@@ -8,7 +8,11 @@ puts "Seeding miolimOS Phase 1 data..."
 # Admin-Nutzer für Self-Hosting aus ENV. KEIN hartkodiertes Default-Passwort:
 # MIOLIMOS_ADMIN_PASSWORD setzen — sonst wird ein Zufallspasswort erzeugt und
 # EINMALIG hier ausgegeben (danach im UI ändern).
-admin = HumanActor.find_or_initialize_by(email: ENV.fetch("MIOLIMOS_ADMIN_EMAIL", "admin@example.com"))
+# #806: Der erste Admin entsteht normalerweise im First-Run-Onboarding
+# (/setup). Existiert schon ein Mensch, nutzen die Beispieldaten den —
+# der ENV-Weg bleibt nur als Fallback für headless Setups.
+admin = HumanActor.order(:id).first ||
+        HumanActor.find_or_initialize_by(email: ENV.fetch("MIOLIMOS_ADMIN_EMAIL", "admin@example.com"))
 admin.assign_attributes(name: ENV.fetch("MIOLIMOS_ADMIN_NAME", "Admin"), active: true)
 if admin.password_digest.blank?
   from_env = ENV["MIOLIMOS_ADMIN_PASSWORD"].presence
@@ -36,16 +40,11 @@ TeamMembership.find_or_create_by!(team: team, actor: classifier) { |m| m.role = 
 puts "  ✓ Team: #{team.name} (owner: #{admin.name}, member: #{classifier.name})"
 
 # ─── Capabilities ───────────────────────────────────────────────────────────
-FULL_ACTIONS = %w[read create update delete].freeze
-RESOURCE_TYPES = %w[Task Awaiting Contact Topic KnowledgeItem Communication Actor OauthCredential Team].freeze
+# #806: Rechtematrix kommt aus CapabilityDefaults (eine Quelle für Seeds,
+# capabilities:sync und das First-Run-Onboarding).
+CapabilityDefaults.grant_full!(admin)
 
-RESOURCE_TYPES.each do |resource|
-  cap = Capability.find_or_initialize_by(
-    actor: admin, resource_type: resource, effect: :allow
-  )
-  cap.actions = FULL_ACTIONS
-  cap.save!
-
+CapabilityDefaults::RESOURCE_TYPES.each do |resource|
   read_only = Capability.find_or_initialize_by(
     actor: classifier, resource_type: resource, effect: :allow
   )

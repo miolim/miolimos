@@ -14,6 +14,9 @@ class SessionsController < ActionController::Base
   skip_before_action :verify_authenticity_token, only: :create
 
   def new
+    # #806: jungfräuliche Instanz (kein menschlicher Nutzer) → erst das
+    # First-Run-Onboarding, das den ersten Admin anlegt.
+    return redirect_to setup_path unless HumanActor.exists?
     # `no-store` verhindert, dass Browser die Login-Seite im bfcache
     # halten — eine zweite Verteidigungslinie zusaetzlich zum Skip oben.
     response.headers["Cache-Control"] = "no-store"

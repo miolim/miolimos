@@ -21,7 +21,7 @@ module Inbox
       /xi.freeze
 
       OL_URL     = "https://openlibrary.org/api/books".freeze
-      USER_AGENT = "miolimOS/1.0 (mailto:hans@miolim.de)".freeze
+      USER_AGENT = "miolimOS/#{Miolimos::VERSION} (+https://github.com/miolim/miolimos)".freeze
 
       def self.call(text:, **_)
         isbn = find_valid_isbn(text)

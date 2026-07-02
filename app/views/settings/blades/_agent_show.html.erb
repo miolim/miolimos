@@ -247,7 +247,7 @@
         </button>
       </div>
       <p class="text-[11px] text-slate-500">
-        <%= t("settings.agents.common.step25_help_html", settings_file: tag.code("#{claude_workdir}/.claude/settings.local.json"), workdir: tag.code("cd #{claude_workdir}")) %>
+        <%= t("settings.agents.common.step25_help_html", settings_file: tag.code("#{claude_workdir}/.claude/settings.local.json"), workdir: tag.code("cd #{claude_workdir}"), app_dir: tag.code("cd #{Rails.root}")) %>
       </p>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-48 whitespace-pre-wrap"><%= claude_settings_cmd %></pre>
 

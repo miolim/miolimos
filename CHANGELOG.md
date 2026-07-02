@@ -15,8 +15,19 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- First-run setup screen (#806): a fresh instance asks for the admin
+  account in the browser instead of requiring `db:seed` + environment
+  variables; `db:seed` now only loads optional example data.
+
 ### Changed
 
+- Generalization for self-hosters (#806): the research agent is
+  configurable via `MIOLIMOS_RESEARCHER_EMAIL`, maintenance rake tasks use
+  the instance's first human actor, Crossref/OpenLibrary user agents
+  reference the project URL, and the default capability matrix lives in
+  one place (`CapabilityDefaults`).
 - Dependency refresh (first Dependabot batch, #805): puma 8.0.2,
   tailwindcss-rails 4.6, rubyzip 3.4.1, signet 0.22, google-apis gems,
   jbuilder 2.15.1, brakeman 8.0.5, thruster 0.1.22; GitHub Actions bumped

@@ -8,6 +8,10 @@
 # `start_wikilink_research` zusaetzlich einen WikilinkResearchJob fuer
 # das Rendering-Indikator-Modell.
 class KnowledgeWikilinkResearchController < ApplicationController
+  # #806: Recherche-Agent konfigurierbar — Selbst-Hoster benennen ihren
+  # eigenen Agenten via ENV; Default ist der historische Instanz-Agent.
+  RESEARCHER_EMAIL = ENV.fetch("MIOLIMOS_RESEARCHER_EMAIL", "miolim_researcher@miolim.de").freeze
+
   before_action :set_item
 
   # JS-getriggerte Endpoints (Stimulus-Fetch); Auth ueber Session.
@@ -27,9 +31,9 @@ class KnowledgeWikilinkResearchController < ApplicationController
   # Bulk: scannt den KI-Body nach `[[Title | URL]]` ohne Ziel-KI und
   # legt EINEN Researcher-Task mit allen Entitaeten an.
   def request_entity_import
-    researcher = AgentActor.find_by(email: "miolim_researcher@miolim.de")
+    researcher = AgentActor.find_by(email: RESEARCHER_EMAIL)
     unless researcher
-      render(json: { error: "Researcher-Agent (miolim_researcher@miolim.de) nicht gefunden." },
+      render(json: { error: "Researcher-Agent (#{RESEARCHER_EMAIL}) nicht gefunden." },
              status: :unprocessable_entity)
       return
     end
@@ -77,9 +81,9 @@ class KnowledgeWikilinkResearchController < ApplicationController
   # Per-Wikilink: legt einen einzigen Researcher-Task + Job fuer EIN
   # `[[Title|URL]]` an. Idempotent: bestehender Job wird zurueckgegeben.
   def start_wikilink_research
-    researcher = AgentActor.find_by(email: "miolim_researcher@miolim.de")
+    researcher = AgentActor.find_by(email: RESEARCHER_EMAIL)
     unless researcher
-      render(json: { error: "Researcher-Agent (miolim_researcher@miolim.de) nicht gefunden." },
+      render(json: { error: "Researcher-Agent (#{RESEARCHER_EMAIL}) nicht gefunden." },
              status: :unprocessable_entity)
       return
     end

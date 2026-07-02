@@ -16,9 +16,10 @@ namespace :capabilities do
   # `AgentActor#grant_default_capabilities!` — write yes, delete no.
   desc "Sync capabilities across all resource types for existing allowed actors"
   task sync: :environment do
-    resource_types = %w[Task Awaiting Contact Topic KnowledgeItem Communication Actor OauthCredential Team Source InboxItem ActorView ActivityEvent Document TimeEntry Event]
-    human_actions  = %w[read create update delete]
-    agent_actions  = %w[read create update]
+    # #806: Liste + Matrix leben in CapabilityDefaults (eine Quelle).
+    resource_types = CapabilityDefaults::RESOURCE_TYPES
+    human_actions  = CapabilityDefaults::HUMAN_ACTIONS
+    agent_actions  = CapabilityDefaults::AGENT_ACTIONS
 
     Actor.find_each do |actor|
       # Wir leiten "dieser Actor soll allow-Rechte kriegen" vom Vorhandensein

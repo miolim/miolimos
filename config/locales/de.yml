@@ -44,6 +44,18 @@ de:
     login_required:      "Bitte melde dich an."
     invalid_credentials: "E-Mail oder Passwort falsch."
 
+  setup:
+    heading:               "Willkommen — Einrichtung"
+    intro:                 "Diese miolimOS-Instanz hat noch keinen Nutzer. Lege das Admin-Konto an, um zu starten."
+    name:                  "Name"
+    email:                 "E-Mail"
+    password:              "Passwort"
+    password_hint:         "Mindestens 8 Zeichen."
+    password_confirmation: "Passwort wiederholen"
+    password_mismatch:     "stimmt nicht mit dem Passwort überein"
+    submit:                "Admin-Konto anlegen"
+    created:               "Willkommen bei miolimOS! Dein Admin-Konto ist eingerichtet."
+
   dashboard:
     title:                "Dashboard"
     my_open_tasks:        "Meine offenen Aufgaben"
@@ -1143,7 +1155,7 @@ de:
         step25_label: "2.5 (Optional): nur Lese-/Recherche-Rechte für diese Agent-Inkarnation"
         step25_hint: "— wenn der Agent kein Schreib-Zugriff auf das Repo bekommen soll (Researcher, Auditor & co.)"
         toast_permission_block_copied: "Permission-Block kopiert."
-        step25_help_html: 'Erlaubt: <code>WebSearch</code>, <code>WebFetch</code>, <code>Read</code>, plus <code>Bash</code> für <code>curl</code>, <code>jq</code>, <code>pdftotext</code>, <code>python3</code>. Geblockt: <code>Edit</code>/<code>Write</code>, <code>git</code>, <code>rm</code>, <code>sudo</code>, <code>mv/cp/chmod/chown</code>, <code>npm/yarn/bundle/gem</code>. Claude Code hat keinen <code>--settings-dir</code>-Flag und keine Env-Variable dafür — die Datei muss in einem <code>.claude/</code>-Unterordner relativ zum CWD liegen, in dem <code>claude</code> startet. Der Befehl unten legt sie in %{settings_file} ab. <strong>Damit sie greift, ersetze in Schritt 3 (tmux-Start) das <code>cd /home/hans/miolimos_src</code> durch %{workdir}</strong> — siehe den alternativen tmux-Befehl direkt unter diesem Block.'
+        step25_help_html: 'Erlaubt: <code>WebSearch</code>, <code>WebFetch</code>, <code>Read</code>, plus <code>Bash</code> für <code>curl</code>, <code>jq</code>, <code>pdftotext</code>, <code>python3</code>. Geblockt: <code>Edit</code>/<code>Write</code>, <code>git</code>, <code>rm</code>, <code>sudo</code>, <code>mv/cp/chmod/chown</code>, <code>npm/yarn/bundle/gem</code>. Claude Code hat keinen <code>--settings-dir</code>-Flag und keine Env-Variable dafür — die Datei muss in einem <code>.claude/</code>-Unterordner relativ zum CWD liegen, in dem <code>claude</code> startet. Der Befehl unten legt sie in %{settings_file} ab. <strong>Damit sie greift, ersetze in Schritt 3 (tmux-Start) das %{app_dir} durch %{workdir}</strong> — siehe den alternativen tmux-Befehl direkt unter diesem Block.'
         alt_tmux_label: "Alternativer tmux-Befehl (ersetzt Schritt 3, wenn Schritt 2.5 verwendet wird):"
         toast_restricted_tmux_copied: "Restricted tmux-Befehl kopiert."
         step3_label: "3. tmux-Session starten"

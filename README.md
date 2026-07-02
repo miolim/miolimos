@@ -50,8 +50,11 @@ bin/setup
 the dev server via `bin/dev` (Rails server + Tailwind watcher on
 `http://localhost:3000`).
 
-To seed example data (creates an admin user — password from
-`MIOLIMOS_ADMIN_PASSWORD`, or a random one is printed):
+On first visit, miolimOS shows a **first-run setup screen** that creates
+the admin account — no seeding or environment variables required. The
+screen disappears permanently once a user exists.
+
+To additionally load example data (demo topics, tasks, notes):
 
 ```bash
 bin/rails db:seed

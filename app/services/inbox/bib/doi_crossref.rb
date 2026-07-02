@@ -9,7 +9,7 @@ module Inbox
     module DoiCrossref
       DOI_RE       = /\b10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i
       CROSSREF_URL = "https://api.crossref.org/works/".freeze
-      USER_AGENT   = "miolimOS/1.0 (mailto:hans@miolim.de)".freeze
+      USER_AGENT   = "miolimOS/#{Miolimos::VERSION} (+https://github.com/miolim/miolimos)".freeze
 
       CSL_TYPE_MAP = {
         "journal-article"     => "article-journal",

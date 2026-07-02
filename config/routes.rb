@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   # ─── Auth ──────────────────────────────────────────────────────────────
   get    "/login",  to: "sessions#new",     as: :login
   post   "/login",  to: "sessions#create"
+  # #806: First-Run-Onboarding — nur erreichbar solange kein HumanActor existiert.
+  get    "/setup",  to: "setup#new",        as: :setup
+  post   "/setup",  to: "setup#create"
   delete "/logout", to: "sessions#destroy", as: :logout
 
   # ─── Web-UI ────────────────────────────────────────────────────────────

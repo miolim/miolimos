@@ -1,7 +1,7 @@
 namespace :inbox do
   desc "Importiert MD-Dateien aus ~/miolimos-inbox/ ins Knowledge-System"
   task import: :environment do
-    actor = HumanActor.find_by(email: "hans@miolim.de") || HumanActor.first
+    actor = HumanActor.order(:id).first
     raise "Kein Human-Actor gefunden" unless actor
 
     Current.actor = actor

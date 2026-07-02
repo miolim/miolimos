@@ -20,8 +20,8 @@ namespace :cleanup do
     count  = scope.count
     next puts "Nichts aufzuräumen." if count.zero?
 
-    # Cleanup-Aktor: Hans, fallback erster HumanActor.
-    actor = HumanActor.find_by(email: "hans@miolim.de") || HumanActor.first
+    # Cleanup-Aktor: der erste (Admin-)HumanActor der Instanz (#806).
+    actor = HumanActor.order(:id).first
     raise "Kein Human-Actor gefunden für Cleanup-Authoring" unless actor
 
     scope.find_each do |k|

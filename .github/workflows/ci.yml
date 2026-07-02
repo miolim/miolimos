@@ -19,7 +19,9 @@ jobs:
         # bundle exec (not bin/brakeman, whose --ensure-latest fails CI on every
         # new Brakeman release). Reports findings to the log; does not fail the
         # build on existing warnings (see #735 security-triage follow-up).
-        run: bundle exec brakeman --no-pager
+        # --no-exit-on-warn: Brakeman bricht sonst bei JEDER Warnung ab —
+        # der Kommentar oben (nur berichten) war nie als Flag umgesetzt (#735).
+        run: bundle exec brakeman --no-pager --no-exit-on-warn
 
   lint:
     name: Lint (RuboCop)
@@ -111,5 +113,9 @@ jobs:
           bundler-cache: true
       - name: Prepare test database
         run: bin/rails db:test:prepare
+      # #735: frischer Checkout hat kein app/assets/builds/tailwind.css
+      # (gitignored) — ohne Build bricht jede Seite mit MissingAsset.
+      - name: Build assets
+        run: bin/rails tailwindcss:build
       - name: Run system tests
         run: bin/rails test:system

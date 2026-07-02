@@ -10,7 +10,7 @@ jobs:
     name: Security scan (Brakeman)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: .ruby-version
@@ -25,7 +25,7 @@ jobs:
     name: Lint (RuboCop)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: .ruby-version
@@ -54,7 +54,7 @@ jobs:
       # Schema is structure.sql (schema_format :sql); db:test:prepare loads it.
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/miolimos_test"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install system packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips postgresql-client
       - uses: ruby/setup-ruby@v1
@@ -72,7 +72,7 @@ jobs:
     name: JS unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -102,7 +102,7 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/miolimos_test"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install system packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips postgresql-client
       - uses: ruby/setup-ruby@v1

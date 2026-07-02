@@ -1,0 +1,21 @@
+<% content_for :title, "Themen" %>
+
+<%# #456 (Hans, 2026-06-02): /topics als vollwertige Blade-Stack-Seite.
+    Starter ist die Themen-Liste (list:topics → topics/topics_list_blade,
+    hierarchisch seit #464). `?stack=`-Param kann Detail-Blades anhaengen.
+    Eigener History-Bucket `topics.stack.history`. %>
+<div data-controller="blade-stack"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="topics.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% locals = stack_item.partial_locals %>
+      <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+      <%= render stack_item.partial, **locals %>
+    <% end %>
+  </main>
+</div>

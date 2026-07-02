@@ -1,0 +1,53 @@
+<% content_for :title, @item.title %>
+<% content_for :head do %>
+  <%# Page-Snapshot beim Re-Visit nicht als Preview zeigen — sonst
+      wirken im Hintergrund erzeugte Backlinks (Comment, Recherche-Job)
+      verzögert sichtbar, weil Turbo erst die alte Version preview-t. %>
+  <meta name="turbo-cache-control" content="no-preview">
+<% end %>
+
+<%# Wenn in_stack-Param mitkommt, wird das Detail im Stack-Modus
+    gerendert (Close-Button, kein Expand-Knopf) — Cancel/Show in einer
+    Stack-Card landet hier. %>
+<% in_stack_show = params[:in_stack].present? %>
+<div class="<%= 'max-w-3xl space-y-4' unless in_stack_show %>">
+  <section class="<%= 'bg-white rounded border border-slate-200 p-4' unless in_stack_show %>">
+    <%= render "knowledge_items/detail", item: @item,
+          expanded: !in_stack_show,
+          in_stack: in_stack_show,
+          body_html: @body_html %>
+  </section>
+
+  <% if @item.outgoing_references.any? %>
+    <section class="bg-white rounded border border-slate-200 p-4">
+      <h2 class="text-sm font-semibold mb-2"><%= t("knowledge.references_out") %></h2>
+      <ul class="text-[13px]">
+        <% @item.outgoing_references.each do |ref| %>
+          <li class="py-0.5">
+            <% if ref.target %>
+              <%= link_to ref.target.title, knowledge_item_path(ref.target.uuid), class: "hover:underline text-emerald-700" %>
+            <% else %>
+              <span class="text-rose-600"><%= ref.target_title %></span>
+            <% end %>
+            <% if ref.anchor_text.present? %><span class="text-xs text-slate-500">#<%= ref.anchor_text %></span><% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%# Soft-deleted Source-KIs werden durch default_scope ausgeblendet,
+      `ref.source` ist dann nil — daher filter_map vor dem Render. %>
+  <% incoming = @item.incoming_references.filter_map(&:source).uniq %>
+  <% if incoming.any? %>
+    <section class="bg-white rounded border border-slate-200 p-4">
+      <h2 class="text-sm font-semibold mb-2"><%= t("knowledge.references_in") %></h2>
+      <ul class="text-[13px]">
+        <% incoming.each do |source| %>
+          <% d = backlink_source_descriptor(source) %>
+          <li class="py-0.5"><%= link_to d[:label], knowledge_item_path(source.uuid), class: "hover:underline" %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

@@ -1,0 +1,22 @@
+<%# #240: Schliessen-Kreuz wandert vom Body-Toolbar in den unteren Spine,
+    damit es immer sichtbar bleibt — unabhaengig vom internen Body-
+    Scroll. Wird in jedem *_blade_card-Spine direkt nach dem
+    vertical-rl-Title eingebunden; durch dessen flex-1 wird der Button
+    automatisch an den Card-Boden gedrueckt.
+    closeCard im blade_stack_controller stoppt Propagation, sonst
+    triggert der aside-Wrapper noch focusCard auf der gerade
+    geschlossenen Card. %>
+<%# #434 Teil 2 (Hans, 2026-06-01): Stack-Verlauf aufrufen — Button am
+    Spine-Fuss, direkt UEBER dem Schliessen-Kreuz (mobil daneben). Feuert ein
+    globales Event; der stack-history-Drawer der Seite faengt es ab und
+    oeffnet/schliesst. So ist der Verlauf auf JEDEM Stack erreichbar. %>
+<button type="button" title="<%= t("shared.close_button.stack_history") %>" aria-label="<%= t("shared.close_button.stack_history") %>"
+        onclick="window.dispatchEvent(new CustomEvent('stack-history:toggle'))"
+        class="shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
+  <%= icon "history", size: "w-4 h-4" %>
+</button>
+<button type="button" title="<%= t("shared.close_button.close_card") %>" aria-label="<%= t("shared.close_button.close") %>"
+        data-action="click->blade-stack#closeCard"
+        class="shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
+  <%= icon "x", size: "w-4 h-4" %>
+</button>

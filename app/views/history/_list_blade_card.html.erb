@@ -1,0 +1,84 @@
+<%# #163 Phase 5a-3: Listen-Blade fuer Verlauf — die zuletzt vom
+    current_actor angeschauten Entitaeten (KIs, Tasks, Sources, Topics,
+    Awaitings). DISTINCT ON wie frueher die Vollseite. #631: das Blade
+    IST jetzt der Verlauf (Split-Pane-Seite abgelöst) — Limit 100 wie
+    die alte Seite, Typ-Filter client-seitig. %>
+<%
+  stack_id  = "list:history"
+  # #631 v2: Query/Preload/Typ-Logik in HistoryHelper — geteilt mit dem
+  # „Mehr laden"-Endpoint (history#more).
+  views     = history_recent_views
+  viewables = history_preload_viewables(views)
+  # #462 (Hans, 2026-06-02): nur die tatsaechlich geladenen Typen als
+  # Filter-Pills anbieten. Label-Map fuer die Pill-Beschriftung.
+  # #632: Personen-/Organisations-KIs als eigener Filter-Typ "Person".
+  type_labels = { "KnowledgeItem" => t("history.types.knowledge_item"), "Person" => t("history.types.person"),
+                  "Task" => t("history.types.task"),
+                  "Source" => t("history.types.source"), "Topic" => t("history.types.topic"),
+                  "Awaiting" => t("history.types.awaiting"), "Communication" => t("history.types.communication") }
+  present_types = views.map { |v| history_effective_type(v, viewables[[v.viewable_type, v.viewable_id.to_s]]) }
+                       .uniq.sort_by { |t| type_labels.keys.index(t) || 99 }
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
+         title="<%= t("history.title") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+         data-target-uuid="<%= stack_id %>">
+    <span class="shrink-0 text-slate-500"><%= icon "history" %></span>
+    <%# #630: Verlaufs-Link kopieren. %>
+    <%= blade_copy_button(stack_id) %>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("history.title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <%# #462: history-filter-Controller togglet die Eintraege client-seitig
+      nach Entitaetstyp. %>
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2"
+       data-controller="history-filter">
+    <div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex flex-col gap-1.5">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-500"><%= icon "history" %></span>
+        <span class="flex-1 min-w-0 truncate font-semibold text-sm"><%= t("history.title") %></span>
+        <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= views.size %></span>
+        <%# #631: Expand-Link raus — das Blade IST die Verlaufs-Seite. %>
+      </div>
+      <%# #462: Entitaets-Filter-Pills (nur geladene Typen). %>
+      <% if present_types.size > 1 %>
+        <div class="flex flex-wrap items-center gap-1 text-[11px]">
+          <button type="button" data-history-filter-target="pill" data-type=""
+                  data-action="click->history-filter#toggle"
+                  class="px-2 py-0.5 rounded"><%= t("history.filter_all") %></button>
+          <% present_types.each do |t| %>
+            <button type="button" data-history-filter-target="pill" data-type="<%= t %>"
+                    data-action="click->history-filter#toggle"
+                    class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
+              <%= type_labels[t] || t %>
+            </button>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <% if views.empty? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= t("history.empty") %></p>
+    <% else %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <%= render "history/rows", views: views, viewables: viewables %>
+        <%# #631 v2: Blaettern — wenn die Seite voll war, gibt es
+            vermutlich aeltere Eintraege. %>
+        <% if views.size >= HistoryHelper::HISTORY_PAGE_SIZE %>
+          <%= render "history/more_frame", before: views.last.viewed_at.to_f.to_s %>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</article>

@@ -1,0 +1,42 @@
+<%# #384 (Hans, 2026-05-27): Diskussions-Tab im Topic. Listet alle
+    KIs dieses Topics, die mindestens eine Mention auf eine Person-KI
+    haben. Das markiert sie als "ist an jemanden adressiert", also als
+    Diskussions-Start (vs. private Notizen, die niemanden adressieren).
+    #484 Increment C (Hans, 2026-06-03): auf das gemeinsame Tab-Gerüst
+    umgestellt. Quick-Add vorerst leer (Hans).
+
+    Locals: topic %>
+<%
+  if @discussion_items.nil?
+    @discussion_items = topic.knowledge_items
+                              .joins(:actor_mentions)
+                              .distinct
+                              .includes(:outgoing_references, :incoming_references) # #486
+                              .order(file_updated_at: :desc)
+                              .limit(500).to_a
+  end
+%>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        t("topics.tabs.discussion", default: "Diskussion"),
+        count:        @discussion_items.size,
+        row_selector: "li[id^='knowledge_row_']",
+        empty:        @discussion_items.any?
+      } do %>
+  <% if @discussion_items.any? %>
+    <ul id="discussion_list" class="divide-y divide-slate-100">
+      <% @discussion_items.each do |ki| %>
+        <%= render "knowledge_items/list_row",
+              item: ki, topic_slug: topic.slug, work_tree_count: 0 %>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="px-3 py-6 text-sm text-slate-500 text-center">
+      Noch keine Diskussions-KIs in diesem Topic.
+      <p class="mt-2 text-xs text-slate-400">
+        Eine KI wird Diskussion, sobald sie einen App-Nutzer per
+        <code>@hans</code> adressiert.
+      </p>
+    </div>
+  <% end %>
+<% end %>

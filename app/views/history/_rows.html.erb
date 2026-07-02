@@ -1,0 +1,97 @@
+<%# #631 v2: Verlaufszeilen — vom Listen-Blade UND dem „Mehr laden"-
+    Endpoint (history#more) gerendert. Locals: views, viewables. %>
+<% views.each do |view| %>
+  <% rec = viewables[[view.viewable_type, view.viewable_id.to_s]] %>
+  <% next unless rec %>
+  <%# #308: Statt Text-Typ-Spalte ein Entitaets-Icon vor dem Title. %>
+  <% type_icon =
+       case view.viewable_type
+       when "KnowledgeItem" then knowledge_type_icon(rec.item_type)
+       when "Task"          then icon("tasks", size: "w-4 h-4")
+       when "Source"        then icon("book_open", size: "w-4 h-4")
+       when "Topic"         then icon("folder", size: "w-4 h-4")
+       when "Awaiting"      then icon("waiting", size: "w-4 h-4")
+       when "Communication" then icon("communications", size: "w-4 h-4")
+       else                      icon("file", size: "w-4 h-4")
+       end
+  %>
+  <li class="py-1.5 hover:bg-slate-50 flex items-center gap-2"
+      data-history-filter-target="item" data-type="<%= history_effective_type(view, rec) %>">
+    <span class="shrink-0 w-5 flex justify-center text-slate-500"
+          title="<%= view.viewable_type %>"><%= type_icon %></span>
+    <%# Klick-Verhalten je nach Typ: KIs/Tasks/Topics/Sources
+        appenden via blade-stack-Action; Awaiting hat keinen
+        eigenen Blade-Typ, da gehen wir in die Vollansicht. %>
+    <% case view.viewable_type %>
+    <% when "KnowledgeItem" %>
+      <a href="#" data-action="click->blade-stack#appendFromList"
+         data-target-uuid="<%= rec.uuid %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.title %></span>
+      </a>
+    <% when "Task" %>
+      <a href="#" data-action="click->blade-stack#openTask"
+         data-task-id="<%= rec.id %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.title %></span>
+      </a>
+    <% when "Source" %>
+      <a href="#" data-action="click->blade-stack#openSource"
+         data-source-slug="<%= rec.slug %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.title %></span>
+      </a>
+    <% when "Topic" %>
+      <a href="#" data-action="click->blade-stack#openTopic"
+         data-topic-slug="<%= rec.slug %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.name %></span>
+      </a>
+    <% when "Awaiting" %>
+      <a href="#" data-action="click->blade-stack#openAwaiting"
+         data-awaiting-id="<%= rec.id %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.title %></span>
+      </a>
+    <% when "Communication" %>
+      <a href="#" data-action="click->blade-stack#openCommunication"
+         data-communication-id="<%= rec.id %>"
+         class="flex-1 min-w-0 hover:underline text-slate-700">
+        <span class="truncate inline-block max-w-full align-bottom"><%= rec.subject.presence || t("history.no_subject") %></span>
+      </a>
+    <% else %>
+      <%= link_to (rec.try(:title) || rec.try(:name) || "(#{rec.id})"),
+            polymorphic_path(rec), data: { turbo_frame: "_top" },
+            class: "flex-1 min-w-0 truncate hover:underline text-slate-700" %>
+    <% end %>
+    <%# #468 (Hans, 2026-06-02): Plus-Icon haengt das Item an den
+        Stack an (mode=append_to_substack), ohne den folgenden Stack
+        zu ersetzen — wie bei den anderen Listen. %>
+    <%
+      plus_kind, plus_id =
+        case view.viewable_type
+        when "KnowledgeItem" then ["ki", rec.uuid]
+        when "Task"          then ["task", rec.id]
+        when "Source"        then ["source", rec.slug]
+        when "Topic"         then ["topic", rec.slug]
+        when "Awaiting"      then ["awaiting", rec.id]
+        when "Communication" then ["communication", rec.id]
+        end
+    %>
+    <% if plus_kind %>
+      <button type="button"
+              data-controller="blade-link"
+              data-blade-link-kind-value="<%= plus_kind %>"
+              data-blade-link-id-value="<%= plus_id %>"
+              data-blade-link-mode-value="append_to_substack"
+              data-action="click->blade-link#append"
+              title="<%= t("history.append_to_stack") %>" aria-label="<%= t("history.append_to_stack") %>"
+              class="shrink-0 p-0.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded cursor-pointer leading-none">
+        <span class="text-base leading-none">+</span>
+      </button>
+    <% end %>
+    <span class="text-xs text-slate-500 shrink-0 tabular-nums" title="<%= l(view.viewed_at, format: '%d.%m.%Y, %H:%M') %>">
+      <%= compact_age(view.viewed_at) %>
+    </span>
+  </li>
+<% end %>

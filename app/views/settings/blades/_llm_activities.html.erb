@@ -1,0 +1,79 @@
+<%# #613: aus app/views/settings/llm_activities/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_llm_activities. Filter
+    arbeiten per Turbo-Frame gegen den Card-Endpoint. %>
+<%= turbo_frame_tag "llm_activities_blade_frame" do %>
+  
+  <div class="bg-white rounded border border-slate-200 px-3 py-2 flex flex-wrap items-center gap-3 text-sm">
+    <span class="font-semibold"><%= t("settings.llm.title") %></span>
+    <span class="text-xs text-slate-500"><%= t("settings.llm.entries_count", count: @activities.size) %></span>
+
+    <%# Status-Filter %>
+    <nav class="flex items-center gap-0.5 text-xs ml-2">
+      <% [["", t("settings.llm.filter_all")], ["queued", t("settings.llm.filter_queued")], ["running", t("settings.llm.filter_running")], ["succeeded", t("settings.llm.filter_succeeded")], ["failed", t("settings.llm.filter_failed")]].each do |key, label| %>
+        <% c = @counts_by_status[key].to_i %>
+        <%= link_to settings_blade_path("llm_activities", status: key.presence, kind: @kind_filter),
+              data: { turbo_frame: "llm_activities_blade_frame" },
+              class: "px-2 py-0.5 rounded #{@status_filter.to_s == key ? 'font-medium text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}" do %>
+          <%= label %><% if c > 0 %><span class="text-slate-400">&nbsp;(<%= c %>)</span><% end %>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <%# Kind-Filter %>
+    <%# #613: Kind-Filter als GET-Form in den Frame (kein Vollseiten-Sprung). %>
+    <%= form_with url: settings_blade_path("llm_activities"), method: :get,
+          data: { turbo_frame: "llm_activities_blade_frame" }, class: "inline ml-2" do %>
+      <input type="hidden" name="status" value="<%= @status_filter %>">
+      <select name="kind" onchange="this.form.requestSubmit()"
+              class="text-xs border border-slate-200 rounded px-1 py-0.5">
+        <option value="" <%= 'selected' if @kind_filter.blank? %>><%= t("settings.llm.all_kinds") %></option>
+        <% LlmActivity::KINDS.each do |k| %>
+          <option value="<%= k %>" <%= 'selected' if @kind_filter == k %>><%= k.humanize %></option>
+        <% end %>
+      </select>
+    <% end %>
+  </div>
+
+  <% if @activities.empty? %>
+    <p class="text-slate-500 italic px-4 py-3 text-sm"><%= t("settings.llm.no_entries") %></p>
+  <% else %>
+    <ul class="bg-white rounded border border-slate-200 divide-y divide-slate-100 text-sm">
+      <% @activities.each do |a| %>
+        <li class="px-3 py-2 hover:bg-slate-50 flex items-center gap-3">
+          <%# #613 St.2: Detail als Blade statt Einzelfenster. %>
+          <button type="button" data-controller="blade-link"
+                  data-blade-link-kind-value="settings_sub" data-blade-link-id-value="llm_activities:<%= a.id %>"
+                  data-action="click->blade-link#append"
+                  class="flex items-center gap-3 flex-1 min-w-0 text-left text-slate-900 bg-transparent border-0 cursor-pointer p-0">
+          <% if true # Block-Ende des früheren link_to-do bleibt gepaart %>
+            <%# Status-Pill %>
+            <%
+              cls = case a.status
+                    when "queued"    then "bg-slate-100 text-slate-700"
+                    when "running"   then "bg-blue-100 text-blue-800"
+                    when "succeeded" then "bg-emerald-100 text-emerald-800"
+                    when "failed"    then "bg-rose-100 text-rose-800"
+                    else                  "bg-slate-100 text-slate-600"
+                    end
+            %>
+            <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full <%= cls %>">
+              <%= a.status %>
+            </span>
+            <span class="shrink-0 text-xs text-slate-500 w-44 truncate"><%= a.kind.humanize %></span>
+            <span class="flex-1 min-w-0 truncate text-slate-700">
+              <%= a.input_summary.to_s.truncate(120) %>
+            </span>
+            <% if a.duration_seconds %>
+              <span class="shrink-0 text-[11px] text-slate-400 tabular-nums w-12 text-right"><%= a.duration_seconds %>s</span>
+            <% end %>
+            <span class="shrink-0 text-[11px] text-slate-400 tabular-nums w-16 text-right"
+                  title="<%= l(a.created_at, format: :short) %>">
+              <%= compact_age(a.created_at) %>
+            </span>
+          <% end %>
+          </button>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

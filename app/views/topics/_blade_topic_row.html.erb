@@ -1,0 +1,64 @@
+<%# #464 (Hans, 2026-06-02): Rekursive Topic-Zeile fuer das Themen-Listen-
+    Blade — Sub-Topics hierarchisch eingerueckt, mit Chevron am Zeilenende
+    (Disclosure) wie in der Sidebar. Klick auf die Zeile haengt das Listen-
+    Blade des Topics an den Stack (blade-link#append).
+    Locals: topic, depth (Default 0). %>
+<%
+  depth    = local_assigns.fetch(:depth, 0)
+  has_next = topic_has_next_step?(topic)
+  subs     = topic.sub_topics.order(:name).to_a
+  has_subs = subs.any?
+  row_title = has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name
+%>
+<li data-topic="<%= topic.slug %>">
+  <% if has_subs %>
+    <div data-controller="disclosure"
+         data-disclosure-storage-key-value="topics.blade.<%= topic.id %>">
+      <div class="group flex items-center" style="padding-left: <%= depth * 0.75 %>rem">
+        <button type="button"
+                data-controller="blade-link"
+                data-blade-link-kind-value="topic_list"
+                data-blade-link-id-value="<%= topic.slug %>"
+                data-action="click->blade-link#append"
+                title="<%= row_title %>"
+                class="flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0">
+          <span class="w-5 flex items-center justify-center shrink-0">
+            <%= topic_marker topic, next_step: has_next, size: :md %>
+          </span>
+          <span class="text-sm flex-1 truncate"><%= topic.name %></span>
+        </button>
+        <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
+        <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                data-disclosure-target="icon"
+                class="shrink-0 p-1 text-slate-400 hover:text-slate-700 cursor-pointer inline-block transition-transform"
+                title="<%= t("topics.toggle_subtopics") %>" aria-label="<%= t("topics.toggle_subtopics") %>">
+          <%= icon "chevron_right" %>
+        </button>
+      </div>
+      <ul data-disclosure-target="content" class="hidden space-y-0.5">
+        <% subs.each do |sub| %>
+          <%= render "topics/blade_topic_row", topic: sub, depth: depth + 1 %>
+        <% end %>
+      </ul>
+    </div>
+  <% else %>
+    <div class="group flex items-center" style="padding-left: <%= depth * 0.75 %>rem">
+      <button type="button"
+              data-controller="blade-link"
+              data-blade-link-kind-value="topic_list"
+              data-blade-link-id-value="<%= topic.slug %>"
+              data-action="click->blade-link#append"
+              title="<%= row_title %>"
+              class="flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0">
+        <span class="w-5 flex items-center justify-center shrink-0">
+          <%= topic_marker topic, next_step: has_next, size: :md %>
+        </span>
+        <span class="text-sm flex-1 truncate"><%= topic.name %></span>
+      </button>
+      <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
+      <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
+    </div>
+  <% end %>
+</li>

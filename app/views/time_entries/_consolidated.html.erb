@@ -1,0 +1,30 @@
+<%# #533 #5 (Hans, 2026-06-07): konsolidierte Zeiten-Gruppen (nach Aufgabe oder
+    Topic). Locals: groups (aus TimeEntry.consolidate), kind ("task"|"topic"),
+    lookup (id → Objekt). %>
+<% if groups.empty? %>
+  <p class="text-xs text-slate-400"><%= t("time_entries.none_recorded") %></p>
+<% else %>
+  <ul class="divide-y divide-slate-100 text-sm">
+    <% groups.each do |g| %>
+      <% obj = lookup[g[:key]] %>
+      <% next unless obj %>
+      <li class="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-slate-50 -mx-1 px-1 rounded"
+          <% if kind == "task" %>
+            data-action="click->blade-stack#openTaskTimes" data-task-id="<%= obj.id %>"
+          <% else %>
+            data-action="click->blade-stack#openTopicTimes" data-topic-slug="<%= obj.slug %>"
+          <% end %>
+          title="<%= t("time_entries.open") %>">
+        <span class="font-mono tabular-nums text-slate-700 w-16 shrink-0"><%= format_minutes(g[:total]) %></span>
+        <span class="flex-1 min-w-0 truncate text-slate-700">
+          <%= kind == "task" ? "##{obj.id} #{obj.title}" : obj.name %>
+        </span>
+        <span class="text-xs text-slate-400 shrink-0 tabular-nums"><%= g[:count] %>×</span>
+        <span class="text-xs text-slate-400 shrink-0 tabular-nums w-12 text-right"><%= g[:last]&.strftime("%d.%m.") %></span>
+      </li>
+    <% end %>
+  </ul>
+  <div class="mt-1 text-xs text-slate-700 font-medium">
+    <%= t("time_entries.sum", total: format_minutes(groups.sum { |g| g[:total] })) %>
+  </div>
+<% end %>

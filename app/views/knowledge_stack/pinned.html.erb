@@ -1,0 +1,23 @@
+<% content_for :title, "Gepinnt" %>
+
+<%# #229: /pinned ist ein Blade-Stack wie /tasks und /topics/:slug.
+    Initial = `list:pinned` (siehe BladeStackLoader::LIST_PARTIALS).
+    `?stack=`-Param kann Detail-Blades anhaengen. %>
+<div data-controller="blade-stack"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="pinned.stack.history"
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "pinned" %>
+        <%= render "knowledge_items/pinned_list_blade_card" %>
+      <% else %>
+        <% locals = stack_item.partial_locals %>
+        <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+        <%= render stack_item.partial, **locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

@@ -1,0 +1,53 @@
+<%# Processor-Picker mit Submit-Button. Wird im Detail-Bereich für
+    pending- und failed-Items verwendet. Das zweite Dropdown
+    (Prompt-Vorlage) ist nur für AiTransform relevant — `run_picker`-
+    Stimulus-Controller schaltet es dynamisch ein/aus.
+
+    Locals: item, processors, prompt_templates, suggested, label %>
+<section class="rounded border border-slate-200 bg-white px-3 py-3 space-y-2"
+         data-controller="run-picker"
+         data-run-picker-descriptions-value='<%= processors.each_with_object({}) { |k, h| h[k.kind] = k.description }.to_json %>'>
+  <div class="text-xs uppercase tracking-wider text-slate-500"><%= label %></div>
+  <%= form_with url: process_now_inbox_item_path(item), method: :post,
+        local: true, class: "flex flex-wrap items-center gap-2" do %>
+    <label class="text-xs text-slate-600 flex items-center gap-1">
+      <span><%= t("inbox_items.process_as") %></span>
+      <select name="processor_kind"
+              data-run-picker-target="processor"
+              data-action="change->run-picker#onChange"
+              class="text-sm border border-slate-200 rounded px-1 py-0.5 bg-white">
+        <% processors.each do |klass| %>
+          <option value="<%= klass.kind %>"
+                  <%= "selected" if klass.kind == suggested %>>
+            <%= klass.label %><%= " #{t("inbox_items.suggested_suffix")}" if klass.kind == suggested %>
+          </option>
+        <% end %>
+      </select>
+    </label>
+
+    <% if prompt_templates.any? %>
+      <label data-run-picker-target="templateBlock"
+             class="text-xs text-slate-600 flex items-center gap-1 <%= 'hidden' unless suggested == 'ai_transform' %>">
+        <span><%= t("inbox_items.template") %></span>
+        <select name="prompt_template_slug"
+                class="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white">
+          <option value=""><%= t("inbox_items.template_blank") %></option>
+          <% prompt_templates.each do |t| %>
+            <option value="<%= t.slug %>"
+                    <%= "selected" if item.payload["prompt_template_slug"] == t.slug %>>
+              <%= t.name %>
+            </option>
+          <% end %>
+        </select>
+      </label>
+    <% end %>
+
+    <button type="submit"
+            class="text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+      <%= t("inbox_items.run") %>
+    </button>
+  <% end %>
+  <p data-run-picker-target="hint" class="text-[11px] text-slate-500">
+    <%= processors.find { |k| k.kind == suggested }&.description %>
+  </p>
+</section>

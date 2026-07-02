@@ -1,0 +1,91 @@
+<%# #418 Iter 2 (Hans, 2026-05-30): Listen-Blade ueber ALLE vergebenen
+    Tags. Sortierung: mit-Icon-zuerst (alphabetisch), dann ohne-Icon
+    (alphabetisch). Klick auf einen Tag oeffnet das item-Blade
+    (kind=tag_list).
+    Locals:
+      - with_icon     (Array<String> — Tags mit Icon-Mapping)
+      - without_icon  (Array<String>)
+%>
+<%
+  # #419 (Hans, 2026-05-30): wenn das Partial direkt aus dem
+  # BladeStackLoader (Initial-Stack-Render) gerendert wird, kommen
+  # keine Locals — der Controller-Pfad #tags_list_card wird nicht
+  # durchlaufen. Wir holen die Daten dann hier selbst, damit das
+  # Blade in beiden Render-Pfaden konsistent gefuellt ist.
+  if local_assigns[:with_icon].nil? && local_assigns[:without_icon].nil?
+    task_tags  = Task.where("array_length(tags, 1) > 0")
+                     .pluck(Arel.sql("DISTINCT unnest(tags)"))
+    ki_tags    = KnowledgeItem.where("array_length(tags, 1) > 0")
+                              .pluck(Arel.sql("DISTINCT unnest(tags)"))
+    # #387 Phase B (Hans, 2026-05-30): Highlight-Tags (auf
+    # KnowledgeItemAnchor) auch im Tag-Quersystem mitfuehren.
+    anchor_tags = KnowledgeItemAnchor.where("array_length(tags, 1) > 0")
+                                     .pluck(Arel.sql("DISTINCT unnest(tags)"))
+    all_tags    = (task_tags + ki_tags + anchor_tags).reject(&:blank?).uniq
+    map        = tag_icons_map
+    with_icon    = all_tags.select { |t| map.key?(t) }.sort
+    without_icon = (all_tags - with_icon).sort
+  else
+    with_icon    = local_assigns[:with_icon] || []
+    without_icon = local_assigns[:without_icon] || []
+  end
+  total = with_icon.size + without_icon.size
+%>
+<article id="stack_card_list:tags"
+         data-uuid="list:tags"
+         class="stack-card shrink-0 relative
+                w-[24rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t("tags.title") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+         data-target-uuid="list:tags">
+    <span class="shrink-0 text-slate-500"><%= icon "tag", size: "w-5 h-5" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("tags.title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
+       data-controller="list-search"
+       data-list-search-selector-value="li[data-tag]">
+    <%# #420 (Hans, 2026-05-30/Iter 2): Toolbar-Header analog Aufgaben/
+        Wissen — Titel, Anzahl, Suchschlitz in einer Zeile. %>
+    <%# #703 (Hans): einheitlicher Topbereich (kein extra Kasten). %>
+    <%= render "shared/list_header",
+          lead_icon: "tag", title: t("tags.title"), count: total,
+          search: (total > 0 ? render("shared/list_search", placeholder: t("tags.search_placeholder")) : nil) %>
+
+    <% if total.zero? %>
+      <p class="text-sm text-slate-400 italic"><%= t("tags.empty") %></p>
+    <% end %>
+
+    <p data-list-search-target="empty" class="hidden text-xs text-slate-400 italic"><%= t("tags.no_results") %></p>
+
+    <% if with_icon.any? %>
+      <ul class="space-y-0.5">
+        <% with_icon.each do |t| %>
+          <%= render "tags/manage_row", t: t, with_icon: true %>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <% if without_icon.any? %>
+      <% if with_icon.any? %>
+        <hr class="border-slate-100 my-2">
+      <% end %>
+      <ul class="space-y-0.5">
+        <% without_icon.each do |t| %>
+          <%= render "tags/manage_row", t: t, with_icon: false %>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</article>

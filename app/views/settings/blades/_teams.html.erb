@@ -1,0 +1,23 @@
+<%# #613: aus app/views/settings/teams/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_teams. %>
+  
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 font-semibold"><%= t("settings.teams_blade.heading") %></header>
+    <% if @teams.empty? %>
+      <p class="px-4 py-3 text-slate-500">—</p>
+    <% else %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <% @teams.each do |team| %>
+          <li class="px-4 py-2">
+            <div class="font-medium"><%= team.name %></div>
+            <div class="text-xs text-slate-500 mb-1"><%= team.description %></div>
+            <ul class="pl-3 text-xs text-slate-700">
+              <% team.team_memberships.each do |m| %>
+                <li><%= m.actor.name %> <span class="text-slate-400">(<%= m.role %>)</span></li>
+              <% end %>
+            </ul>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>

@@ -1,0 +1,21 @@
+<% selected = local_assigns.fetch(:selected, false) %>
+<li id="knowledge_row_<%= item.uuid %>"
+    class="px-4 py-2 flex items-center gap-3 text-[13px] <%= selected ? 'bg-emerald-50 hover:bg-emerald-100' : 'hover:bg-slate-50' %>">
+  <span class="w-5 flex justify-center text-slate-500 shrink-0"><%= knowledge_type_icon(item.item_type) %></span>
+  <%# #756 (Hans, 2026-06-23): Blade-Append statt knowledge_detail-Frame. %>
+  <%= link_to item.title, knowledge_item_path(item.uuid),
+        data: { controller: "blade-link", "blade-link-kind-value": "ki",
+                "blade-link-id-value": item.uuid, action: "click->blade-link#append",
+                turbo_frame: "_top" },
+        class: "flex-1 hover:underline truncate #{'font-semibold text-emerald-900' if selected}" %>
+  <%# #305: Verknuepfte Quelle dezent anzeigen — Buch-Icon + Slug. %>
+  <% if item.bib_source %>
+    <span class="shrink-0 inline-flex items-center gap-1 text-[11px] text-blue-700 font-mono"
+          title="<%= t("knowledge.form.source_tooltip", title: item.bib_source.title) %>">
+      <span class="[&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "book_open" %></span>
+      @<%= item.bib_source.slug %>
+    </span>
+  <% end %>
+  <span class="text-xs text-slate-500"><%= t("knowledge.item_types.#{item.item_type}") %></span>
+  <span class="text-xs text-slate-500 w-24 text-right"><%= l(item.file_updated_at, format: :short) if item.file_updated_at %></span>
+</li>

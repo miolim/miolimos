@@ -1,0 +1,19 @@
+<%# Chips für die erwähnten Personen/Orgs einer Task. Filtert auf
+    item_type Person/Organization — allgemeine Wissens-KIs landen in
+    der separaten "knowledge_chips"-Sektion. Stream-replaced. %>
+<div id="task_contacts_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% task.mentioned_kis.where(item_type: %w[person organization]).order(:title).each do |ki| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= link_to ki.display_name, knowledge_items_path(stack: ki.uuid),
+            data: { turbo_frame: "_top" },
+            class: "hover:underline" %>
+      <%= button_to task_mention_path(task, ki.uuid),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

@@ -1,0 +1,17 @@
+<%# #573 v2: Kalender-Reiter des Topics — derselbe Zeitraum-Renderer wie das
+    globale Kalender-Blade, gescoped auf dieses Topic. Navigation in-place
+    über den eigenen Frame (Endpoint topics#calendar_tab). %>
+<%
+  anchor = begin
+    params[:month].present? ? Date.strptime(params[:month], "%Y-%m-%d") : Date.current
+  rescue ArgumentError
+    Date.current
+  end
+  view = %w[month week day].include?(params[:view].to_s) ? params[:view] : "month"
+  frame_id = "topic_calendar_frame_#{topic.id}"
+%>
+<turbo-frame id="<%= frame_id %>" class="contents" target="_top">
+  <%= render "calendar/period", anchor: anchor, view: view, topic: topic,
+        base_path: calendar_tab_topic_path(topic.slug), frame_id: frame_id,
+        editable: true %>
+</turbo-frame>

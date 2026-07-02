@@ -1,0 +1,150 @@
+<%# #325 (Hans, 2026-05-24): rekursives Sub-Tree-Partial fuer Work-Tree.
+    Locals: nodes (Array<WorkNode>), depth (Int), topic.
+
+    #325-Follow (Hans-Comment 871): Heading-Nodes zeigen ihren
+    Gliederungspunkt-Path (z.B. „1.\", „1.1.\", „2.3.\") ANSTELLE der
+    H1/H2-Pille. Content-Nodes behalten die ¶-Pille. Headings-only-
+    Counting: Nur Headings werden gezaehlt; Content-Nodes ueberspringen
+    den Zaehler.
+    #325 (Hans, 2026-05-25): Sub-Headings innerhalb eines Content-Knotens
+    erben den Path des naechst-vorangehenden Heading-Geschwisters
+    (last_heading_path). Beispiel: Tree [H1, C, H2] mit C.children=[H3,H4]
+    → H3 = „1.1.\", H4 = „1.2.\", H2 = „2.\". Vorher zeigte H3/H4 nur
+    „1.\"/„2.\" weil path_prefix vom Content-Knoten leer weitergereicht
+    wurde. %>
+<%
+  path_prefix = local_assigns[:path_prefix] || []
+  # #592: Junktor des ELTERN bestimmt das Verhältnis der Geschwister
+  # (UND = alle nötig, ODER = Auswahl mit IST-Markierung).
+  parent_junctor = local_assigns[:parent_junctor]
+  heading_counter = 0
+  last_heading_path = nil
+%>
+<ul class="list-none m-0 p-0 work-tree-list"
+    data-work-tree-target="list"
+    data-parent-id="<%= local_assigns[:parent_id] %>">
+  <% nodes.each do |node| %>
+    <%
+      ki = node.knowledge_item
+      if node.role == "heading"
+        heading_counter += 1
+        node_path = path_prefix + [heading_counter]
+        last_heading_path = node_path
+      else
+        # Content-Knoten erbt den Path des juengsten vorangegangenen
+        # Heading-Geschwisters; fallback path_prefix wenn noch keines da.
+        node_path = last_heading_path || path_prefix
+      end
+      badge_text = node.role == "heading" ?
+                     (node_path.join(".") + ".") :
+                     "¶"
+    %>
+    <li id="work_node_<%= node.id %>"
+        data-work-tree-target="node"
+        data-node-id="<%= node.id %>"
+        data-role="<%= node.role %>"
+        data-ki-uuid="<%= ki.uuid %>"
+        class="border-b border-slate-100 last:border-b-0">
+      <div class="flex items-start gap-2 px-3 py-1.5 hover:bg-slate-50"
+           style="padding-left: <%= 0.75 + (depth - 1) * 1.25 %>rem;">
+        <%# Drag-Handle. %>
+        <span class="cursor-grab text-slate-300 hover:text-slate-500 shrink-0 mt-0.5"
+              title="<%= t("topics.drag_to_move") %>">
+          <%= icon "grip", size: "w-3.5 h-3.5" %>
+        </span>
+        <%# #356 (Hans, 2026-05-25): Outdent/Indent jetzt LINKS der
+            Gliederungs-Pille. Outline-Editor-Ergonomie: erst Hierarchie-
+            Kontrollen (Ebene hoch/runter), dann das Ziffer-Etikett. %>
+        <button type="button"
+                data-action="click->work-tree#outdent"
+                title="<%= t("topics.outdent") %>"
+                class="shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
+          <span class="font-mono text-xs leading-none">‹</span>
+        </button>
+        <button type="button"
+                data-action="click->work-tree#indent"
+                title="<%= t("topics.indent") %>"
+                class="shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
+          <span class="font-mono text-xs leading-none">›</span>
+        </button>
+        <%# Rolle-Toggle + Gliederungspunkt-Anzeige. Heading: zeigt
+            den vollen Gliederungs-Path (z.B. 1.2.3.). Content: ¶.
+            Whitespace-nowrap + auto-Breite, damit lange Paths nicht
+            in der Pille verstuemmelt werden. %>
+        <button type="button"
+                data-action="click->work-tree#toggleRole"
+                title="<%= t("topics.toggle_role") %>"
+                class="shrink-0 text-[11px] tabular-nums rounded px-1.5 py-0.5 cursor-pointer whitespace-nowrap
+                       <%= node.role == 'heading' ? 'bg-emerald-100 text-emerald-800 font-medium' : 'bg-slate-100 text-slate-600' %>">
+          <%= badge_text %>
+        </button>
+        <%# #592: IST-Punkt an ODER-Kindern (exklusiv je Verzweigung). %>
+        <% if parent_junctor == "or" %>
+          <%= button_to topic_work_node_path(topic.slug, node), method: :patch,
+                params: { chosen: node.chosen? ? "0" : "1" },
+                form: { class: "inline-block m-0 p-0 leading-none shrink-0 mt-0.5" },
+                title: node.chosen? ? t("topics.unmark_actual") : t("topics.mark_actual"),
+                class: "w-4 h-4 rounded-full border text-[9px] leading-none cursor-pointer
+                        #{node.chosen? ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 text-transparent hover:border-emerald-400'}" do %>●<% end %>
+        <% end %>
+        <span class="shrink-0 text-slate-400 mt-0.5">
+          <%= knowledge_type_icon(ki.item_type, size: "w-3.5 h-3.5") %>
+        </span>
+        <%# #369 (Hans, 2026-05-25): Klick auf den Title scrollt
+            zuerst in einem offenen Render-Blade an die Stelle des
+            Knotens (per work-tree#scrollToInRender). Wenn kein
+            Render-Blade offen ist → Fallthrough auf das gewohnte
+            openInStack-Verhalten (KI als Card oeffnen). %>
+        <a href="<%= knowledge_item_path(ki.uuid) %>"
+           data-action="click->work-tree#scrollToInRender click->blade-stack#openInStack"
+           data-target-uuid="<%= ki.uuid %>"
+           class="flex-1 min-w-0 truncate text-[13px] text-slate-700 hover:underline">
+          <%= ki.title %>
+        </a>
+        <%# #592: Junktor-Badge — wie verfeinern die KINDER dieses Element.
+            Immer sichtbar (Hans: Interface war nicht auffindbar);
+            Default UND, Klick schaltet um. %>
+        <%= button_to topic_work_node_path(topic.slug, node), method: :patch,
+              params: { junctor: (node.junctor.presence || "and") == "and" ? "or" : "and" },
+              form: { class: "inline-block m-0 p-0 leading-none shrink-0" },
+              title: t("topics.toggle_junctor"),
+              class: "text-[10px] px-1.5 py-0.5 rounded-full border cursor-pointer whitespace-nowrap
+                      #{node.junctor == 'or' ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}" do %><%= node.junctor == "or" ? "ODER" : "UND" %><% end %>
+        <%# #592 Z2: Fokusansicht auf diesen Knoten öffnen (Blade). %>
+        <button type="button"
+                data-controller="blade-link"
+                data-blade-link-kind-value="tree_focus"
+                data-blade-link-id-value="<%= node.id %>"
+                data-action="click->blade-link#append"
+                title="<%= t("topics.focus_node") %>"
+                class="shrink-0 p-1 rounded text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer">
+          <%= icon "expand", size: "w-3.5 h-3.5" %>
+        </button>
+        <%# #592: Kind per Titel anlegen/verknüpfen. %>
+        <details class="relative inline-block shrink-0">
+          <summary class="list-none px-1 text-slate-400 hover:text-emerald-700 cursor-pointer [&_svg]:w-4 [&_svg]:h-4 inline-flex" title="<%= t("topics.add_child") %>"><%= icon "plus_circle" %></summary>
+          <div class="absolute right-0 top-5 z-30 bg-white border border-slate-200 rounded shadow-lg p-2 w-56">
+            <%= form_with url: topic_work_nodes_path(topic.slug), method: :post, local: false do %>
+              <%= hidden_field_tag :parent_id, node.id %>
+              <%= text_field_tag :title, nil, placeholder: t("topics.node_title_placeholder"),
+                    autocomplete: "off", list: "tree-ki-suggestions-#{topic.id}",
+                    class: "w-full text-xs rounded border border-slate-200 px-2 py-1" %>
+            <% end %>
+          </div>
+        </details>
+        <button type="button"
+                data-action="click->work-tree#remove"
+                title="<%= t("topics.remove_node") %>"
+                class="shrink-0 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer">
+          <%= icon "trash", size: "w-3.5 h-3.5" %>
+        </button>
+      </div>
+      <% if node.children.any? %>
+        <%= render "topics/work_tree_subtree",
+              nodes: node.children, depth: depth + 1, topic: topic,
+              parent_id: node.id, path_prefix: node_path,
+              parent_junctor: node.junctor %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

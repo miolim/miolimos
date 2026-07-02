@@ -1,0 +1,289 @@
+<%# Eine Sektion pro AgentActor (#153). Header zeigt Avatar, Name,
+    Status-Pill, Zeit-seit-letzter-Aktion, Zähler-Pills, Trigger-Button
+    und Settings-Icon. Aufgeklappt erscheinen drei Sub-Disclosures:
+    offene Tasks, ungelesene Kommentare, Aktivität.
+
+    Locals: agent (AgentActor), bundle (Hash mit :tasks, :unread, :activity) %>
+<%
+  seen      = agent.last_seen_at
+  seen_age  = seen ? (Time.current - seen).to_i : nil
+  status_label, status_pill_cls =
+    if seen.nil?           then [t("dashboard.agent.status_never"),   "bg-slate-100 text-slate-500"]
+    elsif seen_age < 600   then [t("dashboard.agent.status_active"),  "bg-emerald-100 text-emerald-800"]
+    elsif seen_age < 3600  then [t("dashboard.agent.status_idle"),    "bg-amber-100 text-amber-800"]
+    else                        [t("dashboard.agent.status_offline"), "bg-slate-100 text-slate-600"]
+    end
+  trigger_pending = agent.inbox_run_requested_at.present? &&
+                    (seen.nil? || agent.inbox_run_requested_at > seen)
+  storage_root    = "dashboard.agent.#{agent.id}"
+%>
+
+<section data-controller="disclosure"
+         data-disclosure-storage-key-value="<%= storage_root %>"
+         class="bg-white rounded border border-slate-200 min-w-0">
+  <header class="px-3 py-2 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-50 min-w-0">
+      <span data-disclosure-target="icon"
+            class="inline-block transition-transform rotate-90 text-slate-400 shrink-0">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="w-7 h-7 rounded-full <%= actor_avatar_classes(agent) %> font-semibold text-xs flex items-center justify-center shrink-0">
+        <%= actor_initials(agent) %>
+      </span>
+      <h2 class="font-semibold text-sm truncate"><%= agent.name %></h2>
+    </button>
+
+    <span class="text-xs px-2 py-0.5 rounded-full <%= status_pill_cls %>"><%= status_label %></span>
+
+    <% if seen %>
+      <span class="text-xs text-slate-500" title="<%= l(seen, format: :short) %>">
+        <%= t("dashboard.agent.ago", age: compact_age(seen)) %>
+      </span>
+    <% end %>
+
+    <% if bundle[:tasks].any? %>
+      <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+        <%= t("dashboard.agent.open_count", count: bundle[:tasks].size) %>
+      </span>
+    <% end %>
+    <% if bundle[:unread].any? %>
+      <span class="text-xs px-2 py-0.5 rounded bg-rose-50 text-rose-700">
+        <%= t("dashboard.agent.unread_count", count: bundle[:unread].size) %>
+      </span>
+    <% end %>
+
+    <%# #511 (Hans, 2026-06-04): Trigger-Button IMMER zeigen — vorher
+        verschwand er, sobald ein Trigger anstand. Bei einem Agenten, der
+        gerade nicht heartbeatet (Session aus), bleibt der Trigger ewig
+        „pending", sodass der Button nie wiederkam. Jetzt ist die
+        Pending-Info eine Annotation neben dem (Re-)Trigger-Button. %>
+    <% if trigger_pending %>
+      <span class="text-xs italic text-amber-700">
+        <%= t("dashboard.agent.trigger_requested", age: compact_age(agent.inbox_run_requested_at)) %>
+      </span>
+    <% end %>
+    <%= button_to request_inbox_run_path(agent),
+          method: :post,
+          form: { class: "inline m-0 p-0 leading-none", data: { turbo_stream: true } },
+          title: t("dashboard.agent.check_inbox_title"),
+          class: "text-xs px-2 py-0.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 cursor-pointer" do %>
+      <%= trigger_pending ? t("dashboard.agent.check_again") : t("dashboard.agent.check_inbox") %>
+    <% end %>
+    <%# #512 (Hans, 2026-06-04): zweite Variante — /clear vorweg (frischer
+        Kontext), z. B. für eine neue Recherche. %>
+    <%= button_to request_inbox_run_path(agent, clear: 1),
+          method: :post,
+          form: { class: "inline m-0 p-0 leading-none", data: { turbo_stream: true } },
+          title: t("dashboard.agent.fresh_title"),
+          class: "text-xs px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 text-slate-500 cursor-pointer" do %>
+      <%= t("dashboard.agent.fresh") %>
+    <% end %>
+
+    <%= link_to settings_agent_path(agent),
+          class: "ml-auto text-slate-400 hover:text-slate-700 p-1 rounded",
+          title: t("dashboard.agent.settings") do %>
+      <%= icon "gear", size: "w-4 h-4" %>
+    <% end %>
+  </header>
+
+  <div data-disclosure-target="content" class="divide-y divide-slate-100">
+    <%# Sub-Disclosure 1: Offene Aufgaben %>
+    <section data-controller="disclosure"
+             data-disclosure-storage-key-value="<%= storage_root %>.tasks">
+      <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50 flex-wrap">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+          <span data-disclosure-target="icon"
+                class="inline-block transition-transform rotate-90 text-slate-400">
+            <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
+          </span>
+          <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.open_tasks") %></h3>
+        </button>
+        <span class="text-xs text-slate-500"><%= bundle[:tasks].size %></span>
+        <%= render "dashboard/agent_quickadd", agent_id: agent.id %>
+      </header>
+      <div data-disclosure-target="content">
+        <ol id="agent_tasks_<%= agent.id %>" class="flex flex-col">
+          <% bundle[:tasks].each do |task| %>
+            <%= render "tasks/row", task: task, topic: task.topics.first,
+                  draggable: false, show_topic: true,
+                  link_path: task_path(task), blade_kind: "task", blade_id: task.id %>
+          <% end %>
+        </ol>
+        <% if bundle[:tasks].empty? %>
+          <p id="agent_tasks_empty_<%= agent.id %>" class="px-4 py-2 text-slate-400 italic text-sm">
+            <%= t("dashboard.agent.no_open_tasks") %>
+          </p>
+        <% end %>
+      </div>
+    </section>
+
+    <%# Sub-Disclosure 2: Ungelesene Kommentare. #211: Header-Button
+        markiert ALLE Eintraege der Sektion als gelesen, per-Eintrag-
+        Button (✓) nur den einen Comment. Klick auf den Comment-Text
+        scrollt im Detail-Pane zum Comment via Anchor. %>
+    <section data-controller="disclosure"
+             data-disclosure-storage-key-value="<%= storage_root %>.unread">
+      <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+          <span data-disclosure-target="icon"
+                class="inline-block transition-transform rotate-90 text-slate-400">
+            <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
+          </span>
+          <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.unread_comments") %></h3>
+        </button>
+        <span class="text-xs text-slate-500"><%= bundle[:unread].size %></span>
+        <%# #393 (Hans, 2026-05-28): „Alle als gelesen"-Button. Schickt
+            die unique-Task-IDs aller unread-Replies an
+            dashboard_mark_read_path; der Controller upsertet pro Task
+            einen ActorView-Stempel → die Replies fallen aus der
+            Unread-Sektion. %>
+        <% if bundle[:unread].any? %>
+          <%= form_with url: dashboard_mark_read_path, method: :post,
+                local: true,
+                class: "ml-auto inline m-0 p-0" do |_f| %>
+            <% bundle[:unread].map(&:task).uniq.each do |t| %>
+              <%= hidden_field_tag "ids[]", t.id %>
+            <% end %>
+            <button type="submit"
+                    title="<%= t("dashboard.agent.mark_all_read") %>"
+                    aria-label="<%= t("dashboard.agent.mark_all_read") %>"
+                    class="p-1 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded bg-transparent border-0 cursor-pointer">
+              <%= icon "check", size: "w-3.5 h-3.5" %>
+            </button>
+          <% end %>
+        <% end %>
+      </header>
+      <div data-disclosure-target="content">
+        <% if bundle[:unread].empty? %>
+          <p class="px-4 py-2 text-slate-400 italic text-sm"><%= t("dashboard.agent.no_unread") %></p>
+        <% else %>
+          <%# #220 (#379): kompaktere Darstellung. Titelzeile = Topic-Dot
+              (oder Platzhalter) + Aufgabentitel + Aufgabennummer; kein
+              Themen-Name, kein „N neu\". Kommentarzeile = Ungelesen-Dauer
+              + erste Body-Zeile (kein Kommentator-Name; aktuell nur ich). %>
+          <ul class="divide-y divide-slate-100">
+            <% bundle[:unread].group_by(&:task).each do |task, group| %>
+              <li class="px-4 py-1.5">
+                <div class="group flex items-center gap-2 text-xs">
+                  <span class="w-3 shrink-0 flex justify-center">
+                    <% if (topic = task.topics.first) %>
+                      <%= topic_dot topic %>
+                    <% end %>
+                  </span>
+                  <a href="<%= task_path(task) %>"
+                     data-controller="blade-link"
+                     data-blade-link-kind-value="task"
+                     data-blade-link-id-value="<%= task.id %>"
+                     data-action="click->blade-link#append"
+                     class="text-slate-700 hover:underline font-medium truncate flex-1 min-w-0">
+                    <%= task.title %>
+                  </a>
+                  <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= task.id %></span>
+                  <%# #514 (Hans, 2026-06-04): „+" hängt die Aufgabe an statt zu ersetzen. %>
+                  <%= render "shared/blade_plus_button", kind: "task", id: task.id %>
+                </div>
+                <ul class="pl-5 mt-0.5">
+                  <% group.each do |c| %>
+                    <%# Klick oeffnet die Task als Blade + scrollt zum
+                        Reply-Anchor (`reply_<uuid>`). %>
+                    <li id="unread_reply_<%= c.id %>"
+                        class="text-sm text-slate-700 flex items-baseline gap-2 py-0.5">
+                      <span class="text-xs text-slate-400 shrink-0 tabular-nums">
+                        <%= compact_age(c.created_at) %>
+                      </span>
+                      <a href="<%= task_path(c.task) %>#reply_<%= c.id %>"
+                         data-controller="blade-link"
+                         data-blade-link-kind-value="task"
+                         data-blade-link-id-value="<%= c.task.id %>"
+                         data-blade-link-anchor-value="reply_<%= c.id %>"
+                         data-action="click->blade-link#append"
+                         class="flex-1 min-w-0 truncate hover:underline text-slate-600">
+                        <%= c.body.to_s.lines.first.to_s.strip %>
+                      </a>
+                    </li>
+                  <% end %>
+                </ul>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </section>
+
+    <%# Sub-Disclosure 3: Aktivität %>
+    <section data-controller="disclosure"
+             data-disclosure-storage-key-value="<%= storage_root %>.activity">
+      <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+          <span data-disclosure-target="icon"
+                class="inline-block transition-transform rotate-90 text-slate-400">
+            <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
+          </span>
+          <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.activity") %></h3>
+        </button>
+        <span class="text-xs text-slate-500"><%= bundle[:activity].size %></span>
+      </header>
+      <div data-disclosure-target="content">
+        <% if bundle[:activity].empty? %>
+          <p class="px-4 py-2 text-slate-400 italic text-sm"><%= t("dashboard.agent.no_activity") %></p>
+        <% else %>
+          <%# #220: Activity-Eintraege einzeilig (Datum · Titel · #N).
+              Body-Snippet entfaellt — Activity-Liste ist Navigations-
+              Index, nicht Vorschau. Klick auf den Titel oeffnet die Task
+              als Blade (Phase 6c).
+              #228: auf schmalen Bildschirmen Datum/Uhrzeit in eigene
+              Zeile ueber dem Titel — sonst quetscht das w-32-Datum den
+              Titel auf wenige Zeichen weg. Ab sm: wieder einzeilig. %>
+          <%# #457 (Hans, 2026-06-02): je Aufgabe nur die juengste Aktivitaet;
+              die Gesamtzahl der Aktivitaeten steht als (##) zwischen
+              Datum/Uhrzeit und Titel. %>
+          <ul class="divide-y divide-slate-100 text-[13px]">
+            <% bundle[:activity].each do |a| %>
+              <% entry = a[:entry] %>
+              <li class="group px-4 py-1.5 flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+                <span class="shrink-0 sm:w-36 flex items-baseline gap-1.5">
+                  <span class="text-xs text-slate-400 tabular-nums">
+                    <%= l(entry.created_at, format: "%d.%m.%Y %H:%M") %>
+                  </span>
+                  <span class="text-xs text-slate-500 tabular-nums" title="<%= t("dashboard.agent.activity_count_title") %>">(<%= a[:count] %>)</span>
+                </span>
+                <%# #470 (Hans, 2026-06-02): Titel-Link in einen flex-row-
+                    Wrapper, damit das per JS (blade_stack_spine
+                    _refreshInStackMarkers) VOR den Titel eingefuegte
+                    In-Stack-Jump-Chevron NEBEN dem Titel sitzt. Ohne den
+                    Wrapper wuerde es im flex-col-<li> auf Mobil zwischen
+                    Datum/Zaehler und Titel eine eigene Zeile umbrechen. %>
+                <div class="flex items-baseline gap-2 min-w-0 flex-1">
+                  <a href="<%= task_path(entry.task) %>"
+                     data-controller="blade-link"
+                     data-blade-link-kind-value="task"
+                     data-blade-link-id-value="<%= entry.task.id %>"
+                     data-action="click->blade-link#append"
+                     class="flex-1 min-w-0 hover:underline flex items-baseline gap-2">
+                    <span class="truncate <%= entry.task.done? ? 'text-slate-400 line-through' : 'text-slate-900' %> font-medium">
+                      <%= entry.task.title %>
+                    </span>
+                    <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= entry.task.id %></span>
+                    <% if entry.task.done? %>
+                      <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 shrink-0">erledigt</span>
+                    <% end %>
+                  </a>
+                  <%# #514 (Hans, 2026-06-04): „+" hängt die Aufgabe an statt zu ersetzen. %>
+                  <%= render "shared/blade_plus_button", kind: "task", id: entry.task.id %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </section>
+  </div>
+</section>

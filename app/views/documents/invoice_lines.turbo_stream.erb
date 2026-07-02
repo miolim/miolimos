@@ -1,0 +1,5 @@
+<%# #541: nach dem Speichern den Positionen-Bereich (inkl. nachgerechneter
+    Summen) ersetzen. %>
+<%= turbo_stream.replace "document_invoice_lines_#{@document.id}" do %>
+  <%= render "documents/invoice_lines", document: @document %>
+<% end %>

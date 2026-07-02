@@ -1,0 +1,142 @@
+<%= turbo_frame_tag "search_results" do %>
+  <% if @q.present? && @q.length >= 2 %>
+    <div class="bg-white rounded-b border border-slate-200 shadow-lg max-h-[70vh] overflow-y-auto">
+      <% if [@tasks, @contacts, @communications, @knowledge_items, @replies].all?(&:empty?) %>
+        <p class="px-4 py-3 text-slate-500 text-sm"><%= t("search.no_results", query: @q) %></p>
+      <% end %>
+
+      <%# Default-Frame der Suche ist `search_results` (das umschließende
+          turbo_frame_tag). Ohne `_top` würde Turbo versuchen, die Show-
+          Pages der Treffer in diesen Frame zu laden — dort gibt es den
+          Frame nicht → "Content missing".
+          KI/Contact-Links bekommen zusätzlich `blade-stack#openInStack`:
+          Auf einer Stack-Page (blade-stack-Controller aktiv) wird die Card
+          an den aktuellen Stack angehängt; sonst folgt der Klick dem
+          href und navigiert zu /knowledge_items?stack=<uuid>. %>
+      <% if @tasks.any? %>
+        <div class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><%= t("nav.tasks") %></div>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <% @tasks.each do |t| %>
+            <%# #280: an aktuellen Stack appenden statt Full-Page-Nav.
+                blade-link dispatcht ein Event; auf Seiten ohne Stack
+                faellt's auf das href (Volltext-Nav) zurueck. %>
+            <li class="px-4 py-1.5 hover:bg-slate-50">
+              <%= link_to task_path(t),
+                    data: { controller: "blade-link",
+                            "blade-link-kind-value": "task",
+                            "blade-link-id-value": t.id,
+                            action: "click->blade-link#append",
+                            turbo_frame: "_top" },
+                    class: "block hover:underline" do %>
+                <%# #481 (Hans, 2026-06-03): Aufgabennummer in der Trefferzeile
+                    mit anzeigen — analog zu den anderen Aufgaben-Listen. %>
+                <div class="flex items-baseline gap-2">
+                  <span class="truncate"><%= t.title %></span>
+                  <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= t.id %></span>
+                </div>
+                <% if (s = @task_snippets[t.id]).present? && s != t.title %>
+                  <div class="text-xs text-slate-500 truncate"><%= sanitize s, tags: %w[mark] %></div>
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <% if @contacts.any? %>
+        <div class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><%= t("nav.contacts") %></div>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <% @contacts.each do |c| %>
+            <li class="px-4 py-1.5 hover:bg-slate-50">
+              <%# #280: blade-link mit kind=ki. Auf Seiten mit Stack →
+                  Append. Sonst Full-Page-Nav via href. %>
+              <%= link_to c.display_name,
+                    knowledge_items_path(stack: c.uuid),
+                    data: { controller: "blade-link",
+                            "blade-link-kind-value": "ki",
+                            "blade-link-id-value": c.uuid,
+                            action: "click->blade-link#append",
+                            turbo_frame: "_top" },
+                    class: "block hover:underline" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <% if @communications.any? %>
+        <div class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><%= t("nav.communications") %></div>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <% @communications.each do |c| %>
+            <li class="px-4 py-1.5 hover:bg-slate-50">
+              <%= link_to (c.subject.presence || t("search.no_subject")),
+                    communication_path(c),
+                    data: { controller: "blade-link",
+                            "blade-link-kind-value": "communication",
+                            "blade-link-id-value": c.id,
+                            action: "click->blade-link#append",
+                            turbo_frame: "_top" },
+                    class: "block hover:underline" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <% if @knowledge_items.any? %>
+        <div class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><%= t("nav.knowledge") %></div>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <% @knowledge_items.each do |k| %>
+            <li class="px-4 py-1.5 hover:bg-slate-50">
+              <%= link_to knowledge_items_path(stack: k.uuid),
+                    data: { controller: "blade-link",
+                            "blade-link-kind-value": "ki",
+                            "blade-link-id-value": k.uuid,
+                            action: "click->blade-link#append",
+                            turbo_frame: "_top" },
+                    class: "block hover:underline" do %>
+                <div class="flex items-center gap-2"><span class="text-slate-500 shrink-0"><%= knowledge_type_icon(k.item_type) %></span><span class="truncate"><%= k.title %></span></div>
+                <% if (s = @ki_snippets[k.uuid]).present? %>
+                  <div class="text-xs text-slate-500 truncate"><%= sanitize s, tags: %w[mark] %></div>
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <%# #395 (Hans, 2026-05-28): Antworten — Reply-KIs eigene Sektion,
+          weil sie keinen Titel haben und auf Parent + Anker linken. %>
+      <% if @replies.any? %>
+        <div class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><%= t("search.replies") %></div>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <% @replies.each do |r| %>
+            <% parent_key = [r.parent_type, r.parent_type == "Task" ? r.parent_id_int : r.parent_uuid] %>
+            <% parent = @reply_parents[parent_key] %>
+            <% next unless parent %>
+            <% parent_path =
+                 if r.parent_type == "Task"
+                   task_path(parent.id) + "#reply_#{r.uuid}"
+                 else
+                   knowledge_item_path(parent.uuid) + "#reply_#{r.uuid}"
+                 end %>
+            <li class="px-4 py-1.5 hover:bg-slate-50">
+              <%= link_to parent_path,
+                    data: { turbo_frame: "_top" },
+                    class: "block hover:underline" do %>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                  <span class="shrink-0">
+                    <%= icon r.parent_type == "Task" ? "tasks" : "knowledge", size: "w-3 h-3" %>
+                  </span>
+                  <span class="truncate font-medium text-slate-700"><%= parent.title.to_s.presence || t("search.no_title") %></span>
+                  <span class="text-slate-400 shrink-0"><%= t("search.reply_from", name: r.creator&.name) %></span>
+                </div>
+                <% if (s = @reply_snippets[r.uuid]).present? %>
+                  <div class="text-xs text-slate-500 truncate pl-5"><%= sanitize s, tags: %w[mark] %></div>
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

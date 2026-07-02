@@ -1,0 +1,215 @@
+<%# #163 Phase 6c: list:tasks-Blade fuer die /tasks-Stack-Seite.
+    Enthaelt die vollstaendige Tasks-Liste mit Toolbar (Filter/Sort/
+    Group), Sektionen (Eingang/Heute/Demnaechst/Spaeter), Topic-Tab
+    (group=topic) und Drag-and-Drop.
+
+    Datenquellen sind die @-Vars aus TasksController#index/load_index_state!.
+    #275: Self-Contained Fallback — wenn die Blade ueber einen Cross-
+    Page-Stack-Restore oder das Sidebar-Plus auf einer anderen Seite
+    gerendert wird, ist @tasks etc. nicht gesetzt. Dann hier TaskIndexState
+    on-demand laden, damit dieselbe Rich-Variante ueberall funktioniert. %>
+<% stack_id = "list:tasks" %>
+<% if @tasks.nil?
+     _state = TaskIndexState.new(params: params, actor: current_actor)
+     @group_by           ||= _state.group_by
+     @show_done          ||= _state.show_done
+     @filter_q           ||= _state.q
+     @filter_tag         ||= _state.tag
+     @filter_priority    ||= _state.priority
+     @filter_assignee_id ||= _state.assignee_id
+     @task_status        ||= _state.task_status
+     @filter_kind        ||= _state.kind
+     @sort               ||= _state.sort
+     @dir                ||= _state.dir
+     @tasks                = _state.tasks
+     @sections             = _state.sections
+     @topic_sections       = _state.topic_sections
+     @trash_count          = _state.trash_count
+   end %>
+<%
+  section_meta = {
+    inbox: { title: t("tasks.sections.inbox"),   storage: "tasks.inbox",
+             empty: t("tasks.sections_empty.inbox"),
+             hint:  t("tasks.inbox_hint") },
+    today: { title: t("tasks.sections.today"),     storage: "tasks.today",
+             empty: t("tasks.sections_empty.today") },
+    soon:  { title: t("tasks.sections.soon"), storage: "tasks.soon",
+             empty: t("tasks.sections_empty.soon") },
+    later: { title: t("tasks.sections.later"),    storage: "tasks.later",
+             empty: t("tasks.sections_empty.later") }
+  }
+  actor_options    = [[t("tasks.all_assignees"), ""], [t("tasks.assignee_all"), "all"]] +
+                     Actor.active.order(:name).pluck(:name, :id).map { |n, i| [n, i.to_s] }
+  priority_options = [[t("tasks.all_priorities"), ""]] +
+                     Task.priorities.keys.map { |k| [t("tasks.priority.#{k}"), k] }
+  tag_options      = [[t("tasks.all_tags"), ""]] +
+                     Task.where.not(tags: []).pluck(:tags).flatten.uniq.sort.map { |t_| [t_, t_] }
+
+  # #665 (Hans): tri-state Toggles (Zuweisung + Status) + Multi-Select wie
+  # im Topic-Aufgaben-Reiter, jetzt auch hier. Alle aktuellen Filter im
+  # Link erhalten, damit ein Toggle-Klick die übrigen nicht verwirft.
+  toggle_base = { group: @group_by, sort: @sort, dir: @dir, q: @filter_q,
+                  tag: @filter_tag, priority: @filter_priority, kind: @filter_kind,
+                  assignee_id: @filter_assignee_id, task_status: @task_status,
+                  show_done: (@show_done ? "1" : nil) }.compact_blank
+  assignee_state = (%w[others all].include?(@filter_assignee_id) ? @filter_assignee_id : "mine")
+  assignee_cfg   = { "mine"   => { label: t("tasks.assignee_mine"),    icon: "user",  nextp: "others" },
+                     "others" => { label: t("tasks.assignee_others"), icon: "users", nextp: "all" },
+                     "all"    => { label: t("tasks.assignee_all"),   icon: "users", nextp: "mine" } }[assignee_state]
+  status_state   = @task_status.presence || (@show_done ? "all" : "open")
+  status_cfg     = { "open" => { label: t("tasks.status.open"),    nextp: "done" },
+                     "done" => { label: t("tasks.status.done"), nextp: "all" },
+                     "all"  => { label: t("tasks.status_all"),     nextp: "open" } }[status_state]
+  # nextp "mine" → assignee_id leeren (Default = Mir/unzugewiesen).
+  assignee_next  = toggle_base.merge(assignee_id: (assignee_cfg[:nextp] == "mine" ? nil : assignee_cfg[:nextp])).compact_blank
+  status_next    = toggle_base.merge(task_status: status_cfg[:nextp], show_done: nil).compact_blank
+%>
+<%# #232 Phase 3 (B): Live-Updates. Abonniert den globalen "tasks"-Stream —
+    jede sinnvolle Task-Aenderung (Status/Pause/Prio/neu/geloescht, egal ob
+    von Hans oder vom Agenten) broadcastet ein Turbo-Refresh, die Liste
+    morpht und Rows + Zaehler + Reiter-Counts stimmen wieder. %>
+<%# #602 S2: privater Empfänger-Stream statt globalem "tasks". %>
+<%= turbo_stream_from "tasks_user_#{current_actor.id}" if current_actor %>
+<%# #232 (Hans, 2026-06-01): Per-Assignee-Stream fuer Live-Inserts (neue /
+    wieder-geoeffnete Tasks). Getrennt vom globalen "tasks"-Stream, damit ein
+    Prepend nur in der Liste des betroffenen Assignees landet (die Liste ist
+    assignee-gefiltert) — Replace/Remove bleiben global (no-op, wenn die Row
+    nicht da ist). %>
+<% if current_actor %><%= turbo_stream_from "tasks_for_#{current_actor.id}" %><% end %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         data-controller="task-section-home bulk-select"
+         class="stack-card shrink-0 relative
+                w-[42rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t("nav.tasks") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="shrink-0 text-slate-500"><%= icon "tasks" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("nav.tasks") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
+       data-controller="list-search"
+       data-list-search-selector-value="li[data-task-id], div[data-task-id]">
+    <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>
+    <turbo-frame id="tasks_list_frame" class="contents">
+    <%# #703 (Hans): einheitlicher Topbereich (kein extra Kasten). Live-Zähler
+        als count_slot; Controls (von rechts) = Toolbar + Status-/Zuweisungs-
+        Toggle + Mehrfachauswahl. %>
+    <% tasks_count_slot = capture do %><span data-controller="list-count"
+            data-list-count-list-ids-value='<%= ["tasks_section_inbox", "tasks_section_today", "tasks_section_soon", "tasks_section_later"].to_json %>'><%= @tasks.size %></span><% end %>
+    <% tasks_controls = capture do %>
+      <button type="button" data-action="bulk-select#toggleMode"
+              title="<%= t("tasks.multi_select") %>"
+              class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+        <%= icon "check", size: "w-3.5 h-3.5" %>
+      </button>
+      <%= link_to list_card_tasks_path(assignee_next), data: { turbo_frame: "tasks_list_frame" },
+            title: t("tasks.assignee_toggle_title", label: assignee_cfg[:label]),
+            class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
+        <%= icon assignee_cfg[:icon], size: "w-3.5 h-3.5" %><%= assignee_cfg[:label] %>
+      <% end %>
+      <%= link_to list_card_tasks_path(status_next), data: { turbo_frame: "tasks_list_frame" },
+            title: t("tasks.status_toggle_title", label: status_cfg[:label]),
+            class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
+        <%= status_cfg[:label] %>
+      <% end %>
+      <%= render "shared/list_toolbar",
+            path:           list_card_tasks_path,
+            frame:          "tasks_list_frame",
+            group_options:  [[t("tasks.group_time"), :time], [t("tasks.group_topic"), :topic]],
+            sort_options:   [[t("tasks.sort_created"), :created_at],
+                             [t("tasks.sort_manual"), :manual],
+                             [t("tasks.sort_updated"), :updated_at],
+                             [t("tasks.sort_title"), :title],
+                             [t("tasks.sort_priority"), :priority],
+                             [t("tasks.sort_due"), :due_date]],
+            filter_fields:  [
+              { name: :kind, type: :select, label: t("tasks.filter_kind"),
+                options: [[t("tasks.kind_all"), ""], [t("tasks.kind_tasks"), "tasks"], [t("tasks.kind_milestones"), "milestones"]] },
+              { name: :assignee_id, type: :select, label: t("tasks.filter_assignee"), options: actor_options },
+              { name: :priority,    type: :select, label: t("tasks.filter_priority"),  options: priority_options },
+              { name: :tag,         type: :select, label: t("tasks.filter_tag"),        options: tag_options },
+              { name: :show_done,   type: :toggle, label: t("tasks.show_done"),
+                toggle_label: t("tasks.show_done") }
+            ],
+            current_group:  @group_by,
+            current_sort:   @sort,
+            current_dir:    @dir,
+            filter_values:  { kind: @filter_kind,
+                              assignee_id: @filter_assignee_id,
+                              priority: @filter_priority,
+                              tag: @filter_tag,
+                              show_done: (@show_done ? "1" : nil) }.compact_blank,
+            storage_key:    "tasks" %>
+    <% end %>
+    <%= render "shared/list_header",
+          lead_icon: "tasks", title: t("nav.tasks"),
+          count: @tasks.size, count_slot: tasks_count_slot,
+          search: render("shared/list_search", placeholder: t("tasks.list_search_placeholder")),
+          controls: tasks_controls %>
+
+    <div data-controller="active-row" class="space-y-3">
+    <% if @group_by == :topic %>
+      <%= render "tasks/topic_view",
+            topic_sections: @topic_sections %>
+    <% else %>
+      <% @sections.each do |key, rows| %>
+        <% meta = section_meta[key] %>
+        <% expanded_default = key != :later %>
+        <section data-controller="disclosure"
+                 data-disclosure-storage-key-value="<%= meta[:storage] %>"
+                 class="bg-white rounded border border-slate-200 overflow-hidden">
+          <header class="px-4 py-2 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+            <button type="button"
+                    data-action="click->disclosure#toggle"
+                    class="flex items-center gap-2 hover:bg-slate-100 -ml-1 px-1 py-0.5 rounded">
+              <span data-disclosure-target="icon"
+                    class="inline-block transition-transform <%= 'rotate-90' if expanded_default %> text-slate-400">
+                <%= icon "chevron_right" %>
+              </span>
+              <h2 class="font-medium text-slate-900"><%= meta[:title] %></h2>
+            </button>
+            <span class="text-xs text-slate-500"
+                  data-controller="list-count"
+                  data-list-count-list-ids-value='<%= ["tasks_section_#{key}"].to_json %>'><%= rows.size %></span>
+            <% if key == :inbox && meta[:hint] && rows.any? %>
+              <span class="text-xs text-amber-600 italic ml-2 hidden md:inline"><%= meta[:hint] %></span>
+            <% end %>
+            <%= render "tasks/section_quickadd", section_key: key %>
+          </header>
+
+          <div data-disclosure-target="content" <%= 'class=hidden'.html_safe unless expanded_default %>>
+            <ol id="tasks_section_<%= key %>"
+                data-controller="commitment-sortable"
+                data-commitment-sortable-commitment-value="<%= key %>"
+                data-empty-text="<%= meta[:empty] %>"
+                class="flex flex-col min-h-[2.5rem] [&:not(:has(li))]:before:content-[attr(data-empty-text)] [&:not(:has(li))]:before:block [&:not(:has(li))]:before:px-4 [&:not(:has(li))]:before:py-3 [&:not(:has(li))]:before:text-slate-400 [&:not(:has(li))]:before:italic [&:not(:has(li))]:before:text-sm">
+              <% rows.each do |task| %>
+                <%= render "tasks/row", task: task, topic: task.topics.first,
+                      show_topic: true,
+                      link_path: task_path(task),
+                      blade_kind: "task", blade_id: task.id %>
+              <% end %>
+            </ol>
+          </div>
+        </section>
+      <% end %>
+    <% end %>
+    <%# #665: Bulk-Apply-Leiste (Zuweisung/Status/Priorität/Topic) — der
+        bulk-select-Controller sitzt auf der Card, Rows sind bulk-bereit. %>
+    <%= render "shared/bulk_select_bar", key: "tasks", topic: nil, position: :bottom %>
+    </div>
+    </turbo-frame>
+  </div>
+</article>

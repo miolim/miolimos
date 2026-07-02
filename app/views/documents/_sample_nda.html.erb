@@ -1,0 +1,56 @@
+<%# #532 (2026-06-08): NDA auf DIN-5008-Geometrie (Form B) — Empfänger im
+    fenstertauglichen Anschriftfeld; Aussteller speist Briefkopf + Partei. %>
+<% sender_name = @issuer&.title.presence || "Hans-Siem Groth" %>
+<div class="din-page">
+  <%= render "documents/letterhead" %>
+
+  <div class="din-mark din-fold-1"></div>
+  <div class="din-mark din-hole"></div>
+  <div class="din-mark din-fold-2"></div>
+
+  <div class="din-address">
+    <div class="din-return"><%= document_sender_oneline(@issuer) %></div>
+    <div class="din-zvz">&nbsp;</div>
+    <div class="din-recipient">
+      <strong>Muster GmbH</strong><br>
+      Frau Erika Mustermann<br>
+      Beispielweg 12<br>
+      10117 Berlin
+    </div>
+  </div>
+
+  <div class="din-divider"></div>
+
+  <div class="din-info">
+    <div class="row"><span class="k"><%= t("documents.render.date") %></span><span>8. Juni 2026</span></div>
+  </div>
+
+  <div class="din-spacer"></div>
+  <div class="din-body">
+    <div class="doc">
+      <h1><%= t("documents.nda.sample_title") %></h1>
+      <p><%= t("documents.nda.sample_intro_html", sender: sender_name) %></p>
+
+      <h2><%= t("documents.nda.sample_h_subject") %></h2>
+      <p><%= t("documents.nda.sample_subject_body") %></p>
+
+      <h2><%= t("documents.nda.sample_h_confidential") %></h2>
+      <p><%= t("documents.nda.sample_confidential_body") %></p>
+
+      <h2><%= t("documents.nda.sample_h_obligations") %></h2>
+      <ol>
+        <li><%= t("documents.nda.sample_obligation_1") %></li>
+        <li><%= t("documents.nda.sample_obligation_2") %></li>
+        <li><%= t("documents.nda.sample_obligation_3") %></li>
+      </ol>
+
+      <h2><%= t("documents.nda.sample_h_term") %></h2>
+      <p><%= t("documents.nda.sample_term_body") %></p>
+
+      <div class="doc-signatures">
+        <div class="doc-sign"><div class="line"></div><div class="label"><%= t("documents.nda.sample_sign_label", party: sender_name) %></div></div>
+        <div class="doc-sign"><div class="line"></div><div class="label"><%= t("documents.nda.sample_sign_label", party: "Muster GmbH") %></div></div>
+      </div>
+    </div>
+  </div>
+</div>

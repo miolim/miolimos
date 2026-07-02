@@ -1,0 +1,15 @@
+<%# Verknüpftes Wissen (Notes, Quotes, Web-Clips, Sources, Docs) — alles
+    außer Person/Org-KIs (die sind in `_detail_contacts`). Picker filtert
+    auf nicht-Personen-Typen, Quick-Create legt eine Note an.
+    #142: leading Entity-Icon, Border via Disclosure-Wrapper. %>
+<%= render "shared/entity_picker",
+      icon:           "knowledge",
+      chips_id:       "task_knowledge_chips_#{task.id}",
+      chips_partial:  "tasks/knowledge_chips",
+      chips_locals:   { task: task },
+      suggest_url:    suggest_knowledge_items_path(item_type: "note,abstract,transcript,direct_quote,indirect_quote,doc,comment"),
+      add_url:        task_mentions_path(task, kind: :knowledge),
+      param_name:     "mentioned_uuid",
+      label:          "Wissen",
+      placeholder:    "Wissen/Notizen",
+      create_label:   "Notiz anlegen" %>

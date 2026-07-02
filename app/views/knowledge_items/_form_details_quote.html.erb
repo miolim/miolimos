@@ -1,0 +1,20 @@
+<%# Quote-Sekundär-Felder (direct + indirect): bib_source (Pflicht oder
+    Inline-Anlage), Locator (Label + Wert).
+    Locals: f, default_bib_source %>
+<%= render "knowledge_items/bib_source_field", f: f,
+      default_bib_source: local_assigns[:default_bib_source] %>
+
+<div class="grid grid-cols-3 gap-2 text-xs">
+  <label class="block">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.locator_label") %></span>
+    <%= f.text_field :locator_label,
+          placeholder: t("knowledge.form.locator_label_placeholder"),
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  </label>
+  <label class="block col-span-2">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.locator_value") %></span>
+    <%= f.text_field :locator_value,
+          placeholder: t("knowledge.form.locator_value_placeholder"),
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  </label>
+</div>

@@ -1,0 +1,148 @@
+<%# #343 (Hans, 2026-05-25): Reference-Blade — listet alle Wikilink-
+    Ziele einer KI in Source-Reihenfolge, mit 3-Stufen-Toggle pro
+    Ziel (Titel / Titel+erster Absatz / Titel+ganzer Inhalt).
+
+    Locals: item (Quelle-KI). Targets werden via WikilinkTargets
+    extrahiert; jeder Eintrag wird via KnowledgeMarkdown.render in
+    zwei Teile gesplittet (erster Absatz vs. Rest), damit das Cycle-
+    Toggle gestaffelt einblenden kann. %>
+<%
+  source_uuid = item.uuid
+  stack_uuid  = "refs:ki:#{source_uuid}"
+  targets     = WikilinkTargets.for(item)
+  cited_sources = SourceCitations.for(item)   # #512: Quellen ([@slug] / [[&…]])
+%>
+<article id="stack_card_<%= stack_uuid %>"
+         data-uuid="<%= stack_uuid %>"
+         class="stack-card shrink-0 relative
+                w-[44rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t('knowledge.list.refs.spine_title', title: item.title) %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="inline-block w-3 h-3 rounded-full shrink-0 mt-1 bg-amber-400"></span>
+    <%# #366 (Hans, 2026-05-25): file_output als Refs-Spine-Icon. %>
+    <span class="shrink-0 text-slate-600 [&_svg]:w-5 [&_svg]:h-5"
+          title="<%= t('knowledge.list.refs.refs_short') %>"><%= icon "file_output" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= item.title %> · <%= t("knowledge.list.refs.refs_short") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
+    <header class="sticky top-0 z-20 px-3 py-2 bg-white/95 backdrop-blur border-b border-slate-200 flex items-center gap-2">
+      <h2 class="font-semibold text-sm"><%= t("knowledge.list.refs.heading") %></h2>
+      <span class="text-xs text-slate-500"><%= t("knowledge.list.refs.from", title: item.title) %></span>
+      <span class="text-xs text-slate-400 ml-auto"><%= targets.size + cited_sources.size %></span>
+      <%# #360 (Hans, 2026-05-25): Per-Blade-Reload. %>
+      <button type="button"
+              data-action="click->blade-stack#reloadCard"
+              title="<%= t('knowledge.list.refs.reload_title') %>"
+              class="p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+        <%= icon "refresh", size: "w-3.5 h-3.5" %>
+      </button>
+    </header>
+
+    <% if targets.empty? && cited_sources.empty? %>
+      <p class="px-4 py-6 text-sm text-slate-400 italic">
+        <%= t("knowledge.list.refs.empty") %>
+      </p>
+    <% else %>
+      <%# #512 (Hans, 2026-06-04): zitierte Quellen ([@slug] / [[&…]]). %>
+      <% if cited_sources.any? %>
+        <div class="px-3 py-1.5 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+          <%= t("knowledge.list.refs.sources") %> · <%= cited_sources.size %>
+        </div>
+        <div class="divide-y divide-slate-100">
+          <% cited_sources.each do |s| %>
+            <div class="group px-3 py-2 flex items-center gap-2 hover:bg-emerald-50 text-[13px]">
+              <span class="shrink-0 text-slate-400"><%= icon "quote", size: "w-4 h-4" %></span>
+              <a href="<%= source_path(s.slug) %>"
+                 data-controller="blade-link"
+                 data-blade-link-kind-value="source"
+                 data-blade-link-id-value="<%= s.slug %>"
+                 data-action="click->blade-link#append"
+                 data-turbo-frame="_top"
+                 class="flex-1 min-w-0 truncate hover:underline text-slate-800"><%= s.title %></a>
+              <span class="shrink-0 text-[10px] uppercase tracking-wider text-slate-400"><%= s.csl_type_label %></span>
+              <%= render "shared/blade_plus_button", kind: "source", id: s.slug %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if targets.any? %>
+        <% if cited_sources.any? %>
+          <div class="px-3 py-1.5 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+            <%= t("knowledge.list.refs.knowledge_items") %> · <%= targets.size %>
+          </div>
+        <% end %>
+      <% end %>
+      <div class="divide-y divide-slate-200 min-h-full">
+        <% targets.each do |t|
+             body_html = t.body.present? ? KnowledgeMarkdown.render(t.body, item: t) : ""
+             # Split in erster Absatz + Rest. Wir zerlegen am ersten
+             # </p>-Closer; alles davor (inkl. Tag) ist der erste
+             # Absatz, der Rest geht in fullRest. Wenn kein <p> drin,
+             # nimm den ganzen HTML als „erster Absatz", fullRest
+             # leer.
+             first_para_html, rest_html =
+               if (m = body_html.match(/\A(.*?<\/p>)(.*)\z/m))
+                 [m[1], m[2]]
+               else
+                 [body_html, ""]
+               end
+        %>
+          <section data-controller="ref-cycle"
+                   data-ref-cycle-state-value="0"
+                   class="ref-item px-3 py-2">
+            <header class="flex items-baseline gap-2">
+              <button type="button"
+                      data-action="click->ref-cycle#cycle"
+                      title="<%= t('knowledge.list.refs.cycle_title') %>"
+                      class="shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">
+                <span data-ref-cycle-target="icon"
+                      class="inline-block transition-transform">
+                  <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
+                </span>
+              </button>
+              <a href="<%= knowledge_item_path(t.uuid) %>"
+                 data-action="click->blade-stack#openInStack"
+                 data-target-uuid="<%= t.uuid %>"
+                 class="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:underline">
+                <%= t.title %>
+              </a>
+              <% if t.item_type.present? %>
+                <span class="shrink-0 text-[10px] uppercase tracking-wider text-slate-400">
+                  <%= t.item_type %>
+                </span>
+              <% end %>
+            </header>
+
+            <% if first_para_html.present? || rest_html.present? %>
+              <div data-ref-cycle-target="firstPara"
+                   class="markdown-body mt-2 hidden">
+                <%= raw first_para_html %>
+              </div>
+              <% if rest_html.present? %>
+                <div data-ref-cycle-target="fullRest"
+                     class="markdown-body hidden">
+                  <%= raw rest_html %>
+                </div>
+              <% end %>
+            <% else %>
+              <p class="mt-1 ml-6 text-xs text-slate-400 italic"><%= t("knowledge.list.refs.no_content") %></p>
+            <% end %>
+          </section>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</article>

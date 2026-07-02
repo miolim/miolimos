@@ -1,0 +1,23 @@
+<%# #556 (Hans, 2026-06-08): editierbarer bzw. gesperrter Felderbereich eines
+    Dokuments in EINEM Wrapper mit stabiler id. So kann ein Status-Wechsel
+    (final↔entwurf) den ganzen Bereich per Turbo-Stream umschalten — ohne
+    Browser-Refresh. Bei final read-only, sonst editierbar + Infoblock. %>
+<% document = local_assigns.fetch(:document) %>
+<div id="document_editor_<%= document.id %>">
+  <% if document.locked? %>
+    <%= render "documents/fields_readonly", document: document %>
+    <%# #541: Positionen auch im gesperrten Zustand zeigen (read-only). %>
+    <% if document.invoice? %><%= render "documents/invoice_lines", document: document %><% end %>
+  <% else %>
+    <%= render "documents/fields", document: document %>
+    <%# #559 (Hans): Reihenfolge Felder → Infoblock-Felder → Positionen.
+        Die Aussteller-Angaben (issuer_compliance) entfallen — sie stecken
+        bereits in den Infoblock-Feldern (Steuer-/USt-ID etc.). %>
+    <%= render "documents/infofields", document: document %>
+    <%# #541: Rechnungspositionen (Liste; jede öffnet ihr Detail-Blade mit
+        Zeit-Zuordnung) + Summen für Rechnung/Angebot. %>
+    <% if document.invoice? %>
+      <%= render "documents/invoice_lines", document: document %>
+    <% end %>
+  <% end %>
+</div>

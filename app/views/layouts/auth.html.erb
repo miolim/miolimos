@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <title><%= [content_for(:title).presence, "miolimOS"].compact.join(" – ") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%# #634: PWA auch von der Login-Seite aus installierbar. %>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+  </head>
+  <body class="bg-slate-100 text-slate-900 antialiased min-h-screen flex items-center justify-center">
+    <% if flash[:notice].present? %>
+      <div class="fixed top-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
+    <% if flash[:alert].present? %>
+      <div class="fixed top-4 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-rose-800">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <%= yield %>
+  </body>
+</html>

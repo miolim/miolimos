@@ -1,0 +1,43 @@
+<%# #541 (Hans, 2026-06-08): abrechenbare, abgeschlossene Zeitbuchungen des
+    Projekts (Topic) der Rechnung als Positionen übernehmen. Eine Position je
+    Buchung (Menge = Stunden × Stundensatz); übernommene Zeiten verschwinden aus
+    der Liste (sind dieser Rechnung zugeordnet → keine Doppel-Abrechnung).
+    Eigener Wrapper mit stabiler id für den Turbo-Refresh. %>
+<% document = local_assigns.fetch(:document) %>
+<section id="document_time_import_<%= document.id %>" class="text-[13px]">
+  <% unless document.locked? %>
+    <% if document.topic %>
+      <% candidates = TimeEntry.for_topic(document.topic).invoiceable.recent.to_a %>
+      <% if candidates.any? %>
+        <details class="pt-2 border-t border-slate-100">
+          <summary class="cursor-pointer text-slate-500 font-medium select-none"><%= t("documents.time_import.summary") %> · <%= candidates.size %></summary>
+          <%= form_with url: import_time_entries_document_path(document), method: :post, local: false, class: "mt-2 space-y-1.5" do %>
+            <div class="flex items-center gap-2">
+              <label class="text-slate-500"><%= t("documents.time_import.hourly_rate") %></label>
+              <input type="text" inputmode="decimal" name="rate" placeholder="0,00"
+                     class="w-24 border border-slate-200 rounded px-1 py-0.5 text-xs text-right tabular-nums">
+              <span class="text-slate-400"><%= t("documents.time_import.per_hour") %></span>
+            </div>
+            <div class="max-h-48 overflow-y-auto divide-y divide-slate-50 border border-slate-100 rounded">
+              <% candidates.each do |te| %>
+                <label class="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-slate-50">
+                  <input type="checkbox" name="time_entry_ids[]" value="<%= te.id %>" class="rounded border-slate-300 shrink-0">
+                  <span class="tabular-nums text-slate-400 shrink-0"><%= l(te.started_at.to_date, format: :default) %></span>
+                  <span class="tabular-nums shrink-0"><%= t("documents.time_import.hours_unit", hours: number_with_precision(te.hours, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true)) %></span>
+                  <span class="truncate text-slate-600 min-w-0"><%= te.bill_label %></span>
+                </label>
+              <% end %>
+            </div>
+            <div class="flex">
+              <button type="submit" class="ml-auto text-xs px-3 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer"><%= t("documents.time_import.import_as_lines") %></button>
+            </div>
+          <% end %>
+        </details>
+      <% else %>
+        <p class="pt-2 border-t border-slate-100 text-slate-400 text-[12px] italic"><%= t("documents.time_import.none_open") %></p>
+      <% end %>
+    <% else %>
+      <p class="pt-2 border-t border-slate-100 text-slate-400 text-[12px] italic"><%= t("documents.time_import.no_project") %></p>
+    <% end %>
+  <% end %>
+</section>

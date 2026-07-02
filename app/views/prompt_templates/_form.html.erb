@@ -1,0 +1,67 @@
+<%= form_with model: template,
+      url: template.persisted? ? prompt_template_path(template.slug) : prompt_templates_path,
+      local: true, class: "max-w-3xl mx-auto space-y-3" do |f| %>
+
+  <% if template.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-rose-800 text-sm">
+      <ul class="list-disc ml-4">
+        <% template.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-[8rem_1fr] gap-3 items-start text-[13px]">
+    <%= f.label :name, t("prompt_templates.name"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :name, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :slug, t("prompt_templates.slug"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :slug, placeholder: "auto-from-name",
+          class: "w-64 rounded border border-slate-200 px-2 py-1 font-mono" %>
+
+    <%= f.label :description, t("prompt_templates.description"), class: "pt-1 text-slate-600" %>
+    <%= f.text_area :description, rows: 2,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :default_model, t("prompt_templates.model"), class: "pt-1 text-slate-600" %>
+    <div>
+      <%= f.text_field :default_model, placeholder: "ollama:llama3.1:8b oder anthropic:claude-sonnet-4-6",
+            class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-xs" %>
+      <p class="text-xs text-slate-500 mt-0.5">
+        Format: <code>provider:modell</code>. Leer = Auto-Detection (Anthropic, falls Key gesetzt; sonst Ollama).
+      </p>
+    </div>
+
+    <%# #705 (b) (Hans): Ausgabeformat — HTML erzeugt ein KI, das als
+        sandboxed iframe gerendert wird (reiche/interaktive Antworten). %>
+    <%= f.label :output_format, t("prompt_templates.output_format"), class: "pt-1 text-slate-600" %>
+    <div>
+      <%= f.select :output_format,
+            [["Markdown", "markdown"], ["HTML (sandboxed iframe)", "html"]],
+            {}, class: "w-64 rounded border border-slate-200 px-2 py-1" %>
+      <p class="text-xs text-slate-500 mt-0.5">
+        HTML: Das erzeugte KI wird als HTML-Artefakt gerendert (isolierter
+        Sandbox-iframe). Der LLM wird entsprechend auf HTML-Output instruiert.
+      </p>
+    </div>
+
+    <%= f.label :prompt_text, t("prompt_templates.prompt"), class: "pt-1 text-slate-600" %>
+    <div>
+      <%= f.text_area :prompt_text, rows: 14, required: true,
+            data: { controller: "autosize" },
+            class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-xs" %>
+      <p class="text-xs text-slate-500 mt-0.5">
+        Variablen: <code>{{input}}</code> (Body des Items oder verlinkten KI),
+        <code>{{source_url}}</code>, <code>{{source_title}}</code>.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= f.submit (template.persisted? ? t("actions.save") : t("actions.create")),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"),
+          (template.persisted? ? prompt_template_path(template.slug) : prompt_templates_path),
+          class: "px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50" %>
+  </div>
+<% end %>

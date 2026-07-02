@@ -1,0 +1,106 @@
+<%# Eine Zeile in der Wissens-Liste links. Wird per turbo_stream.append
+    nach dem Anlegen einer neuen KI eingefügt. Klick auf den Title
+    ersetzt den Stack; das Plus-Icon (nur Hover) hängt die Card an
+    den bestehenden Stack an.
+
+    Erweiterte Spalten (Creator + Erstelldatum) blendet der list-columns-
+    Controller per `data-cols-expanded`-Attribut auf dem Aside ein. %>
+<li id="knowledge_row_<%= item.uuid %>"
+    data-has-body="<%= item.body.to_s.strip.present? %>"
+    class="group px-3 py-2 flex items-center gap-2 hover:bg-slate-50 text-[13px]">
+  <%# #364 (Hans, 2026-05-25): Work-Tree-Usage-Counter links vom
+      Type-Icon. Reserviert eine fixe w-4-Spalte, damit alles
+      darunter buendig steht — auch wenn Count 0 (= leerer Platz).
+      `work_tree_count`-Local kommt nur aus dem Topic-Wissen-Tab,
+      sonst nil → Spalte komplett weggelassen. %>
+  <% if (wtc = local_assigns[:work_tree_count]).is_a?(Integer) %>
+    <%# #364 (Hans, 2026-05-25): Klick auf die Zahl markiert alle
+        Work-Tree-Eintraege dieser KI (Topic-Slug muss da sein, sonst
+        ist die Counter-Spalte sowieso versteckt). %>
+    <% if wtc > 0 %>
+      <%# #364-Fix (Hans, 2026-05-25 17:00): data-controller muss am
+          Button (oder einem Ancestor) sitzen, sonst registriert
+          Stimulus die click-Action nicht. %>
+      <button type="button"
+              data-controller="work-tree-highlight"
+              data-action="click->work-tree-highlight#flash"
+              data-work-tree-highlight-ki-uuid-param="<%= item.uuid %>"
+              title="<%= wtc %>x im Work-Tree — klicken zum Hervorheben"
+              class="w-4 shrink-0 text-right tabular-nums text-[11px] text-emerald-700 font-medium hover:bg-emerald-50 rounded cursor-pointer">
+        <%= wtc %>
+      </button>
+    <% else %>
+      <span class="w-4 shrink-0 text-right tabular-nums text-[11px] text-slate-300">&nbsp;</span>
+    <% end %>
+  <% end %>
+  <span class="w-5 flex justify-center shrink-0 text-slate-500"><%= knowledge_type_icon(item.item_type) %></span>
+  <%= link_to item.title,
+        knowledge_item_path(item.uuid),
+        data: {
+          action: "click->blade-stack#openFromList",
+          target_uuid: item.uuid
+        },
+        class: "flex-1 hover:underline truncate" %>
+
+  <%# #486 (Hans, 2026-06-03): Highlight-Zähler je Farbe (Pille mit Zahl,
+      wie in der Beschreibungs-Section) + Verweis-Zähler aus/ein.
+      Highlights = Regex auf dem (geladenen) Body, keine Query. Verweise
+      über die Assoziationen — in großen Listen vom Caller preloaded. %>
+  <% hl = KnowledgeMarkdown.highlight_counts(item.body) %>
+  <% if hl.any? %>
+    <span class="shrink-0 flex items-center gap-0.5">
+      <% { "gelb" => "bg-amber-200", "rot" => "bg-rose-200", "gruen" => "bg-emerald-200",
+           "blau" => "bg-sky-200", "lila" => "bg-violet-200" }.each do |color, bg| %>
+        <% n = hl[color].to_i %>
+        <% next if n.zero? %>
+        <span class="inline-flex items-center justify-center min-w-[1rem] h-4 px-0.5 rounded border border-slate-300 <%= bg %> text-[9px] tabular-nums font-semibold text-slate-800"
+              title="<%= color %>: <%= n %> Highlight<%= 's' if n != 1 %>"><%= n %></span>
+      <% end %>
+    </span>
+  <% end %>
+  <% ro = item.outgoing_references.size; ri = item.incoming_references.size %>
+  <% if ro > 0 || ri > 0 %>
+    <span class="shrink-0 flex items-center gap-1 text-[10px] tabular-nums text-slate-400"
+          title="Verweise: <%= ro %> ausgehend, <%= ri %> eingehend">
+      <% if ro > 0 %><span title="<%= ro %> ausgehende Verweise">↗<%= ro %></span><% end %>
+      <% if ri > 0 %><span title="<%= ri %> eingehende Verweise">↙<%= ri %></span><% end %>
+    </span>
+  <% end %>
+
+  <%# #703 (Hans): erweiterte Spalten (Creator/Erstelldatum) entfernt. %>
+  <button type="button"
+          data-action="click->blade-stack#appendFromList"
+          data-target-uuid="<%= item.uuid %>"
+          title="An aktuellen Stack anhängen"
+          aria-label="An Stack anhängen"
+          class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                 w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
+                 leading-none text-base">
+    +
+  </button>
+
+  <%# #374-Revert (Hans, 2026-05-25 22:08): Refs-Icon hier raus —
+      lebt nur in der KI-Card-Toolbar (book_open-Icon). Vorheriger
+      Einbau hatte zusaetzlich KI-Listen-Klicks blockiert. %>
+
+  <%# #325 (Hans): wenn ein Topic-Slug mitgegeben wird, zeigen wir ein
+      zweites Icon, das diese KI als Top-Level-Heading in den Work-
+      Tree des Topics aufnimmt. Der Request landet beim
+      WorkNodesController; wenn ein Work-Tree-Blade desselben Topics
+      im Stack offen ist, aktualisiert er sich via Turbo-Stream. %>
+  <% if local_assigns[:topic_slug].present? %>
+    <button type="button"
+            data-controller="add-to-work-tree"
+            data-action="click->add-to-work-tree#add"
+            data-add-to-work-tree-topic-slug-value="<%= local_assigns[:topic_slug] %>"
+            data-add-to-work-tree-ki-uuid-value="<%= item.uuid %>"
+            title="Als Heading in den Work-Tree aufnehmen"
+            aria-label="In Work-Tree"
+            class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                   w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                   hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer">
+      <%= icon "file_text", size: "w-3.5 h-3.5" %>
+    </button>
+  <% end %>
+</li>

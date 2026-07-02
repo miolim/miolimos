@@ -1,0 +1,169 @@
+<%# Beschreibung der Aufgabe.
+    #132 Phase 2: rendert Markdown durch `KnowledgeMarkdown` — damit
+    gehen Wikilinks `[[KI]]`, Cites `[@source]`, externe Bild-URLs und
+    Bild-Wikilinks `![[Foto-KI]]`.
+    #139: Toggle zwischen Preview und Edit per Pencil-Icon (analog zur
+    KI-Card). Beide Modes leben im selben Partial, ein Stimulus-Controller
+    schaltet Sichtbarkeit. Blur-Submit auf der Textarea löst Turbo-Stream
+    aus, der das Partial wieder im Preview-Mode rendert.
+
+    #335 (Hans, 2026-05-24): Sektions-Styling an Details / Verknüpfungen
+    angepasst — bordered section, Header-Button mit Chevron + Label,
+    Edit/Save-Icons rechts daneben (ml-auto). Default-Zustand bleibt
+    EXPANDED, damit die Beschreibung nicht durch den Umbau in den
+    Hintergrund rutscht. %>
+<%
+  empty = task.description.blank?
+  # Leeres Description-Feld direkt im Edit-Mode öffnen, damit der User
+  # nichts klicken muss — sonst säße er vor einer einsamen
+  # „— keine Notizen —"-Zeile mit Pencil-Icon.
+  start_mode = empty ? "edit" : "preview"
+%>
+<section id="task_description_<%= task.id %>"
+         data-controller="description-toggle disclosure reply-search"
+         data-reply-search-scope-value="card"
+         data-focus-section
+         data-description-toggle-mode-value="<%= start_mode %>"
+         data-disclosure-storage-key-value="task.description.collapsed.<%= task.id %>"
+         class="border border-slate-200 rounded">
+  <%# #589 R5: grauer Titelbalken wie bei den übrigen Chevron-Sections. %>
+  <div class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-t">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="flex items-center gap-2 text-left text-xs text-slate-600 flex-1 min-w-0 cursor-pointer">
+      <span data-disclosure-target="icon"
+            class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("tasks.description_label") %></span>
+    </button>
+    <%# #685 (Hans): Single-Section-Fokus — nur diese Beschreibung. %>
+    <button type="button"
+            data-focus-trigger="section"
+            title="<%= t("tasks.focus_section") %>"
+            aria-label="<%= t("tasks.focus_section_aria") %>"
+            class="focus-view-trigger shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+    <%# #615 (Hans): Suche über die GANZE Karte — Beschreibung + Antworten. %>
+    <input type="search" placeholder="<%= t("tasks.search_card_placeholder") %>" autocomplete="off"
+           data-reply-search-target="input"
+           data-action="input->reply-search#search"
+           class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+    <button type="button" data-action="click->reply-search#forceSearch"
+                title="<%= t("tasks.search_now") %>" aria-label="<%= t("tasks.search_now_aria") %>"
+                class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "search" %></button>
+        <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
+    <button type="button" data-reply-search-target="mode"
+           data-action="click->reply-search#cycleMode"
+           class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+    <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
+    <%# Edit-Icon im Preview-Mode. mousedown-Variante NICHT noetig hier,
+        weil ein Klick auf das Pencil von ausserhalb der Textarea kommt
+        — kein Blur-Submit. %>
+    <button type="button"
+            data-action="click->description-toggle#edit"
+            data-description-toggle-target="editBtn"
+            title="<%= t("actions.edit") %>" aria-label="<%= t("actions.edit") %>"
+            class="p-0.5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer
+                   <%= 'hidden' if start_mode == 'edit' %>">
+      <span class="[&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "pencil" %></span>
+    </button>
+    <%# Save-Icon im Edit-Mode: mousedown statt click, sonst feuert das
+        onblur-Submit auf der Textarea vorher und wir senden zwei
+        PATCH-Requests. %>
+    <button type="button"
+            data-action="mousedown->description-toggle#save"
+            data-description-toggle-target="saveBtn"
+            title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
+            class="p-0.5 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer
+                   <%= 'hidden' unless start_mode == 'edit' %>">
+      <span class="[&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "check" %></span>
+    </button>
+  </div>
+
+  <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3 space-y-1.5">
+    <%# Preview — wenn etwas drinsteht, sonst nur Edit.
+        #480 Increment 2 (Hans, 2026-06-03): interaktive Markdown-Fläche wie
+        der KI-Body — paragraph-actions liefert Hover/Rechtsklick-Highlights.
+        surface=task blendet die (noch) nicht task-fähigen Aktionen aus,
+        Endpunkte gehen an /tasks/<id>, uuid=task:<id> für den Card-Refresh. %>
+    <div data-controller="paragraph-actions"
+         data-paragraph-actions-uuid-value="task:<%= task.id %>"
+         data-paragraph-actions-base-value="/tasks/<%= task.id %>"
+         data-paragraph-actions-surface-value="task">
+      <article data-description-toggle-target="preview"
+               data-card-search-area
+               class="markdown-body text-sm
+                      <%= 'hidden' if start_mode == 'edit' || empty %>">
+        <% if task.description.present? %>
+          <%= KnowledgeMarkdown.render(task.description) %>
+        <% end %>
+      </article>
+    </div>
+
+    <%# #560 (Hans, 2026-06-09): Tippen in der Beschreibung startet/fortsetzt den
+        Timer dieser Aufgabe (analog zur Antwort-Bearbeitung); der Server
+        (reply_start) pausiert dabei einen evtl. laufenden anderen Timer.
+        reply-timer am Form: Vorfahre der Textarea (für input#begin) und fängt
+        den submit ab (für #end). %>
+    <%= form_with model: task, url: task_path(task), method: :patch, local: false,
+          data: { description_toggle_target: "form",
+                  controller: "reply-timer dirty-warn",
+                  reply_timer_subject_type_value: "Task",
+                  reply_timer_subject_id_value:   task.id,
+                  reply_timer_start_url_value:    reply_start_time_entries_path,
+                  reply_timer_end_url_value:      reply_end_time_entries_path,
+                  reply_timer_pause_url_value:    reply_pause_time_entries_path,
+                  action: "submit->reply-timer#end focusin->reply-timer#begin focusout->reply-timer#pause" },
+          class: "block #{'hidden' if start_mode == 'preview' && !empty}" do |f| %>
+      <%# #165: `field-sizing: content` lässt die Textarea automatisch
+          mit ihrem Inhalt wachsen — keine Scrollbalken-Strecke mehr beim
+          Editieren langer Beschreibungen. min-h-24 hält ein vernünftiges
+          Minimum für leere/kurze Texte, resize-y lässt manuelles
+          Höher-Ziehen zu.
+          #168: Wikilink-/Cite-Autocomplete wie im KI-Editor. Wrapper-Div
+          hostet die zwei Stimulus-Controller; die Textarea ist
+          sowohl description-toggle-target als auch
+          wikilink-autocomplete-target=input. %>
+      <%# #373 Phase D (Hans, 2026-05-26): cm6-editor mit angehaengt;
+          ueberschreibt visuell die Textarea, wenn die Pref/`?cm6=1`
+          aktiv ist. Textarea bleibt Submit-Quelle. %>
+      <div class="relative"
+           data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+           data-draft-persist-key-value="task.<%= task.id %>.description"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+           data-cm6-editor-active-value="true">
+        <%# #315 (Hans, 2026-05-25): Schriftart NICHT mono — soll optisch
+            der Preview-Schriftart entsprechen, damit beim Edit-Toggle
+            an dieselbe Stelle gescrollt werden kann (gleicher Zeilen-
+            umbruch, gleiche Zeilenhoehe). Sans-Schrift fuer beide
+            Modes; Tab/Leerzeichen-Sensitivitaet bleibt durch die
+            normale Markdown-Eingabe ueberschaubar. %>
+        <%= f.text_area :description, rows: 4,
+              data: { draft_persist_target:         "input",
+                      description_toggle_target:    "input",
+                      wikilink_autocomplete_target: "input",
+                      cite_autocomplete_target:     "input",
+                      cm6_editor_target:            "textarea",
+                      action: "input->reply-timer#begin input->dirty-warn#mark" },
+              placeholder: t("tasks.notes_placeholder"),
+              class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm focus:outline-none focus:border-slate-400
+                      min-h-24 resize-y overflow-hidden [field-sizing:content]",
+              # #294: relatedTarget-Check + deferred submit. Wenn der Klick
+              # auf ein Feld INNERHALB derselben Card geht (z.B. Titel oben),
+              # NICHT sofort submitten — sonst ersetzt die Server-Antwort
+              # via turbo_stream das Description-Partial mid-click, der
+              # Layout-Shift verschiebt das Click-Target, und der Klick
+              # landet auf einer anderen Card (Hans-Report).
+              # Wenn nicht in der gleichen Card: setTimeout 50ms, damit
+              # der Click sicher zuerst durchgeht.
+              onblur: "const f=this.form; const card=this.closest('.stack-card'); if (event.relatedTarget && card && card.contains(event.relatedTarget)) return; setTimeout(()=>{ if(document.body.contains(f)) f.requestSubmit() }, 50)" %>
+        <ul data-wikilink-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+        <ul data-cite-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+    <% end %>
+  </div>
+</section>

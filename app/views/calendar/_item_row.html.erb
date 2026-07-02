@@ -1,0 +1,61 @@
+<%# #573 v2: eine Kalender-Zeile (Liste/Woche) — mit Edit/Delete an Events. %>
+<% case kind %>
+<% when :event %>
+  <span class="text-emerald-700 shrink-0">●</span>
+  <% if local_assigns[:editable] %>
+    <details class="inline min-w-0">
+      <summary class="cursor-pointer hover:underline inline">
+        <%= obj.title %>
+        <% if obj.starts_at.strftime("%H:%M") != "00:00" %><span class="text-slate-400 text-xs"><%= obj.starts_at.strftime("%H:%M") %></span><% end %>
+        <% if obj.location.present? %><span class="text-slate-400 text-xs">· <%= obj.location %></span><% end %>
+        <% if obj.portal_visible %><span class="text-sky-600 text-[10px]" title="<%= t("calendar.portal_visible") %>">⬡ <%= t("calendar.portal") %></span><% end %>
+      </summary>
+      <div class="mt-1 mb-2 p-2 border border-slate-200 rounded bg-slate-50/60">
+        <%= form_with url: calendar_event_path(obj), method: :patch, class: "space-y-1.5",
+              data: { turbo_stream: true } do %>
+          <input type="text" name="event[title]" value="<%= obj.title %>" required
+                 class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-[13px]">
+          <div class="grid grid-cols-2 gap-1.5">
+            <input type="datetime-local" name="event[starts_at]" value="<%= obj.starts_at.strftime("%Y-%m-%dT%H:%M") %>" required
+                   class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+            <input type="datetime-local" name="event[ends_at]" value="<%= obj.ends_at&.strftime("%Y-%m-%dT%H:%M") %>"
+                   class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+          </div>
+          <input type="text" name="event[location]" value="<%= obj.location %>" placeholder="<%= t("calendar.location") %>"
+                 class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-[13px]">
+          <textarea name="event[description]" rows="2" placeholder="<%= t("calendar.note") %>"
+                    class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-[13px]"><%= obj.description %></textarea>
+          <label class="flex items-center gap-1.5 text-xs text-slate-500">
+            <input type="checkbox" name="event[portal_visible]" value="1" <%= "checked" if obj.portal_visible %> class="rounded border-slate-300">
+            <%= t("calendar.show_in_portal") %>
+          </label>
+          <div class="flex items-center gap-2">
+            <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("actions.save") %></button>
+          </div>
+        <% end %>
+        <%= button_to t("actions.delete"), calendar_event_path(obj), method: :delete,
+              form: { class: "inline m-0 p-0 mt-1", data: { turbo_stream: true, turbo_confirm: t("calendar.delete_event_confirm") } },
+              class: "text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer" %>
+      </div>
+    </details>
+  <% else %>
+    <span class="min-w-0 truncate">
+      <%= obj.title %>
+      <% if obj.starts_at.strftime("%H:%M") != "00:00" %><span class="text-slate-400 text-xs"><%= obj.starts_at.strftime("%H:%M") %></span><% end %>
+      <% if obj.location.present? %><span class="text-slate-400 text-xs">· <%= obj.location %></span><% end %>
+    </span>
+  <% end %>
+  <% if obj.topic && !local_assigns[:hide_topic] %><span class="ml-auto shrink-0"><%= topic_marker obj.topic %></span><% end %>
+<% when :milestone %>
+  <span class="text-rose-600 shrink-0">◆</span>
+  <a href="#" class="min-w-0 truncate hover:underline"
+     data-action="click->blade-stack#openTask" data-task-id="<%= obj.id %>"><%= obj.title %></a>
+<% when :task %>
+  <span class="text-slate-500 shrink-0">○</span>
+  <a href="#" class="min-w-0 truncate hover:underline text-slate-700"
+     data-action="click->blade-stack#openTask" data-task-id="<%= obj.id %>"><%= obj.title %></a>
+<% when :awaiting %>
+  <span class="text-amber-600 shrink-0">⏳</span>
+  <a href="#" class="min-w-0 truncate hover:underline"
+     data-action="click->blade-stack#openAwaiting" data-awaiting-id="<%= obj.id %>"><%= obj.title %></a>
+<% end %>

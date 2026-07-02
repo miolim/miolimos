@@ -1,0 +1,19 @@
+<%# #533 1d (Hans, 2026-06-07): Zeiten-Reiter eines Projekt-Topics. Zeigt alle
+    Zeitbuchungen, die auf dieses Projekt gebucht sind. %>
+<%
+  # #5 (Hans-Spec): je Aufgabe konsolidiert (Aufgabe + Gesamtzeit), Klick öffnet
+  # die Aufgabe gescrollt zur Zeiten-Liste.
+  entries = TimeEntry.for_topic(topic).includes(:time_segments).to_a
+  groups  = TimeEntry.consolidate(entries.select { |e| e.subject_type == "Task" }) { |t| t.subject_id_int }
+  lookup  = Task.where(id: groups.map { |g| g[:key] }).index_by(&:id)
+%>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title: t("topics.tabs.times", default: "Zeiten"),
+        count: groups.size,
+        empty: groups.any?
+      } do %>
+  <div class="px-3 py-2">
+    <%= render "time_entries/consolidated", groups: groups, kind: "task", lookup: lookup %>
+  </div>
+<% end %>

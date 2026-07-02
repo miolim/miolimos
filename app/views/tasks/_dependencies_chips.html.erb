@@ -1,0 +1,19 @@
+<%# Chips für die Predecessors einer Task. Stream-replaced bei add/remove. %>
+<div id="task_dependencies_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% task.incoming_dependencies.includes(:predecessor).each do |dep| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%# #756: Blade-Append statt task_detail-Frame. %>
+      <%= link_to dep.predecessor.title, task_path(dep.predecessor),
+            data: { controller: "blade-link", blade_link_kind_value: "task",
+                    blade_link_id_value: dep.predecessor.id, action: "click->blade-link#append" },
+            class: "hover:underline" %>
+      <%= status_badge dep.predecessor.status, labels: t("tasks.status") %>
+      <%= button_to task_dependency_path(task, dep), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

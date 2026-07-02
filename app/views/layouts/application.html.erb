@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<%# #772 (Hans): Dark-Mode — der Server rendert die `dark`-Klasse aus dem
+    theme-Cookie (morph-/FOUC-sicher; der Topbar-Schalter setzt das Cookie). %>
+<html lang="<%= I18n.locale %>" class="<%= "dark" if cookies[:theme] == "dark" %>">
+  <head>
+    <title><%= [content_for(:title).presence, "miolimOS"].compact.join(" – ") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%# #232 Phase 1 (B): Turbo-8 Page-Morphing fuer Refresh-Visits +
+        Scroll-Preserve. Grundlage fuer Live-Updates via broadcast_refresh:
+        ein eingehender Refresh re-rendert die Seite und morpht nur die
+        Unterschiede ins DOM — viewer-korrekt (jede Session rendert mit
+        ihrem eigenen current_actor). %>
+    <meta name="turbo-refresh-method" content="morph">
+    <meta name="turbo-refresh-scroll" content="preserve">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%# #634: PWA — Manifest (inkl. Android-Share-Target) + Service
+        Worker machen miolimOS installierbar. %>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js").catch(function () {})
+      }
+    </script>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%# #619 Stufe 3: JS-Übersetzungen VOR den Controllern bereitstellen. %>
+    <%= js_i18n_tag %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-slate-50 text-slate-900 text-sm antialiased" data-controller="submit-on-ctrl-enter focus-view">
+    <%# #602 S3: Vorschau-Banner — der Admin sieht gerade die Sicht eines
+        anderen Nutzers (read-only). Auffällig, damit man es nie vergisst. %>
+    <% if previewing? %>
+      <div class="fixed bottom-0 inset-x-0 z-50 bg-amber-400 text-amber-950
+                  px-4 py-1.5 text-[13px] flex items-center gap-3 shadow-lg">
+        <span class="font-semibold"><%= t("shared.preview.label") %></span>
+        <span class="truncate"><%= t("shared.preview.readonly", name: current_actor.name) %></span>
+        <%= button_to t("shared.preview.exit"), end_preview_path, method: :delete,
+              form: { class: "inline m-0 p-0 ml-auto" },
+              class: "px-2 py-0.5 rounded bg-amber-950 text-amber-50 hover:bg-amber-900 cursor-pointer text-[12px]" %>
+      </div>
+    <% end %>
+    <div class="flex h-screen overflow-hidden" data-controller="mobile-nav">
+      <%# Backdrop — nur Mobile, schließt Nav bei Klick %>
+      <div data-mobile-nav-target="backdrop"
+           data-action="click->mobile-nav#close"
+           class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
+
+      <%= render "shared/sidebar" %>
+
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <%= render "shared/topbar" %>
+
+        <main class="flex-1 overflow-y-auto p-4">
+          <% if flash[:notice].present? %>
+            <div class="mb-3 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
+              <%= flash[:notice] %>
+            </div>
+          <% end %>
+          <% if flash[:alert].present? %>
+            <div class="mb-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-rose-800">
+              <%= flash[:alert] %>
+            </div>
+          <% end %>
+
+          <%= yield %>
+        </main>
+      </div>
+
+      <%# Toast-Stack — fixed bottom-right, max 3 sichtbar.
+          Server-Aktionen können via turbo_stream.append("toast_stack", ...)
+          Toasts einblenden. Inverse-Actions hängen am Toast selbst. %>
+      <div id="toast_stack"
+           class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-[calc(100vw-2rem)] sm:w-96"></div>
+
+      <%# #434 Teil 2 (Hans, 2026-06-01): Globaler Stack-Verlauf-Drawer fuer
+          alle Stack-Seiten. Aufruf ueber den Verlauf-Button am Spine-Fuss.
+          Entfernt sich selbst auf Seiten mit eigenem Drawer (Wissen) bzw.
+          ist ohne blade-stack inert. %>
+      <%= render "shared/stack_history_drawer" %>
+    </div>
+  </body>
+</html>

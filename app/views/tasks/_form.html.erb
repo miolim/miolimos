@@ -1,0 +1,49 @@
+<%= form_with model: task, local: true, class: "space-y-3" do |f| %>
+  <% if task.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 p-3 text-rose-800">
+      <ul class="list-disc ml-4">
+        <% task.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :title, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :description, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_area :description, rows: 4,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <%= f.label :status, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.select :status, Task.statuses.keys.map { |k| [t("tasks.status.#{k}"), k] },
+            {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <%= f.label :priority, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.select :priority, Task.priorities.keys.map { |k| [t("tasks.priority.#{k}"), k] },
+            {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <%= f.label :due_date, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.date_field :due_date, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <%= f.label :assignee_id, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.collection_select :assignee_id, Actor.active.order(:name), :id, :name,
+            { include_blank: "—" },
+            class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+  </div>
+
+  <div class="flex gap-2">
+    <%= f.submit t("actions.save"),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), (task.persisted? ? task_path(task) : tasks_path),
+          class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+  </div>
+<% end %>

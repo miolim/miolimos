@@ -1,0 +1,68 @@
+<%# Header-Zeile: Checkbox-Toggle, Titel (inline editierbar),
+    Topic-Navigation. Die Action-Icon-Reihe (in-Thema, Löschen, Schliessen)
+    liegt seit #223 in der Blade-Card-Sticky-Toolbar — eine Titelzeile
+    statt zwei.
+    #254 (+ Mobile-Follow-Up): Titelzeile sticky auf Desktop UND Mobile —
+    bei langer Beschreibung / vielen Kommentaren bleibt die Checkbox
+    erreichbar, ohne nach oben zu scrollen.
+    #263 follow-up: die #-Nummer/Loeschen-Toolbar oben ist NICHT mehr
+    sticky (scrollt mit); diese Zeile haftet stattdessen am viewport-
+    Top des Scroll-Containers (top:-1rem cancelt das p-4-Padding). %>
+<%# #232 (Hans, 2026-06-03): id am Header, damit ein Status-Broadcast
+    GENAU diese Zeile (Checkbox/Done-Zustand + Titel) live ersetzen kann —
+    ohne die editierbare Beschreibung anzufassen (kein Edit-Verlust). %>
+<div id="task_header_<%= task.id %>"
+     class="flex flex-wrap items-start gap-x-3 gap-y-1
+            sticky top-[-1rem] z-10 -mx-4 px-4 pt-2 pb-2
+            bg-white border-b border-slate-100">
+  <% wip_active = task.wip_actor_id.present? && !task.done? %>
+  <%# #463 (Hans, 2026-06-02): data-task-done-toggle macht den Button fuer
+      den `g d`-Shortcut (Done/not-Done der fokussierten Card) auffindbar. %>
+  <%= button_to toggle_done_task_path(task),
+        method: :post,
+        data: { task_done_toggle: true },
+        form: { class: "inline shrink-0 m-0 p-0 leading-none mt-2" },
+        class: "w-5 h-5 rounded flex items-center justify-center p-0 cursor-pointer
+                #{task.done? ? 'border bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600' : (wip_active ? 'border-2 bg-white border-emerald-500 hover:border-emerald-700' : 'border bg-white border-slate-400 hover:border-slate-700')}" do %>
+    <%= icon "check", size: "w-3.5 h-3.5", stroke: 2.5 if task.done? %>
+  <% end %>
+
+  <div class="flex-1 min-w-0">
+    <%= form_with model: task, url: task_path(task), method: :patch, local: false, class: "block" do |f| %>
+      <%# text_area statt text_field, damit lange Titel umbrechen statt
+          abgeschnitten werden. field-sizing:content wächst automatisch
+          mit dem Inhalt (moderne Browser). Enter submittet wie bisher
+          (Zeilenumbrüche im Titel sind nicht gewollt). %>
+      <%= f.text_area :title,
+            rows: 1,
+            class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                    resize-none overflow-hidden [field-sizing:content]
+                    hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none
+                    #{'text-slate-400 line-through' if task.done?}",
+            onblur: "this.form.requestSubmit()",
+            onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
+    <% end %>
+
+    <%# #410 (Hans, 2026-05-30): Topics unter dem Titel entfernt —
+        Detail-Section zeigt sie weiterhin. %>
+
+
+    <%# #167: Entwurfs-Hinweis (reine Info). Solange die Aufgabe Draft ist,
+        sieht sie kein Assignee, der Heartbeat-Counter zählt sie nicht. Die
+        Veröffentlichen-AKTION liegt seit #747 im Status-Control neben dem
+        Titel (siehe unten), nicht mehr hier. %>
+    <% if task.draft? %>
+      <div class="mt-2 text-sm">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs">
+          <%= icon "pencil" %>
+          <%= t("tasks.draft_badge") %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+
+  <%# #756 (Hans, 2026-06-22): Das Status-Control sitzt AUSSCHLIESSLICH in der
+      Card-Toolbar (siehe _blade_card / tasks/_status_control) — bewusst NICHT
+      neben dem Titel. Würde es hier stehen, käme es bei jedem Status-Broadcast
+      (der diesen Header ersetzt) am Titel wieder hoch. %>
+</div>

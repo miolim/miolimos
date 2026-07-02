@@ -1,0 +1,31 @@
+<% content_for :title, t("dashboard.title") %>
+
+<%# #163 Phase 6c (Dashboard): /dashboard ist jetzt eine Blade-Stack-
+    Seite. Default-Stack `list:dashboard` rendert die linke Sektions-
+    Liste (Agent-Bundles, Heute, Demnaechst, Process-Edge, Recent-Comms)
+    als eine Card. Detail-Klicks appenden Task-/Awaiting-/Communication-
+    Blades rechts; die list:dashboard-Card collapsed automatisch.
+
+    Initial-State bei F5: BladeStackLoader parst `?stack=`. Legacy-
+    Params `?task=X` / `?awaiting=Y` / `?communication=Z` werden im
+    Controller auf das Stack-Format umgemappt, damit alte Dashboard-
+    Links weiter funktionieren. %>
+<div data-controller="blade-stack"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="dashboard.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "dashboard" %>
+        <%= render "dashboard/index_list_blade" %>
+      <% else %>
+        <% locals = stack_item.partial_locals %>
+        <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+        <%= render stack_item.partial, **locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

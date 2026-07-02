@@ -1,0 +1,66 @@
+<%= form_with model: awaiting, local: true, class: "space-y-3" do |f| %>
+  <% if awaiting.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 p-3 text-rose-800">
+      <ul class="list-disc ml-4">
+        <% awaiting.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title, t("awaitings.title_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :title, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= f.label :description, t("awaitings.description_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_area :description, rows: 4,
+          placeholder: t("awaitings.notes_placeholder"),
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <%= f.label :follow_up_at, t("awaitings.follow_up_at"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.date_field :follow_up_at, required: true,
+            class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <%= f.label :contact_uuid, t("awaitings.contact"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.collection_select :contact_uuid,
+            KnowledgeItem.persons_and_orgs.order(:title), :uuid, :display_name,
+            { include_blank: "—" },
+            class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+  </div>
+
+  <% if awaiting.persisted? %>
+    <div>
+      <%= f.label :resolution_note, t("awaitings.resolution_note"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.text_area :resolution_note, rows: 2,
+            class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+  <% else %>
+    <%# Themen werden nach dem Anlegen über die Detail-Ansicht gepflegt
+        (Chips wie bei Aufgaben). Vorauswahl nur via topic_id-Param. %>
+    <% if awaiting.topics.any? %>
+      <div class="text-xs text-slate-500">
+        <%= t("awaitings.preselected_topic") %>
+        <% awaiting.topics.each do |topic| %>
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-xs ml-1">
+            <%= topic_dot topic %><%= topic.name %>
+          </span>
+          <%= hidden_field_tag "awaiting[topic_ids][]", topic.id %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="flex gap-2">
+    <%= f.submit t("actions.save"),
+          class: "px-3 py-1.5 rounded bg-amber-600 text-white text-sm hover:bg-amber-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), (awaiting.persisted? ? awaiting_path(awaiting) : awaitings_path),
+          class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+  </div>
+<% end %>

@@ -1,0 +1,48 @@
+<%# #232 (Hans, 2026-06-01): Replies-Liste einer Task in einem turbo-frame.
+    Wird inline von tasks/_replies_section gerendert UND vom GET
+    /tasks/:id/replies (TaskRepliesController#index) als Frame-Fragment
+    nachgeladen, wenn eine Reply-Aenderung ein Live-Update broadcastet.
+    Jede Session rendert mit ihrem eigenen current_actor -> editable?,
+    Drafts und Reihenfolge bleiben pro Viewer korrekt.
+    Locals: task %>
+<%
+  replies  = KnowledgeItem.replies_for(task, viewer: current_actor)
+  last_two = replies.last(2)
+  older    = replies[0...-2] || []
+%>
+<turbo-frame id="task_replies_list_frame_<%= task.id %>">
+  <% if replies.any? %>
+    <ul id="task_replies_list_<%= task.id %>" class="text-[13px]">
+      <% if older.any? %>
+        <li data-controller="disclosure"
+            data-disclosure-storage-key-value="task.<%= task.id %>.replies.older"
+            class="border-b border-slate-100">
+          <button type="button"
+                  data-action="click->disclosure#toggle"
+                  class="w-full text-left flex items-center gap-2 py-2 px-1 text-xs text-slate-500 hover:bg-slate-50 rounded">
+            <span data-disclosure-target="icon"
+                  class="inline-block transition-transform text-slate-400">
+              <%= icon "chevron_right" %>
+            </span>
+            <span><%= t("tasks.older_replies", count: older.size) %></span>
+          </button>
+          <div data-disclosure-target="content" class="hidden pl-2">
+            <ul class="text-[13px]">
+              <% older.each do |reply| %>
+                <%= render "shared/reply_card", reply: reply,
+                      update_url: task_reply_path(task, reply.uuid),
+                      collapsed: true %>
+              <% end %>
+            </ul>
+          </div>
+        </li>
+      <% end %>
+
+      <% last_two.each_with_index do |reply, idx| %>
+        <%= render "shared/reply_card", reply: reply,
+              update_url: task_reply_path(task, reply.uuid),
+              collapsed: idx < last_two.size - 1 %>
+      <% end %>
+    </ul>
+  <% end %>
+</turbo-frame>

@@ -1,0 +1,56 @@
+<%# #613: aus app/views/settings/users/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_users. %>
+  
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+      <h1 class="font-semibold"><%= t("settings.users.title") %></h1>
+      <%# #613 St.2: als Blade statt Einzelfenster. %>
+      <button type="button" data-controller="blade-link"
+              data-blade-link-kind-value="settings_sub" data-blade-link-id-value="users:new"
+              data-action="click->blade-link#append"
+              class="text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 border-0 cursor-pointer"><%= t("settings.users.new") %></button>
+    </header>
+
+    <% if @users.empty? %>
+      <p class="px-4 py-3 text-slate-500"><%= t("settings.users.none") %></p>
+    <% else %>
+      <table class="w-full text-[13px]">
+        <thead class="text-[11px] uppercase tracking-wider text-slate-500">
+          <tr class="border-b border-slate-200">
+            <th class="text-left px-4 py-1.5"><%= t("settings.users.col_name") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.users.col_email") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.users.col_role") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.users.col_active") %></th>
+            <th class="text-right px-4 py-1.5"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |u| %>
+            <tr class="border-b border-slate-100 <%= 'bg-emerald-50/30' if u == current_actor %>">
+              <td class="px-4 py-2"><%= u.name %><% if u == current_actor %> <span class="text-xs text-emerald-700"><%= t("settings.users.you") %></span><% end %></td>
+              <td class="px-4 py-2 font-mono text-xs"><%= u.email %></td>
+              <td class="px-4 py-2"><%= t("settings.users.role_#{u.role}", default: u.role.to_s.humanize) %></td>
+              <td class="px-4 py-2"><%= u.active? ? "✓" : "✗" %></td>
+              <td class="px-4 py-2 text-right">
+                <% unless u == current_actor %>
+                  <%= button_to t("settings.users.view"), start_preview_path(u), method: :post,
+                        title: t("settings.users.view_title"),
+                        form: { class: "inline m-0 p-0 mr-2" },
+                        class: "text-xs text-slate-600 hover:text-slate-900 underline cursor-pointer" %>
+                <% end %>
+                <button type="button" data-controller="blade-link"
+                        data-blade-link-kind-value="settings_sub" data-blade-link-id-value="users:<%= u.id %>:edit"
+                        data-action="click->blade-link#append"
+                        class="text-xs text-slate-600 hover:text-slate-900 mr-2 bg-transparent border-0 cursor-pointer underline-offset-2 hover:underline"><%= t("actions.edit") %></button>
+                <% unless u == current_actor %>
+                  <%= button_to t("actions.delete"), settings_user_path(u), method: :delete,
+                        class: "text-xs text-rose-600 hover:text-rose-800",
+                        form: { class: "inline", data: { turbo_confirm: t("settings.users.delete_confirm", name: u.name) } } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>

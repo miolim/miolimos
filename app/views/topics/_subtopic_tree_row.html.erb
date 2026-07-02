@@ -1,0 +1,37 @@
+<%# #253: Eine Zeile im Subtopics-Baum. Rekursiv — eigene Sub-Topics
+    werden eingerueckt darunter gerendert. Klick auf den Namen appended
+    das List-View-Blade des Sub-Topics (kind: topic_list) in den Stack.
+
+    Locals: topic (das Sub-Topic), depth (Einrueck-Level, 0 = direkt). %>
+<%
+  depth = local_assigns.fetch(:depth, 0)
+  kids  = topic.sub_topics.order(:name).to_a
+%>
+<li data-subtopic-row>
+  <div class="group flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-[13px]"
+       style="padding-left: <%= 0.75 + depth * 1.0 %>rem">
+    <span class="w-3 flex items-center justify-center shrink-0">
+      <%= topic_marker topic %>
+    </span>
+    <%# Klick → blade-stack:append mit kind topic_list. href als
+        Rechtsklick-/Neuer-Tab-Fallback. %>
+    <a href="<%= topic_path(topic) %>"
+       data-controller="blade-link"
+       data-blade-link-kind-value="topic_list"
+       data-blade-link-id-value="<%= topic.slug %>"
+       data-action="click->blade-link#append"
+       class="flex-1 min-w-0 truncate text-slate-900 hover:underline"><%= topic.name %></a>
+    <% if kids.any? %>
+      <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= kids.size %></span>
+    <% end %>
+    <%# #509 (Hans, 2026-06-04): „+" hängt das Sub-Topic an statt zu ersetzen. %>
+    <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
+  </div>
+  <% if kids.any? %>
+    <ul>
+      <% kids.each do |kid| %>
+        <%= render "topics/subtopic_tree_row", topic: kid, depth: depth + 1 %>
+      <% end %>
+    </ul>
+  <% end %>
+</li>

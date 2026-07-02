@@ -1,0 +1,35 @@
+<% content_for :title, "#{portal_topic.name} — #{t("portal.home.portal_suffix")}" %>
+<h1><%= portal_topic.name %></h1>
+<% if @updated_at %>
+  <p class="muted"><%= t("portal.home.last_updated") %> <%= l @updated_at.to_date, format: :long %></p>
+<% end %>
+
+<h2><%= t("portal.home.project_status") %></h2>
+<% done = @milestones.count { |m| m.status == "done" } %>
+<div class="card">
+  <div class="row">
+    <span><%= t("portal.home.milestones_done_html", done: done, total: @milestones.size) %></span>
+    <a href="<%= portal_href(portal_roadmap_path, "roadmap.html") %>" class="muted"><%= t("portal.home.to_roadmap") %></a>
+  </div>
+</div>
+
+<% if @artifacts.any? %>
+  <h2><%= t("portal.home.latest_documents") %></h2>
+  <% @artifacts.each do |a| %>
+    <div class="card row">
+      <a href="<%= portal_artifact_href(a) %>"><%= a.document.display_name.presence || t("portal.home.document_fallback", id: a.document_id) %></a>
+      <span class="muted"><%= l a.created_at.to_date, format: :long %></span>
+    </div>
+  <% end %>
+<% end %>
+
+<% if @messages.any? %>
+  <h2><%= t("portal.home.recent_messages") %></h2>
+  <% @messages.each do |m| %>
+    <div class="msg <%= m.from_customer? ? 'customer' : 'us' %>">
+      <p class="muted"><%= m.from_customer? ? t("portal.home.sender_you") : "miolim" %> · <%= l m.created_at.to_date, format: :long %></p>
+      <p><%= truncate(m.body.to_s, length: 200) %></p>
+    </div>
+  <% end %>
+  <p><a href="<%= portal_href(portal_nachrichten_path, "nachrichten.html") %>" class="muted"><%= t("portal.home.all_messages") %></a></p>
+<% end %>

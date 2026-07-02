@@ -1,0 +1,117 @@
+<%# #325 (Hans, 2026-05-24): Work-Tree-Tab. Zeigt den hierarchischen
+    Work-Tree des Topics: KIs mit Rolle (heading/content), sortiert
+    via position, ggf. mit Material-Hint (welche KIs noch NICHT im
+    Tree liegen).
+
+    Phase 2 — Render + simple DnD. Editier-Operations laufen ueber
+    /topics/:slug/work_nodes (siehe topics/work_nodes_controller.rb).
+
+    Locals: topic. %>
+<%
+  topic = local_assigns.fetch(:topic, @topic)
+  # #592 Linsen-Modell: auch dieser Reiter kann jeden Baum zeigen.
+  tree  = (topic.topic_trees.find_by(id: params[:tree_id]) if params[:tree_id].present?)
+  tree ||= (topic.topic_trees.find_by(id: @current_tree_id) if @current_tree_id)
+  # #592-Fix: Fallback auf den ERSTEN Baum egal welcher Art — ein Topic
+  # mit nur einem Zweckgeflecht zeigte sonst einen leeren Reiter
+  # (Zähler 30, Inhalt leer — Hans-Report).
+  tree ||= topic.topic_trees.work.first || topic.topic_trees.order(:position).first
+  roots = tree ? tree.roots.includes(:knowledge_item, children: :knowledge_item).to_a : []
+%>
+<%# #596: .topic-trees-section ist das Turbo-Replace-Ziel der Knoten-Ops —
+    nur diese Section wird ersetzt, nicht das ganze Blade, damit die
+    Scrollposition erhalten bleibt. %>
+<section class="topic-trees-section bg-white rounded border border-slate-200 overflow-visible"
+         data-controller="work-tree"
+         data-work-tree-topic-id-value="<%= topic.id %>"
+         data-work-tree-topic-slug-value="<%= topic.slug %>">
+  <%# #484 (Hans, 2026-06-03): section-breit (kein -mx-3 mehr — das machte
+      die Zeile blade-breit), sticky top-0 wie das gemeinsame Tab-Gerüst. %>
+  <header class="sticky top-0 z-20 px-3 py-2 border-b border-slate-200 bg-slate-50/95 backdrop-blur flex items-center gap-2 rounded-t">
+    <h2 class="font-semibold text-sm"><%= t("topics.gliederungen") %><%= " · #{tree.display_name}" if tree %></h2>
+    <span class="text-xs text-slate-500"><%= t("topics.nodes_count", count: (tree ? tree.nodes.size : 0)) %></span>
+    <%# #325 (Hans, 2026-05-24): Material wird aus dem Wissen-Tab in
+        einem zweiten Topic-Blade hereingezogen (via "+ in Work-Tree"-
+        Icon dort). Daher kein zweiter Material-Pool im Work-Tree-Tab. %>
+    <%# #325 Phase 3a + #352 Phase 1: zwei Render-Trigger nebeneinander.
+        - Rendering-Blade: oeffnet eine neue Stack-Card mit chevron-
+          toggle-baren KIs (inline, kein Tab-Wechsel).
+        - Voll-Render: oeffnet die saubere Publish-Vorschau in einem
+          neuen Browser-Tab. %>
+    <%# #352-follow2 (Hans, 2026-05-25): Voll-Render-Button entfernt;
+        Rendering-Blade reicht. Falls Hans den Voll-Render-Pfad
+        spaeter doch noch braucht, kommt der Link zurueck. %>
+    <%# #740 (Hans): zwei Render-Lesarten desselben Baums, ungated (jeder
+        Baum mit Knoten). Werk-Render = Gliederung als Dokument; Mittel-
+        Zweck-Render = die Zweck→Mittel-Fokusansicht am Wurzelknoten. %>
+    <% if topic.has_tree? %>
+      <span class="ml-auto inline-flex items-center gap-1">
+        <%# #740 (Hans): nur Icon + Tooltip, kein Text-Label. %>
+        <button type="button"
+                data-action="click->blade-stack#openInStack"
+                data-target-uuid="render:topic:<%= topic.slug %>"
+                title="<%= t("topics.werk_render") %>"
+                aria-label="<%= t("topics.werk_render_short") %>"
+                class="inline-flex items-center p-1 rounded bg-red-700 text-white hover:bg-red-800 cursor-pointer">
+          <%= icon "list_tree", size: "w-4 h-4" %>
+        </button>
+        <% if (mz_root = roots.first) %>
+          <button type="button"
+                  data-action="click->blade-stack#openInStack"
+                  data-target-uuid="treefocus:<%= mz_root.id %>"
+                  title="<%= t("topics.mittel_zweck_render") %>"
+                  aria-label="<%= t("topics.mittel_zweck_render_short") %>"
+                  class="inline-flex items-center p-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer">
+            <%= icon "network", size: "w-4 h-4" %>
+          </button>
+        <% end %>
+      </span>
+    <% end %>
+  </header>
+  <%= render "topics/tree_picker", topic: topic, tab: "trees", current_tree: tree, new_kind: "work" %>
+  <%# #592-Konsolidierung: Quick-Add per Titel — bestehende KI wird
+      verknüpft, sonst entsteht eine (leere) neue KI. %>
+  <div class="px-3 py-1.5 border-b border-slate-100">
+    <%= form_with url: topic_work_nodes_path(topic.slug), method: :post, local: false, class: "flex items-center gap-1" do %>
+      <% if tree %><%= hidden_field_tag :tree_id, tree.id %><% end %>
+      <%= text_field_tag :title, nil, placeholder: t("topics.work_node_placeholder"),
+            autocomplete: "off", list: "tree-ki-suggestions-#{topic.id}",
+            class: "flex-1 min-w-0 text-xs rounded border border-slate-200 px-2 py-1" %>
+    <% end %>
+    <datalist id="tree-ki-suggestions-<%= topic.id %>">
+      <% KnowledgeItem.where.not(item_type: "reply").order(:title).limit(500).pluck(:title).each do |t| %>
+        <option value="<%= t %>"></option>
+      <% end %>
+    </datalist>
+  </div>
+
+  <%# #359 (Hans, 2026-05-25): Inline-editierbarer Werks-Titel +
+      Subtitle. Beide optional; ein onblur-Submit (form_with local:false)
+      persistiert via TopicsController#update. Werte fliessen ins
+      Rendering-Blade als Werkskopf. %>
+  <%= form_with model: topic, url: topic_path(topic), method: :patch,
+        local: false, html: { class: "px-3 py-2 border-b border-slate-100 space-y-1" } do |f| %>
+    <%= f.text_field :work_tree_title,
+          placeholder: t("topics.work_title_placeholder"),
+          autocomplete: "off",
+          onblur: "if (this.dataset.dirty) { this.dataset.dirty = ''; this.form.requestSubmit() }",
+          oninput: "this.dataset.dirty = '1'",
+          class: "w-full bg-transparent text-base font-semibold text-slate-900 placeholder:text-slate-300 placeholder:font-normal border-0 focus:outline-none focus:bg-slate-50 px-1 py-0.5 rounded" %>
+    <%= f.text_field :work_tree_subtitle,
+          placeholder: t("topics.work_subtitle_placeholder"),
+          autocomplete: "off",
+          onblur: "if (this.dataset.dirty) { this.dataset.dirty = ''; this.form.requestSubmit() }",
+          oninput: "this.dataset.dirty = '1'",
+          class: "w-full bg-transparent text-xs text-slate-600 italic placeholder:text-slate-300 placeholder:not-italic border-0 focus:outline-none focus:bg-slate-50 px-1 py-0.5 rounded" %>
+  <% end %>
+
+  <% if roots.empty? %>
+    <p class="px-4 py-6 text-sm text-slate-400 italic">
+      Noch kein Work-Tree. Oeffne im Stack zusaetzlich diese Topic-Blade
+      mit dem „Wissen\"-Tab — beim Hover ueber einer KI-Zeile erscheint
+      ein Icon, das die KI als Top-Level-Heading hier aufnimmt.
+    </p>
+  <% else %>
+    <%= render "topics/work_tree_subtree", nodes: roots, depth: 1, topic: topic %>
+  <% end %>
+</section>

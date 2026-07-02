@@ -1,0 +1,5 @@
+<% content_for :title, @awaiting.title.truncate(40) %>
+
+<div class="max-w-3xl bg-white rounded border border-slate-200 p-4">
+  <%= render "awaitings/detail", awaiting: @awaiting, expanded: true %>
+</div>

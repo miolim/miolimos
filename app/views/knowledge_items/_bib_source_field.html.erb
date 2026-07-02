@@ -1,0 +1,74 @@
+<%# Pflicht-Feld bib_source für source-bezogene KI-Types
+    (abstract/transcript/direct_quote/indirect_quote). Drei Modi:
+
+    1. Bestehende Source: Slug ins Text-Input tippen oder per
+       Autocomplete-Dropdown wählen (sources/suggest).
+    2. Neue Source anlegen: Disclosure "+ neue Quelle" öffnet Mini-Form.
+       Beim Submit: wenn `new_source[title]` gefüllt → Server legt Source
+       an, slug wird aus Title abgeleitet.
+    3. Eines von beiden ist Pflicht — der Controller erzwingt das.
+
+    Slug- und new_source-Felder sind getrennte Param-Pfade; der
+    Controller priorisiert new_source (falls Title gefüllt) über
+    bib_source_slug.
+
+    Locals:
+      f                  — der äußere FormBuilder
+      default_bib_source — vorbelegte bib_source-Slug (z.B. von Source-Detail) %>
+<% default_bib_source = local_assigns[:default_bib_source] %>
+<div class="space-y-2 text-xs"
+     data-controller="source-picker disclosure"
+     data-source-picker-url-value="<%= suggest_sources_path %>">
+  <label class="block relative">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.source_slug_or_search") %></span>
+    <%= f.text_field :bib_source_slug, value: default_bib_source,
+          placeholder: t("knowledge.form.source_slug_placeholder"),
+          data: { source_picker_target: "input" },
+          autocomplete: "off",
+          class: "w-full font-mono text-sm border border-slate-200 rounded px-2 py-1
+                  focus:outline-none focus:border-emerald-400" %>
+    <ul data-source-picker-target="list"
+        class="hidden absolute left-0 right-0 top-full mt-1 z-20 bg-white border
+               border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+  </label>
+
+  <button type="button"
+          data-action="click->disclosure#toggle"
+          class="text-emerald-700 hover:underline cursor-pointer">
+    <span data-disclosure-target="icon" class="inline-block transition-transform">▶</span>
+    <%= t("knowledge.form.new_source") %>
+  </button>
+
+  <div data-disclosure-target="content"
+       class="hidden p-3 border border-emerald-200 rounded bg-emerald-50/30 space-y-2">
+    <p class="text-slate-600">
+      <%= t("knowledge.form.new_source_hint") %>
+    </p>
+    <label class="block">
+      <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.source_title") %></span>
+      <%= text_field_tag "new_source[title]", nil,
+            placeholder: t("knowledge.form.source_title_placeholder"),
+            class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+    </label>
+    <div class="grid grid-cols-2 gap-2">
+      <label class="block">
+        <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.csl_type") %></span>
+        <%= select_tag "new_source[csl_type]",
+              options_for_select(Source::CSL_TYPES.map { |t| [t, t] }, "book"),
+              class: "w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white" %>
+      </label>
+      <label class="block">
+        <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.year_date") %></span>
+        <%= text_field_tag "new_source[issued_string]", nil,
+              placeholder: "z.B. 2026",
+              class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+      </label>
+    </div>
+    <label class="block">
+      <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.url_optional") %></span>
+      <%= text_field_tag "new_source[url]", nil,
+            placeholder: "https://…",
+            class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+    </label>
+  </div>
+</div>

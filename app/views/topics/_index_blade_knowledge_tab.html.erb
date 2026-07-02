@@ -1,0 +1,99 @@
+<%# #163 Phase 6d: Knowledge-/Persons-Tab innerhalb der list:topic-Card.
+    Flache KI-Liste statt nested aside-Splitter. Klick auf eine Row
+    triggert blade-stack#openFromList — das delegiert per Stimulus
+    Event-Bubbling an den outer blade-stack-Controller, der die KI als
+    Card im Stack appended (oder fokussiert, wenn schon offen).
+
+    Locals: topic, tab ("knowledge" | "persons"). %>
+<%
+  # #348 Phase 3 (Hans-fix #347 follow): wenn der Tab via Dashboard-
+  # Stack-Loader-Pfad gerendert wird, sind die Vars nil. Lazy-Load.
+  if tab == "persons" && @persons_items.nil?
+    @persons_items = topic.knowledge_items
+                          .where(item_type: %w[person organization])
+                          .includes(:outgoing_references, :incoming_references) # #486
+                          .order(Arel.sql("LOWER(title)"))
+                          .limit(500).to_a
+  elsif tab == "knowledge" && @knowledge_items.nil?
+    @knowledge_items = topic.knowledge_items
+                            .non_reply
+                            .includes(:outgoing_references, :incoming_references) # #486
+                            .order(Arel.sql("LOWER(title)"))
+                            .limit(500).to_a
+  end
+%>
+<% items = (tab == "persons") ? @persons_items : @knowledge_items %>
+<%# #702 (Hans): Bekanntheits-Filter im Personen-Reiter — Alle | Kommunikation
+    | Persönlich bekannt. „Kommunikation" umfasst die persönlich bekannten. %>
+<% known = (tab == "persons") ? params[:known].to_s.presence_in(%w[comm personal]) : nil %>
+<% if tab == "persons" %>
+  <% items = items.to_a %>
+  <% if known %>
+    <% comm_set = CommunicationMention.where(mentioned_uuid: items.map(&:uuid)).distinct.pluck(:mentioned_uuid).to_set %>
+    <% items = items.select { |k| known == "personal" ? k.personally_known? : (k.personally_known? || comm_set.include?(k.uuid)) } %>
+  <% end %>
+<% end %>
+<% header_title = (tab == "persons") ? t("topics.tabs.persons") : t("topics.tabs.knowledge") %>
+<%# #484 Increment C (Hans, 2026-06-03): auf das gemeinsame Tab-Gerüst
+    umgestellt. Quick-Add (Wissen) = der Typ-Picker zum Anlegen; Personen
+    vorerst ohne Inline-Quick-Add. Anzahl + Suche kommen aus dem Gerüst. %>
+<%
+  # #599: Inhalt-Toggle (Alle | Nur Titel | Mit Inhalt) neben der Suche —
+  # nur im Wissen-Reiter; filtert client-seitig über data-has-body.
+  content_toggle = capture do %>
+    <span class="inline-flex rounded border border-slate-200 overflow-hidden">
+      <% [["alle", "Alle"], ["titel", "Nur Titel"], ["inhalt", "Mit Inhalt"]].each_with_index do |(mode, label), i| %>
+        <button type="button"
+                data-content-filter-target="btn"
+                data-action="click->content-filter#filter"
+                data-content-filter-mode-param="<%= mode %>"
+                class="px-2 py-0.5 cursor-pointer <%= i.zero? ? "bg-slate-700 text-white" : "text-slate-600 hover:bg-slate-50" %>"><%= label %></button>
+      <% end %>
+    </span>
+  <% end %>
+<%# #702 (Hans): Tri-State-Bekanntheits-Toggle im Personen-Reiter, zyklisch
+    via topic-tabs#switch (Muster wie der Zuweisungs-Toggle im Aufgaben-
+    Reiter), rechts neben dem Filter-Schlitz. %>
+<% known_toggle = nil %>
+<% if tab == "persons" %>
+  <% kcfg = { nil        => { label: t("topics.knowledge_all"),           nxt: "comm" },
+              "comm"     => { label: t("topics.knowledge_communication"), nxt: "personal" },
+              "personal" => { label: t("topics.knowledge_known"),         nxt: nil } }[known] %>
+  <% kparams = { tab: "persons", known: kcfg[:nxt] }.compact %>
+  <% known_toggle = capture do %>
+    <%= link_to topic_path(topic, kparams),
+          title: t("topics.known_toggle_title", label: kcfg[:label]),
+          data: { action: "click->topic-tabs#switch",
+                  "topic-tabs-url-param": list_card_topic_path(topic, kparams) },
+          class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
+      <%= icon "user-check", size: "w-3.5 h-3.5" %><%= kcfg[:label] %>
+    <% end %>
+  <% end %>
+<% end %>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        header_title,
+        count:        items.size,
+        row_selector: "li",
+        controllers:  (tab == "knowledge" ? ["content-filter"] : []),
+        controls:     (tab == "knowledge" ? content_toggle : known_toggle),
+        quick_add:    render("topics/tab_quickadd", topic: topic,
+                             item_type:   (tab == "persons" ? "person" : "note"),
+                             placeholder: (tab == "persons" ? "Neue Person …" : "Neues Wissen …")),
+        empty:        items.any?
+      } do %>
+  <%# #484 (Hans, 2026-06-03): <ul> IMMER rendern (auch leer), damit ein
+      neu angelegtes Item per turbo_stream sofort hineinprependet werden
+      kann. #364: Work-Tree-Usage-Counts vorab (vermeidet n+1). %>
+  <% work_tree_counts = topic.work_nodes.group(:knowledge_item_uuid).count %>
+  <ul id="knowledge_list" class="divide-y divide-slate-100">
+    <% items.each do |k| %>
+      <%= render "knowledge_items/list_row",
+            item: k, topic_slug: topic.slug,
+            work_tree_count: (work_tree_counts[k.uuid] || 0) %>
+    <% end %>
+  </ul>
+  <% if items.empty? %>
+    <p class="px-4 py-3 text-slate-500 italic text-sm">—</p>
+  <% end %>
+<% end %>

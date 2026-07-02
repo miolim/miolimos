@@ -1,0 +1,12 @@
+<%# #631 v2: „Mehr laden"-Schwanz der Verlaufsliste. Der Link navigiert
+    seinen eigenen Frame; history#more antwortet mit demselben Frame,
+    gefüllt mit den nächsten Zeilen + ggf. dem nächsten Schwanz.
+    Locals: before (String, Unix-Timestamp der ältesten gezeigten Zeile). %>
+<%= turbo_frame_tag "history_more_#{before.tr('.', '-')}", class: "contents" do %>
+  <li class="py-2 text-center list-none">
+    <a href="<%= more_history_path(before: before) %>"
+       class="text-xs text-slate-500 hover:text-slate-900 underline">
+      <%= t("history.load_more") %>
+    </a>
+  </li>
+<% end %>

@@ -1,0 +1,15 @@
+<% content_for :title, "#{t("portal.roadmap.title")} — #{portal_topic.name}" %>
+<h1><%= t("portal.roadmap.title") %></h1>
+<% if @milestones.empty? %>
+  <p class="muted"><%= t("portal.roadmap.empty") %></p>
+<% end %>
+<% @milestones.each do |m| %>
+  <% state = m.status == "done" ? [t("portal.roadmap.status_done"), "done"] : (m.wip_actor_id || m.commitment.present? ? [t("portal.roadmap.status_in_progress"), "active"] : [t("portal.roadmap.status_planned"), ""]) %>
+  <div class="card row">
+    <span><%= m.title %></span>
+    <span>
+      <% if m.due_date %><span class="muted" style="margin-right:.7rem"><%= l m.due_date, format: :long %></span><% end %>
+      <span class="pill <%= state[1] %>"><%= state[0] %></span>
+    </span>
+  </div>
+<% end %>

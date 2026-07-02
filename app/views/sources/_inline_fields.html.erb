@@ -1,0 +1,277 @@
+<%# #198 Phase 2: Inline-Edit-Felder für Source-Detail. Wird sowohl
+    vom Split-Pane-Detail (`_detail.html.erb`, frame `source_detail`)
+    als auch vom Stack-Card-Detail (`_stack_card_detail.html.erb`,
+    frame `source_detail_<slug>`) verwendet.
+
+    Locals:
+      source         — Source-Record
+      respond_target — String, Name des Hidden-Fields, das dem Controller
+                       sagt, welcher Frame nach dem Save erneuert werden
+                       soll. "in_stack" → source_detail_<slug>,
+                       "in_pane" → source_detail. %>
+
+<%# CSL-Typ-Select + Slug-Pill. %>
+<div class="flex items-center gap-2 text-xs text-slate-500">
+  <%= form_with model: source, url: source_path(source.slug), method: :patch,
+        local: false, class: "contents" do |f| %>
+    <%= hidden_field_tag respond_target, "1" %>
+    <%= f.select :csl_type,
+          Source::CSL_TYPES.map { |t| [I18n.t("sources.csl_types.#{t}", default: t.humanize), t] }.sort_by(&:first),
+          { selected: source.csl_type },
+          onchange: "this.form.requestSubmit()",
+          class: "border border-slate-200 rounded px-1 py-0.5 bg-white" %>
+  <% end %>
+  <span class="font-mono text-slate-400" title="<%= t("sources.inline.cite_key_title", slug: source.slug) %>">@<%= source.slug %></span>
+</div>
+
+<%# #584-Folge (Hans): Autoren/Creators als eigene Sub-Section ZUOBERST.
+    Zusammengeklappt: je vergebener Rolle eine Zeile, Namen mit Semikolon.
+    Aufgeklappt: die Zeilen-Editoren mit Rollenauswahl. Keine UUIDs in
+    der Anzeige. %>
+<%
+  creators_by_role = source.source_creators.includes(:knowledge_item)
+                           .order(:position).group_by(&:role)
+  role_labels = { "author" => t("sources.roles.author"), "editor" => t("sources.roles.editor"),
+                  "translator" => t("sources.roles.translator"), "court" => t("sources.roles.court"),
+                  "reporter" => t("sources.roles.reporter"), "illustrator" => t("sources.roles.illustrator"),
+                  "director" => t("sources.roles.director"), "composer" => t("sources.roles.composer"),
+                  "interviewer" => t("sources.roles.interviewer") }
+%>
+<section data-controller="disclosure" class="group border border-slate-200 rounded"
+         data-disclosure-storage-key-value="source-creators-state">
+  <button type="button"
+          data-action="click->disclosure#toggle"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("sources.inline.authors_creators") %></span>
+  </button>
+
+  <%# Kompakt-Ansicht: sichtbar solange die Section zugeklappt ist
+      (data-collapsed kommt vom disclosure-Controller). %>
+  <div class="group-data-[collapsed=false]:hidden px-3 pb-2 text-xs space-y-0.5">
+    <% if creators_by_role.empty? %>
+      <p class="text-slate-400 italic"><%= t("sources.inline.no_authors") %></p>
+    <% else %>
+      <% SourceCreator::ROLES.each do |role| %>
+        <% next unless (scs = creators_by_role[role]) %>
+        <div class="text-slate-700">
+          <span class="text-slate-500"><%= role_labels.fetch(role, role.humanize) %>:</span>
+          <%= scs.filter_map { |sc| sc.knowledge_item&.title }.join("; ") %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div data-disclosure-target="content" class="hidden px-3 pb-3 border-t border-slate-100 pt-2 text-xs">
+    <%= form_with url: source_path(source.slug), method: :patch, local: false do %>
+      <%= hidden_field_tag respond_target, "1" %>
+      <%# Sentinel-Leerzeile: creators[] wird auch bei null verbliebenen
+          Zeilen gepostet — Löschen-auf-null funktioniert. %>
+      <input type="hidden" name="creators[][knowledge_item_uuid]" value="">
+      <div data-controller="rows-editor">
+        <template data-rows-editor-target="template">
+          <div data-row class="grid grid-cols-[1fr_7rem_auto] gap-1 items-center mb-1">
+            <input type="text" name="creators[][knowledge_item_uuid]"
+                   list="creator-suggestions-<%= source.slug %>" placeholder="<%= t("sources.inline.creator_name_placeholder") %>"
+                   class="rounded border border-slate-200 px-2 py-0.5">
+            <select name="creators[][role]" class="rounded border border-slate-200 px-1 py-0.5">
+              <% SourceCreator::ROLES.each do |r| %><option value="<%= r %>"><%= r %></option><% end %>
+            </select>
+            <button type="button" data-action="click->rows-editor#remove"
+                    class="px-2 text-slate-400 hover:text-rose-600">×</button>
+          </div>
+        </template>
+        <div data-rows-editor-target="rows">
+          <% source.source_creators.includes(:knowledge_item).order(:position).each do |sc| %>
+            <div data-row class="grid grid-cols-[1fr_7rem_auto] gap-1 items-center mb-1">
+              <input type="text" name="creators[][knowledge_item_uuid]"
+                     value="<%= sc.knowledge_item&.title %>"
+                     list="creator-suggestions-<%= source.slug %>"
+                     class="rounded border border-slate-200 px-2 py-0.5">
+              <select name="creators[][role]" class="rounded border border-slate-200 px-1 py-0.5">
+                <% SourceCreator::ROLES.each do |r| %>
+                  <option value="<%= r %>" <%= "selected" if sc.role == r %>><%= r %></option>
+                <% end %>
+              </select>
+              <button type="button" data-action="click->rows-editor#remove"
+                      class="px-2 text-slate-400 hover:text-rose-600">×</button>
+            </div>
+          <% end %>
+        </div>
+        <div class="flex items-center gap-2 mt-1">
+          <button type="button" data-action="click->rows-editor#add"
+                  class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("sources.inline.add_creator") %></button>
+          <%= submit_tag t("actions.save"), class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
+        </div>
+        <%# #584-Folge: keine UUIDs anzeigen — Vorschlagswert ist der Titel;
+            der Server löst Titel → Person auf (sync_creators). %>
+        <datalist id="creator-suggestions-<%= source.slug %>">
+          <% KnowledgeItem.persons_and_orgs.order(:title).each do |k| %>
+            <option value="<%= k.title %>"></option>
+          <% end %>
+        </datalist>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<%# Inline-editierbare Skalar-Felder. #581: Drei-Stufen-Toggle statt
+    auf/zu — zu → nur belegte Felder → alle Felder. Leere Felder tragen
+    data-empty="true" und werden in der Mittelstufe versteckt. %>
+<section data-controller="tri-disclosure"
+         data-tri-disclosure-storage-key-value="source-details-state"
+         class="border border-slate-200 rounded">
+  <button type="button"
+          data-action="click->tri-disclosure#cycle"
+          title="<%= t("sources.inline.details_cycle_title") %>"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-tri-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("sources.inline.details") %></span>
+    <span data-tri-disclosure-target="label" class="text-slate-400"></span>
+  </button>
+  <div data-tri-disclosure-target="content"
+       class="hidden px-3 pb-3 space-y-2 border-t border-slate-100 pt-3 text-xs">
+    <%
+      filled_any = false
+    %>
+    <%# #584: Voll-Edit in die Details verschmolzen — Titel + Slug sind
+        jetzt hier inline editierbar, der Pencil zur Edit-Page entfällt. %>
+    <label class="flex flex-col gap-0.5" data-empty="false">
+      <span class="text-slate-500"><%= t("sources.fields.title_label") %></span>
+      <%= form_with model: source, url: source_path(source.slug), method: :patch,
+            local: false, class: "contents" do |f| %>
+        <%= hidden_field_tag respond_target, "1" %>
+        <%= f.text_field :title, value: source.title,
+              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+              class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+      <% end %>
+    </label>
+    <label class="flex flex-col gap-0.5" data-empty="false">
+      <span class="text-slate-500"><%= t("sources.inline.slug_label_html") %></span>
+      <%= form_with model: source, url: source_path(source.slug), method: :patch,
+            local: false, class: "contents" do |f| %>
+        <%= hidden_field_tag respond_target, "1" %>
+        <%= f.text_field :slug, value: source.slug,
+              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+              class: "border border-slate-200 rounded px-2 py-0.5 bg-white font-mono" %>
+      <% end %>
+    </label>
+    <% [
+      [:container_title,  t("sources.fields.container_title"), :text],
+      [:publisher,        t("sources.fields.publisher"),       :text],
+      [:publisher_place,  t("sources.fields.publisher_place"), :text],
+      [:issued_string,    t("sources.fields.issued_string"),   :text],
+      [:edition,          t("sources.fields.edition"),         :text],
+      [:volume,           t("sources.fields.volume"),          :text],
+      [:issue,            t("sources.fields.issue"),           :text],
+      [:pages,            t("sources.fields.pages"),           :text],
+      [:language,         t("sources.fields.language"),        :text],
+      [:archive,          t("sources.fields.archive"),         :text],
+      [:archive_location, t("sources.fields.archive_location"),:text],
+      [:url,              t("sources.fields.url"),             :url],
+      [:jurisdiction,     t("sources.fields.jurisdiction"),    :text],
+      [:court,            t("sources.fields.court"),           :text],
+      [:docket_number,    t("sources.fields.docket_number"),   :text]
+    ].each do |attr, label, kind| %>
+      <% value_for_empty = attr == :issued_string ? (source.issued_string.presence || source.issued_date&.iso8601) : source.public_send(attr) %>
+      <% field_empty = value_for_empty.to_s.strip.blank? %>
+      <% filled_any ||= !field_empty %>
+      <label class="flex flex-col gap-0.5" data-empty="<%= field_empty %>">
+        <span class="text-slate-500"><%= label %></span>
+        <%= form_with model: source, url: source_path(source.slug), method: :patch,
+              local: false, class: "contents" do |f| %>
+          <%= hidden_field_tag respond_target, "1" %>
+          <% value = value_for_empty %>
+          <% if kind == :url %>
+            <%# #582: Link-Icon zum Öffnen — vorher musste die URL per
+                Zwischenablage in den Browser kopiert werden. %>
+            <span class="flex items-center gap-1.5">
+              <%= f.url_field attr, value: value,
+                    placeholder: "https://…",
+                    onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                    class: "flex-1 min-w-0 border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+              <% if value.present? %>
+                <%= link_to value, target: "_blank", rel: "noopener",
+                      title: t("sources.open_url"),
+                      class: "shrink-0 text-slate-400 hover:text-emerald-700" do %>
+                  <%= icon "external_link", size: "w-3.5 h-3.5" %>
+                <% end %>
+              <% end %>
+            </span>
+          <% else %>
+            <%= f.text_field attr, value: value,
+                  onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                  class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+          <% end %>
+        <% end %>
+      </label>
+    <% end %>
+    <% unless filled_any %>
+      <p class="text-slate-400 italic" data-empty="false"><%= t("sources.inline.no_details") %></p>
+    <% end %>
+
+    <%# #584-Folge: Creators-Editor in die Autoren-Sub-Section zuoberst
+        verschoben. %>
+
+    <%# #584: Identifier editierbar statt read-only (gleiches Muster). %>
+    <div class="border-t border-slate-100 pt-2" data-empty="<%= source.source_identifiers.none? %>">
+      <span class="text-slate-500 font-medium"><%= t("sources.fields.identifier") %></span>
+      <%= form_with url: source_path(source.slug), method: :patch, local: false, class: "mt-1" do %>
+        <%= hidden_field_tag respond_target, "1" %>
+        <%# Sentinel wie bei den Creators — Löschen-auf-null funktioniert. %>
+        <input type="hidden" name="identifiers[][value]" value="">
+        <div data-controller="rows-editor">
+          <template data-rows-editor-target="template">
+            <div data-row class="grid grid-cols-[7rem_1fr_auto] gap-1 items-center mb-1">
+              <select name="identifiers[][scheme]" class="rounded border border-slate-200 px-1 py-0.5">
+                <% SourceIdentifier::KNOWN_SCHEMES.each do |s| %><option value="<%= s %>"><%= s %></option><% end %>
+              </select>
+              <input type="text" name="identifiers[][value]" placeholder="<%= t("sources.fields.value") %>"
+                     class="rounded border border-slate-200 px-2 py-0.5 font-mono">
+              <button type="button" data-action="click->rows-editor#remove"
+                      class="px-2 text-slate-400 hover:text-rose-600">×</button>
+            </div>
+          </template>
+          <div data-rows-editor-target="rows">
+            <% source.source_identifiers.each do |id| %>
+              <div data-row class="grid grid-cols-[7rem_1fr_auto] gap-1 items-center mb-1">
+                <select name="identifiers[][scheme]" class="rounded border border-slate-200 px-1 py-0.5">
+                  <% SourceIdentifier::KNOWN_SCHEMES.each do |s| %>
+                    <option value="<%= s %>" <%= "selected" if id.scheme == s %>><%= s %></option>
+                  <% end %>
+                </select>
+                <input type="text" name="identifiers[][value]" value="<%= id.value %>"
+                       class="rounded border border-slate-200 px-2 py-0.5 font-mono">
+                <button type="button" data-action="click->rows-editor#remove"
+                        class="px-2 text-slate-400 hover:text-rose-600">×</button>
+              </div>
+            <% end %>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <button type="button" data-action="click->rows-editor#add"
+                    class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("sources.inline.add_identifier") %></button>
+            <%= submit_tag t("actions.save"), class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<%# Abstract als Inline-Textarea. %>
+<div class="border-t border-slate-100 pt-2 space-y-1">
+  <span class="text-xs uppercase tracking-wider text-slate-500"><%= t("sources.fields.abstract") %></span>
+  <%= form_with model: source, url: source_path(source.slug), method: :patch,
+        local: false, class: "contents" do |f| %>
+    <%= hidden_field_tag respond_target, "1" %>
+    <%= f.text_area :abstract, value: source.abstract, rows: 4,
+          placeholder: t("sources.inline.abstract_placeholder"),
+          data: { controller: "autosize" },
+          onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+          class: "w-full text-[13px] border border-slate-200 rounded px-2 py-1 bg-white" %>
+  <% end %>
+</div>

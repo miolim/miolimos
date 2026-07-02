@@ -1,0 +1,24 @@
+<%# #618: Inbox-Item-Detail als Stack-Blade. Lädt seine Daten selbst
+    (gleicher Pfad für Klick-Fetch und Stack-Restore). Locals: item. %>
+<%
+  stack_id   = "inboxitem:#{item.id}"
+  processors = Inbox::Registry.all
+  templates  = PromptTemplate.order(:name)
+  suggested  = item.suggested_processor_kind
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[36rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%# #755: Spine-Label gekürzt (lange URLs); volle Form bleibt im title-Tooltip. %>
+  <%= render "shared/blade_spine", stack_id: stack_id,
+        title: item.display_title, icon_html: icon("inbox"), label: item.display_title_short,
+        topics: item.topics %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">
+    <%= render "inbox_items/detail",
+          item: item, processors: processors,
+          prompt_templates: templates, suggested: suggested %>
+  </div>
+</article>

@@ -1,0 +1,85 @@
+<%# Turbo-Frame-Detail für ein Thema. Minimaler Header: Name und Kürzel
+    in einer Zeile. Status/Farbe werden auf der Edit-Seite bearbeitet —
+    das Detail-Panel ist für die Übersicht, nicht für Formularfelder. %>
+<%= turbo_frame_tag "topic_detail" do %>
+  <div id="topic_<%= topic.id %>" class="space-y-3">
+    <%# #170: Breadcrumb über dem Titel raus — die Hierarchie wird
+        jetzt komplett in der Sidebar abgebildet (Sub-Topic-Chevron
+        am Themen-Item). Spart vertikalen Platz oben. %>
+
+    <div class="flex items-center gap-2">
+      <%# #361 (Hans, 2026-05-25): Im Listen-Blade-Mode (expanded=true)
+          leben die Icons in der obersten Zeile (_blade_toolbar) und
+          der Color-Dot auf dem Spine — die Titelzeile bekommt
+          ausschliesslich den editierbaren Namen.
+          Im Frame-Mode (expanded=false) bleibt die alte Anzeige
+          inkl. Color-Dot / Slug / Action-Icons als Fallback. %>
+      <% unless local_assigns[:expanded] %>
+        <span class="inline-block w-3 h-3 rounded-full shrink-0" style="background: <%= topic.color.presence || '#94a3b8' %>"></span>
+      <% end %>
+
+      <%= form_with model: topic, url: topic_path(topic), method: :patch, local: false, class: "flex-1 min-w-0" do |f| %>
+        <%= f.text_field :name,
+              class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                      hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none",
+              onblur: "this.form.requestSubmit()",
+              onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
+      <% end %>
+
+      <% unless local_assigns[:expanded] %>
+        <%# #164: Beschreibung als Info-Icon mit nativem title-Tooltip
+            (nur Frame-Mode — im Listen-Blade-Mode lebt der Body
+            unterhalb im Beschreibung-Block). %>
+        <% if topic.description.present? %>
+          <span class="shrink-0 text-slate-400 hover:text-slate-700 [&_svg]:w-4 [&_svg]:h-4"
+                title="<%= topic.description %>"
+                tabindex="0">
+            <%= icon "info" %>
+          </span>
+        <% end %>
+
+        <% if topic.template? %>
+          <span class="text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded shrink-0"><%= t("topics.template") %></span>
+        <% end %>
+
+        <span class="hidden sm:inline text-xs font-mono text-slate-500 shrink-0"><%= topic.slug %></span>
+        <div class="flex items-center gap-1 shrink-0 text-slate-500">
+          <%= link_to edit_topic_path(topic), data: { turbo_frame: "_top" },
+                title: t("actions.edit"), "aria-label": t("actions.edit"),
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+            <%= icon "pencil" %>
+          <% end %>
+          <%= link_to topic_path(topic), data: { turbo_frame: "_top" },
+                title: t("topics.open_full"), "aria-label": t("topics.full_view"),
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+            <%= icon "expand" %>
+          <% end %>
+          <%= button_to topic_path(topic), method: :delete,
+                class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer",
+                title: t("actions.delete"), "aria-label": t("actions.delete"),
+                form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("topics.delete_confirm") } } do %>
+            <%= icon "trash" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# #164: Beschreibung wandert in den Info-Icon-Tooltip oben. Kein
+        separater Block mehr. %>
+
+    <%# #472 (Hans, 2026-06-02): research_question/research_kind +
+        create_synthesis entfernt. Synthese-Notizen entstehen jetzt ueber
+        die Synthese-KI-Vorlagen im KI-Vorlagen-Picker (#471: Vorlagen
+        statt Subtypen/Research-Felder). %>
+
+    <%# #164: Sub-Themen werden nicht mehr auf der Themen-Seite gezeigt —
+        die hierarchische Gliederung wandert in die Navigationsspalte
+        (gesonderter Task). %>
+
+    <% if topic.template? %>
+      <div class="text-[13px] border-t border-slate-100 pt-3">
+        <%= render "topics/instantiate_form", topic: topic %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

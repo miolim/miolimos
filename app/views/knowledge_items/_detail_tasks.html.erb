@@ -1,0 +1,15 @@
+<%# Verknüpfte Aufgaben — Picker erlaubt Auswahl bestehender Tasks
+    oder Quick-Create (neue Task wird sofort mit dieser KI verknüpft).
+    #130c: kein Section-Label mehr, Chips wandern unter den Picker.
+    #363 (Hans, 2026-05-25): leading-Icon „tasks". %>
+<%= render "shared/entity_picker",
+      icon:           "tasks",
+      chips_id:       "ki_task_mentions_chips_#{item.uuid}",
+      chips_partial:  "knowledge_items/task_mentions_chips",
+      chips_locals:   { item: item },
+      suggest_url:    suggest_tasks_path,
+      add_url:        knowledge_item_task_mentions_path(item),
+      param_name:     "task_id",
+      label:          t("knowledge.detail.task"),
+      placeholder:    t("knowledge.detail.task_placeholder"),
+      create_label:   t("knowledge.detail.create_task") %>

@@ -1,0 +1,28 @@
+<%# Quick-Add-Formular für Tasks (Topic-Tab).
+    Als Partial ausgelagert, damit der Controller es nach erfolgreichem
+    Create per turbo_stream.replace mit einem frischen leeren Formular
+    ersetzen kann.
+    #299: Title-Feld ist gleichzeitig Vorlagen-Picker (siehe
+    dashboard/_agent_quickadd). Kein Default-Agent in diesem Kontext. %>
+<div data-controller="task-template-picker"
+     data-task-template-picker-title-target-id-value="task_quickadd_form_title"
+     data-task-template-picker-description-target-id-value="task_quickadd_form_description"
+     class="relative">
+  <%= form_with url: tasks_path, method: :post, id: "task_quickadd_form", class: "flex gap-2" do |f| %>
+    <%= f.hidden_field :topic_id, value: topic.id %>
+    <%= f.hidden_field :description, id: "task_quickadd_form_description" %>
+    <%= f.text_field :title,
+          id: "task_quickadd_form_title",
+          placeholder: t("tasks.quick_add_placeholder"),
+          autofocus: local_assigns[:autofocus],
+          autocomplete: "off",
+          data: {
+            "task-template-picker-target": "input",
+            action: "input->task-template-picker#fetch focus->task-template-picker#fetch keydown->task-template-picker#keydown blur->task-template-picker#blur"
+          },
+          class: "flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    <%= f.submit t("tasks.add"), class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+  <% end %>
+  <ul data-task-template-picker-target="list"
+      class="hidden absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+</div>

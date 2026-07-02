@@ -1,0 +1,77 @@
+<%# #532 (2026-06-08): Rechnung auf DIN-5008-Geometrie (Form B) — der
+    Empfänger steht im fenstertauglichen Anschriftfeld; Rechnungs-Metadaten
+    im Informationsblock rechts. %>
+<div class="din-page">
+  <%= render "documents/letterhead" %>
+
+  <div class="din-mark din-fold-1"></div>
+  <div class="din-mark din-hole"></div>
+  <div class="din-mark din-fold-2"></div>
+
+  <div class="din-address">
+    <div class="din-return"><%= document_sender_oneline(@issuer) %></div>
+    <div class="din-zvz">&nbsp;</div>
+    <div class="din-recipient">
+      <strong>Muster GmbH</strong><br>
+      Beispielweg 12<br>
+      10117 Berlin
+    </div>
+  </div>
+
+  <div class="din-divider"></div>
+
+  <div class="din-info">
+    <div class="row"><span class="k"><%= t("documents.invoice.invoice_number") %></span><span>2026-0001</span></div>
+    <div class="row"><span class="k"><%= t("documents.invoice.invoice_date") %></span><span>8. Juni 2026</span></div>
+    <div class="row"><span class="k"><%= t("documents.invoice.service_period") %></span><span>01.–31.05.2026</span></div>
+    <div class="row"><span class="k"><%= t("documents.invoice.customer_number") %></span><span>K-0042</span></div>
+  </div>
+
+  <div class="din-spacer"></div>
+  <div class="din-body">
+    <div class="doc">
+      <h1><%= t("documents.invoice.invoice") %></h1>
+
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th><%= t("documents.invoice.col_position") %></th>
+            <th class="num"><%= t("documents.invoice.col_quantity") %></th>
+            <th class="num"><%= t("documents.invoice.col_unit_price") %></th>
+            <th class="num"><%= t("documents.invoice.col_amount") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Beratung Projekt X — Konzeption &amp; Umsetzung</td>
+            <td class="num">12,0 h</td>
+            <td class="num">120,00 €</td>
+            <td class="num">1.440,00 €</td>
+          </tr>
+          <tr>
+            <td>Beratung Projekt X — Abstimmung &amp; Doku</td>
+            <td class="num">3,5 h</td>
+            <td class="num">120,00 €</td>
+            <td class="num">420,00 €</td>
+          </tr>
+          <tr>
+            <td>Auslagen — Bahnfahrt Hamburg–Berlin (Beleg)</td>
+            <td class="num">1</td>
+            <td class="num">89,90 €</td>
+            <td class="num">89,90 €</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="doc-totals">
+        <div class="row"><span><%= t("documents.invoice.net_amount") %></span><span>1.949,90 €</span></div>
+        <div class="row"><span><%= t("documents.invoice.plus_vat", rate: "19") %></span><span>370,48 €</span></div>
+        <div class="row grand"><span><%= t("documents.invoice.total_amount") %></span><span>2.320,38 €</span></div>
+      </div>
+
+      <p style="margin-top:10mm; font-size:9pt; color:#4b5563;">
+        <%= t("documents.invoice.payment_note_html") %>
+      </p>
+    </div>
+  </div>
+</div>

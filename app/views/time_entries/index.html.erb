@@ -1,0 +1,23 @@
+<% content_for :title, t("time_entries.title") %>
+
+<%# #533 #5 (Hans, 2026-06-07): /time_entries ist ein Blade-Stack. Initiales
+    Card ist die 3-Reiter-Zeiten-Liste; ?stack= kann Detail-Blades anhängen
+    (time:<id>, task:<id>, …) — so funktionieren die Drill-down-Klicks. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="time_entries.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "time_entries" %>
+        <%= render "time_entries/list_blade_card" %>
+      <% else %>
+        <% locals = stack_item.partial_locals %>
+        <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+        <%= render stack_item.partial, **locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

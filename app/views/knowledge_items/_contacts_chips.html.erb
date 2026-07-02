@@ -1,0 +1,17 @@
+<%# Chips für die erwähnten Personen/Orgs eines KIs. Wird bei jedem
+    Add/Remove via Turbo-Stream replaced. %>
+<div id="knowledge_contacts_chips_<%= item.uuid %>" class="flex flex-wrap gap-1.5">
+  <% item.mentioned_kis.order(:title).each do |ki| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= link_to ki.display_name, knowledge_item_path(ki.uuid),
+            class: "hover:underline" %>
+      <%= button_to knowledge_item_mention_path(knowledge_item_uuid: item.uuid, id: ki.uuid),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("knowledge.chip.unlink"), "aria-label": t("knowledge.chip.unlink_short"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

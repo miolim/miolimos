@@ -1,0 +1,60 @@
+<%# #532/#548/#559 (Hans): Infoblock-Felder. #559: einheitliches 3-Spalten-
+    Raster — Spalte 1 lässt überall Platz für die Personen-ID-Checkbox (auch
+    wo nicht relevant), Spalte 2 sind die Keys (zuoberst Ihr/Unser Zeichen,
+    dann die IDs), Spalte 3 die Values (alle linksbündig). %>
+<% document = local_assigns.fetch(:document) %>
+<% g = "grid grid-cols-[1.25rem_7rem_1fr_auto] gap-x-2 gap-y-1 items-center" %>
+<% inp = "w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-xs" %>
+<section id="document_infofields_<%= document.id %>" class="space-y-1.5 text-[13px] pt-3 mt-3 border-t border-slate-300">
+  <div class="text-[15px] font-semibold text-slate-600"><%= t("documents.fields.infoblock_fields") %></div>
+
+  <%# — Ihr / Unser Zeichen — Spalte 1 leer (kein Checkbox), Key, Value. %>
+  <div class="<%= g %>">
+    <span></span>
+    <span class="text-slate-500"><%= t("documents.fields.your_ref") %></span>
+    <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
+      <%= text_field_tag :your_ref, document.your_ref,
+            onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inp %>
+    <% end %>
+    <span></span>
+
+    <span></span>
+    <span class="text-slate-500"><%= t("documents.fields.our_ref") %></span>
+    <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
+      <%= text_field_tag :our_ref, document.our_ref,
+            onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inp %>
+    <% end %>
+    <span></span>
+  </div>
+
+  <%# — Freie Key-Value-Felder — gleiches Raster, Spalte 4 = Löschen. %>
+  <%= form_with url: document_fields_document_path(document), method: :patch, local: false,
+        data: { controller: "rows-editor" } do %>
+    <template data-rows-editor-target="template">
+      <div data-row class="<%= g %>">
+        <span></span>
+        <input type="text" name="fields[][label]" placeholder="<%= t("documents.fields.label_placeholder") %>" class="<%= inp %>">
+        <input type="text" name="fields[][value]" placeholder="<%= t("documents.fields.value_placeholder") %>" class="<%= inp %>">
+        <button type="button" data-action="click->rows-editor#remove" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+      </div>
+    </template>
+    <div data-rows-editor-target="rows" class="space-y-1">
+      <% document.document_fields.ordered.each do |fld| %>
+        <div data-row class="<%= g %>">
+          <input type="hidden" name="fields[][id]" value="<%= fld.id %>">
+          <span></span>
+          <input type="text" name="fields[][label]" value="<%= fld.label %>" class="<%= inp %>">
+          <input type="text" name="fields[][value]" value="<%= fld.value %>" class="<%= inp %>">
+          <button type="button" data-action="click->rows-editor#remove" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+        </div>
+      <% end %>
+    </div>
+    <div class="flex items-center gap-2 pt-1 pl-[1.5rem]">
+      <button type="button" data-action="click->rows-editor#add" class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("documents.fields.add_field") %></button>
+      <button type="submit" class="ml-auto text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("actions.save") %></button>
+    </div>
+  <% end %>
+
+  <%# — Personen-IDs an/abwählen — Checkbox in Spalte 1, Wert linksbündig. %>
+  <%= render "documents/id_candidates", document: document %>
+</section>

@@ -1,0 +1,109 @@
+<%# #163 Phase 6c (KI): list:knowledge_items-Blade fuer die
+    /knowledge_items-Stack-Seite. Enthaelt die volle KI-Liste mit
+    Toolbar (Type-Picker, Sort, Filter, Chat-Import-Prompt) als
+    sticky-Header. Klick auf eine Zeile appendet die KI-Stack-Card
+    rechts (via blade-stack#openFromList, identisch zur Legacy-Aside);
+    die Listen-Blade collapsed automatisch (Phase 6b).
+
+    Datenquelle: @items (vom Controller).
+    #257: self-contained Fallback — wird die Blade ueber das Sidebar-
+    Plus oder einen Cross-Page-Stack-Restore gerendert, ist @items
+    nicht vom Controller gesetzt. Dann hier die Default-Liste laden,
+    damit die Blade ueberall funktioniert, nicht nur auf der
+    /knowledge_items-Page. %>
+<% stack_id = "list:knowledge_items" %>
+<% @sort ||= (params[:sort].presence || "title").to_s %>
+<% @dir  ||= (params[:dir].presence  || "asc").to_s %>
+<% @show_superseded = params[:superseded].to_s == "1" if @show_superseded.nil? %>
+<% @items ||= begin
+     dir = @dir == "desc" ? :desc : :asc
+     s = KnowledgeItem.non_reply.includes(:creator)   # #436: Reply-KIs nicht listen
+     # #460 (Hans, 2026-06-04): Abgelöste KIs standardmäßig ausblenden.
+     s = s.not_superseded unless @show_superseded
+     s = s.where(item_type: params[:item_type]) if params[:item_type].present?
+     case @sort
+     when "file_updated_at" then s.order(file_updated_at: dir)
+     when "file_created_at" then s.order(file_created_at: dir)
+     when "item_type"       then s.order(item_type: dir).order(:title)
+     else                        s.order(Arel.sql("LOWER(title) #{dir}"))
+     end
+   end %>
+<%
+  filter_type = params[:item_type].to_s
+  picker_types =
+    case filter_type
+    when "person", "organization", "person,organization"
+      %w[person organization]
+    when ""
+      %w[note abstract transcript direct_quote indirect_quote comment doc]
+    else
+      [filter_type]
+    end
+  type_options = [[t("knowledge.list.index.all_types"), ""]] +
+                 KnowledgeItem.item_types.keys.map { |k| [k.humanize, k] }
+%>
+<%# #703 (Hans): list-columns-Feature entfernt (Spalten + „Spalten erweitern"). %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative
+                w-[28rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t('knowledge.index_title') %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="shrink-0 text-slate-500"><%= icon "knowledge" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("knowledge.index_title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
+       data-controller="list-search">
+    <%# #558: Sortieren/Filtern rendert IN-PLACE in diesem Frame (Stack bleibt).
+        display:contents = layout-neutral (sticky Header bleibt funktionsfähig). %>
+    <turbo-frame id="knowledge_list_frame" class="contents">
+    <%# #703 (Hans): einheitlicher Topbereich via shared/list_header.
+        Add = Typ-Picker (Plus), Controls = Sortier-/Filter-Toolbar. %>
+    <% knowledge_controls = capture do %>
+      <%= render "shared/list_toolbar",
+            path:           list_card_knowledge_items_path,
+            frame:          "knowledge_list_frame",
+            sort_options:   [[t("knowledge.list.index.sort_title"), :title],
+                             [t("knowledge.list.index.sort_updated"), :file_updated_at],
+                             [t("knowledge.list.index.sort_created"), :file_created_at],
+                             [t("knowledge.list.index.sort_type"), :item_type]],
+            filter_fields:  [
+              { name: :item_type, type: :select, label: t("knowledge.list.index.filter_type"),
+                options: type_options }
+            ],
+            current_sort:   @sort,
+            current_dir:    @dir,
+            filter_values:  { item_type: params[:item_type] }.compact_blank,
+            storage_key:    "knowledge_items" %>
+    <% end %>
+    <%= render "shared/list_header",
+          lead_icon: "knowledge", title: t("knowledge.index_title"),
+          count: @items.size,
+          add:      render("knowledge_items/type_picker", types: picker_types),
+          search:   render("shared/list_search", placeholder: t("knowledge.list.index.search_placeholder")),
+          controls: knowledge_controls %>
+
+    <ul id="knowledge_list" class="divide-y divide-slate-100">
+      <% @items.each do |k| %>
+        <%= render "knowledge_items/list_row", item: k %>
+      <% end %>
+      <% if @items.empty? %>
+        <li class="px-4 py-3 text-slate-500 text-sm">—</li>
+      <% end %>
+    </ul>
+    <p data-list-search-target="empty" class="hidden px-4 py-2 text-xs text-slate-400 italic"><%= t("knowledge.list.index.no_results") %></p>
+    </turbo-frame>
+  </div>
+</article>

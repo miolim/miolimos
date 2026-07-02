@@ -1,0 +1,41 @@
+<%# #592: Baum-Picker (Linsen-Modell) — beide Reiter (Work-Tree +
+    Zweckgeflecht) zeigen JEDEN Baum des Topics; der Reiter bestimmt nur
+    die Linse. Locals: topic, tab, current_tree (TopicTree|nil),
+    new_kind (Default-Art für "+ Baum"). %>
+<% trees = topic.topic_trees.order(:position).to_a %>
+<% if trees.size > 1 || trees.none? %>
+  <div class="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-slate-100 text-xs">
+    <% trees.each do |t| %>
+      <span class="inline-flex items-center">
+        <%= link_to topic_path(topic, tab: tab, tree_id: t.id),
+              data: { action: "click->topic-tabs#switch",
+                      "topic-tabs-url-param": list_card_topic_path(topic, tab: tab, tree_id: t.id) },
+              class: "px-2 py-0.5 rounded-full border cursor-pointer
+                      #{current_tree&.id == t.id ? 'bg-slate-700 border-slate-700 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}" do %>
+          <%= t.display_name %>
+        <% end %>
+        <%# #600: Baum löschen (Knoten weg, KIs bleiben) — nur am gerade
+            gewählten Baum, damit die Leiste nicht voller Mülleimer hängt. %>
+        <% if current_tree&.id == t.id %>
+          <%= button_to "×", topic_tree_path(topic.slug, t), method: :delete,
+                form: { class: "inline-block m-0 p-0 leading-none ml-0.5",
+                        data: { turbo_confirm: t("topics.tree_delete_confirm", name: t.display_name, count: t.nodes.count) } },
+                title: t("topics.tree_delete"),
+                class: "px-1 text-slate-400 hover:text-rose-600 cursor-pointer" %>
+        <% end %>
+      </span>
+    <% end %>
+    <details class="relative inline-block ml-auto">
+      <summary class="list-none px-2 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer">+ Baum</summary>
+      <div class="absolute right-0 top-7 z-30 bg-white border border-slate-200 rounded shadow-lg p-2 w-56">
+        <%= form_with url: topic_trees_path(topic.slug), method: :post, local: false, class: "space-y-1" do %>
+          <%= hidden_field_tag :kind, new_kind %>
+          <%= hidden_field_tag :tab, tab %>
+          <%= text_field_tag :name, nil, placeholder: t("topics.tree_name_placeholder"),
+                autocomplete: "off",
+                class: "w-full text-xs rounded border border-slate-200 px-2 py-1" %>
+        <% end %>
+      </div>
+    </details>
+  </div>
+<% end %>

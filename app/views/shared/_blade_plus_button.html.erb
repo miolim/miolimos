@@ -1,0 +1,24 @@
+<%# #224 6f-2 cleanup: Plus-Icon-on-Hover (Desktop) bzw. immer (Mobile)
+    fuer Listen-Row-Partials. Appendet das Detail-Blade ans Sub-Stack-
+    Ende statt es zu ersetzen.
+
+    Voraussetzung: Parent-Element hat `class="group"` (sonst greift
+    group-hover nicht).
+
+    Locals:
+      - kind  ("task" | "topic" | "source" | "awaiting" | "communication" | "list")
+      - id    (slug / id) %>
+<button type="button"
+        data-controller="blade-link"
+        data-blade-link-kind-value="<%= kind %>"
+        data-blade-link-id-value="<%= id %>"
+        data-blade-link-mode-value="append_to_substack"
+        data-action="click->blade-link#append"
+        title="An aktuellen Stack anhängen"
+        aria-label="An Stack anhängen"
+        class="flex md:invisible md:group-hover:visible shrink-0 items-center justify-center
+               w-5 h-5 rounded text-slate-400 bg-transparent border-0
+               hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
+               leading-none text-base">
+  +
+</button>

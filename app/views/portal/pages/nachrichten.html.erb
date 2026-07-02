@@ -1,0 +1,21 @@
+<% content_for :title, "#{t("portal.nachrichten.title")} — #{portal_topic.name}" %>
+<h1><%= t("portal.nachrichten.title") %></h1>
+<% if @messages.empty? %>
+  <p class="muted"><%= t("portal.nachrichten.empty") %></p>
+<% end %>
+<% @messages.each do |m| %>
+  <div class="msg <%= m.from_customer? ? 'customer' : 'us' %>">
+    <p class="muted"><%= m.from_customer? ? t("portal.nachrichten.sender_you") : "miolim" %> · <%= l m.created_at, format: :short %></p>
+    <p><%= simple_format(m.body.to_s) %></p>
+  </div>
+<% end %>
+
+<% unless @export %>
+<h2><%= t("portal.nachrichten.new_message") %></h2>
+<div class="card">
+  <%= form_with url: portal_nachrichten_path, method: :post, local: true, class: "stack" do %>
+    <textarea name="body" placeholder="<%= t("portal.nachrichten.body_placeholder") %>" required></textarea>
+    <button class="primary" type="submit"><%= t("portal.nachrichten.send") %></button>
+  <% end %>
+</div>
+<% end %>

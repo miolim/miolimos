@@ -1,0 +1,192 @@
+<%# Source-Form: alle CSL-Felder. Type-spezifische Sichtbarkeit machen
+    wir später per JS — V1 zeigt einfach alles, der User entscheidet. %>
+<%= form_with model: source, url: source.persisted? ? source_path(source.slug) : sources_path,
+      local: true, class: "space-y-3 max-w-3xl mx-auto" do |f| %>
+
+  <% if source.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-rose-800 text-sm">
+      <ul class="list-disc ml-4">
+        <% source.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Reihenfolge per #114: Typ + Slug → Creators → Title →
+      Identifiers → URL → Container/Jahr/Verlag/… → Juristisches.
+      Mehrere kleine Grid-Blöcke, getrennt durch die beiden Fieldsets,
+      bewahren dabei die saubere "8rem | 1fr"-Spaltenoptik. %>
+
+  <div class="grid grid-cols-[8rem_1fr] gap-3 items-start text-[13px]">
+    <%= f.label :csl_type, t("sources.fields.csl_type"), class: "pt-1 text-slate-600" %>
+    <%= f.select :csl_type, Source::CSL_TYPES.map { |t| [I18n.t("sources.csl_types.#{t}", default: t.humanize), t] }.sort_by(&:first), {},
+          class: "rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :slug, t("sources.fields.slug"), class: "pt-1 text-slate-600" %>
+    <div>
+      <%= f.text_field :slug, placeholder: t("sources.fields.slug_placeholder"),
+            class: "w-full rounded border border-slate-200 px-2 py-1 font-mono" %>
+      <p class="text-xs text-slate-500 mt-0.5"><%= t("sources.fields.slug_hint_html") %></p>
+    </div>
+  </div>
+
+  <%# Creators (Person/Org-KI-uuid + Rolle) — bewusst vor dem Titel,
+      damit man die Quelle erst „verortet". %>
+  <fieldset class="border border-slate-200 rounded p-3">
+    <legend class="text-xs uppercase tracking-wider text-slate-500 px-1"><%= t("sources.form.creators_legend") %></legend>
+    <div data-controller="rows-editor">
+      <% existing_creators = source.persisted? ? source.source_creators.includes(:knowledge_item).to_a : [] %>
+      <template data-rows-editor-target="template">
+        <div data-row class="grid grid-cols-[1fr_8rem_auto] gap-2 items-center mb-1">
+          <input type="text" name="creators[][knowledge_item_uuid]"
+                 list="creator-suggestions" placeholder="<%= t("sources.form.creator_placeholder") %>"
+                 class="rounded border border-slate-200 px-2 py-0.5 text-xs">
+          <select name="creators[][role]" class="rounded border border-slate-200 px-1 py-0.5 text-xs">
+            <% SourceCreator::ROLES.each do |r| %>
+              <option value="<%= r %>"><%= r %></option>
+            <% end %>
+          </select>
+          <button type="button" data-action="click->rows-editor#remove"
+                  class="px-2 text-slate-400 hover:text-rose-600">×</button>
+        </div>
+      </template>
+      <div data-rows-editor-target="rows">
+        <% existing_creators.each do |sc| %>
+          <div data-row class="grid grid-cols-[1fr_8rem_auto] gap-2 items-center mb-1">
+            <input type="text" name="creators[][knowledge_item_uuid]"
+                   value="<%= sc.knowledge_item&.title || sc.knowledge_item_uuid %>"
+                   list="creator-suggestions"
+                   class="rounded border border-slate-200 px-2 py-0.5 text-xs">
+            <select name="creators[][role]" class="rounded border border-slate-200 px-1 py-0.5 text-xs">
+              <% SourceCreator::ROLES.each do |r| %>
+                <option value="<%= r %>" <%= "selected" if sc.role == r %>><%= r %></option>
+              <% end %>
+            </select>
+            <button type="button" data-action="click->rows-editor#remove"
+                    class="px-2 text-slate-400 hover:text-rose-600">×</button>
+          </div>
+        <% end %>
+      </div>
+      <button type="button" data-action="click->rows-editor#add"
+              class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
+        <%= t("sources.form.add_creator") %>
+      </button>
+      <datalist id="creator-suggestions">
+        <% KnowledgeItem.persons_and_orgs.order(:title).each do |k| %>
+          <option value="<%= k.uuid %>"><%= k.title %></option>
+        <% end %>
+      </datalist>
+    </div>
+  </fieldset>
+
+  <div class="grid grid-cols-[8rem_1fr] gap-3 items-start text-[13px]">
+    <%= f.label :title, t("sources.fields.title_label"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :title, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+
+  <%# Identifiers direkt hinter dem Titel — sind oft das, was man
+      noch zur Hand hat (DOI, ISBN, ECLI etc.). %>
+  <fieldset class="border border-slate-200 rounded p-3">
+    <legend class="text-xs uppercase tracking-wider text-slate-500 px-1"><%= t("sources.fields.identifier") %></legend>
+    <div data-controller="rows-editor">
+      <template data-rows-editor-target="template">
+        <div data-row class="grid grid-cols-[8rem_1fr_auto] gap-2 items-center mb-1">
+          <select name="identifiers[][scheme]" class="rounded border border-slate-200 px-1 py-0.5 text-xs">
+            <% SourceIdentifier::KNOWN_SCHEMES.each do |s| %>
+              <option value="<%= s %>"><%= s %></option>
+            <% end %>
+          </select>
+          <input type="text" name="identifiers[][value]" placeholder="<%= t("sources.fields.value") %>"
+                 class="rounded border border-slate-200 px-2 py-0.5 text-xs font-mono">
+          <button type="button" data-action="click->rows-editor#remove"
+                  class="px-2 text-slate-400 hover:text-rose-600">×</button>
+        </div>
+      </template>
+      <div data-rows-editor-target="rows">
+        <% (source.persisted? ? source.source_identifiers : []).each do |id| %>
+          <div data-row class="grid grid-cols-[8rem_1fr_auto] gap-2 items-center mb-1">
+            <select name="identifiers[][scheme]" class="rounded border border-slate-200 px-1 py-0.5 text-xs">
+              <% SourceIdentifier::KNOWN_SCHEMES.each do |s| %>
+                <option value="<%= s %>" <%= "selected" if id.scheme == s %>><%= s %></option>
+              <% end %>
+            </select>
+            <input type="text" name="identifiers[][value]" value="<%= id.value %>"
+                   class="rounded border border-slate-200 px-2 py-0.5 text-xs font-mono">
+            <button type="button" data-action="click->rows-editor#remove"
+                    class="px-2 text-slate-400 hover:text-rose-600">×</button>
+          </div>
+        <% end %>
+      </div>
+      <button type="button" data-action="click->rows-editor#add"
+              class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
+        <%= t("sources.form.add_identifier") %>
+      </button>
+    </div>
+  </fieldset>
+
+  <div class="grid grid-cols-[8rem_1fr] gap-3 items-start text-[13px]">
+    <%= f.label :url, t("sources.fields.url"), class: "pt-1 text-slate-600" %>
+    <%# #582: Link-Icon zum Öffnen der hinterlegten URL. %>
+    <span class="flex items-center gap-1.5">
+      <%= f.url_field :url, class: "flex-1 min-w-0 rounded border border-slate-200 px-2 py-1" %>
+      <% if f.object.url.present? %>
+        <%= link_to f.object.url, target: "_blank", rel: "noopener", title: t("sources.open_url"),
+              class: "shrink-0 text-slate-400 hover:text-emerald-700" do %>
+          <%= icon "external_link", size: "w-4 h-4" %>
+        <% end %>
+      <% end %>
+    </span>
+
+    <%= f.label :container_title, t("sources.fields.container_title"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :container_title,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :issued_string, t("sources.fields.issued_string"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :issued_string, value: source.issued_string.presence || source.issued_date&.iso8601,
+          placeholder: t("sources.fields.issued_string_placeholder"),
+          class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :publisher, t("sources.fields.publisher"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :publisher, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :publisher_place, t("sources.fields.publisher_place"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :publisher_place, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :edition, t("sources.fields.edition"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :edition, class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :volume, t("sources.fields.volume"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :volume, class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :issue, t("sources.fields.issue"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :issue, class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :pages, t("sources.fields.pages"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :pages, placeholder: "33–47", class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :language, t("sources.fields.language"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :language, placeholder: "de, en …", class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :abstract, t("sources.fields.abstract"), class: "pt-1 text-slate-600" %>
+    <%= f.text_area :abstract, rows: 4, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%# Juristische Felder — nur sinnvoll für legal_case/legislation, V1 immer sichtbar. %>
+    <%= f.label :jurisdiction, t("sources.fields.jurisdiction"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :jurisdiction, placeholder: "DE, EU, DE-SH …",
+          class: "w-32 rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :court, t("sources.fields.court"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :court, placeholder: "BGH, BVerfG …",
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+
+    <%= f.label :docket_number, t("sources.fields.docket_number"), class: "pt-1 text-slate-600" %>
+    <%= f.text_field :docket_number, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= f.submit (source.persisted? ? t("actions.save") : t("actions.create")),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), (source.persisted? ? source_path(source.slug) : sources_path),
+          class: "px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50" %>
+  </div>
+<% end %>

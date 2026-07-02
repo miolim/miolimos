@@ -1,0 +1,5 @@
+<% content_for :title, t("topics.new") %>
+<div class="max-w-xl bg-white rounded border border-slate-200 p-4">
+  <h1 class="text-lg font-semibold mb-3"><%= t("topics.new") %></h1>
+  <%= render "form", topic: @topic %>
+</div>

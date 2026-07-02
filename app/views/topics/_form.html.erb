@@ -1,0 +1,62 @@
+<%= form_with model: topic, local: true, class: "space-y-3" do |f| %>
+  <% if topic.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 p-3 text-rose-800">
+      <ul class="list-disc ml-4">
+        <% topic.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :name, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :slug, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :slug, required: true,
+          class: "w-full rounded border border-slate-200 px-2 py-1 font-mono" %>
+  </div>
+  <div>
+    <%= f.label :description, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_area :description, rows: 4,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <%# #472 (Hans, 2026-06-02): Recherchefrage + Recherche-Typ entfernt —
+      Recherche-Topics laufen über Vorlagen/Tags (#471), Synthesen über
+      die Synthese-KI-Vorlagen. %>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <%= f.label :status, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.select :status, Topic.statuses.keys.map { |k| [k, k] },
+            {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <%= f.label :color, class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.color_field :color, class: "w-full rounded border border-slate-200 px-2 py-1 h-9" %>
+    </div>
+  </div>
+  <%# #150: Sub-Topics — Parent kann jedes Topic sein, das nicht das
+      Topic selbst oder ein Nachfahre ist. %>
+  <div>
+    <%= f.label :parent_topic_id, "Übergeordnetes Thema (optional)",
+          class: "block text-xs text-slate-600 mb-1" %>
+    <%
+      excluded = topic.persisted? ? ([topic.id] + topic.descendant_topics.map(&:id)) : []
+      parent_options = [["— kein übergeordnetes Thema —", ""]] +
+                       Topic.visible_to(Current.actor).where.not(id: excluded).non_templates.order(:name).pluck(:name, :id)
+    %>
+    <%= f.select :parent_topic_id, options_for_select(parent_options, topic.parent_topic_id),
+          {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :template %>
+    <%= f.label :template, "Vorlage", class: "text-xs text-slate-600" %>
+  </div>
+
+  <div class="flex gap-2">
+    <%= f.submit t("actions.save"),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), topics_path, class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+  </div>
+<% end %>

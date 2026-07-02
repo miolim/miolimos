@@ -1,0 +1,97 @@
+<%# #613: aus app/views/settings/accounts/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_accounts. %>
+  
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+      <h1 class="font-semibold"><%= t("settings.accounts.title") %></h1>
+      <%= link_to t("settings.accounts.connect"), connect_settings_accounts_path,
+            class: "text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700" %>
+    </header>
+
+    <%# #768 (Hans): globale Mail-Sync-Policy — internen Team-Verkehr
+        vom Import ausschließen (Default) oder einschließen. %>
+    <section class="px-4 py-3 border-b border-slate-200">
+      <%= form_with url: sync_policy_settings_accounts_path, method: :patch, data: { turbo: false } do %>
+        <label class="flex items-start gap-2 text-sm cursor-pointer">
+          <input type="checkbox" name="exclude_internal" value="1" class="mt-0.5"
+                 <%= "checked" if Setting.sync_exclude_internal_team? %>
+                 onchange="this.form.requestSubmit()">
+          <span>
+            <span class="font-medium"><%= t("settings.accounts.exclude_internal") %></span>
+            <span class="block text-xs text-slate-500"><%= t("settings.accounts.exclude_internal_help") %></span>
+          </span>
+        </label>
+      <% end %>
+    </section>
+
+    <% if @credentials.empty? %>
+      <p class="px-4 py-3 text-slate-500"><%= t("settings.accounts.none") %></p>
+    <% else %>
+      <table class="w-full text-[13px]">
+        <thead class="text-[11px] uppercase tracking-wider text-slate-500">
+          <tr class="border-b border-slate-200">
+            <th class="text-left px-4 py-1.5"><%= t("settings.accounts.col_email") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.accounts.col_owner") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.accounts.col_active") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.accounts.col_expires") %></th>
+            <th class="text-left px-4 py-1.5"><%= t("settings.accounts.col_gcal") %></th>
+            <th class="text-right px-4 py-1.5"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @credentials.each do |c| %>
+            <tr class="border-b border-slate-100">
+              <td class="px-4 py-2 font-mono"><%= c.email_address %></td>
+              <td class="px-4 py-2"><%= c.actor.name %></td>
+              <td class="px-4 py-2">
+                <%# #760 (Hans, 2026-06-23): inaktiv (z.B. Token abgelaufen/
+                    widerrufen) = klarer, verlinkter Reconnect-Hinweis statt ✗. %>
+                <% if c.active? %>
+                  <span class="text-emerald-600">✓</span>
+                <% else %>
+                  <%= link_to t("settings.accounts.reconnect_needed"), connect_settings_accounts_path,
+                        class: "inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs hover:bg-amber-100" %>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 text-xs text-slate-500">
+                <%= l(c.expires_at, format: :short) if c.expires_at %>
+              </td>
+              <td class="px-4 py-2">
+                <%# #573-Folge: Ziel-Kalender für den GCal-Push (leer = primary). %>
+                <%= form_with url: update_settings_settings_account_path(c), method: :patch, local: true, class: "flex items-center gap-1" do %>
+                  <%= text_field_tag :gcal_calendar_id, c.gcal_calendar_id,
+                        placeholder: t("settings.accounts.gcal_placeholder"),
+                        autocomplete: "off",
+                        class: "w-56 text-xs rounded border border-slate-200 px-2 py-1 font-mono" %>
+                  <%= submit_tag "OK", class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer" %>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 text-right">
+                <%= button_to t("settings.accounts.sync_now"), sync_settings_account_path(c), method: :post,
+                      class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 mr-1",
+                      form: { class: "inline" } %>
+                <%= button_to t("settings.accounts.disconnect"), settings_account_path(c), method: :delete,
+                      class: "text-xs px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100",
+                      form: { class: "inline", data: { turbo_confirm: t("settings.accounts.disconnect_confirm", email: c.email_address) } } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="bg-white rounded border border-slate-200 p-4 text-[13px] text-slate-600">
+    <div class="font-semibold mb-1 text-slate-700"><%= t("settings.accounts.setup_title") %></div>
+    <ol class="list-decimal ml-5 space-y-1">
+      <li><%= t("settings.accounts.setup_1_html") %></li>
+      <li><%= t("settings.accounts.setup_2_html") %>
+          <code class="bg-slate-100 px-1 py-0.5 rounded"><%= callback_settings_accounts_url %></code></li>
+      <li><%= t("settings.accounts.setup_3_html") %>
+        <pre class="mt-1 bg-slate-50 px-3 py-2 rounded border border-slate-200 text-xs font-mono">google:
+  oauth_client_id: "…"
+  oauth_client_secret: "…"</pre>
+      </li>
+      <li><%= t("settings.accounts.setup_4_html") %></li>
+    </ol>
+  </div>

@@ -1,0 +1,70 @@
+<%# #163 Phase 5a-2: Listen-Blade fuer Quellen. #631 v3: das Blade IST
+    jetzt die Quellen-Seite (Split-Pane abgelöst) — Limit hoch, Suche
+    bleibt client-seitig. %>
+<%
+  stack_id = "list:sources"
+  sources  = Source.order(Arel.sql("LOWER(title)")).limit(300).to_a
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
+         title="<%= t("sources.title") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+         data-target-uuid="<%= stack_id %>">
+    <span class="shrink-0 text-slate-500"><%= icon "quote" %></span>
+    <%# #630: Quellen-Listen-Link kopieren. %>
+    <%= blade_copy_button(stack_id) %>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("sources.title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2"
+       data-controller="list-search">
+    <div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex items-center gap-2">
+      <span class="text-slate-500"><%= icon "quote" %></span>
+      <span class="font-semibold text-sm"><%= t("sources.title") %></span>
+      <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= sources.size %></span>
+      <div class="flex-1 min-w-0">
+        <%= render "shared/list_search", placeholder: t("sources.search_placeholder") %>
+      </div>
+      <%# #631 v3: Expand-Link raus — das Blade IST die Quellen-Seite.
+          Dafür: Neue Quelle anlegen. %>
+      <%= link_to new_source_path, data: { turbo_frame: "_top" },
+            title: t("sources.new_source_title"), "aria-label": t("sources.new_source"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 text-slate-500 shrink-0" do %>
+        <%= icon "plus_circle", size: "w-4 h-4" %>
+      <% end %>
+    </div>
+
+    <% if sources.empty? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= t("sources.empty") %></p>
+    <% else %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <% sources.each do |s| %>
+          <li class="py-1.5 hover:bg-slate-50 flex items-baseline gap-2">
+            <span class="shrink-0 text-slate-400 text-xs uppercase tracking-wider"><%= s.csl_type.to_s[0..2] %></span>
+            <%# Klick = Source als Detail-Blade an den Stack append. %>
+            <a href="#"
+               data-action="click->blade-stack#openSource"
+               data-source-slug="<%= s.slug %>"
+               class="flex-1 min-w-0 hover:underline text-slate-700">
+              <span class="truncate inline-block max-w-full align-bottom"><%= s.title %></span>
+            </a>
+            <% if s.issued_date %>
+              <span class="text-xs text-slate-500 shrink-0 tabular-nums"><%= s.issued_date.year %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+      <p data-list-search-target="empty" class="hidden text-xs text-slate-400 italic py-2"><%= t("sources.no_results") %></p>
+    <% end %>
+  </div>
+</article>

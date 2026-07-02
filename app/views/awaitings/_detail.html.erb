@@ -1,0 +1,7 @@
+<%# Turbo-Frame-Detailpanel — wird in #awaiting_detail geladen.
+    Body steckt in _detail_body, damit das gleiche Markup auch im
+    Blade-Card (#163 Phase 5b) ohne Frame-Wrapper eingebettet werden
+    kann. %>
+<%= turbo_frame_tag "awaiting_detail" do %>
+  <%= render "awaitings/detail_body", awaiting: awaiting, expanded: local_assigns[:expanded] %>
+<% end %>

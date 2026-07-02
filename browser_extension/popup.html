@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>miolimOS Inbox</title>
+  <style>
+    body { font-family: system-ui, sans-serif; font-size: 13px; margin: 0; width: 360px; }
+    .container { padding: 12px; }
+    h1 { font-size: 14px; margin: 0 0 8px 0; color: #0f172a; }
+    label { display: block; font-size: 11px; color: #64748b; margin-top: 8px; margin-bottom: 2px; }
+    input, textarea, select {
+      width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1;
+      border-radius: 4px; padding: 4px 6px; font: inherit;
+    }
+    textarea { font-family: ui-monospace, monospace; font-size: 12px; resize: vertical; min-height: 48px; }
+    .row { display: flex; gap: 6px; align-items: center; margin-top: 12px; }
+    button {
+      background: #059669; color: white; border: 0; padding: 6px 12px;
+      border-radius: 4px; font: inherit; cursor: pointer;
+    }
+    button:hover { background: #047857; }
+    button.secondary { background: white; color: #475569; border: 1px solid #cbd5e1; }
+    button.secondary:hover { background: #f1f5f9; }
+    .hint { font-size: 11px; color: #64748b; }
+    .error { color: #b91c1c; font-size: 11px; margin-top: 6px; }
+    .ok    { color: #059669; font-size: 11px; margin-top: 6px; }
+    a.settings { font-size: 11px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>An miolimOS-Inbox senden</h1>
+
+    <label for="title">Titel</label>
+    <input type="text" id="title" placeholder="(automatisch von der Seite)">
+
+    <label for="url">URL</label>
+    <input type="url" id="url">
+
+    <label for="note">Notiz (optional)</label>
+    <textarea id="note" placeholder="Was Du dazu sagen willst …"></textarea>
+
+    <label><input type="checkbox" id="auto" checked> sofort verarbeiten (Auto-Processor)</label>
+
+    <div class="row">
+      <button id="save">Speichern</button>
+      <button id="cancel" class="secondary">Abbrechen</button>
+      <a href="#" class="settings" id="open-options">Einstellungen</a>
+    </div>
+
+    <div id="status"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

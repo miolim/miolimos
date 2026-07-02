@@ -1,0 +1,46 @@
+<%# #613: aus app/views/settings/agents/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_agents. %>
+  
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+      <h1 class="font-semibold"><%= t("settings.agents.list.heading") %></h1>
+      <%# #613 St.2: als Blade statt Einzelfenster. %>
+      <button type="button" data-controller="blade-link"
+              data-blade-link-kind-value="settings_sub" data-blade-link-id-value="agents:new"
+              data-action="click->blade-link#append"
+              class="text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 border-0 cursor-pointer"><%= t("settings.agents.list.new_agent") %></button>
+    </header>
+
+    <% if @agents.empty? %>
+      <p class="px-4 py-3 text-slate-500">—</p>
+    <% else %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <% @agents.each do |a| %>
+          <li class="px-4 py-2">
+            <div class="flex items-center gap-3 mb-1">
+              <%# Heartbeat-Status-Dot. %>
+              <% if a.last_seen_at %>
+                <% age = Time.current - a.last_seen_at %>
+                <span class="inline-block w-2 h-2 rounded-full shrink-0
+                             <%= age < 600 ? 'bg-emerald-500' : age < 3600 ? 'bg-amber-500' : 'bg-rose-500' %>"
+                      title="<%= t("settings.agents.list.last_heartbeat_title", time: time_ago_in_words(a.last_seen_at)) %>"></span>
+              <% else %>
+                <span class="inline-block w-2 h-2 rounded-full shrink-0 bg-slate-300"
+                      title="<%= t("settings.agents.list.never_active_title") %>"></span>
+              <% end %>
+              <button type="button" data-controller="blade-link"
+                      data-blade-link-kind-value="settings_sub" data-blade-link-id-value="agents:<%= a.id %>"
+                      data-action="click->blade-link#append"
+                      class="font-medium flex-1 text-left hover:underline bg-transparent border-0 cursor-pointer"><%= a.name %></button>
+              <span class="text-xs text-slate-500"><%= a.active? ? t("settings.agents.common.active") : t("settings.agents.common.inactive") %></span>
+              <button type="button" data-controller="blade-link"
+                      data-blade-link-kind-value="settings_sub" data-blade-link-id-value="agents:<%= a.id %>"
+                      data-action="click->blade-link#append"
+                      class="text-xs text-slate-600 hover:text-slate-900 bg-transparent border-0 cursor-pointer"><%= t("settings.agents.list.detail") %></button>
+            </div>
+            <div class="text-xs text-slate-500 mb-1"><%= a.description %></div>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>

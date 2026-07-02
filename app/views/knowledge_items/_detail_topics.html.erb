@@ -1,0 +1,18 @@
+<%# #363 (Hans, 2026-05-25): KI-Topic-Picker. Aus _detail.html.erb
+    extrahiert, damit das knowledge_items/_pickers-Partial die
+    Verknuepfungen analog Tasks gruppieren kann. %>
+<%# #700 (Hans, 2026-06-15): Icon wie bei Aufgaben — Thema = folder. %>
+<%= render "shared/entity_picker",
+      icon:           "folder",
+      chips_id:       "knowledge_topics_chips_#{item.uuid}",
+      chips_partial:  "knowledge_items/topics_chips",
+      chips_locals:   { item: item },
+      suggest_url:    suggest_topics_path,
+      add_url:        knowledge_item_topics_path(knowledge_item_uuid: item.uuid),
+      param_name:     "topic_id",
+      label:          t("knowledge.detail.topic"),
+      placeholder:    t("knowledge.detail.topic_placeholder"),
+      create_label:   t("knowledge.detail.create_topic") %>
+
+<%# #602 S3: Wer sieht dieses KI? (privat / Mitglieder / intern öffentlich) %>
+<div class="mt-1"><%= visibility_badge(item) %></div>

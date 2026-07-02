@@ -1,0 +1,151 @@
+<%# Erweitertes Backlinks-Panel nur für Person/Org-KIs.
+    Zeigt vier Sektionen, jeweils default eingeklappt:
+      - KIs   (Body-Wikilinks ∪ Frontmatter-`contacts:`-Mentions, dedupliziert)
+      - Tasks
+      - E-Mails (mit Rolle)
+      - Wartepunkte (offene)
+    Locals: item (das Person/Org-KI). %>
+<%
+  ref_uuids       = item.incoming_references.pluck(:source_uuid).compact.uniq
+  mention_uuids   = item.inbound_mentions.pluck(:knowledge_item_uuid).uniq
+  related_ki_uuids = (ref_uuids | mention_uuids) - [item.uuid]
+  related_kis     = KnowledgeItem.where(uuid: related_ki_uuids).order(file_updated_at: :desc)
+  tasks           = item.mentioning_tasks.includes(:topics).order(updated_at: :desc)
+  comms           = item.communication_mentions.includes(:communication).order("communications.sent_at DESC NULLS LAST")
+  awaitings_open  = item.awaitings.open.by_urgency
+
+  total = related_kis.size + tasks.size + comms.size + awaitings_open.size
+
+  role_label = ->(role) {
+    case role.to_s
+    when "sender"    then t("knowledge.list.backlinks.role_sender")
+    when "recipient" then t("knowledge.list.backlinks.role_recipient")
+    when "cc"        then "cc"
+    when "bcc"       then "bcc"
+    else                  ""
+    end
+  }
+%>
+<% if total.positive? %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.person_backlinks"
+           class="border border-slate-200 rounded">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+      <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.list.backlinks.title") %></span>
+      <span class="text-slate-400">· <%= total %></span>
+      <span class="text-slate-400 ml-2 truncate text-[11px]">
+        <% [[t("knowledge.list.backlinks.summary_kis"), related_kis.size], [t("knowledge.list.backlinks.summary_tasks"), tasks.size], [t("knowledge.list.backlinks.summary_emails"), comms.size], [t("knowledge.list.backlinks.summary_awaiting"), awaitings_open.size]].each do |label, n| %>
+          <% if n > 0 %><span class="mr-2"><%= label %> · <%= n %></span><% end %>
+        <% end %>
+      </span>
+    </button>
+
+    <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-3">
+
+      <% if related_kis.any? %>
+        <details<%= ' open'.html_safe if related_kis.size <= 5 %>>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+            <span class="font-medium"><%= t("knowledge.list.backlinks.section_knowledge") %></span>
+            <span>· <%= related_kis.size %></span>
+          </summary>
+          <div class="mt-1 space-y-0.5">
+            <%# #680 (Hans, 2026-06-13): Antwort-Quellen nicht als nackte,
+                titellose Antwort öffnen — über backlink_source_descriptor
+                das Mutter-Item (Aufgabe/KI) öffnen und zur Antwort scrollen
+                (nav_uuid/scroll_to). Spiegelt die Backlink-Liste in
+                _detail.html.erb. %>
+            <% related_kis.each do |src| %>
+              <% d = backlink_source_descriptor(src) %>
+              <% link_data = { action: "click->blade-stack#openInStack", target_uuid: d[:nav_uuid] } %>
+              <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
+              <div class="text-[13px] flex items-center gap-2">
+                <span class="w-5 flex justify-center text-slate-500">
+                  <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src.item_type) %>
+                </span>
+                <%= link_to d[:label], knowledge_item_path(src.uuid),
+                      data: link_data,
+                      class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if tasks.any? %>
+        <details<%= ' open'.html_safe if tasks.size <= 5 %>>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+            <span class="font-medium"><%= t("knowledge.list.backlinks.section_tasks") %></span>
+            <span>· <%= tasks.size %></span>
+          </summary>
+          <div class="mt-1 space-y-0.5">
+            <% tasks.each do |t| %>
+              <div class="text-[13px] flex items-center gap-2">
+                <span class="w-5 text-center"><%= t.done? ? "✅" : "⬜" %></span>
+                <%# #163 Phase 2: Klick oeffnet als Task-Blade im
+                    blade-stack (statt Vollnavigation). %>
+                <%= link_to t.title, task_path(t),
+                      data: { action: "click->blade-stack#openTask", task_id: t.id },
+                      class: "hover:underline truncate flex-1 #{'text-slate-400 line-through' if t.done?}" %>
+                <% if (topic = t.topics.first) %>
+                  <span class="text-xs text-slate-400 shrink-0"><%= topic.name %></span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if comms.any? %>
+        <details<%= ' open'.html_safe if comms.size <= 5 %>>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+            <span class="font-medium"><%= t("knowledge.list.backlinks.section_emails") %></span>
+            <span>· <%= comms.size %></span>
+          </summary>
+          <div class="mt-1 space-y-0.5">
+            <% comms.each do |cm| %>
+              <% c = cm.communication; next unless c %>
+              <div class="text-[13px] flex items-center gap-2">
+                <span class="w-7 text-center text-xs text-slate-500 shrink-0"><%= role_label.call(cm.role) %></span>
+                <%= link_to (c.subject.presence || t("knowledge.list.backlinks.no_subject")), communication_path(c),
+                      data: { turbo_frame: "_top" },
+                      class: "hover:underline truncate flex-1" %>
+                <span class="text-xs text-slate-400 shrink-0">
+                  <%= l(c.sent_at, format: :short) if c.sent_at %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if awaitings_open.any? %>
+        <details<%= ' open'.html_safe if awaitings_open.size <= 5 %>>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+            <span class="font-medium"><%= t("knowledge.list.backlinks.section_awaiting") %></span>
+            <span>· <%= awaitings_open.size %></span>
+          </summary>
+          <div class="mt-1 space-y-0.5">
+            <% awaitings_open.each do |a| %>
+              <div class="text-[13px] flex items-center gap-2">
+                <span class="w-5 text-center text-amber-500">⏳</span>
+                <%= link_to a.title, awaiting_path(a),
+                      data: { turbo_frame: "_top" },
+                      class: "hover:underline truncate flex-1" %>
+                <% if a.follow_up_at %>
+                  <span class="text-xs <%= a.overdue? ? 'text-rose-600' : 'text-slate-400' %> shrink-0">
+                    <%= l(a.follow_up_at, format: :short) %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  </section>
+<% end %>

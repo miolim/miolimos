@@ -1,0 +1,35 @@
+<%# Toast für den Toast-Stack. Append via turbo_stream.append("toast_stack", ...).
+    Locals:
+      - message       (String, required)
+      - undo_url      (String, optional) — wenn gesetzt: Rückgängig-Button
+      - undo_method   (Symbol, optional, default :post)
+      - undo_payload  (Hash, optional) — extra hidden fields für die Undo-Form %>
+<%
+  toast_id     = "toast_#{SecureRandom.hex(4)}"
+  undo_url     = local_assigns[:undo_url]
+  undo_method  = local_assigns.fetch(:undo_method, :post)
+  undo_payload = local_assigns.fetch(:undo_payload, {})
+%>
+<div id="<%= toast_id %>"
+     data-controller="toast"
+     data-action="mouseenter->toast#pause mouseleave->toast#resume"
+     class="flex items-center gap-3 bg-slate-900 text-white text-sm px-3 py-2 rounded shadow-lg
+            transition-all duration-200 opacity-100 translate-x-0">
+  <span class="flex-1 min-w-0"><%= message %></span>
+
+  <% if undo_url %>
+    <%= button_to undo_url, method: undo_method,
+          form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+          class: "text-emerald-300 hover:text-emerald-200 underline text-sm bg-transparent border-0 cursor-pointer" do %>
+      <% undo_payload.each do |key, value| %>
+        <input type="hidden" name="<%= key %>" value="<%= value %>">
+      <% end %>
+      Rückgängig
+    <% end %>
+  <% end %>
+
+  <button type="button"
+          data-action="click->toast#dismiss"
+          aria-label="Schließen"
+          class="text-slate-400 hover:text-white text-lg leading-none">×</button>
+</div>

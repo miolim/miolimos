@@ -1,0 +1,255 @@
+<%# #163 Phase 6c (Dashboard): list:dashboard-Blade fuer die /dashboard-
+    Stack-Seite. Enthaelt die kompletten linken Sektionen (Agent-Bundles,
+    Heute, Demnaechst, Process-Edge, Recent-Communications) als eine
+    einzelne Card. Klick auf Task-/Awaiting-/Communication-Eintraege
+    appendet rechts ein Detail-Blade — die Card collapsed automatisch
+    auf den Spine (siehe blade-stack-Controller Phase 6b).
+
+    Datenquellen sind die @-Vars aus DashboardController#index. %>
+<% stack_id = "list:dashboard" %>
+<%# #232 Phase 3 (B): Live-Updates. Dashboard-Listen abonnieren den
+    "tasks"-Stream — Task-Aenderungen morphen Bundles/Heute/Demnaechst
+    + Zaehler. %>
+<%# #602 S2: privater Empfänger-Stream statt globalem "tasks". %>
+<%= turbo_stream_from "tasks_user_#{current_actor.id}" if current_actor %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative
+                w-[44rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t("dashboard.title") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="shrink-0 text-slate-500"><%= icon "home" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("dashboard.title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <%# #388 (Hans, 2026-05-28): Bulk-Select-Wurzel umschliesst alle
+        Dashboard-Sektionen, ein einziger Toggle aktiviert die
+        Checkboxen in Heute / Demnaechst / Agent-Bundles gleichzeitig. %>
+    <div data-controller="active-row bulk-select" class="bulk-select-root space-y-3">
+      <%= render "shared/bulk_select_bar", key: "dashboard", topic: nil, position: :top %>
+      <%# #153: Pro Agent eine Sektion mit Header und drei Sub-Disclosures
+          (Tasks, Ungelesene, Aktivitaet). %>
+      <% @agent_bundles.each do |bundle| %>
+        <%= render "dashboard/agent_section", agent: bundle[:agent], bundle: bundle %>
+      <% end %>
+
+      <%# Heute. %>
+      <section data-controller="disclosure"
+               data-disclosure-storage-key-value="dashboard.today_tasks"
+               class="bg-white rounded border border-slate-200">
+        <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
+          <button type="button"
+                  data-action="click->disclosure#toggle"
+                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+            <span data-disclosure-target="icon"
+                  class="inline-block transition-transform rotate-90 text-slate-400">
+              <%= icon "chevron_right" %>
+            </span>
+            <h2 class="font-semibold"><%= t("dashboard.today") %></h2>
+          </button>
+          <span class="text-xs text-slate-500"><%= @today_tasks.size %></span>
+          <span class="ml-auto">
+            <%= link_to t("dashboard.all_tasks"), tasks_path,
+                  class: "text-xs text-slate-500 hover:text-slate-900" %>
+          </span>
+        </header>
+
+        <div data-disclosure-target="content">
+          <% if @today_tasks.empty? %>
+            <p class="px-4 py-3 text-slate-400 italic text-sm"><%= t("dashboard.today_empty") %></p>
+          <% else %>
+            <ol class="flex flex-col">
+              <% @today_tasks.each do |task| %>
+                <%= render "tasks/row", task: task, topic: task.topics.first,
+                      draggable: false, show_topic: true,
+                      link_path: task_path(task), blade_kind: "task", blade_id: task.id %>
+              <% end %>
+            </ol>
+          <% end %>
+        </div>
+      </section>
+
+      <%# Demnaechst. %>
+      <section data-controller="disclosure"
+               data-disclosure-storage-key-value="dashboard.soon_tasks"
+               class="bg-white rounded border border-slate-200">
+        <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
+          <button type="button"
+                  data-action="click->disclosure#toggle"
+                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+            <span data-disclosure-target="icon"
+                  class="inline-block transition-transform rotate-90 text-slate-400">
+              <%= icon "chevron_right" %>
+            </span>
+            <h2 class="font-semibold"><%= t("dashboard.upcoming") %></h2>
+          </button>
+          <span class="text-xs text-slate-500"><%= @soon_tasks.size %></span>
+        </header>
+
+        <div data-disclosure-target="content">
+          <% if @soon_tasks.empty? %>
+            <p class="px-4 py-3 text-slate-400 italic text-sm"><%= t("dashboard.week_empty") %></p>
+          <% else %>
+            <ol class="flex flex-col">
+              <% @soon_tasks.each do |task| %>
+                <%= render "tasks/row", task: task, topic: task.topics.first,
+                      draggable: false, show_topic: true,
+                      link_path: task_path(task), blade_kind: "task", blade_id: task.id %>
+              <% end %>
+            </ol>
+          <% end %>
+        </div>
+      </section>
+
+      <%# Prozess-Edge: Next-Step + offene Wartepunkte pro Topic. %>
+      <section data-controller="disclosure"
+               data-disclosure-storage-key-value="dashboard.process_edge"
+               class="bg-white rounded border border-slate-200">
+        <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
+          <button type="button"
+                  data-action="click->disclosure#toggle"
+                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+            <span data-disclosure-target="icon"
+                  class="inline-block transition-transform rotate-90 text-slate-400">
+              <%= icon "chevron_right" %>
+            </span>
+            <h2 class="font-semibold"><%= t("dashboard.process_edge_title") %></h2>
+          </button>
+          <span class="text-xs text-slate-500"><%= t("dashboard.topics_count", count: @process_edge_by_topic.size) %></span>
+          <span class="ml-auto">
+            <%= link_to t("dashboard.all_awaitings"), awaitings_path,
+                  class: "text-xs text-slate-500 hover:text-slate-900" %>
+          </span>
+        </header>
+
+        <div data-disclosure-target="content">
+        <%
+          next_step_entries = @process_edge_by_topic.select { |e| e[:next_step] }
+          all_awaitings = @process_edge_by_topic.flat_map { |e| e[:awaitings].map { |a| [e[:topic], a] } } +
+                          @orphan_awaitings.map { |a| [nil, a] }
+        %>
+
+        <% if next_step_entries.empty? && all_awaitings.empty? %>
+          <p class="px-4 py-3 text-slate-500"><%= t("dashboard.no_process_edge") %></p>
+        <% else %>
+          <% if next_step_entries.any? %>
+            <ul class="divide-y divide-slate-100">
+              <% next_step_entries.each do |entry| %>
+                <%= render "tasks/row", task: entry[:next_step],
+                      topic: entry[:topic],
+                      draggable: false,
+                      emphasize: true,
+                      link_path: task_path(entry[:next_step]),
+                      blade_kind: "task", blade_id: entry[:next_step].id %>
+              <% end %>
+            </ul>
+          <% end %>
+
+          <% if all_awaitings.any? %>
+            <ul class="divide-y divide-slate-100 text-[13px] <%= 'border-t border-slate-100' if next_step_entries.any? %>">
+              <% all_awaitings.each do |topic, a| %>
+                <li class="px-4 py-2 flex items-center gap-2 hover:bg-slate-50">
+                  <span class="w-3 flex items-center justify-center shrink-0">
+                    <% if topic %>
+                      <a href="<%= topic_path(topic) %>"
+                         data-controller="blade-link"
+                         data-blade-link-kind-value="topic"
+                         data-blade-link-id-value="<%= topic.slug %>"
+                         data-action="click->blade-link#append"
+                         title="<%= topic.name %>"
+                         class="flex items-center justify-center hover:opacity-70">
+                        <%= topic_marker topic %>
+                      </a>
+                    <% end %>
+                  </span>
+                  <span class="shrink-0 <%= a.overdue? ? 'text-rose-500' : 'text-amber-500' %>" title="<%= t("dashboard.waiting_point") %>">⏳</span>
+                  <a href="<%= awaiting_path(a) %>"
+                     data-controller="blade-link"
+                     data-blade-link-kind-value="awaiting"
+                     data-blade-link-id-value="<%= a.id %>"
+                     data-action="click->blade-link#append"
+                     class="hover:underline flex-1 min-w-0 truncate text-slate-700">
+                    <%= a.title.truncate(60) %>
+                  </a>
+                  <% if a.follow_up_at %>
+                    <span class="text-xs <%= a.overdue? ? 'text-rose-700 font-medium' : 'text-slate-500' %>">
+                      <%= l(a.follow_up_at, format: :short) %>
+                    </span>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
+        </div>
+      </section>
+
+      <%# Letzte Kommunikationen. %>
+      <section data-controller="disclosure"
+               data-disclosure-storage-key-value="dashboard.recent_communications"
+               class="bg-white rounded border border-slate-200">
+        <header class="px-4 py-2 border-b border-slate-200">
+          <button type="button"
+                  data-action="click->disclosure#toggle"
+                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+            <span data-disclosure-target="icon"
+                  class="inline-block transition-transform rotate-90 text-slate-400">
+              <%= icon "chevron_right" %>
+            </span>
+            <h2 class="font-semibold"><%= t("dashboard.recent_communications") %></h2>
+          </button>
+        </header>
+        <div data-disclosure-target="content">
+        <% if @recent_communications.empty? %>
+          <p class="px-4 py-3 text-slate-500"><%= t("dashboard.no_communications") %></p>
+        <% else %>
+          <ul class="divide-y divide-slate-100">
+            <% @recent_communications.each do |comm| %>
+              <li class="px-4 py-2 hover:bg-slate-50 flex items-center gap-3 text-[13px]">
+                <span class="<%= comm.inbound? ? 'text-blue-600' : 'text-slate-400' %>"><%= comm.inbound? ? '↓' : '↑' %></span>
+                <span class="truncate flex-1">
+                  <a href="<%= communication_path(comm) %>"
+                     data-controller="blade-link"
+                     data-blade-link-kind-value="communication"
+                     data-blade-link-id-value="<%= comm.id %>"
+                     data-action="click->blade-link#append"
+                     class="hover:underline text-slate-900">
+                    <%= comm.subject.presence || t("communications.no_subject") %>
+                  </a>
+                </span>
+                <% if comm.topics.empty? %>
+                  <span class="text-xs text-amber-600"><%= t("communications.no_topic") %></span>
+                <% else %>
+                  <span class="flex items-center gap-1">
+                    <% comm.topics.each do |topic| %>
+                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-xs">
+                        <%= topic_dot topic %><%= topic.name %>
+                      </span>
+                    <% end %>
+                  </span>
+                <% end %>
+                <span class="text-xs text-slate-500 w-28 text-right shrink-0">
+                  <%= l(comm.sent_at, format: :short) if comm.sent_at %>
+                </span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+        </div>
+      </section>
+      <%= render "shared/bulk_select_bar", key: "dashboard", topic: nil, position: :bottom %>
+    </div>
+  </div>
+</article>

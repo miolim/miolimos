@@ -1,0 +1,16 @@
+<%# Sources als Chips + Picker zum Hinzufügen.
+    Quick-Create deaktiviert: Sources tragen csl_type/Metadaten,
+    das Anlegen gehört nach /sources.
+    #142: leading Entity-Icon, Border via Disclosure-Wrapper. %>
+<%= render "shared/entity_picker",
+      icon:           "book_open",
+      chips_id:       "task_sources_chips_#{task.id}",
+      chips_partial:  "tasks/sources_chips",
+      chips_locals:   { task: task },
+      suggest_url:    suggest_sources_path,
+      add_url:        task_sources_path(task),
+      param_name:     "source_id",
+      label:          "Quelle",
+      placeholder:    "Quelle",
+      create_label:   "anlegen",
+      allow_create:   false %>

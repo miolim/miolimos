@@ -1,0 +1,84 @@
+<%# Kommentar-Thread für einen Task. Generischer Mechanismus, jeder
+    Actor kann posten. Locals: task.
+    #226: bei langen Threads alle bis auf die letzten zwei in einer
+    Gruppen-Disclosure verstecken — Default collapsed. Vorletzter
+    Comment ist eigene collapsed-Disclosure, letzter ist expanded.
+    Auto-Open: wenn in older-Group ungelesene Comments fuer
+    current_actor stecken, faellt die Gruppe initial offen — so
+    sieht man Ungelesenes ohne Klicken. Storage-Key bleibt; wenn
+    der User explizit collapsed, gewinnt das im naechsten Connect.
+    #167: Drafts sind nur für den Autor sichtbar — visible_to? filtert
+    sie für alle anderen Actors raus.
+
+    #336 (Hans, 2026-05-24): Sektions-Styling an Details / Beschreibung
+    / Verknüpfungen angepasst — bordered section, Chevron-Header mit
+    "Kommentare" + Count. Default expanded (Kommentare sollen sofort
+    sichtbar sein). „Noch keine Kommentare"-Placeholder entfaellt;
+    Eingabefeld folgt direkt. %>
+<%
+  comments = task.comments.select { |c| c.visible_to?(current_actor) }
+  last_two = comments.last(2)
+  older    = comments[0...-2] || []
+  older_read_ids = older.any? ?
+    CommentRead.where(actor_id: current_actor.id,
+                      task_comment_id: older.map(&:id))
+               .pluck(:task_comment_id).to_set : Set.new
+  older_has_unread = older.any? { |c|
+    c.actor_id != current_actor.id && !older_read_ids.include?(c.id)
+  }
+%>
+<section data-controller="disclosure"
+         data-disclosure-storage-key-value="tasks.<%= task.id %>.comments"
+         class="border border-slate-200 rounded">
+  <button type="button"
+          data-action="click->disclosure#toggle"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-disclosure-target="icon"
+          class="inline-block transition-transform rotate-90 text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("task_comments.comments") %></span>
+    <% if comments.any? %>
+      <span class="text-slate-400">· <%= comments.size %></span>
+    <% end %>
+  </button>
+
+  <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3 space-y-2">
+    <% if comments.any? %>
+      <ul id="task_comments_<%= task.id %>" class="text-[13px]">
+        <% if older.any? %>
+          <%# Gruppen-Disclosure (Aeltere Kommentare) bleibt bestehen,
+              Hans-Spec aus #336: "fuer Aeltere Kommentare bleibt es
+              ebenso erhalten". %>
+          <li data-controller="disclosure"
+              data-disclosure-storage-key-value="task.<%= task.id %>.thread.older"
+              class="border-b border-slate-100">
+            <button type="button"
+                    data-action="click->disclosure#toggle"
+                    class="w-full text-left flex items-center gap-2 py-2 px-1 text-xs text-slate-500 hover:bg-slate-50 rounded">
+              <span data-disclosure-target="icon"
+                    class="inline-block transition-transform <%= 'rotate-90' if older_has_unread %> text-slate-400">
+                <%= icon "chevron_right" %>
+              </span>
+              <span><%= t("task_comments.older_comments", count: older.size) %></span>
+            </button>
+            <div data-disclosure-target="content" class="<%= 'hidden' unless older_has_unread %> pl-2">
+              <ul class="text-[13px]">
+                <% older.each do |comment| %>
+                  <%= render "task_comments/comment", comment: comment, collapsed: true %>
+                <% end %>
+              </ul>
+            </div>
+          </li>
+        <% end %>
+
+        <% last_two.each_with_index do |comment, idx| %>
+          <%= render "task_comments/comment", comment: comment,
+                collapsed: idx < last_two.size - 1 %>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <%= render "task_comments/form", task: task %>
+  </div>
+</section>

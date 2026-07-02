@@ -1,0 +1,23 @@
+<%# #363 (Hans, 2026-05-25): Chips fuer die Tags einer KI. Analog
+    tasks/_tags_chips. Stream-replaced bei add/remove via
+    KnowledgeItemTagsController. %>
+<div id="knowledge_tags_chips_<%= item.uuid %>" class="flex flex-wrap gap-1.5">
+  <% Array(item.tags).sort.each do |tag| %>
+    <%# #428 Phase 4 (Hans, 2026-05-31): Chip in Tag-Farbe + Beschreibung-Tooltip. %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs <%= tag_color_classes(tag) %>"
+          <% if (d = tag_description(tag)).present? %>title="<%= d %>"<% end %>>
+      <% if (ic = tag_icon_html(tag, size: "w-3 h-3")) %>
+        <span class="inline-flex items-center opacity-70"><%= ic %></span>
+      <% end %>
+      <span><%= tag %></span>
+      <%= button_to knowledge_item_tag_path(knowledge_item_uuid: item.uuid, tag: tag),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("knowledge.list.tags.remove_title"),
+            "aria-label": t("knowledge.list.tags.remove_aria", tag: tag),
+            class: "p-0 bg-transparent border-0 cursor-pointer leading-none text-slate-400 hover:text-rose-600" do %>
+        <span class="text-sm leading-none">×</span>
+      <% end %>
+    </span>
+  <% end %>
+</div>

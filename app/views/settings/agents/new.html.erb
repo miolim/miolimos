@@ -1,0 +1,10 @@
+<% content_for :title, t("settings.agent_form.new_title") %>
+<div class="space-y-3">
+  <%# #613: Reiter-Leiste abgelöst — zurück zum Einstellungs-Stack. %>
+  <%= link_to t("settings.agent_form.back_to_settings"), settings_path(stack: "list:settings,settings:agents"),
+        class: "inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900" %>
+  <div class="max-w-xl bg-white rounded border border-slate-200 p-4">
+    <h1 class="text-lg font-semibold mb-3"><%= t("settings.agent_form.new_title") %></h1>
+    <%= render "form", agent: @agent %>
+  </div>
+</div>

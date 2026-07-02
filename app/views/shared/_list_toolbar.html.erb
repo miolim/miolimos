@@ -1,0 +1,175 @@
+<%# Gemeinsame Listen-Toolbar (#87): drei Icon-Buttons (Gruppieren, Sortieren,
+    Filtern) plus optional ein „Views"-Button für gespeicherte Sichten.
+    Jeder Klick öffnet ein Pop-Over mit der jeweiligen Auswahl. Aktive
+    Filter zeigen Count-Badges am Icon. State wird per URL-Query
+    persistiert (bookmark- und teilbar) und in localStorage zwischengespeichert.
+
+    Locals (alle optional, leere weglassen):
+      path:            Pfad für GET-Submit (default request.path)
+      group_options:   Array<[label, key]> z.B. [["Wann", :time], ["Projekt", :topic]]
+      sort_options:    Array<[label, key]> z.B. [["Geändert", :updated_at], ["Manuell", :manual]]
+      filter_fields:   Array<Hash> mit { name:, type: :text|:select|:toggle, label:, options? }
+      current_group:   Symbol (z.B. :time)
+      current_sort:    Symbol
+      current_dir:     "asc"|"desc"
+      filter_values:   Hash<name => value>
+      storage_key:     String, z.B. "tasks" — für localStorage-Komfort %>
+<%
+  path          = local_assigns.fetch(:path, request.path)
+  group_options = local_assigns[:group_options]
+  sort_options  = local_assigns[:sort_options]
+  filter_fields = local_assigns[:filter_fields]
+  current_group = local_assigns[:current_group]&.to_s
+  current_sort  = local_assigns[:current_sort]&.to_s
+  current_dir   = local_assigns.fetch(:current_dir, "desc").to_s
+  filter_values = local_assigns.fetch(:filter_values, {})
+  storage_key   = local_assigns[:storage_key]
+  # #484 (Hans, 2026-06-03): frame_reload -> Formular-Submit laedt die
+  # Blade-Card IN PLACE neu (topic-tabs#switchForm), statt eine Full-Page-
+  # Navigation zu machen (die in einem Stack einen neuen Stack aufmacht).
+  # Default aus: das globale /tasks nutzt weiter die normale Navigation.
+  toolbar_form_data = local_assigns[:frame_reload] ? { action: "submit->topic-tabs#switchForm" } : {}
+  # #558 (Hans, 2026-06-09): frame -> Sortier/Filter-Submit rendert die Liste
+  # IN-PLACE in diesem turbo-frame (statt Full-Page-Nav, die im Stack einen
+  # neuen Stack aufmacht). Konsument umschließt die Liste mit dem Frame und
+  # setzt path: auf den list_card-Endpoint.
+  toolbar_form_data = toolbar_form_data.merge(turbo_frame: local_assigns[:frame]) if local_assigns[:frame].present?
+
+  active_filter_count = filter_values.count { |_, v|
+    v.present? && v != false && v.to_s != "0"
+  }
+%>
+<div data-controller="list-toolbar"
+     <%= "data-list-toolbar-storage-key-value=\"#{storage_key}\"".html_safe if storage_key %>
+     class="flex items-center gap-1">
+
+  <% if group_options&.any? %>
+    <div class="relative">
+      <button type="button"
+              data-action="click->list-toolbar#toggleGroup"
+              title="<%= t("shared.list_toolbar.group") %>"
+              aria-label="<%= t("shared.list_toolbar.group") %>"
+              class="p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900
+                     <%= 'bg-slate-100 text-slate-900' if current_group.present? %>">
+        <span class="[&_svg]:w-4 [&_svg]:h-4"><%= icon "group" %></span>
+      </button>
+      <div data-list-toolbar-target="groupMenu"
+           class="hidden absolute right-0 mt-1 z-20 w-56 bg-white border border-slate-200 rounded shadow-lg p-1 text-sm">
+        <%= form_with url: path, method: :get, local: true, class: "block", data: toolbar_form_data do |f| %>
+          <% filter_values.each { |k, v| %><%= hidden_field_tag(k, v) unless k.to_s == "group" %><% } %>
+          <%= hidden_field_tag :sort, current_sort if current_sort.present? %>
+          <%= hidden_field_tag :dir,  current_dir  if current_dir.present? %>
+          <button type="submit" name="group" value=""
+                  class="w-full text-left px-3 py-1.5 rounded hover:bg-slate-100
+                         <%= 'font-medium' if current_group.blank? %>">
+            <%= t("shared.list_toolbar.no_grouping") %>
+          </button>
+          <% group_options.each do |label, key| %>
+            <button type="submit" name="group" value="<%= key %>"
+                    class="w-full text-left px-3 py-1.5 rounded hover:bg-slate-100
+                           <%= 'font-medium text-slate-900 bg-slate-50' if current_group == key.to_s %>">
+              <%= label %>
+            </button>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if sort_options&.any? %>
+    <div class="relative">
+      <button type="button"
+              data-action="click->list-toolbar#toggleSort"
+              title="<%= t("shared.list_toolbar.sort") %>"
+              aria-label="<%= t("shared.list_toolbar.sort") %>"
+              class="p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900
+                     <%= 'bg-slate-100 text-slate-900' if current_sort.present? %>">
+        <span class="[&_svg]:w-4 [&_svg]:h-4"><%= icon "arrow_up_down" %></span>
+      </button>
+      <div data-list-toolbar-target="sortMenu"
+           class="hidden absolute right-0 mt-1 z-20 w-56 bg-white border border-slate-200 rounded shadow-lg p-1 text-sm">
+        <%= form_with url: path, method: :get, local: true, class: "block", data: toolbar_form_data do |f| %>
+          <% filter_values.each { |k, v| %><%= hidden_field_tag(k, v) unless k.to_s.in?(%w[sort dir]) %><% } %>
+          <%= hidden_field_tag :group, current_group if current_group.present? %>
+          <%# Richtungs-Toggle (#87 follow-up): zwei prominente Buttons
+              oben im Menü; aktiv = blauer Fond. %>
+          <div class="flex items-center gap-1 px-1 pb-1 mb-1 border-b border-slate-100">
+            <% [["↑ #{t("shared.list_toolbar.ascending")}", "asc"], ["↓ #{t("shared.list_toolbar.descending")}", "desc"]].each do |label, dir_val| %>
+              <button type="submit" name="dir" value="<%= dir_val %>"
+                      class="flex-1 text-center px-2 py-1 rounded text-xs
+                             <%= current_dir == dir_val ? 'bg-slate-200 text-slate-900 font-medium' : 'text-slate-600 hover:bg-slate-100' %>">
+                <%= label %>
+              </button>
+            <% end %>
+          </div>
+          <% sort_options.each do |label, key| %>
+            <% is_active = current_sort == key.to_s %>
+            <button type="submit" name="sort" value="<%= key %>"
+                    class="w-full text-left px-3 py-1.5 rounded hover:bg-slate-100
+                           <%= 'font-medium text-slate-900 bg-slate-50' if is_active %>">
+              <%= label %>
+            </button>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if filter_fields&.any? %>
+    <div class="relative">
+      <button type="button"
+              data-action="click->list-toolbar#toggleFilter"
+              title="<%= t("shared.list_toolbar.filter") %>"
+              aria-label="<%= t("shared.list_toolbar.filter") %>"
+              class="relative p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900
+                     <%= 'bg-slate-100 text-slate-900' if active_filter_count > 0 %>">
+        <span class="[&_svg]:w-4 [&_svg]:h-4"><%= icon "filter" %></span>
+        <% if active_filter_count > 0 %>
+          <span class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-semibold flex items-center justify-center">
+            <%= active_filter_count %>
+          </span>
+        <% end %>
+      </button>
+      <div data-list-toolbar-target="filterMenu"
+           class="hidden absolute right-0 mt-1 z-20 w-80 bg-white border border-slate-200 rounded shadow-lg p-3 text-sm space-y-2">
+        <%= form_with url: path, method: :get, local: true, class: "space-y-2", data: toolbar_form_data do |f| %>
+          <%= hidden_field_tag :group, current_group if current_group.present? %>
+          <%= hidden_field_tag :sort,  current_sort  if current_sort.present? %>
+          <%= hidden_field_tag :dir,   current_dir   if current_dir.present? %>
+          <% filter_fields.each do |field| %>
+            <% name  = field[:name] %>
+            <% value = filter_values[name] || filter_values[name.to_s] %>
+            <div>
+              <% if field[:label].present? %>
+                <label class="block text-xs text-slate-500 mb-0.5"><%= field[:label] %></label>
+              <% end %>
+              <% case field[:type].to_sym
+                 when :text %>
+                <%= text_field_tag name, value, placeholder: field[:placeholder],
+                      class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
+              <% when :select %>
+                <%= select_tag name, options_for_select(field[:options], value),
+                      class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+              <% when :toggle %>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <%= hidden_field_tag name, "" %>
+                  <%= check_box_tag name, "1", value.present? && value.to_s != "0" %>
+                  <span><%= field[:toggle_label] || field[:label] %></span>
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+            <%= link_to t("shared.list_toolbar.reset"), path + (current_group.present? || current_sort.present? ? "?#{({group: current_group, sort: current_sort, dir: current_dir}.compact_blank).to_query}" : ""),
+                  data: (local_assigns[:frame].present? ? { turbo_frame: local_assigns[:frame] } : {}),
+                  class: "text-xs text-slate-500 hover:text-slate-900" %>
+            <button type="submit"
+                    class="text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer">
+              <%= t("shared.list_toolbar.apply") %>
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

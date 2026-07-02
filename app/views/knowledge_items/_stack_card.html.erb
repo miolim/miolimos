@@ -1,0 +1,55 @@
+<%# Eine Card im Sliding-Pane-Stack.
+    Spine links (rotated Title), Detail rechts. Stack-Card-Wrapper ist
+    schmal, das Detail-Partial liefert seine eigene sticky Toolbar
+    inkl. Close-×-Button (via in_stack: true).
+    Locals: item (KnowledgeItem), body_html (String, optional). %>
+<%# Eine Card im Stack. Die Card SELBST ist position:sticky (von JS
+    nach add/remove gesetzt mit kumulativem left-Offset). Beim
+    horizontalen Scrollen kleben sich die Cards links treppenartig
+    übereinander, sodass nur der Spine-Streifen jeder zurückgelassenen
+    Card sichtbar bleibt — wie Buchrücken im Regal.
+    Z-Index wird auch von JS gesetzt: später = höher, damit eine neuere
+    Card visuell über die früheren rutscht. %>
+<article id="stack_card_<%= item.uuid %>"
+         data-uuid="<%= item.uuid %>"
+         <% if local_assigns[:focus_title] %>data-focus-after-add="title"<% elsif local_assigns[:auto_edit_body] %>data-focus-after-add="content_edit"<% end %>
+         class="stack-card shrink-0 relative
+                w-[36rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <%# Spine: relative an der linken Card-Kante. Klebt automatisch mit,
+      weil die Card sticky ist. Klick scrollt zur Card. Layout: oben
+      das Type-Icon (normal ausgerichtet), direkt darunter der Title
+      vertikal — Text beginnt direkt am Icon und läuft nach unten
+      (#129). %>
+  <%# #683 (Hans): Bei PDF-Anhängen zwei Spine-Aktionen — PDF im ganzen
+      Blade anzeigen (Full-Blade-Overlay) + PDF in neuem Browser-Tab. %>
+  <% is_pdf = item.file_path.to_s.downcase.end_with?(".pdf") %>
+  <% spine_extra = capture do %>
+    <% if is_pdf %>
+      <% pdf_url = file_knowledge_item_path(item.uuid) %>
+      <button type="button"
+              data-controller="pdf-fullblade"
+              data-pdf-fullblade-url-value="<%= pdf_url %>"
+              data-action="click->pdf-fullblade#toggle"
+              title="PDF in der ganzen Card anzeigen"
+              aria-label="PDF in der ganzen Card anzeigen"
+              class="shrink-0 text-slate-500 hover:text-slate-800 cursor-pointer p-0 bg-transparent border-0 [&_svg]:w-4 [&_svg]:h-4"><span data-pdf-fullblade-target="expandIcon"><%= icon "expand" %></span><span data-pdf-fullblade-target="reduceIcon" class="hidden"><%= icon "reduce" %></span></button>
+      <a href="<%= pdf_url %>" target="_blank" rel="noopener"
+         title="PDF in neuem Browser-Tab öffnen"
+         aria-label="PDF in neuem Browser-Tab öffnen"
+         class="shrink-0 text-slate-500 hover:text-slate-800 [&_svg]:w-4 [&_svg]:h-4"><%= icon "external_link" %></a>
+    <% end %>
+  <% end %>
+  <%= render "shared/blade_spine", stack_id: item.uuid, title: item.title,
+        icon_html: knowledge_type_icon(item.item_type, size: "w-5 h-5"), label: item.title,
+        topics: item.topics, extra_actions: (is_pdf ? spine_extra : nil) %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">
+    <%= render "knowledge_items/detail",
+          item:      item,
+          body_html: local_assigns[:body_html],
+          in_stack:  true %>
+  </div>
+</article>

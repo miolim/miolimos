@@ -1,0 +1,49 @@
+# Self-hosting miolimOS with Docker Compose (app + PostgreSQL).
+#
+# A fresh clone cannot decrypt the maintainer's credentials, so you must
+# provide YOUR OWN Rails master key. Generate credentials first (see the
+# README "Quick start"), then:
+#
+#   RAILS_MASTER_KEY=$(cat config/master.key) docker compose up --build
+#
+# The app will be available on http://localhost:3000. The entrypoint runs
+# `db:prepare` automatically (creates + migrates the primary/cache/queue
+# databases on first boot). Background jobs run inside Puma
+# (SOLID_QUEUE_IN_PUMA), so no separate worker container is needed.
+
+name: miolimos
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${MIOLIMOS_DB_USER:-miolimos_src}
+      POSTGRES_PASSWORD: ${MIOLIMOS_SRC_DATABASE_PASSWORD:-miolimos}
+      POSTGRES_DB: miolimos_production
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MIOLIMOS_DB_USER:-miolimos_src}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    environment:
+      # Required: your own master key (cat config/master.key).
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?set RAILS_MASTER_KEY, e.g. RAILS_MASTER_KEY=$(cat config/master.key)}
+      MIOLIMOS_DB_HOST: db
+      MIOLIMOS_DB_USER: ${MIOLIMOS_DB_USER:-miolimos_src}
+      MIOLIMOS_SRC_DATABASE_PASSWORD: ${MIOLIMOS_SRC_DATABASE_PASSWORD:-miolimos}
+      MIOLIMOS_HOST: ${MIOLIMOS_HOST:-localhost}
+      # Run background jobs (Solid Queue) inside the Puma process.
+      SOLID_QUEUE_IN_PUMA: "true"
+    ports:
+      - "3000:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:

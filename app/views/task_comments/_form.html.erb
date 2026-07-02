@@ -1,0 +1,63 @@
+<%# Posting-Form für einen neuen Task-Kommentar.
+    Wird per turbo_stream nach jedem Submit ersetzt → Textarea ist
+    wieder leer. Locals: task.
+
+    #178: comment-autosave hängt sich an turbo:before-visit und
+    beforeunload — wenn man mit nicht-leerem, geänderten Body
+    wegnavigiert, geht ein sendBeacon raus, der das Comment als
+    Entwurf anlegt. Beim Wiederkommen sieht man's mit Entwurfs-Pill
+    im Thread (#167-Mechanik). %>
+<%# #324 (Hans): comment-form-local faengt den Submit ab und wendet die
+    Turbo-Stream-Antwort LOKAL im umgebenden Stack-Card-Scope an —
+    sonst zielt Turbo's getElementById bei Mehrfach-Instanzen auf die
+    erste Card im DOM, nicht auf die getippte. %>
+<%= form_with url: task_comments_path(task), method: :post, local: false,
+      id: "task_comment_form_#{task.id}",
+      data: { controller: "comment-autosave comment-form-local buttons-when-filled",
+              action:     "submit->comment-form-local#submit
+                           input->buttons-when-filled#sync",
+              comment_autosave_url_value: task_comments_path(task) },
+      html: { class: "flex flex-col gap-2 pt-3" } do |f| %>
+  <%# #165: field-sizing:content lässt die Textarea mit dem Tipp-
+      Inhalt mitwachsen; rows=2 bleibt die Start-/Min-Höhe.
+      #168: Wikilink-/Cite-Autocomplete wie im KI-Editor. %>
+  <%# #373 Phase D (Hans, 2026-05-26): CM6 auch fuer neuen Kommentar. %>
+  <div class="relative"
+       data-controller="wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+       data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+       data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+       data-cm6-editor-active-value="true">
+    <%= f.text_area :body, rows: 2,
+          placeholder: t("task_comments.body_placeholder"),
+          required: true,
+          data: { wikilink_autocomplete_target: "input",
+                  cite_autocomplete_target:     "input",
+                  comment_autosave_target:      "input",
+                  buttons_when_filled_target:   "input",
+                  cm6_editor_target:            "textarea" },
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1
+                  resize-y [field-sizing:content]
+                  focus:outline-none focus:border-emerald-400" %>
+    <ul data-wikilink-autocomplete-target="list"
+        class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+    <ul data-cite-autocomplete-target="list"
+        class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+  </div>
+  <%# #167: Zwei Submit-Buttons. "Als Entwurf speichern" setzt as_draft=1,
+      sodass der Kommentar als Entwurf gespeichert wird — sichtbar nur
+      für den Autor, der Assignee (Agent) sieht ihn nicht.
+      #336 (Hans): Buttons NUR sichtbar, wenn Text im Feld steht — der
+      buttons-when-filled-Controller pollt den Input-Event und toggelt
+      das `hidden`-Class auf dem Actions-Wrapper. %>
+  <div class="flex items-center justify-end gap-2 hidden"
+       data-buttons-when-filled-target="actions">
+    <button type="submit" name="as_draft" value="1"
+            class="px-3 py-1 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50 cursor-pointer"
+            title="<%= t("task_comments.save_draft_title") %>">
+      <%= t("task_comments.save_draft") %>
+    </button>
+    <%= f.submit t("task_comments.post"),
+          class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+  </div>
+<% end %>

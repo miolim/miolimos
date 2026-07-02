@@ -1,0 +1,193 @@
+<%# #384 Phase 3b-Polish (Hans, 2026-05-27): Visueller Stil
+    angeglichen an task_comments/_comment.html.erb — Persona-Icon,
+    Name als Disclosure-Header, darunter Zeit + Wortzahl, dann Body
+    mit Disclosure-Chevron.
+
+    Locals:
+      reply       — KnowledgeItem mit item_type=:reply
+      update_url  — URL fuer PATCH (Edit / Publish), z.B.
+                    knowledge_item_reply_path(parent.uuid, reply.uuid)
+                    oder task_reply_path(parent, reply.uuid)
+      collapsed   — Bool, Default false (letzter Reply ist offen,
+                    ältere kommen via aussen-Disclosure aufklappbar) %>
+<%
+  editable  = reply.editable_by?(current_actor)
+  deletable = reply.deletable_by?(current_actor)
+  is_draft = reply.published_at.nil?
+  collapsed_default = local_assigns.fetch(:collapsed, false)
+  body_text  = reply.body.to_s
+  word_count = body_text.scan(/[\p{L}\p{N}]+/).size
+  # #396 (Hans, 2026-05-28): Absolute URL zur Reply fuer Copy-Link.
+  # Parent kann Task oder KnowledgeItem sein.
+  reply_url =
+    case reply.parent_type
+    when "Task"
+      "#{request.protocol}#{request.host_with_port}#{task_path(reply.parent_id_int)}#reply_#{reply.uuid}"
+    when "KnowledgeItem"
+      "#{request.protocol}#{request.host_with_port}#{knowledge_item_path(reply.parent_uuid)}#reply_#{reply.uuid}"
+    end
+  # #466 (Hans, 2026-06-02): Fuer den Absatz-Link aus einer Antwort
+  # (paragraph-actions) das KI-Heading des Parents als Ziel. Bei Task-
+  # Parent leer (Tasks sind keine Wikilink-Ziele) — separater Folgeschritt.
+  paragraph_parent_title =
+    reply.parent_type == "KnowledgeItem" ? KnowledgeItem.find_by(uuid: reply.parent_uuid)&.title.to_s : ""
+%>
+<li id="reply_<%= reply.uuid %>"
+    data-controller="disclosure<%= ' description-toggle' if editable %>"
+    <%# #232 (Hans, 2026-06-01): Body-Aufklappzustand persistieren, damit ein
+        gezielter Reply-Live-Reload (Frame-Navigation) eine aufgeklappte
+        Antwort nicht wieder einklappt. %>
+    data-disclosure-storage-key-value="reply.<%= reply.uuid %>.body"
+    data-description-toggle-mode-value="preview"
+    class="group flex gap-3 py-2 border-b border-slate-100 last:border-0 <%= 'opacity-80' if is_draft %>">
+  <div class="shrink-0 mt-0.5 text-slate-400 w-5 flex justify-center">
+    <% if reply.creator.is_a?(AgentActor) %>
+      <%= icon "bot" %>
+    <% else %>
+      <%= icon "user" %>
+    <% end %>
+  </div>
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <button type="button"
+              data-action="click->disclosure#toggle"
+              class="flex items-center gap-1 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer">
+        <span data-disclosure-target="icon"
+              class="inline-block transition-transform <%= 'rotate-90' unless collapsed_default %> text-slate-400">
+          <%= icon "chevron_right" %>
+        </span>
+        <span class="font-medium text-slate-700"><%= reply.creator&.name || "—" %></span>
+      </button>
+      <% if is_draft %>
+        <%# #767 (Hans, 2026-06-23): Nur der Entwurf-Hinweis bleibt im Titel;
+            der Veröffentlichen-Button wandert nach unten (rechts, grün). %>
+        <span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[10px] uppercase tracking-wider">
+          <%= t("shared.reply.draft") %>
+        </span>
+      <% end %>
+      <span class="ml-auto flex items-center gap-1 [&_svg]:w-3.5 [&_svg]:h-3.5">
+        <%# #396 (Hans, 2026-05-28): Copy-Link in Zwischenablage. URL
+            zeigt auf den Parent-Detail mit `#reply_<uuid>`-Anker. %>
+        <% if reply_url %>
+          <button type="button"
+                  data-controller="copy-clipboard"
+                  data-action="click->copy-clipboard#copy"
+                  data-copy-clipboard-content-value="<%= reply_url %>"
+                  data-copy-clipboard-toast-value="<%= t("shared.reply.link_copied") %>"
+                  title="<%= t("shared.reply.copy_link") %>"
+                  class="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 bg-transparent border-0 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </button>
+        <% end %>
+        <% if editable %>
+          <button type="button"
+                  data-action="click->description-toggle#edit click->disclosure#expand"
+                  data-description-toggle-target="editBtn"
+                  title="<%= t("actions.edit") %>"
+                  class="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 bg-transparent border-0 cursor-pointer">
+            <%= icon "pencil" %>
+          </button>
+        <% end %>
+        <%# #384 Phase 3d / #536: Eigene Beiträge IMMER löschbar (deletable_by?,
+            entkoppelt von der „bis Antwort"-Regel des Bearbeitens). %>
+        <% if deletable %>
+          <%= button_to update_url, method: :delete, form: { data: { turbo_frame: "_top", turbo_confirm: t("shared.reply.delete_confirm") }, class: "inline m-0 p-0 leading-none" },
+                class: "p-1 rounded text-slate-500 hover:text-rose-700 hover:bg-rose-50 bg-transparent border-0 cursor-pointer",
+                title: t("actions.delete") do %>
+            <%= icon "trash" %>
+          <% end %>
+        <% end %>
+      </span>
+    </div>
+    <div class="flex items-center gap-2 pl-[18px] text-[11px] text-slate-400">
+      <span><%= l(reply.published_at || reply.created_at, format: "%d.%m.%Y, %H:%M") %></span>
+      <span title="<%= t("shared.reply.words_in_post") %>">
+        · <%= t("shared.reply.words", count: word_count) %>
+      </span>
+    </div>
+    <div data-disclosure-target="content" class="<%= 'hidden' if collapsed_default %>">
+      <%# Preview-Mode: gerenderter Body.
+          #465/#466 (Hans, 2026-06-02): paragraph-actions auch in Antworten —
+          Hover-Markierung + Rechtsklick-Kontextmenue (Highlight, Kommentar,
+          Aufgabe) am Absatz. uuid = die Reply-KI selbst; Anker-/Highlight-/
+          Kommentar-Operationen laufen damit gegen die Reply-Datei. %>
+      <div data-controller="paragraph-actions"
+           data-paragraph-actions-uuid-value="<%= reply.uuid %>"
+           data-paragraph-actions-title-value="<%= paragraph_parent_title %>"
+           data-paragraph-actions-reply-value="true">
+        <div data-description-toggle-target="preview"
+             class="markdown-body text-sm text-slate-800 break-words mt-1">
+          <%# #450 (Hans, 2026-06-01): highlight_filter (optional) reduziert
+              die Vorschau auf die markierten Stellen der gewaehlten Farben. %>
+          <%# #480 (Hans, 2026-06-03): Antworten ueber den VOLLEN KI-Renderer
+              rendern (statt render_inline_markdown). Damit ist die Markdown-
+              Flaeche einheitlich: gleiche Block-/Anker-Nummerierung wie der
+              Server (block_line_indices) — Highlight/Anker/Kommentar/Aufgabe
+              treffen jetzt den richtigen Absatz (behebt die #475-Klasse) —
+              plus native Backlink-Indikatoren, Wikilinks, Mentions, Filter. %>
+          <%= KnowledgeMarkdown.render(reply.body, item: reply, highlight_filter: local_assigns[:highlight_filter]) %>
+        </div>
+      </div>
+      <% if editable %>
+        <%# Edit-Mode: Inline-Textarea-Form.
+            #533 #1: Auto-Timer für die Eltern-Aufgabe/KI dieser Antwort —
+            startet beim aktiven Tippen, endet beim Speichern. %>
+        <% reply_subj_id = reply.parent_type == "KnowledgeItem" ? reply.parent_uuid : reply.parent_id_int %>
+        <%= form_with url: update_url, method: :patch, local: false,
+              id: "reply_edit_#{reply.uuid}",
+              data: { turbo_frame: "_top", description_toggle_target: "form",
+                      controller: "reply-timer dirty-warn",
+                      reply_timer_subject_type_value: reply.parent_type,
+                      reply_timer_subject_id_value:   reply_subj_id,
+                      reply_timer_start_url_value:    reply_start_time_entries_path,
+                      reply_timer_end_url_value:      reply_end_time_entries_path,
+                      reply_timer_pause_url_value:    reply_pause_time_entries_path,
+                      action: "input->reply-timer#begin input->dirty-warn#mark submit->reply-timer#end focusin->reply-timer#begin focusout->reply-timer#pause" },
+              class: "hidden mt-1" do |f| %>
+          <%# #521: tab-indent → Tab rückt ein (Liste), statt zum Speichern-
+              Button zu springen.
+              #523 (Hans, 2026-06-06): field-sizing:content lässt das Feld mit
+              dem Inhalt wachsen (war hier verloren gegangen — Feld öffnete in
+              fixer Standardgröße). rows=3 ist nur noch die Mindesthöhe. %>
+          <%= f.text_area :body, value: reply.body, rows: 3,
+                data: { description_toggle_target: "input", controller: "tab-indent" },
+                class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm
+                        resize-none overflow-hidden [field-sizing:content]
+                        focus:outline-none focus:border-emerald-400" %>
+        <% end %>
+        <%# #767 (Hans, 2026-06-23): einheitliche Button-Leiste unten rechts —
+            Speichern (grau, nur im Edit-Mode sichtbar) links, Veröffentlichen
+            (grün, nur bei Entwürfen) rechts. Der Speichern-Button liegt außer-
+            halb des Edit-Forms und referenziert es per form=. %>
+        <div class="flex items-center justify-end gap-2 mt-1">
+          <button type="submit" form="reply_edit_<%= reply.uuid %>"
+                  data-description-toggle-target="saveBtn"
+                  class="hidden px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 cursor-pointer">
+            <%= t("actions.save") %>
+          </button>
+          <% if is_draft %>
+            <%# capture-reply-body schreibt den aktuellen Edit-Textarea-Inhalt
+                ins hidden body-Feld, damit direktes Veröffentlichen keine
+                ungespeicherten Änderungen verliert (#540). %>
+            <%= form_with url: update_url, method: :patch, local: false,
+                  data: { turbo_frame: "_top", controller: "capture-reply-body",
+                          action: "submit->capture-reply-body#sync" },
+                  class: "inline m-0 p-0 leading-none" do |f| %>
+              <%= f.hidden_field :publish, value: "1" %>
+              <%= f.hidden_field :body, value: reply.body %>
+              <%# #451: data-reply-publish macht den Button für den
+                  Strg+Umschalt+Enter-Shortcut auffindbar. %>
+              <button type="submit" data-reply-publish
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer border-0">
+                <%= icon "globe", size: "w-3 h-3" %><%= t("shared.reply.publish") %>
+              </button>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</li>

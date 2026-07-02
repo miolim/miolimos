@@ -1,0 +1,16 @@
+# #232 Phase 0: Action-Cable-Adapter pro Environment.
+# Dev/Test laufen in-process (async/test), Produktion ueber solid_cable
+# auf der PRIMARY-Datenbank — bewusst KEIN separates `cable`-DB und kein
+# connects_to, damit kein zusaetzliches Postgres-DB-Setup noetig ist
+# (anders als solid_queue/solid_cache, die eigene DBs haben). Bei
+# spaeterem Bedarf laesst sich das auf eine eigene cable-DB heben.
+development:
+  adapter: async
+
+test:
+  adapter: test
+
+production:
+  adapter: solid_cable
+  polling_interval: 0.1.seconds
+  message_retention: 1.day

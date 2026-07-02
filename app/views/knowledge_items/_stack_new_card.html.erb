@@ -1,0 +1,140 @@
+<%# Stack-Card für ein noch nicht gespeichertes KnowledgeItem.
+    Layout angelehnt an _detail.html.erb im Edit-Mode:
+      - Sticky Toolbar oben mit Type-Icon, Title-Field, Save (✓) und
+        Abbrechen (×) als Icons.
+      - Disclosure "Details" mit Topics + typspezifischen Sekundär-
+        Feldern (bib_source, locator, source_url, chat_title, …).
+      - Markdown-Body unten — prominent.
+
+    Type ist via Picker beim Plus-Klick festgelegt (Hidden-Field).
+    Locals:
+      topic_slugs        — Komma-getrennte Slugs zur Vorauswahl
+      default_type       — vom Picker durchgereichter Type (default: "note")
+      default_bib_source — vorbelegte bib_source (Source-Detail "+Quote") %>
+<%
+  default_type       = local_assigns[:default_type].presence || "note"
+  default_bib_source = local_assigns[:default_bib_source]
+  spine_label        = t("knowledge.item_types.#{default_type}", default: t("knowledge.form.new_entry"))
+  form_id            = "stack_new_card_form"
+
+  details_partial =
+    case default_type
+    when "abstract"                       then "knowledge_items/form_details_abstract"
+    when "transcript"                     then "knowledge_items/form_details_transcript"
+    when "direct_quote", "indirect_quote" then "knowledge_items/form_details_quote"
+    when "person"                         then "knowledge_items/form_details_person"
+    when "organization"                   then "knowledge_items/form_details_organization"
+    end
+  body_accepts_file = (default_type == "transcript")
+  body_placeholder  =
+    case default_type
+    when "abstract"      then t("knowledge.form.body_placeholder_abstract")
+    when "transcript"    then t("knowledge.form.body_placeholder_transcript")
+    when "direct_quote"  then t("knowledge.form.body_placeholder_direct_quote")
+    when "indirect_quote" then t("knowledge.form.body_placeholder_indirect_quote")
+    when "person", "organization" then t("knowledge.form.body_placeholder_note")
+    else                       t("knowledge.form.body_placeholder_default")
+    end
+%>
+<%# #390 (Hans, 2026-05-28): bei prefill_title (z.B. Quick-Create
+    aus Paragraph-Aktion) den Cursor direkt ins Beschreibungsfeld
+    leiten. _focusAfterAdd im blade-stack-Controller behandelt
+    `data-focus-after-add` nach dem MutationObserver-Append. %>
+<article id="stack_card_new"
+         data-uuid="new"
+         <% if local_assigns[:prefill_title].present? %>data-focus-after-add="content"<% end %>
+         class="stack-card shrink-0 relative
+                w-[36rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-emerald-50 border-r border-emerald-200
+                flex flex-col items-center pt-2 gap-2">
+    <span class="shrink-0 text-emerald-700"><%= knowledge_type_icon(default_type) %></span>
+    <span class="text-xs text-emerald-900 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] rotate-180 min-h-0 flex-1">
+      <%= t("knowledge.form.spine_new", label: spine_label) %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <%= form_with url: knowledge_items_path, method: :post, local: false,
+        multipart: true, html: { id: form_id, class: "flex-1 min-w-0 flex flex-col" } do |f| %>
+    <%= f.hidden_field :in_stack,  value: "1" %>
+    <%= f.hidden_field :item_type, value: default_type %>
+
+    <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
+      <%# #202: Fehler-Banner, z.B. bei Title-Dublette. Re-Submit nach
+          Anpassung schickt das Form erneut. %>
+      <% if local_assigns[:error_message].present? %>
+        <div class="-mx-4 -mt-4 px-4 py-2 bg-rose-50 border-b border-rose-200 text-rose-800 text-sm">
+          <%= error_message %>
+        </div>
+      <% end %>
+
+      <%# Sticky Toolbar — Icon + Title + Save/Abbrechen, analog Edit-Form. %>
+      <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20
+                  border-b border-slate-100 flex items-center gap-1">
+        <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(default_type, size: "w-6 h-6") %></span>
+        <%# #202: Title-Suggest-Dropdown war ablenkend. Statt der inline-
+            Dubletten-Anzeige verhindert jetzt die Modell-Validation
+            (uniqueness, case-insensitive) das Speichern. %>
+        <div class="flex-1 min-w-0 relative">
+          <%# #390 (Hans, 2026-05-28): Title-Autofocus nur, wenn das Titel-
+              Feld leer in den Render geht. Bei prefill_title (z.B. via
+              Quick-Create aus Paragraph-Aktion oder Suchvorschlag) springt
+              der Fokus stattdessen ins Beschreibungsfeld (form_body), so
+              dass Hans gleich Inhalt tippen kann. %>
+          <%= f.text_field :title,
+                value: local_assigns[:prefill_title],
+                autofocus: local_assigns[:prefill_title].blank?,
+                required: true,
+                placeholder: t("knowledge.form.title_placeholder"),
+                autocomplete: "off",
+                class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                        hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none truncate" %>
+        </div>
+
+        <div class="flex items-center gap-1 shrink-0 text-slate-500">
+          <button type="submit" form="<%= form_id %>"
+                  title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
+                  class="p-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer">
+            <%= icon "check" %>
+          </button>
+        </div>
+      </div>
+
+      <%# "Details" — Topics plus typspezifische Sekundär-Felder. %>
+      <section data-controller="disclosure" class="border border-slate-200 rounded">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+          <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+            <%= icon "chevron_right" %>
+          </span>
+          <span class="font-medium"><%= t("knowledge.form.details") %></span>
+          <span class="text-slate-400 truncate">· <%= spine_label %></span>
+        </button>
+        <div data-disclosure-target="content"
+             class="hidden px-3 pb-3 space-y-3 border-t border-slate-100 pt-3">
+          <label class="block text-xs">
+            <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.topics_comma") %></span>
+            <%= f.text_field :topics, value: topic_slugs,
+                  placeholder: "patent-ring, mpg-solar …",
+                  class: "w-full font-mono text-xs border border-slate-200 rounded px-2 py-1" %>
+          </label>
+          <% if details_partial %>
+            <%= render details_partial, f: f, default_bib_source: default_bib_source %>
+          <% end %>
+        </div>
+      </section>
+
+      <%# Body — prominent unter den Details. %>
+      <%= render "knowledge_items/form_body", f: f,
+            accept_file: body_accepts_file,
+            placeholder: body_placeholder,
+            prefill_content: local_assigns[:prefill_content] %>
+    </div>
+  <% end %>
+</article>

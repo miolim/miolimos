@@ -1,0 +1,12 @@
+<%# #532 Phase 2: selbst-enthaltenes Dokument-HTML für den PDF-Render
+    (Theme inline, damit Chrome ohne Asset-Server rendert). %>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <%= render "documents/print_theme" %>
+</head>
+<body>
+  <%= render "documents/sample_#{sample}" %>
+</body>
+</html>

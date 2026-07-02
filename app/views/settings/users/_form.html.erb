@@ -1,0 +1,49 @@
+<%= form_with model: user, url: (user.persisted? ? settings_user_path(user) : settings_users_path),
+      scope: :human_actor, local: true, class: "space-y-3" do |f| %>
+  <% if user.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 p-3 text-rose-800">
+      <ul class="list-disc ml-4">
+        <% user.errors.full_messages.each do |m| %><li><%= m %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :name, required: true, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :email, t("settings.user_form.email_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.email_field :email, required: true, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :password, (user.persisted? ? t("settings.user_form.password_label_edit") : t("settings.user_form.password_label")),
+          class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.password_field :password, autocomplete: "new-password",
+          required: !user.persisted?,
+          minlength: 8,
+          class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <%# #602 S1/S3: System-Rolle — Admin sieht alles, Mitglied nur seine
+      Themen (Mitgliedschaft / intern öffentlich / Eigenes), Gast sieht
+      wie ein Mitglied, kann in seinen Themen aber NUR LESEN. %>
+  <div>
+    <%= f.label :role, t("settings.user_form.role_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.select :role,
+          [[t("settings.user_form.role_admin"), "admin"],
+           [t("settings.user_form.role_member"), "member"],
+           [t("settings.user_form.role_guest"), "guest"]],
+          {}, class: "w-full rounded border border-slate-200 px-2 py-1 bg-white" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :active %>
+    <%= f.label :active, t("settings.user_form.active_label"), class: "text-xs text-slate-600" %>
+  </div>
+
+  <div class="flex gap-2">
+    <%= f.submit t("actions.save"),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), settings_users_path,
+          class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+  </div>
+<% end %>

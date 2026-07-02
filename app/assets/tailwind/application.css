@@ -1,0 +1,741 @@
+@import "tailwindcss";
+
+/* Markdown-Render-Styles für KnowledgeItem-Bodies (Redcarpet-Output).
+   Tailwind hat kein eingebautes prose-Plugin geladen, also pflegen
+   wir hier nur das Nötigste. */
+@layer components {
+  .markdown-body { @apply text-sm text-slate-700; }
+
+  .markdown-body h1 { @apply text-xl font-semibold mt-4 mb-2 text-slate-900; }
+  .markdown-body h2 { @apply text-lg font-semibold mt-3 mb-2 text-slate-900; }
+  .markdown-body h3 { @apply text-base font-semibold mt-2 mb-1 text-slate-900; }
+  .markdown-body h4 { @apply text-sm font-semibold mt-2 mb-1 text-slate-900; }
+
+  /* #352 follow (Hans, 2026-05-25): Body-Headings im Rendering-Blade
+     wieder slate-900 (Default-Markdown) — der Kontrast kommt jetzt
+     ueber die roten Gliederungs-Headings (siehe _render_blade_subtree).
+     Regel hier null-effekt, bleibt als Dokumentation; reset via @apply. */
+  .render-blade-body h1,
+  .render-blade-body h2,
+  .render-blade-body h3,
+  .render-blade-body h4,
+  .render-blade-body h5,
+  .render-blade-body h6 { @apply text-slate-900 font-semibold; }
+
+  .markdown-body p { @apply my-2; }
+
+  .markdown-body ul { @apply list-disc pl-6 my-2 space-y-0.5; }
+  .markdown-body ol { @apply list-decimal pl-6 my-2 space-y-0.5; }
+  .markdown-body li { @apply leading-snug; }
+
+  .markdown-body a { @apply text-emerald-700 underline hover:text-emerald-900; }
+
+  .markdown-body code { @apply font-mono text-[0.85em] bg-slate-100 px-1 py-0.5 rounded; }
+  .markdown-body pre  { @apply bg-slate-100 p-3 rounded my-2 overflow-x-auto; }
+  .markdown-body pre code { @apply bg-transparent p-0; }
+
+  .markdown-body blockquote { @apply border-l-4 border-slate-300 pl-3 my-2 text-slate-600 italic; }
+
+  .markdown-body hr { @apply my-3 border-slate-200; }
+
+  .markdown-body table { @apply text-sm border-collapse my-2; }
+  .markdown-body th { @apply font-semibold border-b border-slate-300 px-2 py-1 text-left; }
+  .markdown-body td { @apply border-b border-slate-100 px-2 py-1; }
+
+  .markdown-body img { @apply max-w-full h-auto my-2 rounded; }
+
+  /* #306 (Hans): Listen-Suchfeld — versteckt Rows ohne Match. Eigene
+     Klasse, damit andere Hide-Mechanismen (z.B. CSS-Disclosure) nicht
+     kollidieren. */
+  .list-search-hidden { display: none !important; }
+
+  /* #320 (Hans): Counter-Badge auf jedem Spine, dessen data-uuid mehr
+     als einmal im Stack vorkommt. Sitzt ganz oben im Spine, ueber dem
+     Item-Icon. Dunkles Pillen-Layout fuer Kontrast. */
+  .stack-instance-counter {
+    @apply inline-flex items-center justify-center min-w-[1.5rem] h-4 px-1 mt-1 mb-0.5
+           rounded-full bg-slate-700 text-white text-[10px] font-semibold leading-none shrink-0
+           border-0 cursor-pointer hover:bg-slate-800;
+  }
+
+  /* #331 (Hans): dauerhaft (doppel-klick) kollabierte Cards bekommen
+     einen farbigen Balken oben am Spine, damit man sofort erkennt:
+     hier sitzt eine eingeklappte Card. Emerald (= Detail-Blade),
+     Blue (= Listen-Blade, data-uuid faengt mit `list:` an). */
+  .stack-card[data-collapsed="true"] .stack-spine {
+    border-top: 4px solid rgb(5 150 105);  /* emerald-600 */
+  }
+  .stack-card[data-collapsed="true"][data-uuid^="list:"] .stack-spine {
+    border-top: 4px solid rgb(37 99 235);  /* blue-600 */
+  }
+
+  /* #314 (Hans): Highlights ueber `==text==` (Default gelb) und
+     `==text|farbe==` mit fester Palette. Wir setzen Hintergrund-
+     Farben aus Tailwinds 200-er Skala, Padding minimal damit der
+     Inline-Fluss erhalten bleibt. */
+  /* #384 Phase 2 (Hans, 2026-05-27): @-Mention-Pill auf App-Nutzer. */
+  .actor-mention {
+    @apply inline-block px-1.5 rounded
+           bg-sky-100 text-sky-800 text-sm
+           font-medium cursor-default;
+  }
+  .actor-mention.actor-mention-missing {
+    @apply bg-rose-100 text-rose-800;
+  }
+
+  .markdown-body mark { @apply px-1 rounded-sm; }
+  .markdown-body mark.hl-gelb  { @apply bg-amber-200 text-amber-900; }
+  .markdown-body mark.hl-rot   { @apply bg-rose-200 text-rose-900; }
+  .markdown-body mark.hl-gruen { @apply bg-emerald-200 text-emerald-900; }
+  .markdown-body mark.hl-blau  { @apply bg-sky-200 text-sky-900; }
+  .markdown-body mark.hl-lila  { @apply bg-violet-200 text-violet-900; }
+
+  /* Wikilinks — bereits offene Cards bekommen eine deutlich kräftigere
+     Hervorhebung (doppelte Unterstreichung, anderer Farbton), damit
+     beim Quer-Lesen sofort klar ist: das Ziel liegt schon im Stack. */
+  .wikilink {
+    text-decoration: underline;
+    text-decoration-style: solid;
+    text-decoration-color: rgb(4 120 87 / 0.5);   /* emerald-700/50 */
+    text-underline-offset: 2px;
+  }
+  .wikilink-open {
+    background: rgb(16 185 129 / 0.15);            /* emerald-500/15 */
+    text-decoration-style: double;
+    text-decoration-color: rgb(4 120 87);
+    border-radius: 0.125rem;
+    padding: 0 0.15rem;
+  }
+  /* Ungelöster [[Neuer Name]]-Link: gestrichelter Underline,
+     Klick-Cursor — Hinweis: "ich kann angelegt werden". */
+  .wikilink-missing {
+    text-decoration-style: dashed;
+    text-decoration-color: rgb(225 29 72 / 0.6);    /* rose-600/60 */
+    cursor: pointer;
+  }
+  /* #239 Phase B: Typed Wikilink (mit ^anchor_id → Relation). Dotted
+     statt solid signalisiert „diese Verknüpfung trägt Metadaten — Label,
+     Beschreibung, Richtung." Indikator-Icon erscheint daneben. */
+  .wikilink-typed {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgb(4 120 87 / 0.7);     /* emerald-700/70 */
+    text-underline-offset: 2px;
+  }
+  .relation-link-indicator {
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 120ms;
+  }
+  .relation-link-indicator:hover {
+    opacity: 1;
+  }
+  /* #248: Resize-Handle am rechten Rand jeder Stack-Card. Schmal, fast
+     unsichtbar bis Hover; Doppelklick auf den Handle setzt die Breite
+     auf Default zurueck (siehe blade_stack_controller). Nur Desktop —
+     auf Mobile sind die Blades sowieso 100vw breit.
+     #248 follow-up v2: damit der Handle exakt links neben dem
+     vertikalen Scrollbar sitzt — egal ob die Card scrollt oder nicht
+     —, reservieren wir die Scrollbar-Breite immer (scrollbar-gutter:
+     stable), und forcen die Scrollbar selbst auf 14px (Webkit) bzw
+     scrollbar-width:thin (Firefox). Der Handle steht dann konstant
+     14px vom rechten Rand: bei sichtbarem Scrollbar direkt links
+     daneben, sonst am Rand des Content-Bereichs. */
+  .stack-card > .overflow-y-auto {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.4) transparent;
+  }
+  .stack-card > .overflow-y-auto::-webkit-scrollbar {
+    width: 14px;
+  }
+  .stack-card > .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.4); /* slate-400/40 */
+    border: 4px solid transparent;
+    background-clip: padding-box;
+    border-radius: 8px;
+  }
+  .stack-card > .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .blade-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 14px;
+    width: 6px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background-color 120ms;
+    z-index: 30;
+    touch-action: none;
+  }
+  .blade-resize-handle:hover {
+    background: rgb(16 185 129 / 0.35); /* emerald-500/35 */
+  }
+  @media (max-width: 767px) {
+    .blade-resize-handle { display: none; }
+  }
+  /* #283: im eingeklappten Zustand keinen Resize-Handle anzeigen —
+     der Spine ist 28px schmal, das Resize-Greifen hat dort keinen
+     Sinn (und der Handle wuerde optisch ueberhaupt nicht draufpassen). */
+  .stack-card[data-collapsed="true"] .blade-resize-handle {
+    display: none;
+  }
+
+  /* #239 Phase B+: „+"-Icon zum Auto-Typify eines untyped Wikilinks.
+     Deutlich dezenter als die anderen Indikatoren — er soll im
+     Lesefluss nicht ablenken, taucht beim Hover-aufs-Wikilink-Span
+     deutlich auf. */
+  .relation-typify-indicator {
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+  .wikilink:hover + .relation-typify-indicator,
+  .relation-typify-indicator:hover,
+  span:hover > .relation-typify-indicator {
+    opacity: 0.8;
+  }
+
+  /* Source-Citation-Chips inline im Body: dezent, blau-tönig, mit
+     Hover-Underline. Broken-Variante (unaufgelöste Slug) gestrichelt
+     rosa als "fehlende Quelle"-Hinweis. */
+  .source-cite {
+    color: rgb(29 78 216);            /* blue-700 */
+    text-decoration: underline;
+    text-decoration-color: rgb(29 78 216 / 0.4);
+    text-underline-offset: 2px;
+  }
+  .source-cite:hover {
+    text-decoration-color: rgb(29 78 216);
+  }
+  .source-cite-broken {
+    color: rgb(225 29 72 / 0.8);
+    text-decoration-style: dashed;
+  }
+
+  /* Hover-Highlight für referenzierbare Blöcke. Sehr dezent, damit
+     der Lesefluss nicht gestört wird; die Iconbar erscheint rechts
+     oben in der gleichen Hover-Reaktion. */
+  .para-anchorable {
+    border-left: 2px solid transparent;
+    padding-left: 0.5rem;
+    margin-left: -0.5rem;
+    transition: background-color 120ms, border-color 120ms;
+  }
+  .para-anchorable:hover,
+  /* #520 (Hans, 2026-06-05): markiert bleiben, solange das Kontextmenü
+     offen ist — auch wenn die Maus aufs Menü wandert (kein :hover mehr). */
+  .para-anchorable.para-active {
+    background: rgb(254 252 232 / 0.6);  /* amber-50/60 */
+    border-left-color: rgb(252 211 77);   /* amber-300 */
+  }
+  /* #520 (Hans, 2026-06-06): Verschachtelte Listen — ein <li> enthält die
+     tieferen Ebenen, also matcht :hover auch alle Eltern-Listenpunkte und
+     färbt sie mit ein. Eltern, die einen aktuell gehoverten verschachtelten
+     Block enthalten, neutralisieren — so bleibt nur der innerste (= unter dem
+     Cursor) markiert. Den aktiven Menü-Block (.para-active) nicht anfassen. */
+  .para-anchorable:not(.para-active):has(.para-anchorable:hover) {
+    background: transparent;
+    border-left-color: transparent;
+  }
+
+  /* Wenn mindestens eine Backlink-Quelle dieses Blocks im Stack offen
+     ist: Block dezent unterlegen, Counter-Icon kräftiger einfärben. */
+  .para-backlinked-open {
+    background: rgb(16 185 129 / 0.08);          /* emerald-500/8 */
+    border-left-color: rgb(52 211 153);           /* emerald-400 */
+  }
+  .backlink-indicator-open {
+    background: rgb(16 185 129 / 0.18);          /* emerald-500/18 */
+    color: rgb(4 120 87);                         /* emerald-700 */
+    font-weight: 600;
+  }
+
+  /* Beim Anchor-Sprung kurz hervorheben, damit man weiß, wo man
+     gelandet ist. `:target` greift bei URL-Hash-Navigation, `.anchor-
+     flash` wird vom Stack-Controller programmatisch beim Klick auf
+     einen Wikilink mit Anker gesetzt. */
+  .para-anchorable:target,
+  .anchor-flash {
+    animation: anchor-flash 1500ms ease-out;
+  }
+  @keyframes anchor-flash {
+    0%   { background: rgb(252 211 77 / 0.5); }
+    100% { background: transparent; }
+  }
+}
+
+/* Aktive Card im Stack — die, auf die Tastatur-Shortcuts (Cmd+E/S)
+   wirken. Deutlicher Spine in emerald-500 plus weiße Schrift. Bewusst
+   außerhalb von `@layer components`, weil die Tailwind-Utility-Klasse
+   `bg-slate-50` auf dem Spine sonst gewinnt — Layer-Reihenfolge
+   stellt utilities NACH components, also setzen wir hier außerhalb
+   aller Layer höher in der Cascade. */
+/* Alter „aktive Card“-Effekt (emerald-500 + weisse Schrift) entfaellt
+   mit #224 6f-1; Helligkeit signalisiert Focus, siehe Farbcode-Block
+   weiter unten. */
+
+/* #163 Phase 4: Sidebar-Append-Plus-Icons sind nur dann nuetzlich,
+   wenn die aktuelle Seite einen Blade-Stack hat — sonst gibt es
+   nichts, an das man appenden koennte. blade_stack_controller setzt
+   die Klasse beim Connect auf <body>. */
+body:not(.has-blade-stack) .sidebar-blade-plus {
+  display: none !important;
+}
+
+/* #163 Phase 6a: Spine-Klick toggelt Collapse-State. Collapsed = nur
+   Spine sichtbar (Body display: none), Card schrumpft auf Spine-Breite. */
+/* #224 (2026-05-19, Hans): Collapse-Animation, damit der Spine
+   sichtbar von seiner alten zu seiner neuen Position „gleitet" statt
+   abrupt zu springen. Greift nur auf Desktop (Mobile-Stack hat
+   eigenes Snap-Layout). */
+@media (min-width: 768px) {
+  .stack-card {
+    transition: width 220ms ease-out, max-width 220ms ease-out, opacity 180ms ease-out;
+  }
+  /* #256: Smooth-Close — die JS-closeCard-Animation setzt diese Klasse,
+     CSS-Transition oben gleitet Breite → 0 + Opacity → 0, danach
+     entfernt der Controller die Card aus dem DOM. */
+  .stack-card.is-closing {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+}
+.stack-card[data-collapsed="true"] {
+  /* #250-follow-up: !important, weil die Resize-Logik die Card-Breite
+     inline-style setzt (z.B. width:500px) — ohne !important wuerde der
+     Inline-Wert die Class-Regel ueberschreiben, und der collapsed-
+     Spine bliebe ein 500px-leeres-Feld neben dem Spine-Strich. */
+  width: 1.75rem !important;       /* matches w-7 (Spine-Breite) */
+  max-width: 1.75rem !important;
+  /* #277 v6: der Inner-Body wird per JS-flex-Freeze auf seine
+     vor-Collapse-Breite festgehalten — overflow:hidden schneidet
+     den ueberlappenden Teil rechts ab. */
+  overflow: hidden;
+}
+/* #287: Listen-Rows, deren Item bereits als Blade im Stack offen ist,
+   bekommen Bold + Jump-Pfeil-Button (JS-injected). Bold zielt auf
+   alle Title-Link-Varianten: Task-Row hat <a><span.truncate>Title</span></a>;
+   KI/Source/Communication-Rows haben den Title direkt im <a> mit
+   truncate-Klasse oder in einem <div class="truncate"> innerhalb des
+   <a>. Beide Patterns abgedeckt. */
+.in-stack a:not(.in-stack-jump),
+.in-stack a:not(.in-stack-jump) .truncate {
+  font-weight: 600;
+}
+
+/* #284 v4: visueller Atemraum rechts der letzten Card. Ohne diese
+   Margin sitzt die Card flush gegen die Container-Border und sieht
+   beschnitten aus (Hans-Report). flex+overflow-auto + flex-shrink:0
+   am Card → margin erhoeht den scrollWidth, scroll bleibt sauber.
+   Greift nur auf Desktop; auf Mobile uebernimmt scroll-snap die
+   Card-Positionierung. */
+@media (min-width: 768px) {
+  #blade_stack_container > .stack-card:last-child {
+    margin-right: 0.5rem;
+  }
+}
+/* #277 follow-up: statt display:none auf dem inneren Body — der
+   springt instant — animiert die Opacity. Beide Richtungen 60ms
+   Fade, gleicher Gesamtablauf 220ms. Beim Ausklappen Delay 160ms,
+   damit der Inhalt erst gegen Ende der Breiten-Animation sichtbar
+   wird (kein Text-Umbruch pro Frame). Beim Einklappen ohne Delay
+   schnell verschwinden, dann gleitet die Breite. */
+.stack-card > .overflow-y-auto {
+  opacity: 1;
+  transition: opacity 60ms ease-in 160ms;
+}
+.stack-card[data-collapsed="true"] > .overflow-y-auto {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 60ms ease-out;
+}
+
+/* #263: Auf Mobilgeraeten ist horizontaler Platz „wertvoller". Statt
+   der vollen Linke-Hoehe-Spine bekommt jede Card einen schlanken
+   horizontalen Titelbalken oben (unter der Suche). Spine-Markup bleibt
+   identisch, CSS dreht die Achsen. */
+@media (max-width: 767px) {
+  .stack-card {
+    flex-direction: column !important;
+  }
+  .stack-card .stack-spine {
+    flex-direction: row !important;
+    align-self: auto !important;
+    width: 100% !important;
+    height: 2.25rem !important;          /* 36px, ordentlicher Touch-Target */
+    padding: 0 0.5rem !important;
+    gap: 0.5rem !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgb(226 232 240);  /* slate-200 */
+  }
+  /* Title-Span hat per Tailwind-Inline-Variant writing-mode:vertical-rl —
+     hier zurueckdrehen, damit der Text horizontal liest. */
+  .stack-card .stack-spine [class*="writing-mode\\:vertical-rl"],
+  .stack-card .stack-spine .\[writing-mode\:vertical-rl\] {
+    writing-mode: horizontal-tb !important;
+    flex: 1 1 auto;
+  }
+  /* Close-Button: kein mb-1 mehr noetig. */
+  .stack-card .stack-spine .shared-blade-close {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* #224 6f-1: Spine-Farbcode. Listen-Blades hell-/dunkelblau, Detail-
+   Blades hell-/dunkelgruen. Helligkeit signalisiert Focus (data-active).
+   Hover hebt ein bisschen an, ohne Focus zu suggerieren. */
+.stack-card .stack-spine {
+  background: #f0fdf4;          /* emerald-50 — Detail default */
+  transition: background-color 120ms ease-out;
+}
+.stack-card .stack-spine:hover {
+  background: #dcfce7;          /* emerald-100 */
+}
+.stack-card[data-active="true"] .stack-spine {
+  background: #4ade80;          /* emerald-400 — Detail focused */
+}
+.stack-card[data-uuid^="list:"] .stack-spine {
+  background: #eff6ff;          /* sky-50 — List default */
+}
+.stack-card[data-uuid^="list:"] .stack-spine:hover {
+  background: #dbeafe;          /* sky-100 */
+}
+.stack-card[data-uuid^="list:"][data-active="true"] .stack-spine {
+  background: #60a5fa;          /* sky-400 — List focused */
+}
+
+/* #352-follow (Hans, 2026-05-25): Render-Blade + Reference-Blades
+   (KI + Topic) bekommen einen roten Spine in Focus-Abstufung. */
+.stack-card[data-uuid^="render:topic:"] .stack-spine,
+.stack-card[data-uuid^="refs:ki:"] .stack-spine,
+.stack-card[data-uuid^="refs:topic:"] .stack-spine {
+  background: #fef2f2;          /* red-50 */
+}
+.stack-card[data-uuid^="render:topic:"] .stack-spine:hover,
+.stack-card[data-uuid^="refs:ki:"] .stack-spine:hover,
+.stack-card[data-uuid^="refs:topic:"] .stack-spine:hover {
+  background: #fee2e2;          /* red-100 */
+}
+.stack-card[data-uuid^="render:topic:"][data-active="true"] .stack-spine,
+.stack-card[data-uuid^="refs:ki:"][data-active="true"] .stack-spine,
+.stack-card[data-uuid^="refs:topic:"][data-active="true"] .stack-spine {
+  background: #f87171;          /* red-400 */
+}
+
+/* #224 6f-4 v2 (first principles, 2026-05-18): Mobile-Stack ist
+   jetzt nativer scroll-snap statt manual transforms. Der Browser
+   uebernimmt Swipe-Mechanik komplett — kein touch-JS, kein
+   translateX, kein visibility-Toggle. Hans's Spine-Visible-Toggle
+   pro Blade entfaellt; der Spine ist immer linke Kante der Card. */
+@media (max-width: 767px) {
+  [data-blade-stack-target="container"][data-mobile="true"] {
+    margin: -1rem;
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100dvh - 5rem);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;            /* Firefox */
+  }
+  [data-blade-stack-target="container"][data-mobile="true"]::-webkit-scrollbar {
+    display: none;                    /* Chrome/Safari/Brave */
+  }
+  [data-blade-stack-target="container"][data-mobile="true"] .stack-card {
+    /* JS-inline-Reste aus dem alten Pfad ueberschreiben. */
+    position: static !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100%;
+    flex: 0 0 100vw;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    border-left: 0;
+    transform: none !important;
+    transition: none !important;
+    visibility: visible !important;
+  }
+}
+
+/* #234 follow-up: auf Mobile (Touch) den nativen Browser-Long-Press-
+   Callout auf Task-Rows unterdruecken, sonst poppt waehrend des
+   300ms-SortableJS-Delays das System-Kontextmenue auf und stiehlt
+   den Drag. Greift ueberall, wo eine [data-task-id]-Row im Markup
+   sitzt — also in Sortable- und CommitmentSortable-Listen. */
+@media (hover: none) and (pointer: coarse) {
+  [data-task-id] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* #388 (Hans, 2026-05-28): Bulk-Select-Modus. Im aktiven Modus
+   werden die Per-Row-Checkboxen sichtbar, und der Toggle-Button-
+   Text wechselt zu „Aktiv“. */
+/* #484 (Hans, 2026-06-03): nur noch `.bulk-active` (statt
+   `.bulk-select-root.bulk-active`), damit der bulk-select-Controller auch
+   auf der Tab-Section sitzen kann (Multi-Select-Icon in der Befehlszeile). */
+.bulk-active .bulk-checkbox { display: inline-block; }
+.bulk-active .bulk-toggle-label::before { content: "Auswahl aktiv — "; }
+
+
+/* #561 (Hans, 2026-06-09): juristische Gliederungs-Aufzählungen — (1)/(2)…
+   als (n)-Klammer-Dezimal, a)/b)… als Buchstabe-Klammer. */
+@counter-style legal-paren-decimal { system: numeric; symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"; prefix: "("; suffix: ") "; }
+@counter-style legal-paren-alpha { system: alphabetic; symbols: "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"; suffix: ") "; }
+.markdown-body ol.legal-paren-decimal { list-style: legal-paren-decimal; padding-left: 2.4em; }
+.markdown-body ol.legal-paren-alpha   { list-style: legal-paren-alpha;   padding-left: 2em; }
+
+/* #589 (Hans, 2026-06-10): Fokus-Orientierung — die Chevron-Section, in der
+   gerade gearbeitet wird, bekommt kurz einen dunkleren, optisch dickeren
+   Rahmen: 1s stehen, dann ausfaden. Runde 3: bei JEDEM Toggle neu — darum
+   JS-Klasse (disclosure/tri-disclosure starten die Animation per
+   classList-Restart) statt :focus-within (kann nicht re-triggern).
+   box-shadow statt border-width, damit nichts im Layout springt. */
+.section-flash {
+  animation: section-focus-flash 1.6s ease-out forwards;
+}
+
+/* #589 Runde 4 (Hans): Section-Titel mit leichtem grauem Hintergrund —
+   gilt zentral für alle Chevron-Sections (disclosure + tri-disclosure),
+   Hover wird eine Stufe dunkler als bisher. */
+section[data-controller~="disclosure"] > button,
+section[data-controller~="tri-disclosure"] > button {
+  background-color: var(--color-slate-50, #f8fafc);
+}
+section[data-controller~="disclosure"] > button:hover,
+section[data-controller~="tri-disclosure"] > button:hover {
+  background-color: var(--color-slate-100, #f1f5f9);
+}
+/* Offene Section: untere Ecken des Titel-Buttons eckig, damit der graue
+   Balken sauber an der Trennlinie zum Inhalt abschließt. */
+section[data-controller~="disclosure"][data-collapsed="false"] > button,
+section[data-controller~="tri-disclosure"]:not([data-state="closed"]) > button {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+@keyframes section-focus-flash {
+  0%, 62% {  /* ~1s voll sichtbar … */
+    border-color: var(--color-slate-700, #334155);
+    box-shadow: 0 0 0 1px var(--color-slate-700, #334155);
+  }
+  100% {     /* … dann ausfaden zurück zum Normalrahmen */
+    border-color: var(--color-slate-200, #e2e8f0);
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+
+/* #603 R5 (Hans): solange ein Picker-Eingabefeld offen ist, Hover-Effekte
+   der Zeile abschalten — sonst springt das Layout beim Mausbewegen. */
+.erow-open { background-color: transparent !important; }
+.erow-open .erow-hover-label { display: none !important; }
+/* #603 R7 (Hans): Zeilen mit EINTRAG zeigen keinen Hover-Text und keine
+   Hover-Hervorhebung mehr — die data-empty-Wrapper (false = belegt)
+   existieren bereits für den belegte-Felder-Modus (#581). */
+[data-empty="false"] .erow-hover-label { display: none !important; }
+[data-empty="false"] .group\/erow:hover,
+.group\/erow[data-empty="false"]:hover { background-color: transparent !important; }
+
+/* #685 (Hans, 2026-06-13): Fokusansichten — Single Blade + Single Section.
+   Nur Desktop (>= md). Reines Klassen-Toggling über <body>; die Cards/
+   Sections bleiben im DOM (kein Move → State bleibt). */
+@media (min-width: 768px) {
+  /* Chrome (Sidebar + Topbar) in beiden Fokusmodi ausblenden. */
+  body.focus-blade .focus-chrome-hide,
+  body.focus-section .focus-chrome-hide { display: none !important; }
+
+  /* Nur das fokussierte Blade zeigen, zentriert. */
+  body.focus-blade #blade_stack_container,
+  body.focus-section #blade_stack_container { justify-content: center; }
+
+  body.focus-blade #blade_stack_container > .stack-card:not([data-focus-blade]),
+  body.focus-section #blade_stack_container > .stack-card:not([data-focus-blade]) {
+    display: none !important;
+  }
+
+  body.focus-blade .stack-card[data-focus-blade],
+  body.focus-section .stack-card[data-focus-blade] {
+    width: var(--focus-blade-width, 46rem) !important;
+    max-width: 95vw !important;
+    margin-inline: auto !important;
+  }
+
+  /* Single Section: nur die aktive Beschreibungs-Section zeigen. Der
+     Controller stellt den Pfad Section→Card frei und markiert alle
+     Off-Path-Geschwister (inkl. Spine) mit .focus-section-off. */
+  body.focus-section .focus-section-off { display: none !important; }
+  body.focus-section [data-focus-section-active] { border: 0; }
+  /* #685 R3 (Hans): der Beschreibungs-Header ist sticky mit top:var(--ki-title-h)
+     (Offset für den darüberliegenden Titel). Im Fokus ist der Titel
+     ausgeblendet → ohne Offset, sonst verdeckt der Header die erste Zeile
+     des Bearbeitungsfelds. */
+  body.focus-section [data-focus-section-active] > header {
+    top: 0 !important;
+    /* #709 (Hans): Der Scroll-Container hat oben p-4 (1rem). Der Sticky-
+       Header klebt bei top:0 (= padding-Kante), darüber bleibt die 1rem-
+       Padding-Lücke transparent — durchscrollender Text taucht dort über
+       dem „Titel-Streifen" auf. Ein deckungsgleicher „Hood" (1rem nach
+       oben, opak) blendet diesen Bereich aus, ohne Layout-Shift. Die Card
+       (weißer Streifen auf grauem Grund) bleibt — Zielbild (#709 R3). */
+    box-shadow: 0 -1rem 0 0 #fff;
+  }
+
+  /* #709 R3/R4 (Hans): In der Section-Fokusansicht NUR den Rahmen um das
+     Edit-Feld und dessen grüne Fokus-Hervorhebung entfernen — beim
+     reduzierten Interface braucht es keinen Orientierungs-Rahmen. Gilt für
+     die Plain-Textarea UND den CM6-Editor (.cm-editor; dessen Theme setzt
+     border slate-200 + bei Focus emerald-400 — daher !important). Der
+     weiße Streifen (Card) auf grauem Grund bleibt unverändert. */
+  body.focus-section [data-focus-section-active] textarea,
+  body.focus-section [data-focus-section-active] .cm-editor,
+  body.focus-section [data-focus-section-active] .cm-editor.cm-focused {
+    border-color: transparent !important;
+    background: transparent !important;
+  }
+  body.focus-section [data-focus-section-active] textarea:focus,
+  body.focus-section [data-focus-section-active] .cm-editor.cm-focused {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* Eigener Breiten-Drag-Handle der Fokusansicht (rechte Card-Kante). */
+  .focus-blade-width-handle {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 6px;
+    cursor: col-resize; z-index: 25; background: transparent;
+  }
+  .focus-blade-width-handle:hover { background: rgb(52 211 153 / 0.55); }
+
+  /* #685 R4: Icon-Wechsel enter↔exit rein aus dem Fokus-Zustand ableiten —
+     bleibt nach Card-/Frame-Re-Rendern automatisch korrekt (kein JS nötig). */
+  body.focus-blade .stack-card[data-focus-blade] [data-focus-trigger="blade"] .focus-enter-icon,
+  body.focus-section [data-focus-section-active] [data-focus-trigger="section"] .focus-enter-icon {
+    display: none;
+  }
+  body.focus-blade .stack-card[data-focus-blade] [data-focus-trigger="blade"] .focus-exit-icon,
+  body.focus-section [data-focus-section-active] [data-focus-trigger="section"] .focus-exit-icon {
+    display: inline-block !important;
+  }
+}
+
+/* Fokus-Trigger-Icons auf Mobile ausblenden (Feature ist Desktop-only). */
+@media (max-width: 767px) {
+  .focus-view-trigger { display: none !important; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   #772 (Hans, 2026-06-27): DARK MODE.
+   Tailwind v4 kompiliert Farb-Utilities zu var(--color-*). Wir remappen den
+   ganzen slate-Ramp unter `html.dark` von hell→dunkel (50 = dunkelste Fläche,
+   900 = hellster Text). Das deckt in einem Zug alle Flächen-, Text-, Rahmen-
+   und Divide-Utilities ab (inkl. der 600+ border-slate-200 und der
+   markdown-body @apply-Regeln, die ebenfalls die Variablen nutzen).
+   --color-white bleibt #fff, damit `text-white` auf Akzent-Buttons weiß
+   bleibt; die paar weißen FLÄCHEN (bg-white) sowie die wenigen dunklen
+   Flächen (bg-slate-700/800/900) werden gezielt per Klasse nachgezogen.
+   Bewusst UNGELAYERT am Dateiende → schlägt alle @layer-Utilities.
+   ════════════════════════════════════════════════════════════════════════ */
+html.dark {
+  color-scheme: dark;
+
+  /* slate-Ramp invertiert (Helligkeit gespiegelt) */
+  --color-slate-50:  #0f172a;   /* tiefste Fläche (Body/Container) */
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;   /* Standard-Rahmen */
+  --color-slate-300: #475569;
+  --color-slate-400: #64748b;   /* gedämpfter Text/Icons, Fokus-Rahmen */
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #dde5ee;   /* Fließtext */
+  --color-slate-800: #eef2f7;
+  --color-slate-900: #f8fafc;   /* Überschriften */
+}
+
+/* Topbar-Icon: Mond (hell) ⇄ Sonne (dunkel) */
+html.dark .theme-icon-moon { display: none; }
+html.dark .theme-icon-sun  { display: flex; }
+
+/* Weiße FLÄCHEN → Karten-Dunkel (text-white bleibt unangetastet weiß). */
+.dark .bg-white,
+.dark .focus\:bg-white:focus,
+.dark .hover\:bg-white:hover { background-color: #1e293b; }
+
+/* Dunkle FLÄCHEN, die dunkel BLEIBEN sollen (sonst kippen sie durch den
+   Ramp-Remap nach hell). Mit ihrem weißen Text weiterhin lesbar. */
+.dark .bg-slate-700,
+.dark .hover\:bg-slate-700:hover { background-color: #334155; }
+.dark .bg-slate-800,
+.dark .hover\:bg-slate-800:hover { background-color: #273244; }
+.dark .bg-slate-900 { background-color: #1e293b; }
+.dark .stack-instance-counter { background-color: #475569; }
+.dark .stack-instance-counter:hover { background-color: #576882; }
+
+/* Rahmen, die auf dunklen Flächen sitzen → dezent statt hell. */
+.dark .border-slate-700 { border-color: #475569; }
+.dark .border-slate-800 { border-color: #3a4658; }
+
+/* text-slate-300 ist (anders als 400+) helle Schrift auf Akzent/Dunkel —
+   nach dem Remap zu dunkel; wieder hell halten. */
+.dark .text-slate-300 { color: #cbd5e1; }
+
+/* Farbige Spines (literale Pastelltöne im CSS oben) → gedämpfte Dunkel-Töne,
+   damit sie nicht als helle Streifen auf den dunklen Karten knallen. */
+.dark .stack-card .stack-spine { background: #1a2738; }            /* Detail default */
+.dark .stack-card .stack-spine:hover { background: #21344a; }
+.dark .stack-card[data-active="true"] .stack-spine { background: #15803d; }  /* emerald-700 */
+.dark .stack-card[data-uuid^="list:"] .stack-spine { background: #172a45; }
+.dark .stack-card[data-uuid^="list:"] .stack-spine:hover { background: #1e3a5f; }
+.dark .stack-card[data-uuid^="list:"][data-active="true"] .stack-spine { background: #1d4ed8; }  /* blue-700 */
+.dark .stack-card[data-uuid^="render:topic:"] .stack-spine,
+.dark .stack-card[data-uuid^="refs:ki:"] .stack-spine,
+.dark .stack-card[data-uuid^="refs:topic:"] .stack-spine { background: #3a1f24; }
+.dark .stack-card[data-uuid^="render:topic:"][data-active="true"] .stack-spine,
+.dark .stack-card[data-uuid^="refs:ki:"][data-active="true"] .stack-spine,
+.dark .stack-card[data-uuid^="refs:topic:"][data-active="true"] .stack-spine { background: #b91c1c; }  /* red-700 */
+
+/* Markdown-Code/Pre nutzen bg-slate-100 (jetzt #1e293b) — leicht abheben. */
+.dark .markdown-body code,
+.dark .markdown-body pre { background-color: #0b1220; }
+
+/* #772 Nachzug 1: Opacity-Varianten von bg-white / bg-slate-50 (sticky
+   Header mit backdrop-blur etc.) nutzen var(--color-white) bzw. -slate-50 und
+   blieben hell — auf die dunklen Karten-/Body-Töne mit gleicher Transparenz. */
+.dark .bg-white\/95     { background-color: rgb(30 41 59 / 0.95); }   /* slate-800/95 */
+.dark .bg-white\/50     { background-color: rgb(30 41 59 / 0.55); }
+.dark .bg-slate-50\/95  { background-color: rgb(15 23 42 / 0.95); }
+.dark .bg-slate-50\/60  { background-color: rgb(15 23 42 / 0.6); }
+.dark .bg-slate-50\/50  { background-color: rgb(15 23 42 / 0.5); }
+
+/* #772 Nachzug 2: CM6-Editor (Body-Editor) setzt sein Theme in JS
+   (color slate-700, border slate-200) — nur per !important übersteuerbar.
+   Dunkles Pendant, grüner Fokus-Rand bleibt. Siehe cm6_editor_controller.js. */
+.dark .cm-editor {
+  color: #dde5ee !important;
+  border-color: #334155 !important;
+  background-color: #0b1220 !important;
+}
+.dark .cm-editor .cm-content { caret-color: #dde5ee; }
+.dark .cm-editor .cm-cursor, .dark .cm-editor .cm-dropCursor { border-left-color: #dde5ee !important; }
+.dark .cm-editor.cm-focused { border-color: #34d399 !important; }   /* emerald-400 */
+.dark .cm-editor .cm-gutters {
+  background-color: #0b1220 !important;
+  color: #64748b !important;
+  border-color: #334155 !important;
+}
+.dark .cm-editor .cm-activeLine { background-color: rgb(148 163 184 / 0.07); }
+.dark .cm-editor .cm-activeLineGutter { background-color: rgb(148 163 184 / 0.1); }
+.dark .cm-editor .cm-selectionBackground,
+.dark .cm-editor .cm-content ::selection { background-color: rgb(52 211 153 / 0.25) !important; }

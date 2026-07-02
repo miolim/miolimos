@@ -1,0 +1,85 @@
+<%# #533 Phase 1b (Hans, 2026-06-07): Header-Timer + Quick-Add-Popup.
+    Sitzt am Ende der Quick-Create-Leiste. Zeigt den laufenden Timer (egal von
+    wo gestartet), erlaubt Stop hier, und startet/nachträgt über das Popup. %>
+<%
+  topics   = Topic.non_templates.active.order(:name).to_a
+  projects = topics.select(&:project?)
+  others   = topics.reject(&:project?)
+%>
+<div class="relative flex items-center gap-2"
+     data-controller="time-timer"
+     data-time-timer-running-url-value="<%= running_time_entries_path %>"
+     data-time-timer-create-url-value="<%= time_entries_path %>"
+     data-time-timer-stop-url-value="<%= stop_time_entries_path %>">
+
+  <%# #2c: Regal — ein Chip je aktivem Timer (laufend + pausiert), per JS
+      gefüllt aus GET /time_entries/running (active-Liste). %>
+  <div data-time-timer-target="bar" class="flex items-center gap-1.5"></div>
+
+  <%# Start/Nachtragen-Button. %>
+  <button type="button" data-action="time-timer#togglePopup"
+          title="<%= t("shared.timer.track_time") %>" aria-label="<%= t("shared.timer.track_time") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer">
+    <%= icon "timer", size: "w-4 h-4" %>
+  </button>
+
+  <%# Popup. %>
+  <div data-time-timer-target="popup"
+       class="hidden absolute right-0 top-9 z-50 w-72 bg-white border border-slate-200 rounded-lg shadow-xl p-3 space-y-2 text-sm">
+    <div class="flex items-center gap-1 text-xs">
+      <button type="button" data-action="time-timer#setTimerMode"
+              class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer"><%= t("shared.timer.start_now") %></button>
+      <button type="button" data-action="time-timer#setManualMode"
+              class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer"><%= t("shared.timer.add_manually") %></button>
+      <button type="button" data-action="time-timer#closePopup"
+              class="ml-auto p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer" aria-label="<%= t("shared.timer.close") %>">
+        <%= icon "x", size: "w-4 h-4" %>
+      </button>
+    </div>
+
+    <%# #533 1c: Card-Start-Modus — Subjekt-Zeile + Topic-Buttons der Aufgabe/KI. %>
+    <div data-time-timer-target="subjectRow" class="hidden text-xs text-slate-600">
+      <%= t("shared.timer.time_for") %> <span data-time-timer-target="subjectLabel" class="font-medium"></span>
+    </div>
+    <div data-time-timer-target="subjectTopics" class="flex flex-wrap gap-1"></div>
+    <label class="hidden text-xs text-slate-600">
+      <input type="checkbox" data-time-timer-target="removeOthers" class="rounded border-slate-300 mr-1 align-middle">
+      <%= t("shared.timer.remove_other_projects") %>
+    </label>
+
+    <select data-time-timer-target="topic"
+            class="w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      <option value=""><%= t("shared.timer.choose_project") %></option>
+      <% if projects.any? %>
+        <optgroup label="<%= t("shared.timer.projects") %>">
+          <% projects.each do |t| %><option value="<%= t.id %>"><%= t.name %></option><% end %>
+        </optgroup>
+      <% end %>
+      <optgroup label="<%= t("shared.timer.topics") %>">
+        <% others.each do |t| %><option value="<%= t.id %>"><%= t.name %></option><% end %>
+      </optgroup>
+    </select>
+
+    <input type="text" data-time-timer-target="note" placeholder="<%= t("shared.timer.note_placeholder") %>"
+           class="w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+
+    <div data-time-timer-target="manualFields" class="hidden space-y-2">
+      <input type="datetime-local" data-time-timer-target="startedAt"
+             class="w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      <input type="number" min="1" step="1" data-time-timer-target="minutes" placeholder="<%= t("shared.timer.duration_minutes") %>"
+             class="w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    </div>
+
+    <label class="flex items-center gap-1.5 text-xs text-slate-600">
+      <input type="checkbox" data-time-timer-target="billable" class="rounded border-slate-300">
+      <%= t("shared.timer.billable") %>
+    </label>
+
+    <p data-time-timer-target="error" class="hidden text-xs text-rose-600"></p>
+
+    <button type="button" data-action="time-timer#submit" data-time-timer-target="submit"
+            class="w-full rounded bg-emerald-600 text-white text-sm py-1 hover:bg-emerald-700 cursor-pointer">
+      <%= t("shared.timer.start_timer") %>
+    </button>
+  </div>
+</div>

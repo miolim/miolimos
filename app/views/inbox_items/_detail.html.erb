@@ -1,0 +1,239 @@
+<%# Detail eines Inbox-Items. Wird sowohl als Inhalt des "inbox_detail"-
+    Turbo-Frames im Split-Pane geladen als auch von der Vollansicht
+    (show.html.erb) direkt gerendert.
+
+    Locals:
+      item              — InboxItem
+      processors        — Array<ProcessorBase> (Registry.all)
+      prompt_templates  — Array<PromptTemplate>
+      suggested         — String, suggested_processor_kind %>
+<%# #618: Frame-ID pro Item — als Blade können mehrere Details offen sein. %>
+<%= turbo_frame_tag "inbox_detail_#{item.id}" do %>
+  <article class="space-y-4">
+    <%# Header: Titel + Status-Pill, Action-Icons rechts. Bei
+        archived-Items keine destructive Aktion mehr — nur Löschen. %>
+    <header class="flex items-start gap-2">
+      <span class="text-[11px] uppercase tracking-wider text-slate-500 mt-1.5"><%= item.source_kind %></span>
+      <h1 class="flex-1 text-lg font-semibold text-slate-900 leading-snug"><%= item.display_title %></h1>
+      <%= status_pill(item.status) %>
+
+      <div class="flex items-center gap-1 shrink-0 text-slate-500 ml-1">
+        <% if item.status != "archived" %>
+          <%= button_to archive_inbox_item_path(item), method: :post,
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer",
+                title: t("inbox_items.archive"), "aria-label": t("inbox_items.archive"),
+                form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } } do %>
+            <%= icon "archive" %>
+          <% end %>
+        <% end %>
+        <%= button_to inbox_item_path(item), method: :delete,
+              class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer",
+              title: t("inbox_items.delete_permanently"), "aria-label": t("inbox_items.delete_permanently"),
+              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("inbox_items.delete_permanently_confirm") } } do %>
+          <%= icon "trash" %>
+        <% end %>
+      </div>
+    </header>
+
+    <%# Quelle + Zeitstempel als kleine Meta-Zeile direkt unter dem Header. %>
+    <div class="flex items-center gap-3 text-xs text-slate-500 -mt-2">
+      <% if item.source_url.present? %>
+        <%= link_to item.source_url, item.source_url, target: "_blank", rel: "noopener",
+              class: "flex-1 font-mono truncate hover:text-slate-900" %>
+      <% end %>
+      <span class="shrink-0"
+            title="<%= l(item.created_at, format: :short) %>">
+        <%= t("inbox_items.added_ago", age: compact_age(item.created_at)) %>
+      </span>
+    </div>
+
+    <%# #633: Provenienz — Item stammt aus einem E-Mail-Anhang. %>
+    <% if (comm_id = item.payload["communication_id"]) && (comm = Communication.find_by(id: comm_id)) %>
+      <div class="flex items-center gap-1.5 text-xs text-slate-500 -mt-2">
+        <span class="shrink-0"><%= icon "mail", size: "w-3.5 h-3.5" %></span>
+        <span><%= t("inbox_items.from_email") %></span>
+        <button type="button"
+                data-controller="blade-link"
+                data-blade-link-kind-value="communication"
+                data-blade-link-id-value="<%= comm.id %>"
+                data-action="click->blade-link#append"
+                class="min-w-0 truncate underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0 text-left">
+          <%= comm.subject.presence || t("inbox_items.no_subject") %>
+        </button>
+      </div>
+    <% end %>
+
+    <%# #618 v4: YouTube-Thumbnail (i.ytimg.com, keine API nötig). %>
+    <% if (vid = item.youtube_video_id) %>
+      <%= link_to item.source_url, target: "_blank", rel: "noopener", class: "block w-56" do %>
+        <img src="https://i.ytimg.com/vi/<%= vid %>/hqdefault.jpg"
+             alt="<%= t("inbox_items.video_thumbnail_alt") %>" loading="lazy"
+             class="rounded border border-slate-200 w-full">
+      <% end %>
+    <% end %>
+
+    <%# #670 (Hans): Dublettenkontrolle — gibt es zu dieser Quelle schon
+        einen Import? Vor der Verarbeitung warnen, Link zur möglichen
+        Dublette (öffnet im selben Stack), und „Als Dublette archivieren". %>
+    <% if !%w[processed archived].include?(item.status) && (dupes = item.potential_duplicate_kis.to_a).any? %>
+      <section class="rounded border border-amber-300 bg-amber-50 px-3 py-3 space-y-2">
+        <div class="text-xs uppercase tracking-wider text-amber-800"><%= t("inbox_items.possible_duplicate") %></div>
+        <p class="text-sm text-amber-900"><%= t("inbox_items.duplicate_intro", count: dupes.size) %></p>
+        <ul class="space-y-1">
+          <% dupes.each do |ki| %>
+            <li>
+              <button type="button"
+                      data-controller="blade-link"
+                      data-blade-link-kind-value="ki"
+                      data-blade-link-id-value="<%= ki.uuid %>"
+                      data-action="click->blade-link#append"
+                      class="text-sm text-amber-900 underline hover:text-amber-700 cursor-pointer bg-transparent border-0 p-0 text-left inline-flex items-center gap-1">
+                <%= knowledge_type_icon(ki.item_type, size: "w-3.5 h-3.5") %><%= ki.title %>
+              </button>
+            </li>
+          <% end %>
+        </ul>
+        <div class="pt-1">
+          <%= button_to t("inbox_items.archive_as_duplicate"), archive_inbox_item_path(item, duplicate_of: dupes.first.uuid),
+                method: :post,
+                form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+                class: "text-xs px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+          <span class="text-xs text-amber-700 ml-1"><%= t("inbox_items.archive_as_duplicate_hint") %></span>
+        </div>
+      </section>
+    <% end %>
+
+    <%# #171: Themen-Picker — Hans pflegt schon vor der Verarbeitung, in
+        welche Themen die erzeugten KIs/Tasks gehören. Processor liest
+        die Zuweisung beim Erzeugen aus und vererbt sie. %>
+    <% unless item.status == "archived" %>
+      <div class="text-xs">
+        <div class="text-slate-500 mb-1.5"><%= t("inbox_items.topics") %></div>
+        <%= render "shared/entity_picker",
+              chips_id:      "inbox_item_topics_chips_#{item.id}",
+              chips_partial: "inbox_items/topics_chips",
+              chips_locals:  { item: item },
+              suggest_url:   suggest_topics_path,
+              add_url:       inbox_item_topics_path(item),
+              param_name:    "topic_id",
+              placeholder:   t("inbox_items.topic_search_placeholder"),
+              create_label:  t("inbox_items.topic_create_label") %>
+      </div>
+    <% end %>
+
+    <%# Status-spezifische Hauptaktion ────────────────────────────────── %>
+    <% case item.status %>
+    <% when "pending" %>
+      <%= render "inbox_items/run_picker", item: item, processors: processors,
+            prompt_templates: prompt_templates, suggested: suggested,
+            label: t("inbox_items.process") %>
+
+    <% when "processing" %>
+      <%# inbox-status-poller pollt /inbox/:id/poll alle paar Sekunden;
+          sobald der Status wechselt, ersetzt der Server den Detail-Frame
+          und blendet einen Toast ein. Manueller "Aktualisieren"-Link
+          bleibt als Fallback drin. %>
+      <section class="rounded border border-blue-200 bg-blue-50 px-3 py-3 flex items-center gap-3"
+               data-controller="inbox-status-poller"
+               data-inbox-status-poller-url-value="<%= poll_inbox_item_path(item) %>"
+               data-inbox-status-poller-interval-value="4000">
+        <span class="inline-block w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
+        <span class="text-sm text-blue-900"><%= t("inbox_items.processing") %></span>
+        <%= link_to t("inbox_items.refresh_now"), inbox_item_path(item),
+              class: "ml-auto text-xs text-blue-700 hover:text-blue-900 underline" %>
+      </section>
+
+    <% when "awaiting_confirmation" %>
+      <% cf = item.result["confirmation"] || {} %>
+      <% if cf["reason"].to_s.start_with?("whisper_") %>
+        <section class="rounded border border-amber-300 bg-amber-50 px-3 py-3 space-y-2">
+          <div class="text-xs uppercase tracking-wider text-amber-800"><%= t("inbox_items.confirmation_required") %></div>
+          <p class="text-sm text-amber-900">
+            <%= t("inbox_items.transcribe_duration_html", duration: cf["duration_human"]) %>
+          </p>
+          <%# #776 (Hans): je nach Verfügbarkeit Whisper und/oder
+              Diarisierung (AssemblyAI) als getrennte Buttons anbieten.
+              whisper_available fehlt bei Alt-Items → default true (vor #776
+              war Whisper der einzige Weg). %>
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <% if cf.fetch("whisper_available", true) %>
+              <%= button_to t("inbox_items.continue_transcribe_whisper",
+                    cost: number_with_precision(cf["estimated_eur"], precision: 2)),
+                    process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_whisper: true),
+                    method: :post,
+                    class: "text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+            <% end %>
+            <% if cf["diarize_available"] %>
+              <%= button_to t("inbox_items.continue_transcribe_diarize",
+                    cost: number_with_precision(cf["diarize_estimated_eur"], precision: 2)),
+                    process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_diarize: true),
+                    method: :post,
+                    class: "text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer" %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+    <% when "failed" %>
+      <section class="rounded border border-rose-200 bg-rose-50 px-3 py-3 space-y-2">
+        <div class="text-xs uppercase tracking-wider text-rose-700"><%= t("inbox_items.error") %></div>
+        <pre class="text-xs whitespace-pre-wrap text-rose-900"><%= item.error_message %></pre>
+        <%= render "inbox_items/run_picker", item: item, processors: processors,
+              prompt_templates: prompt_templates, suggested: suggested,
+              label: t("inbox_items.retry") %>
+      </section>
+
+    <% when "processed" %>
+      <%= render "inbox_items/result_section", item: item %>
+
+    <% when "archived" %>
+      <% if (dup_uuid = item.payload["duplicate_of"].presence) && (dup = KnowledgeItem.find_by(uuid: dup_uuid)) %>
+        <p class="text-sm text-slate-500 italic"><%= t("inbox_items.archived_as_duplicate") %> →
+          <button type="button"
+                  data-controller="blade-link"
+                  data-blade-link-kind-value="ki"
+                  data-blade-link-id-value="<%= dup.uuid %>"
+                  data-action="click->blade-link#append"
+                  class="not-italic underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0"><%= dup.title %></button>
+        </p>
+      <% else %>
+        <p class="text-sm text-slate-500 italic"><%= t("inbox_items.archived") %></p>
+      <% end %>
+    <% end %>
+
+    <%# Inline-Edit nur in pending/failed — danach gibt es kein Zurück
+        mehr (KI/Source ist erzeugt, ein nachträglicher Title-Change am
+        Inbox-Item ändert daran nichts mehr). %>
+    <% if %w[pending failed].include?(item.status) %>
+      <details class="rounded border border-slate-200 bg-white">
+        <summary class="px-3 py-2 text-xs text-slate-500 cursor-pointer hover:text-slate-900">
+          <%= t("inbox_items.edit_entry") %>
+        </summary>
+        <%= form_with model: item, url: inbox_item_path(item), method: :patch,
+              local: true, class: "px-3 pb-3 space-y-2" do |f| %>
+          <%= f.text_field :title, value: item.display_title, placeholder: t("inbox_items.title_placeholder"),
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1" %>
+          <% if item.source_url.present? %>
+            <%# #582: Link-Icon zum Öffnen der Quell-URL. %>
+            <span class="flex items-center gap-1.5">
+              <%= f.url_field :source_url, value: item.source_url,
+                    class: "flex-1 min-w-0 text-xs text-slate-600 font-mono rounded border border-slate-200 px-2 py-1" %>
+              <%= link_to item.source_url, target: "_blank", rel: "noopener", title: t("inbox_items.open_url"),
+                    class: "shrink-0 text-slate-400 hover:text-emerald-700" do %>
+                <%= icon "external_link", size: "w-3.5 h-3.5" %>
+              <% end %>
+            </span>
+          <% end %>
+          <% if item.raw_content.present? %>
+            <%= f.text_area :raw_content, value: item.raw_content, rows: 6,
+                  class: "w-full text-xs font-mono rounded border border-slate-200 px-2 py-1" %>
+          <% end %>
+          <div class="flex items-center justify-end">
+            <%= f.submit t("actions.save"),
+                  class: "text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
+          </div>
+        <% end %>
+      </details>
+    <% end %>
+  </article>
+<% end %>

@@ -1,0 +1,54 @@
+<%# Gemeinsamer Body-Bereich für alle KI-Types: Markdown-Textarea mit
+    Wikilink-/Cite-Autocomplete, autosize-Höhe. Optional File-Upload
+    (für transcript) — wenn Datei ausgewählt ist, ignoriert der Server
+    den Markdown-Inhalt.
+    Locals:
+      f             — der äußere FormBuilder
+      accept_file   — bool, default false. Wenn true: PDF-Upload-Block
+      placeholder   — Textarea-Placeholder (default: "Markdown-Inhalt …") %>
+<%
+  accept_file = local_assigns.fetch(:accept_file, false)
+  placeholder = local_assigns.fetch(:placeholder, "Markdown-Inhalt …")
+%>
+<%# #373 Phase A (Hans, 2026-05-26): cm6-editor liegt mit auf dem
+    Wrapper. Default-Verhalten: macht nichts (gated auf ?cm6=1).
+    Wenn Hans den Spike testet, ersetzt CM6 visuell die Textarea —
+    autosize/autocomplete-Controller bleiben am Element haengen, weil
+    die Textarea als DOM-SoT erhalten bleibt. %>
+<div class="relative"
+     data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+     data-draft-persist-key-value="ki.new.content"
+     data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+     data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+     data-cm6-editor-active-value="true">
+  <%= f.text_area :content,
+        value: local_assigns[:prefill_content],
+        rows: 10,
+        placeholder: placeholder,
+        data: { draft_persist_target:         "input",
+                wikilink_autocomplete_target: "input",
+                cite_autocomplete_target:     "input",
+                cm6_editor_target:            "textarea",
+                controller: "autosize" },
+        class: "w-full font-mono text-sm border border-slate-200 rounded px-2 py-2
+                focus:outline-none focus:border-emerald-400" %>
+  <ul data-wikilink-autocomplete-target="list"
+      class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+  <ul data-cite-autocomplete-target="list"
+      class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+</div>
+
+<% if accept_file %>
+  <div class="text-xs text-slate-600 mt-2">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <span>📎 PDF (statt Markdown):</span>
+      <%= f.file_field :file, accept: "application/pdf,application/*,image/*",
+            class: "text-xs" %>
+    </label>
+    <p class="text-slate-400 mt-1 text-[11px]">
+      Wenn eine Datei ausgewählt ist, wird der Markdown-Inhalt ignoriert
+      und das KI als Datei-Attachment angelegt.
+    </p>
+  </div>
+<% end %>

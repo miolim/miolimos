@@ -1,0 +1,44 @@
+<%# #434 Teil 2 (Hans, 2026-06-01): Generischer Stack-Verlauf-Drawer fuer
+    ALLE Stack-Seiten (nicht nur Wissen). Der stack-history-Controller liest
+    den Storage-Key vom blade-stack-Element der Seite (dashboard/tasks/…),
+    loest Card-Titel ueber den generischen Resolver (stack#resolve) auf und
+    oeffnet/schliesst auf das `stack-history:toggle`-Window-Event, das der
+    Spine-Button am Fuss jeder Card feuert. Panel ist position:fixed, damit
+    es unabhaengig vom Render-Ort sauber am Viewport-Rand sitzt. %>
+<div data-controller="stack-history"
+     data-stack-history-shared-value="true"
+     data-stack-history-resolve-url-value="<%= stack_resolve_path %>">
+  <div data-stack-history-target="drawer"
+       class="@container hidden fixed right-0 top-12 bottom-0 w-[40rem] max-w-[calc(100vw-2rem)]
+              bg-white border-l border-slate-200 shadow-xl z-40 flex flex-col">
+    <header class="px-3 py-2 border-b border-slate-200 flex items-center gap-2">
+      <h2 class="font-semibold text-sm">Stack-Verlauf</h2>
+      <span data-stack-history-target="count" class="text-xs text-slate-500"></span>
+      <button type="button"
+              data-action="click->stack-history#clear"
+              class="ml-auto text-xs text-slate-500 hover:text-rose-600">
+        Verlauf leeren
+      </button>
+      <button type="button"
+              data-action="click->stack-history#toggle"
+              aria-label="Schließen"
+              class="text-slate-500 hover:text-slate-900 text-lg leading-none">×</button>
+    </header>
+    <div class="flex flex-col @[32rem]:flex-row flex-1 min-h-0 overflow-y-auto @[32rem]:overflow-y-hidden">
+      <div class="@[32rem]:flex-1 @[32rem]:border-r border-b @[32rem]:border-b-0 border-slate-200 bg-slate-50 flex flex-col min-h-0">
+        <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200 bg-white/50">
+          📌 Gepinnt
+        </div>
+        <div data-stack-history-target="pinnedList"
+             class="flex-1 @[32rem]:overflow-y-auto px-2 py-2 space-y-1.5"></div>
+      </div>
+      <div class="@[32rem]:flex-1 flex flex-col min-h-0">
+        <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200">
+          Verlauf
+        </div>
+        <div data-stack-history-target="list"
+             class="flex-1 @[32rem]:overflow-y-auto px-2 py-2 space-y-1.5"></div>
+      </div>
+    </div>
+  </div>
+</div>

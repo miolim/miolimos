@@ -1,0 +1,67 @@
+<%# #613: aus app/views/settings/tag_icons/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_tag_icons. %>
+<div class="space-y-4">
+  
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-3">
+    <h1 class="text-lg font-semibold"><%= t("settings.tag_icons.title") %></h1>
+    <p class="text-sm text-slate-700"><%= t("settings.tag_icons.intro_html") %></p>
+
+    <%= form_with url: settings_tag_icons_path, method: :patch, local: true,
+          data: { controller: "rows-editor" } do %>
+      <div class="space-y-2">
+        <div class="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-slate-500 font-medium">
+          <div><%= t("settings.tag_icons.col_tag") %></div>
+          <div><%= t("settings.tag_icons.col_icon_html") %></div>
+          <div></div>
+        </div>
+        <div data-rows-editor-target="rows" class="space-y-2">
+          <% @mapping.each do |tag, icon| %>
+            <%= render "settings/tag_icons/row", tag: tag, icon: icon %>
+          <% end %>
+          <% if @mapping.empty? %>
+            <%= render "settings/tag_icons/row", tag: "", icon: "" %>
+          <% end %>
+        </div>
+      </div>
+
+      <template data-rows-editor-target="template">
+        <%= render "settings/tag_icons/row", tag: "", icon: "" %>
+      </template>
+
+      <div class="flex items-center gap-2 mt-4">
+        <button type="button"
+                data-action="click->rows-editor#add"
+                class="text-xs px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.tag_icons.add_row") %>
+        </button>
+        <button type="submit"
+                class="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+          <%= t("settings.tag_icons.save") %>
+        </button>
+        <span class="text-xs text-slate-500 ml-2">
+          <%= t("settings.tag_icons.empty_hint") %>
+        </span>
+      </div>
+    <% end %>
+
+    <% if @mapping.any? %>
+      <section class="border-t border-slate-100 pt-3 mt-3">
+        <h2 class="text-sm font-medium text-slate-700 mb-2"><%= t("settings.tag_icons.preview") %></h2>
+        <div class="flex flex-wrap gap-2">
+          <% @mapping.each do |tag, icon_name| %>
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+              <% if (ic = tag_icon_html(tag, size: "w-3 h-3")) %>
+                <span class="text-slate-500 inline-flex items-center"><%= ic %></span>
+              <% else %>
+                <span class="text-rose-500 text-[10px]">⚠</span>
+              <% end %>
+              <span class="text-slate-700"><%= tag %></span>
+              <span class="text-slate-400">→ <%= icon_name %></span>
+            </span>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </section>
+</div>
+

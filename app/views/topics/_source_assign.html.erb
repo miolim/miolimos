@@ -1,0 +1,14 @@
+<%# #494 (Hans, 2026-06-03): Quelle einem Topic zuweisen — Picker, der
+    bestehende Quellen via /sources/suggest sucht und die gewaehlte dem
+    Topic zuordnet (Relevanz default „relevant"). Locals: topic. %>
+<div class="relative" data-controller="source-topic-picker"
+     data-source-topic-picker-url-value="<%= suggest_sources_path %>"
+     data-source-topic-picker-topic-id-value="<%= topic.id %>"
+     data-source-topic-picker-create-url-value="<%= create_source_topic_path(topic) %>">
+  <input type="text" placeholder="<%= t("topics.source_placeholder") %>" autocomplete="off"
+         data-source-topic-picker-target="input"
+         data-action="input->source-topic-picker#fetch focus->source-topic-picker#fetch keydown->source-topic-picker#keydown blur->source-topic-picker#blur"
+         class="w-full rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+  <ul data-source-topic-picker-target="list"
+      class="hidden absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+</div>

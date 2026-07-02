@@ -1,0 +1,133 @@
+<%# #573 v2: EIN Zeitraum-Renderer für alle Kalender-Kontexte.
+    Locals:
+      anchor    — Date im Zielzeitraum
+      view      — "month" | "week" | "day"
+      topic     — optional: nur Zeitobjekte dieses Topics
+      base_path — Endpoint für Navigation (turbo-frame-in-place)
+      frame_id  — ID des umgebenden turbo-frames (Nav-Links zielen darauf)
+      editable  — Edit/Delete an Ereignissen anzeigen %>
+<%
+  view  ||= "month"
+  topic ||= nil
+  editable = local_assigns.fetch(:editable, true)
+  if view == "day"
+    # #598: Tagesansicht — nutzt denselben Tagesliste-Zweig wie die Woche.
+    from = anchor; to = anchor
+    prev_anchor = anchor - 1.day; next_anchor = anchor + 1.day
+    label = l(anchor, format: "%A, %d.%m.%Y")
+  elsif view == "week"
+    from = anchor.beginning_of_week(:monday); to = anchor.end_of_week(:monday)
+    prev_anchor = anchor - 1.week; next_anchor = anchor + 1.week
+    label = "#{t("calendar.week_abbr")} #{anchor.cweek} · #{l from, format: "%d.%m."}–#{l to, format: "%d.%m.%Y"}"
+  else
+    from = anchor.beginning_of_month; to = anchor.end_of_month
+    prev_anchor = anchor.prev_month; next_anchor = anchor.next_month
+    label = l(from, format: "%B %Y")
+  end
+  range = from.beginning_of_day..to.end_of_day
+
+  events     = Event.visible_to(Current.actor).includes(:topic, :communication).where(starts_at: range)
+  milestones = Task.visible_to(Current.actor).where(client_milestone: true).where.not(published_at: nil).where(due_date: from..to)
+  faellige   = Task.visible_to(Current.actor).open.where(client_milestone: false).where.not(due_date: nil).where(due_date: from..to).where(parent_id: nil)
+  warte      = Awaiting.open.where(follow_up_at: from..to)
+  if topic
+    events     = events.where(topic_id: topic.id)
+    milestones = milestones.joins(:task_topics).where(task_topics: { topic_id: topic.id })
+    faellige   = faellige.joins(:task_topics).where(task_topics: { topic_id: topic.id })
+    warte      = warte.where(topic_id: topic.id) if Awaiting.column_names.include?("topic_id")
+  end
+
+  by_day = Hash.new { |h, k| h[k] = [] }
+  events.order(:starts_at).each { |e| by_day[e.starts_at.to_date] << [:event, e] }
+  milestones.each { |t| by_day[t.due_date] << [:milestone, t] }
+  faellige.each   { |t| by_day[t.due_date] << [:task, t] }
+  warte.each      { |a| by_day[a.follow_up_at.to_date] << [:awaiting, a] }
+
+  nav = ->(a, v) { "#{base_path}#{base_path.include?("?") ? "&" : "?"}month=#{a.strftime("%Y-%m-%d")}&view=#{v}" }
+%>
+<div class="flex items-center gap-2 flex-wrap">
+  <%= link_to "‹", nav.call(prev_anchor, view), data: { turbo_frame: frame_id },
+        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600" %>
+  <span class="text-sm font-medium tabular-nums min-w-36 text-center"><%= label %></span>
+  <%= link_to "›", nav.call(next_anchor, view), data: { turbo_frame: frame_id },
+        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600" %>
+  <%= link_to t("calendar.today"), nav.call(Date.current, view), data: { turbo_frame: frame_id },
+        class: "text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50" %>
+  <span class="flex-1"></span>
+  <%# #598: Reihenfolge Tag | Woche | Monat. %>
+  <span class="inline-flex rounded border border-slate-200 overflow-hidden text-xs">
+    <%= link_to t("calendar.view_day"), nav.call(anchor, "day"), data: { turbo_frame: frame_id },
+          class: "px-2 py-0.5 #{view == 'day' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+    <%= link_to t("calendar.view_week"), nav.call(anchor, "week"), data: { turbo_frame: frame_id },
+          class: "px-2 py-0.5 #{view == 'week' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+    <%= link_to t("calendar.view_month"), nav.call(anchor, "month"), data: { turbo_frame: frame_id },
+          class: "px-2 py-0.5 #{view == 'month' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+  </span>
+</div>
+
+<% if view == "month" %>
+  <% first_cell = from.beginning_of_week(:monday); last_cell = to.end_of_week(:monday) %>
+  <table class="w-full table-fixed text-[11px] border-collapse mt-2">
+    <thead><tr>
+      <% t("calendar.weekday_headers").each do |d| %>
+        <th class="text-left text-slate-400 font-normal pb-1"><%= d %></th>
+      <% end %>
+    </tr></thead>
+    <tbody>
+      <% first_cell.step(last_cell, 7).each do |week_start| %>
+        <tr>
+          <% (week_start..week_start + 6).each do |day| %>
+            <% in_month = day.month == from.month %>
+            <td class="align-top border border-slate-100 p-1 h-16 <%= 'bg-slate-50/60 text-slate-300' unless in_month %> <%= 'ring-1 ring-emerald-400 ring-inset' if day == Date.current %>">
+              <div class="<%= day == Date.current ? 'font-semibold text-emerald-700' : 'text-slate-400' %>"><%= day.day %></div>
+              <% by_day[day].first(3).each do |kind, obj| %>
+                <div class="truncate leading-tight">
+                  <% case kind
+                     when :event     %><span class="text-emerald-700">●</span> <%= obj.title %>
+                  <% when :milestone %><span class="text-rose-600">◆</span> <%= obj.title %>
+                  <% when :task      %><span class="text-slate-500">○</span> <%= obj.title %>
+                  <% when :awaiting  %><span class="text-amber-600">⏳</span> <%= obj.title %>
+                  <% end %>
+                </div>
+              <% end %>
+              <% if by_day[day].size > 3 %><div class="text-slate-400">+<%= by_day[day].size - 3 %></div><% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%# Wochenansicht: vertikale Tagesliste. %>
+  <div class="mt-2 space-y-1">
+    <% (from..to).each do |day| %>
+      <div class="flex gap-2 border-b border-slate-50 py-1 <%= 'bg-emerald-50/40' if day == Date.current %>">
+        <div class="w-20 shrink-0 text-xs <%= day == Date.current ? 'text-emerald-700 font-semibold' : 'text-slate-400' %>">
+          <%= l day, format: "%a %d.%m." %>
+        </div>
+        <div class="min-w-0 flex-1 space-y-0.5 text-[13px]">
+          <% if by_day[day].empty? %><span class="text-slate-300 text-xs">—</span><% end %>
+          <% by_day[day].each do |kind, obj| %>
+            <%= render "calendar/item_row", kind: kind, obj: obj, editable: editable, frame_id: frame_id %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<% if view == "month" %>
+  <% items = by_day.sort.flat_map { |day, list| list.map { |k, o| [day, k, o] } } %>
+  <% if items.any? %>
+    <div class="space-y-0.5 text-[13px] mt-3">
+      <% items.each do |day, kind, obj| %>
+        <div class="flex items-baseline gap-2 py-0.5 border-b border-slate-50">
+          <span class="text-xs text-slate-400 tabular-nums w-14 shrink-0"><%= l day, format: "%d.%m." %></span>
+          <%= render "calendar/item_row", kind: kind, obj: obj, editable: editable, frame_id: frame_id %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-sm text-slate-400 italic mt-3"><%= t("calendar.empty_period") %></p>
+  <% end %>
+<% end %>

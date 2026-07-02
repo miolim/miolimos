@@ -1,0 +1,90 @@
+<%# #613: aus app/views/settings/ki_templates/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_ki_templates. %>
+<%# #301: KI-Vorlagen. Liste links, Anlege-/Edit-Form rechts. Eine
+    Vorlage liefert item_type + Default-Titel + Default-Body fuer den
+    Quick-Create-KI-Slot in der Topbar. %>
+<div class="space-y-3">
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <section class="md:col-span-2 bg-white rounded border border-slate-200 divide-y divide-slate-100">
+      <header class="px-4 py-3 flex items-center gap-3">
+        <h2 class="text-sm font-semibold text-slate-900"><%= t("settings.ki_templates.existing") %></h2>
+        <span class="text-xs text-slate-500"><%= @ki_templates.size %></span>
+      </header>
+      <% if @ki_templates.any? %>
+        <ul class="divide-y divide-slate-100">
+          <% @ki_templates.each do |t| %>
+            <li class="px-4 py-2 flex items-start gap-3 group hover:bg-slate-50">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-slate-900 truncate"><%= t.name %></span>
+                  <span class="shrink-0 inline-flex items-center px-1.5 py-0 rounded bg-sky-50 border border-sky-200 text-sky-800 text-[10px] uppercase tracking-wider">
+                    <%= t.item_type %>
+                  </span>
+                </div>
+                <% if t.title.present? %>
+                  <div class="text-xs text-slate-500 truncate"><%= t("settings.ki_templates.title_prefix", title: t.title) %></div>
+                <% end %>
+              </div>
+              <%= link_to t("actions.edit"), edit_settings_ki_template_path(t),
+                    class: "text-xs text-slate-500 hover:text-slate-900 shrink-0" %>
+              <%= button_to t("actions.delete"), settings_ki_template_path(t),
+                    method: :delete,
+                    form: { class: "inline shrink-0", data: { turbo_confirm: t("settings.ki_templates.delete_confirm", name: t.name) } },
+                    class: "text-xs text-rose-600 hover:text-rose-800 bg-transparent border-0 cursor-pointer p-0" %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="px-4 py-3 text-sm text-slate-500 italic"><%= t("settings.ki_templates.empty") %></p>
+      <% end %>
+    </section>
+
+    <section class="bg-white rounded border border-slate-200">
+      <header class="px-4 py-3 border-b border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-900">
+          <%= @new_ki_template.persisted? ? t("settings.ki_templates.form_edit_title") : t("settings.ki_templates.form_new_title") %>
+        </h2>
+      </header>
+      <%= form_with model: @new_ki_template,
+            url: @new_ki_template.persisted? ? settings_ki_template_path(@new_ki_template) : settings_ki_templates_path,
+            class: "px-4 py-3 space-y-3",
+            data: { turbo: false } do |f| %>
+        <% if @new_ki_template.errors.any? %>
+          <div class="text-xs text-rose-700"><%= @new_ki_template.errors.full_messages.to_sentence %></div>
+        <% end %>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.ki_templates.field_name") %></span>
+          <%= f.text_field :name, required: true, autofocus: true,
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.ki_templates.field_type") %></span>
+          <%= f.select :item_type,
+                KnowledgeItem.item_types.keys.map { |k| [t("knowledge.item_types.#{k}", default: k.humanize), k] },
+                {},
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.ki_templates.field_default_title") %></span>
+          <%= f.text_field :title,
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.ki_templates.field_default_body") %></span>
+          <%= f.text_area :body, rows: 6,
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none font-mono [field-sizing:content]" %>
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <% if @new_ki_template.persisted? %>
+            <%= link_to t("actions.cancel"), settings_ki_templates_path,
+                  class: "text-xs text-slate-500 hover:text-slate-900 self-center" %>
+          <% end %>
+          <%= f.submit @new_ki_template.persisted? ? t("settings.ki_templates.submit_update") : t("actions.create"),
+                class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</div>
+

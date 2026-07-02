@@ -1,0 +1,27 @@
+<%# #533 1d (Hans, 2026-06-07): collapsible „Zeiten"-Subsection für eine
+    Aufgabe/KI (unter Details). Locals: subject, storage_key. %>
+<%
+  # #578: time_segments preloaden — duration_minutes summiert die
+  # Segmente, ohne Preload ist das 1 Query pro Buchung.
+  entries = TimeEntry.for_subject(subject).includes(:time_segments).recent.to_a
+  total   = entries.sum(&:duration_minutes)
+%>
+<%# #581-Folge: data-empty — im „belegte Felder"-Modus der umgebenden
+    Details-Section verschwindet die Zeiten-Subsection ohne Buchungen. %>
+<section data-controller="disclosure"
+         data-disclosure-storage-key-value="<%= storage_key %>"
+         data-empty="<%= entries.empty? %>"
+         <% if local_assigns[:anchor] %>id="<%= anchor %>"<% end %>
+         class="border border-slate-200 rounded mt-3">
+  <button type="button" data-action="click->disclosure#toggle"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 rounded-t">
+    <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("shared.time_section.times") %></span>
+    <% if entries.any? %><span class="text-slate-400">· <%= format_minutes(total) %></span><% end %>
+  </button>
+  <div data-disclosure-target="content" class="hidden px-3 pb-3 pt-1">
+    <%= render "shared/time_entries_list", entries: entries, show_subject: false %>
+  </div>
+</section>

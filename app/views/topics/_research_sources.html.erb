@@ -1,0 +1,95 @@
+<%# #494 (Hans, 2026-06-03): Recherche-Quellen eines Topics mit
+    interaktiver Relevanz (3 Zustaende) + Notiz + Zuweisen/Entfernen.
+    Wird IMMER gerendert (auch leer), damit der Picker + das
+    turbo-replace-Ziel existieren. Locals: topic. %>
+<%
+  sts = topic.source_topics
+             .includes(source: [:source_identifiers, :creator_kis])
+             .order(Arel.sql("CASE WHEN relevance = 'relevant' AND reached THEN 0 " \
+                              "WHEN relevance = 'relevant' THEN 1 ELSE 2 END"))
+             .to_a
+  # #575 (Hans, 2026-06-10): zwei Dimensionen — inhaltliches Urteil
+  # (relevant/irrelevant) getrennt von Zugriff (erreicht/n. erreicht).
+  # [wert, label, aktiv-Klassen] — LITERAL (Tailwind scannt Klassennamen).
+  rel_opts = [
+    ["relevant",   "relevant",   "bg-emerald-100 border-emerald-300 text-emerald-800"],
+    ["irrelevant", "irrelevant", "bg-slate-200 border-slate-300 text-slate-700"]
+  ]
+  reach_opts = [
+    [true,  "erreicht",    "bg-emerald-100 border-emerald-300 text-emerald-800"],
+    [false, "n. erreicht", "bg-amber-100 border-amber-300 text-amber-800"]
+  ]
+%>
+<div id="topic_research_sources_<%= topic.id %>" class="border-b border-slate-100">
+  <%# #494 (Hans, 2026-06-03): „Quelle aufnehmen"-Picker sitzt jetzt in der
+      Titelzeile (shell quick_add), nicht mehr hier. Nur noch die Überschrift. %>
+  <div class="px-3 py-1.5 bg-slate-50">
+    <span class="text-[11px] uppercase tracking-wider text-slate-400">
+      <%= t("topics.research_sources_heading", count: sts.size) %>
+    </span>
+  </div>
+
+  <% if sts.empty? %>
+    <p class="px-3 py-2 text-xs text-slate-400 italic"><%= t("topics.no_research_source") %></p>
+  <% else %>
+    <ul class="divide-y divide-slate-100">
+      <% sts.each do |st| %>
+        <li class="group px-3 py-2 text-[13px] hover:bg-slate-50">
+          <div class="flex items-center gap-2">
+            <span class="shrink-0 text-slate-400"><%= icon "quote", size: "w-4 h-4" %></span>
+            <%# #577: blade-link statt nackter Navigation — Klick appendet die
+                Quelle als Blade an den aktuellen Stack (Muster sources/_row,
+                #291); ohne blade-stack faellt es auf source_path zurueck. %>
+            <%= link_to st.source.title, source_path(st.source.slug),
+                  data: {
+                    controller: "blade-link",
+                    "blade-link-kind-value": "source",
+                    "blade-link-id-value": st.source.slug,
+                    action: "click->blade-link#append",
+                    turbo_frame: "_top"
+                  },
+                  class: "flex-1 min-w-0 truncate hover:underline #{'text-slate-400' if st.relevance == 'irrelevant'}" %>
+            <div class="shrink-0 flex items-center gap-0.5">
+              <% rel_opts.each do |val, label, active_cls| %>
+                <% active = st.relevance == val %>
+                <%= button_to label,
+                      source_topic_path(st.source.slug, st.topic_id),
+                      method: :patch, params: { relevance: val },
+                      form: { class: "inline-block m-0 p-0 leading-none" },
+                      class: "text-[10px] px-1.5 py-0.5 rounded border cursor-pointer #{active ? active_cls + ' font-medium' : 'border-slate-200 text-slate-400 hover:bg-slate-100'}" %>
+              <% end %>
+              <span class="mx-0.5 h-3 w-px bg-slate-200" aria-hidden="true"></span>
+              <% reach_opts.each do |val, label, active_cls| %>
+                <% active = st.reached == val %>
+                <%= button_to label,
+                      source_topic_path(st.source.slug, st.topic_id),
+                      method: :patch, params: { reached: val ? "1" : "0" },
+                      form: { class: "inline-block m-0 p-0 leading-none" },
+                      class: "text-[10px] px-1.5 py-0.5 rounded border cursor-pointer #{active ? active_cls + ' font-medium' : 'border-slate-200 text-slate-400 hover:bg-slate-100'}" %>
+              <% end %>
+            </div>
+            <%= button_to source_topic_path(st.source.slug, st.topic_id),
+                  method: :delete,
+                  form: { class: "inline-block m-0 p-0 leading-none",
+                          data: { turbo_confirm: t("topics.remove_assignment_confirm") } },
+                  class: "shrink-0 text-slate-300 hover:text-rose-600 p-0.5 cursor-pointer",
+                  title: t("topics.remove_assignment") do %>
+              <%= icon "trash", size: "w-3.5 h-3.5" %>
+            <% end %>
+            <%# #577: Plus haengt die Quelle an den Stack an (wie in den
+                anderen Listen, #509). Braucht group-Klasse am li. %>
+            <%= render "shared/blade_plus_button", kind: "source", id: st.source.slug %>
+          </div>
+          <%= form_with url: source_topic_path(st.source.slug, st.topic_id), method: :patch,
+                class: "mt-1 pl-6" do |f| %>
+            <%= f.text_field :note, value: st.note,
+                  placeholder: t("topics.note_placeholder"), autocomplete: "off",
+                  onblur: "if(this.dataset.dirty){this.dataset.dirty='';this.form.requestSubmit()}",
+                  oninput: "this.dataset.dirty='1'",
+                  class: "w-full bg-transparent text-xs text-slate-500 border-0 border-b border-transparent focus:border-slate-300 focus:outline-none px-0 py-0.5 placeholder:text-slate-300" %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

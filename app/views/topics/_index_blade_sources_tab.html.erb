@@ -1,0 +1,45 @@
+<%# #163 Phase 6d: Sources-Tab innerhalb der list:topic-Card.
+    #155 Phase 5c: zusaetzlich die direkt verknuepften Recherche-
+    Quellen mit Markierung (#575: relevant/irrelevant × erreicht/nicht-erreicht).
+    #484 Increment C (Hans, 2026-06-03): auf das gemeinsame Tab-Gerüst
+    umgestellt. Anzahl/Suche beziehen sich auf die zitierten Quellen (die
+    durchsuchbare Hauptliste); die Recherche-Quellen sind ein kleines
+    Kontext-Band darüber. Quick-Add vorerst leer (noch keine Operation). %>
+<%
+  # #348 Phase 3-Muster: Lazy-Load fuer den Stack-Loader-Pfad.
+  if @sources_items.nil?
+    @research_source_topics = topic.source_topics
+                                   .includes(source: [:source_identifiers, :creator_kis])
+                                   .to_a
+    src_ids = topic.knowledge_items.where.not(bib_source_id: nil).distinct.pluck(:bib_source_id)
+    @sources_items = Source.where(id: src_ids)
+                           .includes(:source_identifiers, :creator_kis)
+                           .order(Arel.sql("LOWER(title)")).to_a
+  end
+%>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        t("topics.tabs.sources"),
+        count:        @sources_items.size,
+        row_selector: "li[id^='source_row_']",
+        quick_add:    render("topics/source_assign", topic: topic),
+        empty:        @sources_items.any?
+      } do %>
+  <%# #494 (Hans, 2026-06-03): Recherche-Quellen jetzt interaktiv
+      (Relevanz-Toggle, Notiz, Zuweisen/Entfernen). Immer gerendert. %>
+  <%= render "topics/research_sources", topic: topic %>
+
+  <%# Zitierte Quellen (durchsuchbare Hauptliste). %>
+  <% if @sources_items.empty? %>
+    <p class="px-4 py-3 text-slate-500 italic text-sm"><%= t("topics.no_sources") %></p>
+  <% else %>
+    <%# #494 Option 1 (Hans, 2026-06-04): zitierte Quellen, die noch nicht
+        Recherche-Quelle sind, bekommen ein „+ ins Thema". %>
+    <% assigned_source_ids = (@research_source_topics || topic.source_topics.to_a).map(&:source_id).to_set %>
+    <ul data-controller="active-row" class="divide-y divide-slate-100">
+      <% @sources_items.each do |s| %>
+        <%= render "sources/row", source: s, add_to_topic: topic, assigned_source_ids: assigned_source_ids %>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

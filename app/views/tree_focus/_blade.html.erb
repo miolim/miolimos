@@ -1,0 +1,35 @@
+<%# #592 Z2: Fokusansicht-Blade. Locals: entry (WorkNode, Blade-Identität),
+    focus (WorkNode, aktueller Cursor). Navigation in-place über das
+    Turbo-Frame (Links mit ?focus=…). %>
+<%
+  topic = entry.topic
+  stack_uuid = "treefocus:#{entry.id}"
+%>
+<article id="stack_card_<%= stack_uuid %>"
+         data-uuid="<%= stack_uuid %>"
+         class="stack-card shrink-0 relative
+                w-[34rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+  <%# #740 (Hans): Spine-Hintergrund rot (wie der Werk-Render-Button),
+      network-Icon + Label weiß. %>
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-red-700 border-r border-red-800
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-red-800"
+         title="<%= t("tree_focus.spine_title", name: topic.name) %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="text-white mt-1"><%= icon "network", size: "w-4 h-4" %></span>
+    <span class="text-xs text-white font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+<%= t("tree_focus.spine_label", name: topic.name) %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3">
+    <%= turbo_frame_tag "tree_focus_frame_#{entry.id}" do %>
+      <%= render "tree_focus/panel", entry: entry, focus: focus %>
+    <% end %>
+  </div>
+</article>

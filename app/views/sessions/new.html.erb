@@ -1,0 +1,24 @@
+<% content_for :title, t("sessions.new_heading") %>
+
+<div class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="flex items-center gap-2 mb-4">
+    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+    <span class="font-semibold text-slate-900">miolimOS</span>
+  </div>
+  <h1 class="text-lg font-semibold mb-4"><%= t("sessions.new_heading") %></h1>
+
+  <%= form_with url: login_path, method: :post, local: true do |f| %>
+    <div class="mb-3">
+      <%= f.label :email, t("sessions.email"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.email_field :email, autofocus: true, required: true,
+            class: "w-full rounded border border-slate-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    </div>
+    <div class="mb-4">
+      <%= f.label :password, t("sessions.password"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.password_field :password, required: true,
+            class: "w-full rounded border border-slate-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    </div>
+    <%= f.submit t("sessions.submit"),
+          class: "w-full rounded bg-emerald-600 text-white font-medium py-1.5 hover:bg-emerald-700 cursor-pointer" %>
+  <% end %>
+</div>

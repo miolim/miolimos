@@ -1,0 +1,233 @@
+<%# #301: Quick-Create-Leiste in der Topbar. Icon-Reihe + aufklappbare
+    Eingabeslots (fixed + zentriert). Aufgabe / Wartepunkt / KI / Person.
+
+    Neu erstellte Entitaet wird vom jeweiligen Controller-Create-Pfad
+    (quick_create=1) per turbo_stream an `blade_stack_container`
+    appended — d.h. auf einer Stack-Seite landet sie direkt rechts im
+    Stack. %>
+<div data-controller="quick-create" class="relative flex items-center gap-0.5">
+  <%# ─── Icon-Reihe ─────────────────────────────────────────────── %>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="task"
+          title="<%= t("shared.quick_create.task_title") %>" aria-label="<%= t("shared.quick_create.task_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon "tasks", size: "w-4 h-4" %>
+  </button>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="awaiting"
+          title="<%= t("shared.quick_create.awaiting_title") %>" aria-label="<%= t("shared.quick_create.awaiting_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon "waiting", size: "w-4 h-4" %>
+  </button>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="ki"
+          title="<%= t("shared.quick_create.ki_title") %>" aria-label="<%= t("shared.quick_create.ki_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon "knowledge", size: "w-4 h-4" %>
+  </button>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="person"
+          title="<%= t("shared.quick_create.person_title") %>" aria-label="<%= t("shared.quick_create.person_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon "user", size: "w-4 h-4" %>
+  </button>
+  <%# #302: Inbox-Import als 5. Icon. Slot uebernimmt URL oder Freitext —
+      InboxItem.create errechnet source_kind aus dem Input. %>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="inbox"
+          title="<%= t("shared.quick_create.inbox_title") %>" aria-label="<%= t("shared.quick_create.inbox_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon "inbox", size: "w-4 h-4" %>
+  </button>
+
+  <%# ─── Slot: Aufgabe ──────────────────────────────────────────── %>
+  <%# #355 (Hans, 2026-05-25): Voreinstellungen fuer Topic + Zugewiesen,
+      sitzungsuebergreifend persistent ueber localStorage (controller
+      task-quickadd-prefs). %>
+  <%
+    quickadd_topics    = Topic.visible_to(Current.actor).non_templates.order(:name) rescue Topic.visible_to(Current.actor).order(:name)
+    quickadd_assignees = Actor.where(active: true).order(:name) rescue Actor.order(:name)
+  %>
+  <%= render layout: "shared/quick_create_slot",
+        locals: { slot: "task", heading: t("quick_create.headings.task") } do %>
+    <div data-controller="task-template-picker task-quickadd-prefs"
+         data-task-template-picker-title-target-id-value="quick_create_task_title"
+         data-task-template-picker-description-target-id-value="quick_create_task_description"
+         class="relative">
+      <%= form_with url: tasks_path, method: :post, class: "space-y-2" do |f| %>
+        <%= f.hidden_field :description, id: "quick_create_task_description" %>
+        <%= f.text_field :title,
+              id: "quick_create_task_title",
+              placeholder: t("quick_create.fields.title_or_template"),
+              autocomplete: "off",
+              data: {
+                "task-template-picker-target": "input",
+                action: "input->task-template-picker#fetch focus->task-template-picker#fetch keydown->task-template-picker#keydown blur->task-template-picker#blur"
+              },
+              class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+        <%# #641: vier benannte Presets (Topic+Zugewiesen) als Tier-Icons —
+            Klick aktiviert, Select-Änderungen speichern ins aktive Preset,
+            das zuletzt aktive wird beim nächsten Aufruf wiederhergestellt. %>
+        <div class="flex items-center gap-1 pt-1">
+          <span class="text-[11px] text-slate-500 mr-1"><%= t("quick_create.fields.preset") %></span>
+          <% %w[cat squirrel bird fish].each do |p| %>
+            <button type="button"
+                    data-task-quickadd-prefs-target="preset"
+                    data-preset="<%= p %>"
+                    data-action="click->task-quickadd-prefs#selectPreset"
+                    title="Preset <%= p %>" aria-label="Preset <%= p %>"
+                    class="p-1 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+              <%= icon p, size: "w-4 h-4" %>
+            </button>
+          <% end %>
+        </div>
+        <%# Topic-Preset. Toplevel `topic_id`-Param wird vom Quickadd-Pfad
+            in tasks#create gelesen (params[:topic_id]). %>
+        <label class="block text-[11px] text-slate-500 mt-1"><%= t("quick_create.fields.topic") %></label>
+        <%= select_tag :topic_id,
+              options_for_select([[t("quick_create.fields.no_topic"), ""]] +
+                quickadd_topics.map { |t| [t.name, t.id.to_s] }),
+              data: {
+                "task-quickadd-prefs-target": "topic",
+                action: "change->task-quickadd-prefs#saveTopic"
+              },
+              class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+        <%# Assignee-Preset. Toplevel `assignee_id` ist im task_params-
+            Quickadd-Branch erlaubt. %>
+        <label class="block text-[11px] text-slate-500 mt-1"><%= t("quick_create.fields.assignee") %></label>
+        <%= select_tag :assignee_id,
+              options_for_select([[t("quick_create.fields.assignee_default"), ""]] +
+                quickadd_assignees.map { |a| [a.name, a.id.to_s] }),
+              data: {
+                "task-quickadd-prefs-target": "assignee",
+                action: "change->task-quickadd-prefs#saveAssignee"
+              },
+              class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+        <div class="flex justify-end">
+          <%= f.submit t("actions.create"),
+                class: "text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+        </div>
+      <% end %>
+      <%# #641: Vorlagen-Treffer UNTER den Feldern im Fluss (statt
+          absolute über den Selects — die waren sonst verdeckt). %>
+      <ul data-task-template-picker-target="list"
+          class="hidden mt-2 bg-white border border-slate-200 rounded shadow-inner max-h-56 overflow-y-auto"></ul>
+    </div>
+  <% end %>
+
+  <%# ─── Slot: Wartepunkt ───────────────────────────────────────── %>
+  <%= render layout: "shared/quick_create_slot",
+        locals: { slot: "awaiting", heading: t("quick_create.headings.awaiting") } do %>
+    <%= form_with model: Awaiting.new, url: awaitings_path, method: :post, class: "space-y-2" do |f| %>
+      <%= hidden_field_tag :quick_create, "1" %>
+      <%= f.text_field :title,
+            placeholder: t("quick_create.fields.awaiting_placeholder"),
+            autocomplete: "off",
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" %>
+      <div class="flex justify-end">
+        <%= f.submit t("actions.create"),
+              class: "text-xs px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ─── Slot: KI ───────────────────────────────────────────────── %>
+  <%# #301: Title-Feld doppelt als KI-Vorlagen-Picker. Treffer fuellt
+      item_type-Select + Title + Hidden-Body. %>
+  <%= render layout: "shared/quick_create_slot",
+        locals: { slot: "ki", heading: t("quick_create.headings.ki") } do %>
+    <div data-controller="ki-template-picker"
+         data-ki-template-picker-item-type-target-id-value="quick_create_ki_item_type"
+         data-ki-template-picker-title-target-id-value="quick_create_ki_title"
+         data-ki-template-picker-body-target-id-value="quick_create_ki_body"
+         class="relative">
+      <%= form_with url: knowledge_items_path, method: :post, class: "space-y-2" do |f| %>
+        <%= hidden_field_tag :quick_create, "1" %>
+        <%= hidden_field_tag :content, "", id: "quick_create_ki_body" %>
+        <%= f.select :item_type,
+              KnowledgeItem.item_types.keys.map { |k| [t("knowledge.item_types.#{k}", default: k.humanize), k] },
+              { selected: "note" },
+              id: "quick_create_ki_item_type",
+              class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" %>
+        <%= f.text_field :title,
+              id: "quick_create_ki_title",
+              placeholder: t("quick_create.fields.title_or_template"),
+              autocomplete: "off",
+              data: {
+                "ki-template-picker-target": "input",
+                action: "input->ki-template-picker#fetch focus->ki-template-picker#fetch keydown->ki-template-picker#keydown blur->ki-template-picker#blur"
+              },
+              class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" %>
+        <%# #609 (Hans): Datei direkt im KI-Quick-Add — mit Datei wird eine
+            Datei-KI angelegt (Bild/PDF/MD; Typ-Auswahl oben ist dann egal,
+            der Server nutzt den Datei-Pfad). %>
+        <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+          <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "paperclip" %></span>
+          <%= f.file_field :file, accept: "image/*,application/pdf,.md,.markdown,text/markdown",
+                class: "text-xs flex-1 min-w-0" %>
+        </label>
+        <div class="flex justify-end">
+          <%= f.submit t("actions.create"),
+                class: "text-xs px-3 py-1 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
+        </div>
+      <% end %>
+      <ul data-ki-template-picker-target="list"
+          class="hidden absolute z-40 left-0 right-0 bg-white border border-slate-200 rounded shadow-lg max-h-56 overflow-y-auto"></ul>
+    </div>
+  <% end %>
+
+  <%# ─── Slot: Person ───────────────────────────────────────────── %>
+  <%= render layout: "shared/quick_create_slot",
+        locals: { slot: "person", heading: t("quick_create.headings.person") } do %>
+    <%= form_with url: knowledge_items_path, method: :post, class: "space-y-2" do |f| %>
+      <%= hidden_field_tag :quick_create, "1" %>
+      <%= hidden_field_tag :item_type, "person" %>
+      <%= f.text_field :title,
+            placeholder: t("quick_create.fields.person_placeholder"),
+            autocomplete: "off",
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+      <%# #761 (Hans): optionale URL — ausgefüllt zieht der Create-Pfad gleich
+          die Kontaktdaten aus der Quelle (Kontaktdaten-Phase der
+          Entitäts-Recherche). %>
+      <%= f.url_field :enrich_url,
+            placeholder: t("quick_create.fields.person_url_placeholder"),
+            autocomplete: "off",
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+      <div class="flex justify-end">
+        <%= f.submit t("actions.create"),
+              class: "text-xs px-3 py-1 rounded bg-violet-600 text-white hover:bg-violet-700 cursor-pointer" %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ─── Slot: Inbox-Import (#302 + #307) ───────────────────────── %>
+  <%# URL ODER Freitext ODER Datei (PDF / Bild / Markdown).
+      InboxItemsController#create errechnet source_kind aus dem
+      Inhalt (URL vs raw_content vs upload). %>
+  <%= render layout: "shared/quick_create_slot",
+        locals: { slot: "inbox", heading: t("quick_create.headings.inbox") } do %>
+    <%= form_with url: inbox_items_path, method: :post, local: true,
+          multipart: true, class: "space-y-2" do |f| %>
+      <%= f.url_field :source_url,
+            placeholder: t("quick_create.fields.url_placeholder"),
+            autocomplete: "off",
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+      <%= f.text_area :raw_content,
+            placeholder: t("quick_create.fields.text_placeholder"),
+            rows: 4,
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400 [field-sizing:content] resize-y" %>
+      <%# #307: Datei-Upload (PDF / Bild / Markdown). Beim Submit
+          mit file > URL/raw_content; store_uploaded_file! kuemmert
+          sich um Ablage, der Processor entscheidet anhand der Endung. %>
+      <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+        <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "paperclip" %></span>
+        <%= f.file_field :file, accept: "application/pdf,image/*,.md,.markdown,text/markdown",
+              class: "text-xs flex-1 min-w-0" %>
+      </label>
+      <div class="flex justify-end">
+        <%= f.submit t("quick_create.fields.submit_inbox"),
+              class: "text-xs px-3 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

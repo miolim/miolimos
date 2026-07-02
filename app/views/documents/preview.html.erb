@@ -1,0 +1,45 @@
+<%# #532 Phase 2: Theme-Werkbank — selbst-enthaltene Standalone-Seite (kein
+    App-Layout/Turbo-Frame), damit sie zuverlässig in einem eigenen Tab lädt
+    und das Papierblatt (210mm) nicht vom App-Container beschnitten wird. %>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= t("documents.preview.title") %></title>
+  <%= render "documents/print_theme" %>
+</head>
+<body>
+  <div class="doc-toolbar">
+    <strong><%= t("documents.preview.title") %></strong>
+    <% DocumentsController::SAMPLES.each do |key, label| %>
+      <a href="<%= document_preview_path(sample: key, issuer: @issuer&.uuid) %>" class="<%= 'active' if @sample == key %>"><%= label %></a>
+    <% end %>
+
+    <%# #532: Aussteller-Auswahl — speist den Briefkopf aus den Stammdaten. %>
+    <% if @issuers.any? %>
+      <form method="get" action="<%= document_preview_path %>" style="display:inline; margin-left:8px;">
+        <input type="hidden" name="sample" value="<%= @sample %>">
+        <label style="font-size:12px; color:#475569;"><%= t("documents.preview.issuer_label") %>
+          <select name="issuer" onchange="this.form.submit()"
+                  style="padding:2px 6px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+            <% @issuers.each do |iss| %>
+              <option value="<%= iss.uuid %>" <%= 'selected' if @issuer&.uuid == iss.uuid %>><%= iss.title %></option>
+            <% end %>
+          </select>
+        </label>
+      </form>
+    <% else %>
+      <span style="margin-left:8px; font-size:12px; color:#94a3b8;"><%= t("documents.preview.no_issuer") %></span>
+    <% end %>
+
+    <span style="margin-left:auto;"></span>
+    <a href="<%= document_pdf_path(sample: @sample, issuer: @issuer&.uuid) %>" class="pdf"><%= t("documents.preview.download_pdf") %></a>
+    <button type="button" onclick="window.print()"><%= t("documents.preview.print") %></button>
+  </div>
+
+  <div class="doc-canvas">
+    <%= render "documents/sample_#{@sample}" %>
+  </div>
+</body>
+</html>

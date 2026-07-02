@@ -1,0 +1,66 @@
+<%# #484 Increment C (Hans, 2026-06-03): gemeinsames Gerüst für die
+    Topic-Reiter, damit alle dieselbe Struktur + Breite haben. Aufbau:
+      1. sticky Quick-Add-Zeile: Reitername + (optional) Quick-Add-Feld
+      2. Befehlszeile: Anzahl [| Suche | Steuerungen]
+      3. yield = der eigentliche Listen-Inhalt
+    Alles innerhalb derselben Section -> einheitliche Breite (kein
+    Über-die-ganze-Blade-Breite mehr).
+
+    Als Layout benutzen: render layout "topics/tab_shell" mit locals +
+    einem Block, dessen Inhalt (die Liste) per yield ausgegeben wird.
+
+    Locals:
+      title:        String  — Reitername (Pflicht)
+      count:        Integer — angezeigte Anzahl
+      total:        Integer — Gesamtzahl (optional; default = count)
+      row_selector: String  — Selektor für die Listen-Suche (default "li")
+      quick_add:    html_safe — Quick-Add-Feld (optional; #484: bei
+                    Kommunikation/Diskussion vorerst leer)
+      controls:     html_safe — rechtsbündige Steuer-Icons (optional;
+                    #484: nur einblenden, wo die Operation existiert)
+      empty:        Bool — ob ein „keine Treffer"-Target gerendert wird %>
+<%
+  total        = local_assigns.fetch(:total, local_assigns[:count])
+  row_selector = local_assigns.fetch(:row_selector, "li")
+  quick_add    = local_assigns[:quick_add]
+  controls     = local_assigns[:controls]
+  # #484 (Hans, 2026-06-03): optionale Zusatz-Controller auf der Section
+  # (z.B. "active-row" beim Aufgaben-Reiter) — list-search bleibt immer dabei.
+  section_controllers = ["list-search", *Array(local_assigns[:controllers])].join(" ")
+%>
+<section class="bg-white rounded border border-slate-200 overflow-visible"
+         data-controller="<%= section_controllers %>"
+         data-list-search-selector-value="<%= row_selector %>">
+  <%# 1) Sticky Quick-Add-Zeile. #484 (Hans, 2026-06-03): NUR section-breit
+      (kein -mx-3 mehr — das machte die Zeile breiter als die Liste). Bleibt
+      sticky am Scroll-Container-Top. %>
+  <div class="sticky top-0 z-20 px-3 py-2 border-b border-slate-200
+              bg-slate-50/95 backdrop-blur rounded-t flex items-center gap-2">
+    <span class="text-sm font-semibold shrink-0"><%= title %></span>
+    <% if quick_add %>
+      <div class="flex-1 min-w-0"><%= quick_add %></div>
+    <% end %>
+  </div>
+
+  <%# 2) Befehlszeile: Anzahl | Suche | Steuerungen. %>
+  <div class="px-3 py-1.5 border-b border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+    <%# #484 (Hans, 2026-06-03): immer „angezeigt/gesamt" (z.B. 3/3). Der
+        „angezeigt"-Wert wird von list-search live mitgezählt (Filter). %>
+    <span class="shrink-0 tabular-nums" title="<%= t("topics.shown_total") %>">
+      <span data-list-search-target="count"><%= count %></span>/<%= total %>
+    </span>
+    <div class="flex-1 min-w-0">
+      <%= render "shared/list_search", placeholder: "#{title} filtern …" %>
+    </div>
+    <% if controls %>
+      <div class="shrink-0 flex items-center gap-1"><%= controls %></div>
+    <% end %>
+  </div>
+
+  <%# 3) Listen-Inhalt. %>
+  <%= yield %>
+
+  <% if local_assigns[:empty] %>
+    <p data-list-search-target="empty" class="hidden px-4 py-2 text-xs text-slate-400 italic"><%= t("topics.no_results") %></p>
+  <% end %>
+</section>

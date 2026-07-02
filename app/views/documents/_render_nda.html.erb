@@ -1,0 +1,51 @@
+<%# #562 (Hans): einseitige Vertraulichkeitserklärung als mehrseitiger Vertrag —
+    OHNE DIN-Anschriftfeld/Infoblock. Briefkopf nur auf Seite 1 (in-flow oben).
+    Seitenränder + Fußzeile (Seitenzahl + Dokument-ID) setzt der PDF-Render
+    (DocumentPdf.render_paged via Ferrum); die Bildschirm-Vorschau zeigt den
+    Inhalt als eine durchlaufende Seite. Parteien: Erklärender (= Aussteller/
+    Unterzeichner) und der Kunde (= Adressat). Signierbar (#547). %>
+<% document = local_assigns.fetch(:document) %>
+<div class="nda-doc">
+  <%# Briefkopf (Seite 1) — Name links, Absenderzeilen rechts. %>
+  <header class="nda-letterhead">
+    <span class="nda-logo"><%= document.issuer&.title %></span>
+    <span class="nda-sender"><%= document_sender_html(document.issuer) %></span>
+  </header>
+
+  <div class="doc nda">
+    <h1><%= document.subject.presence || t("documents.nda.default_title") %></h1>
+
+    <div class="nda-parties">
+      <p>
+        <strong><%= document.issuer&.title.presence || t("documents.nda.issuer_placeholder") %></strong>
+        <% document_address_lines(document.issuer).each do |l| %><br><%= l %><% end %>
+        <br><%= t("documents.nda.role_issuer_html") %>
+      </p>
+      <p class="nda-versus"><strong><%= t("documents.nda.versus") %></strong></p>
+      <p>
+        <strong><%= document.recipient&.title.presence || t("documents.nda.recipient_placeholder") %></strong>
+        <% document_address_lines(document.recipient, override: document.chosen_recipient_address).each do |l| %><br><%= l %><% end %>
+        <br><%= t("documents.nda.role_recipient_html") %>
+      </p>
+    </div>
+
+    <% if document.body_ki %>
+      <div class="markdown-body"><%= KnowledgeMarkdown.render(document.body_ki.body.to_s).html_safe %></div>
+    <% end %>
+
+    <%# Unterschrift nur des Erklärenden (einseitig). Signierbar (#547). %>
+    <div class="nda-signature <%= 'din-signed' if @signed %>">
+      <% city = document_address_lines(document.issuer).last %>
+      <p class="nda-place-date"><%= t("documents.nda.place_prefix", city: city) if city.present? %><%= l(document.document_date, format: :long) if document.document_date %></p>
+      <% if @signed && @signature_image.present? %>
+        <img src="<%= @signature_image %>" alt="<%= t("documents.render.signature_alt") %>"
+             style="display:block; max-height:22mm; margin-bottom:-12mm; position:relative; z-index:2;">
+      <% end %>
+      <% if @signed %>
+        <div style="font-size:7.5pt; color:#000; margin-bottom:1mm; position:relative; z-index:1;"><%= t("documents.render.signed_note", name: document.issuer&.title, date: l(Date.current, format: :long)) %></div>
+      <% end %>
+      <div class="line">&nbsp;</div>
+      <div class="name"><%= document.issuer&.title.presence || "—" %></div>
+    </div>
+  </div>
+</div>

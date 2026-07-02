@@ -1,0 +1,13 @@
+<%# Erwähnte Personen/Orgs als Chips + Picker zum Hinzufügen / Quick-Create.
+    #142: leading Entity-Icon, Border via Disclosure-Wrapper. %>
+<%= render "shared/entity_picker",
+      icon:           "users",
+      chips_id:       "task_contacts_chips_#{task.id}",
+      chips_partial:  "tasks/contacts_chips",
+      chips_locals:   { task: task },
+      suggest_url:    suggest_knowledge_items_path(item_type: "person,organization"),
+      add_url:        task_mentions_path(task),
+      param_name:     "mentioned_uuid",
+      label:          "Person/Org",
+      placeholder:    "Person/Org",
+      create_label:   "Person anlegen" %>

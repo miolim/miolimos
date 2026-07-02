@@ -1,0 +1,54 @@
+<%# #567 (Hans): Topic-Eigenschaften als Blade im aktuellen Stack — statt der
+    Vollnavigation zu /topics/:slug/edit. Nutzt dasselbe _form wie die
+    Edit-Seite (eine Quelle für die Felder) + den Kunde-Picker (#566). %>
+<article id="stack_card_topicprops:<%= topic.slug %>"
+         data-uuid="topicprops:<%= topic.slug %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: "topicprops:#{topic.slug}",
+        title: "#{t("topics.properties")} · #{topic.name}",
+        icon_html: icon("pencil"), label: "#{t("topics.properties")} · #{topic.name}" %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
+    <header class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20
+                   border-b border-slate-100 flex items-center gap-2">
+      <span class="inline-block w-3 h-3 rounded-full shrink-0"
+            style="background: <%= topic.color.presence || '#94a3b8' %>"></span>
+      <span class="flex-1 min-w-0 truncate font-semibold"><%= t("topics.properties") %> · <%= topic.name %></span>
+    </header>
+
+    <%# #566: Kunde — macht das Topic zum Projekt (Portal-Sektion im
+        Topic-Blade erscheint nach der Zuordnung automatisch). %>
+    <div class="space-y-1 text-[13px]">
+      <div class="text-xs text-slate-600"><%= t("topics.customer") %> <span class="text-slate-400">(macht das Thema zum Projekt — Portal, Meilensteine, Rechnungen)</span></div>
+      <%= render "shared/entity_picker",
+            icon: "building", icon_only: true, placeholder: t("topics.person_org_placeholder"),
+            chips_first: true, close_after_pick: true,
+            chips_id: "topic_customer_chip_#{topic.id}",
+            chips_partial: "topics/customer_chip",
+            chips_locals: { topic: topic },
+            suggest_url: suggest_knowledge_items_path(item_type: "person,organization", id_as_uuid: 1),
+            add_url: set_customer_topic_path(topic),
+            param_name: "value", create_label: "", allow_create: false %>
+    </div>
+
+    <%# #571 (Hans): Kundenportal-Sektion lebt HIER (selten genutzt, nahm im
+        Topic-Blade zu viel vertikalen Platz ein). %>
+    <% if topic.project? %>
+      <div class="pt-3 border-t border-slate-200">
+        <%= render "topics/portal_accesses", topic: topic %>
+      </div>
+    <% end %>
+
+    <%# #602 S1: Mitglieder + Sichtbarkeit — wer (außer Admins) sieht
+        dieses Thema und alles, was daran hängt. %>
+    <div class="pt-3 border-t border-slate-200">
+      <%= render "topics/memberships", topic: topic %>
+    </div>
+
+    <div class="pt-3 border-t border-slate-200">
+      <%= render "topics/form", topic: topic %>
+    </div>
+  </div>
+</article>

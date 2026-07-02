@@ -1,0 +1,47 @@
+<%# #532 (Hans, 2026-06-08): Anschreiben nach DIN 5008 (Form B). Geometrie
+    liegt jetzt zentral im _print_theme (alle Muster teilen sie). Quelle:
+    DIN 5008:2020-03 i.V.m. DIN 676 (Anschriftfeld 85×45 mm, 50 mm von oben;
+    Fluchtlinie 25 mm; Falzmarken 105/210 mm, Lochmarke 148,5 mm). %>
+<div class="din-page">
+  <%= render "documents/letterhead" %>
+
+  <div class="din-mark din-fold-1"></div>
+  <div class="din-mark din-hole"></div>
+  <div class="din-mark din-fold-2"></div>
+
+  <div class="din-address">
+    <div class="din-return"><%= document_sender_oneline(@issuer) %></div>
+    <div class="din-zvz">&nbsp;</div>
+    <div class="din-recipient">
+      <strong>Muster GmbH</strong><br>
+      Frau Erika Mustermann<br>
+      Beispielweg 12<br>
+      10117 Berlin
+    </div>
+  </div>
+
+  <div class="din-divider"></div>
+
+  <div class="din-info">
+    <div class="row"><span class="k"><%= t("documents.render.your_ref") %></span><span>—</span></div>
+    <div class="row"><span class="k"><%= t("documents.render.our_ref") %></span><span>HG-2026</span></div>
+    <div class="row"><span class="k"><%= t("documents.letter.contact_person") %></span><span><%= @issuer&.title.presence || "—" %></span></div>
+    <div class="row"><span class="k"><%= t("documents.render.date") %></span><span>8. Juni 2026</span></div>
+  </div>
+
+  <div class="din-spacer"></div>
+  <div class="din-body">
+    <p class="din-subject"><%= t("documents.letter.sample_subject") %></p>
+
+    <p><%= t("documents.letter.sample_salutation") %></p>
+    <p><%= t("documents.letter.sample_body_1") %></p>
+    <p><%= t("documents.letter.sample_body_2") %></p>
+    <p><%= t("documents.letter.sample_body_3") %></p>
+
+    <p class="din-greeting"><%= t("documents.render.greeting") %></p>
+    <div class="din-signature">
+      <div class="line">&nbsp;</div>
+      <div class="name"><%= @issuer&.title.presence || "Hans-Siem Groth" %></div>
+    </div>
+  </div>
+</div>

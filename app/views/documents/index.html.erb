@@ -1,0 +1,26 @@
+<% content_for :title, "Dokumente" %>
+<%# #532 (Hans, 2026-06-08): kein Turbo-Cache für die Dokumente-Seite — sonst
+    zeigt Turbo beim Zurück-/Hin-Navigieren einen veralteten Snapshot des
+    Anlege-Buttons (Symptom: "Neues Dokument" reagiert nicht, wenn die Liste
+    das erste Blade im Stack ist). %>
+<% content_for :head do %><meta name="turbo-cache-control" content="no-cache"><% end %>
+
+<%# #532 (Hans, 2026-06-08): /documents ist ein Blade-Stack. Initiales Card
+    ist die Dokumentenliste; ?stack= kann document:<id>-Detailblades anhängen. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="documents.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :ki %>
+        <%= render stack_item.partial, item: stack_item.record,
+              body_html: @initial_stack_bodies[stack_item.record.uuid] %>
+      <% else %>
+        <%= render stack_item.partial, **stack_item.partial_locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

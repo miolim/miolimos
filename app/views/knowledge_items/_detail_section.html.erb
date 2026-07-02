@@ -1,0 +1,319 @@
+<%# #389 Phase B.2 (Hans, 2026-05-28): Konsolidierte „Details"-Section
+    fuer KIs. Vereint die alten Sektionen `_pickers`
+    („Verknuepfungen") + die Details-Disclosure aus `_detail` in eine
+    einzige chevron-Disclosure mit drei internen Bereichen:
+      (1) Stempel: Erstellt am … von | Geaendert am …
+      (2) Felder: Typ + Person/Org-Felder + file_path
+      (3) Picker: Thema · Quelle · Tag · Person/Org · Aufgabe +
+                  Sub-Sektionen Frontmatter (YAML) + Versionshistorie
+
+    Locals: item, in_stack %>
+<%
+  in_stack       = local_assigns.fetch(:in_stack, false)
+  topics_count   = item.topics.size
+  persons_count  = item.mentioned_kis.where(item_type: %w[person organization]).size rescue 0
+  tasks_count    = (item.respond_to?(:tasks) ? item.tasks.size : 0) rescue 0
+  # #458 (Hans, 2026-06-02): „Thema/Themen" nicht mehr als Zahl —
+  # stattdessen die konkreten Themen mit Farbmarkierer (siehe Heading).
+  picker_labels  = [
+    ["tags",       Array(item.tags).size],
+    ["persons",    persons_count],
+    ["tasks_summary", tasks_count]
+  ]
+  picker_summary = picker_labels.select { |_, n| n.to_i > 0 }
+                                .map { |key, n| t("knowledge.detail.summary.#{key}", count: n) }
+                                .join(" · ").presence
+%>
+<%# #581-Folge: tri-disclosure — zu → belegte Felder (135°) → alle (90°). %>
+<section data-controller="tri-disclosure"
+         data-tri-disclosure-storage-key-value="knowledge.<%= item.uuid %>.details"
+         class="border border-slate-200 rounded">
+  <button type="button"
+          data-action="click->tri-disclosure#cycle"
+          title="<%= t("knowledge.detail.details_cycle_hint") %>"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-tri-disclosure-target="icon"
+          class="inline-block transition-transform text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("knowledge.detail.details") %></span>
+    <span class="text-slate-400 truncate">·
+      <%= t("knowledge.item_types.#{item.item_type}") %><%
+        %><%# #458: konkrete Themen mit Farbmarkierer statt Anzahl. %><%
+        %><% item.topics.order(:name).each do |topic| %> · <%= topic_dot topic %> <%= topic.name %><% end %><%
+        %><%= picker_summary ? " · #{picker_summary}" : "" %>
+    </span>
+  </button>
+
+  <div data-tri-disclosure-target="content"
+       class="hidden px-3 pb-3 border-t border-slate-100 pt-3 space-y-3">
+
+    <%# === Bereich 1: Stempel + Info-Icon mit file_path === %>
+    <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+      <% if item.file_created_at %>
+        <span>
+          <%= t("knowledge.detail.created_at") %> <%= l(item.file_created_at, format: "%d.%m.%Y, %H:%M") %>
+          <% if item.creator %>
+            <%= t("knowledge.detail.by") %> <span class="text-slate-700"><%= item.creator.name %></span>
+          <% end %>
+        </span>
+      <% end %>
+      <% if item.file_updated_at && item.file_updated_at > (item.file_created_at || 1.year.ago) + 1.minute %>
+        <span>· <%= t("knowledge.detail.updated_at") %> <%= l(item.file_updated_at, format: "%d.%m.%Y, %H:%M") %></span>
+      <% end %>
+      <%# #389 (Hans, 2026-05-28): file_path als kleines Info-i mit
+          Hover-/Klick-Tooltip statt eigener Zeile. %>
+      <button type="button"
+              title="<%= item.file_path %>"
+              class="ml-1 text-slate-400 hover:text-slate-700 cursor-help bg-transparent border-0 p-0 leading-none"
+              onclick="this.querySelector('span').classList.toggle('hidden')">
+        <%= icon "info", size: "w-3 h-3" %>
+        <span class="hidden ml-1 font-mono text-[10px] text-slate-500"><%= item.file_path %></span>
+      </button>
+    </div>
+
+    <%# === Bereich 2: Felder — Typ-Inline + Person/Org-Felder === %>
+    <div class="space-y-2 text-xs">
+      <%# #681 (Hans): Bekanntheits-Toggle einer Person oben in die Details-
+          Section, direkt über der Typ-Auswahl (war vorher unter den
+          Editoren). %>
+      <% if item.item_type == "person" %>
+        <%= render "knowledge_items/person_known_toggle", item: item %>
+      <% end %>
+      <%# #389 (Hans, 2026-05-28): Typ-Label + Select in einer Zeile,
+          Select etwas groesser. %>
+      <div class="flex items-center gap-2">
+        <span class="shrink-0 text-slate-500 font-medium"><%= t("knowledge.detail.type") %></span>
+        <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+          <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+          <%# #681 (Hans): bei Person/Organisation die Typ-Auswahl auf genau
+              diese beiden beschränken — eine Person/Org wird man höchstens
+              zur jeweils anderen umtypen, nicht zu Notiz/Quelle. %>
+          <% type_keys = item.item_type.in?(%w[person organization]) ? %w[person organization] : KnowledgeItem.item_types.keys %>
+          <%= f.select :item_type,
+                type_keys.map { |k| [t("knowledge.item_types.#{k}"), k] },
+                { selected: item.item_type },
+                onchange: "this.form.requestSubmit()",
+                class: "border border-slate-200 rounded px-2 py-1 bg-white text-sm" %>
+        <% end %>
+      </div>
+
+      <% if item.item_type == "person" %>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex flex-col gap-0.5" data-empty="<%= item.first_name.blank? %>">
+            <span class="text-slate-500"><%= t("knowledge.detail.first_name") %></span>
+            <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+              <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+              <%= f.text_field :first_name, value: item.first_name,
+                    onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                    class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+            <% end %>
+          </label>
+          <label class="flex flex-col gap-0.5" data-empty="<%= item.last_name.blank? %>">
+            <span class="text-slate-500"><%= t("knowledge.detail.last_name") %></span>
+            <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+              <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+              <%= f.text_field :last_name, value: item.last_name,
+                    onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                    class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+            <% end %>
+          </label>
+        </div>
+      <% end %>
+
+      <% if item.item_type == "organization" %>
+        <label class="flex flex-col gap-0.5" data-empty="<%= item.parent_org_uuid.blank? %>">
+          <span class="text-slate-500"><%= t("knowledge.detail.parent_org_label_html") %></span>
+          <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+            <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+            <%= f.text_field :parent_org,
+                  value: item.parent_org&.title || item.parent_org_uuid,
+                  list: "org-parent-suggestions",
+                  placeholder: t("knowledge.detail.parent_org_placeholder"),
+                  onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                  class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+          <% end %>
+          <datalist id="org-parent-suggestions">
+            <% org_titles_for_datalist.each do |t| %>
+              <% next if t == item.title %>
+              <option value="<%= t %>"></option>
+            <% end %>
+          </datalist>
+        </label>
+      <% end %>
+
+      <%# #532/#544 Stammdaten: Aussteller-Markierung. Die USt-IdNr wohnt
+          jetzt im IDs-Bereich (#544), nicht mehr als eigenes Feld. %>
+      <% if item.item_type.in?(%w[person organization]) %>
+        <label class="flex items-center gap-2 cursor-pointer" data-empty="<%= !item.issuer? %>">
+          <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+            <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+            <%= f.check_box :issuer, checked: item.issuer?,
+                  onchange: "this.form.requestSubmit()",
+                  class: "rounded border-slate-300" %>
+            <span class="text-slate-600"><%= t("knowledge.detail.issuer_label_html") %></span>
+          <% end %>
+        </label>
+        <%# #541: USt-Befreiung (z.B. Kleinunternehmer §19 UStG) — DB-direkt.
+            Davon abhängig zeigt die Rechnung das MwSt-Feld an oder nicht. %>
+        <label class="flex items-center gap-2 cursor-pointer" data-empty="<%= !item.vat_exempt? %>">
+          <%= form_with url: vat_exempt_knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do %>
+            <input type="hidden" name="vat_exempt" value="0">
+            <input type="checkbox" name="vat_exempt" value="1" <%= "checked" if item.vat_exempt? %>
+                   onchange="this.form.requestSubmit()" class="rounded border-slate-300">
+            <span class="text-slate-600"><%= t("knowledge.detail.vat_exempt_label_html") %></span>
+          <% end %>
+        </label>
+      <% end %>
+    </div>
+
+    <%# === Bereich 3: Picker === %>
+    <%# #581-Folge: data-empty je Block — Mittelstufe zeigt nur Belegtes. %>
+    <div class="space-y-2 pt-2 border-t border-slate-100">
+      <div data-empty="<%= item.topics.none? %>"><%= render "knowledge_items/detail_topics", item: item %></div>
+
+      <%# Quelle (bib_source) — eigener source-picker-Controller, in
+          picker-toggle gewrappt fuer das Trigger-Klick-Pattern (Hans
+          #389, 2026-05-28). Default: [Icon] Quelle [chip]. Klick auf
+          Trigger oder Icon oeffnet das Eingabefeld. %>
+      <div class="group/erow flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs
+                  min-h-7 rounded px-1.5 -mx-1.5 hover:bg-slate-50 cursor-pointer"
+           data-action="click->picker-toggle#openFromRow"
+           data-empty="<%= item.bib_source_id.blank? %>"
+           data-controller="picker-toggle source-picker"
+           data-source-picker-url-value="<%= suggest_sources_path %>">
+        <button type="button"
+                data-action="click->picker-toggle#open"
+                title="<%= t("knowledge.detail.source") %>"
+                class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none"
+                aria-label="<%= t("knowledge.detail.change_source") %>">
+          <%= icon "quote" %>
+        </button>
+        <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 shrink-0 select-none"><%= t("knowledge.detail.source") %></span>
+        <%# #603 R3: Text-Trigger entfernt — nur Icon. Verstecktes
+            trigger-Target bleibt für die picker-toggle-Mechanik. %>
+        <button type="button" hidden
+                data-picker-toggle-target="trigger"></button>
+        <div data-picker-toggle-target="inputBox" hidden class="relative flex-1 min-w-[12rem]">
+          <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "block" do |f| %>
+            <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+            <%= text_field_tag :bib_source_slug, item.bib_source&.slug,
+                  placeholder: t("knowledge.detail.source_picker_placeholder"),
+                  data: { source_picker_target: "input" },
+                  autocomplete: "off",
+                  onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                  class: "w-full font-mono text-sm border border-slate-200 rounded px-2 py-0.5 bg-white
+                          focus:outline-none focus:border-emerald-400" %>
+            <ul data-source-picker-target="list"
+                class="hidden absolute left-0 right-0 top-full mt-1 z-20 bg-white border
+                       border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+          <% end %>
+        </div>
+        <% if item.bib_source %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+            <%= item.bib_source.title.to_s.truncate(40) %>
+          </span>
+        <% end %>
+      </div>
+
+      <div data-empty="<%= Array(item.tags).none? %>">
+        <%# #700 (Hans, 2026-06-15): Icon wie bei Aufgaben — Tag = bookmark. %>
+        <%= render "shared/entity_picker",
+              icon:           "bookmark",
+              chips_id:       "knowledge_tags_chips_#{item.uuid}",
+              chips_partial:  "knowledge_items/tags_chips",
+              chips_locals:   { item: item },
+              suggest_url:    suggest_tags_knowledge_items_path,
+              add_url:        knowledge_item_tags_path(knowledge_item_uuid: item.uuid),
+              param_name:     "tag_id",
+              label:          t("knowledge.detail.tag"),
+              placeholder:    t("knowledge.detail.tag_placeholder"),
+              create_label:   t("knowledge.detail.create_tag") %>
+      </div>
+
+      <div data-empty="<%= persons_count.to_i.zero? %>"><%= render "knowledge_items/detail_contacts", item: item %></div>
+      <div data-empty="<%= tasks_count.to_i.zero? %>"><%= render "knowledge_items/detail_tasks", item: item %></div>
+
+      <%# #460 (Hans, 2026-06-04): Supersession-Picker — dieses (alte) KI
+          als abgelöst durch ein anderes markieren. id_as_uuid=1 → Picker
+          postet die UUID; exclude blendet das KI selbst aus; allow_create
+          false (nur bestehende KIs). Banner/„aufheben" sitzen oben. %>
+      <div data-empty="<%= item.superseded_by_uuid.blank? %>">
+      <%= render "shared/entity_picker",
+            icon:          "archive",
+            chips_id:      "knowledge_supersede_chip_#{item.uuid}",
+            chips_partial: "knowledge_items/supersede_chip",
+            chips_locals:  { item: item },
+            suggest_url:   suggest_knowledge_items_path(id_as_uuid: 1, exclude: item.uuid),
+            add_url:       supersede_knowledge_item_path(item.uuid),
+            param_name:    "successor_uuid",
+            label:         t("knowledge.detail.superseded_by_label"),
+            placeholder:   t("knowledge.detail.successor_placeholder"),
+            create_label:  "—",
+            allow_create:  false %>
+      </div>
+
+      <%# Versionshistorie — Lazy-Load via Turbo-Frame. #581-Folge:
+          Werkzeug-Subsections (Historie/Frontmatter) erscheinen nur in
+          der Stufe „alle Felder" — data-empty=true ist hier bewusst. %>
+      <section data-controller="disclosure" data-empty="true"
+               data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.history"
+               class="border border-slate-200 rounded">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+          <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+            <%= icon "chevron_right" %>
+          </span>
+          <span class="font-medium">🕒 <%= t("knowledge.detail.version_history") %></span>
+        </button>
+        <div data-disclosure-target="content" class="hidden border-t border-slate-100">
+          <%= turbo_frame_tag "ki_history_#{item.uuid}",
+                src:     history_knowledge_item_path(uuid: item.uuid),
+                loading: "lazy" do %>
+            <p class="text-xs text-slate-500 italic px-3 py-2"><%= t("knowledge.detail.history_loading") %></p>
+          <% end %>
+        </div>
+      </section>
+
+      <%# Frontmatter (YAML) — read-only Inspector, nur in „alle Felder". %>
+      <section data-controller="disclosure" data-empty="true"
+               data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.frontmatter"
+               class="border border-slate-200 rounded">
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+          <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+            <%= icon "chevron_right" %>
+          </span>
+          <span class="font-medium"><%= t("knowledge.detail.frontmatter_yaml") %></span>
+        </button>
+        <div data-disclosure-target="content" class="hidden border-t border-slate-100">
+          <%# #500 (Hans, 2026-06-04): Zwei Frontmatter — der vom Autor im Text
+              getippte Block (typ/ebene/… , seit dem Strip nicht mehr in der
+              Prosa sichtbar) und die abgeleitete Export-Frontmatter aus den
+              DB-Feldern. Beide bekommen hier ihren sichtbaren Ort. %>
+          <% authored = FileProxy.read_authored_frontmatter(actor: current_actor, knowledge_item: item) %>
+          <% derived  = FileProxy.read_frontmatter_yaml(actor: current_actor, knowledge_item: item) %>
+          <% if authored.present? %>
+            <div class="text-[10px] uppercase tracking-wide text-slate-400 px-3 pt-2"><%= t("knowledge.detail.frontmatter_authored") %></div>
+            <pre class="text-xs font-mono px-3 py-1 bg-slate-50 text-slate-800
+                        max-h-96 overflow-y-auto whitespace-pre-wrap break-words"><%= authored %></pre>
+          <% end %>
+          <% if derived.present? %>
+            <div class="text-[10px] uppercase tracking-wide text-slate-400 px-3 pt-2"><%= t("knowledge.detail.frontmatter_derived") %></div>
+            <pre class="text-xs font-mono px-3 py-1 pb-2 bg-slate-50 text-slate-800
+                        max-h-96 overflow-y-auto whitespace-pre-wrap break-words"><%= derived %></pre>
+          <% end %>
+          <% unless authored.present? || derived.present? %>
+            <p class="text-xs text-slate-500 italic px-3 py-2"><%= t("knowledge.detail.no_frontmatter") %></p>
+          <% end %>
+        </div>
+      </section>
+
+      <%# #546 (Hans): Zeiten als Subsection der Details (zuvor eigene Section). %>
+      <%= render "shared/time_section", subject: item, storage_key: "ki.#{item.uuid}.times",
+            anchor: "ki_times_#{item.uuid}" %>
+    </div>
+  </div>
+</section>

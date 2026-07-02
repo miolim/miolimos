@@ -1,0 +1,227 @@
+<%# Eine Zeile in der Task-Liste mit fester Reihenfolge:
+    Grip → Subaufgaben-Pfeil → Checkbox → Titel.
+    Locals:
+      - task       (Task)
+      - topic      (Topic, optional)
+      - nested     (Bool, default false) — diese Zeile ist eine
+                   Unteraufgabe unter einer anderen → kein data-task-id
+                   für Sortable, kein Grip.
+      - draggable  (Bool) — Drag erlaubt? default: ja, wenn open + nicht nested
+      - emphasize  (Bool) — Titel font-medium (für Next-Step).
+      - show_topic (Bool) — Themen-Chip vor dem Titel (für /tasks-Sektionen
+                   ohne Topic-Gruppierung). %>
+<%
+  nested     = local_assigns.fetch(:nested, false)
+  draggable  = local_assigns.fetch(:draggable, true) && !task.done? && !nested
+  emphasize  = local_assigns.fetch(:emphasize, false)
+  show_topic = local_assigns.fetch(:show_topic, false)
+  has_subs   = task.subtasks.any?
+  # #214 follow-up: Aufrufer kann den Link-Pfad ueberschreiben, damit der
+  # Klick auf eine Task-Row auf /dashboard auf /dashboard?task=X navigiert
+  # (statt auf /tasks/:id). So bleibt ein Browser-Refresh auf der
+  # Dashboard-Detailansicht. Default: task_path (volle Detailseite).
+  link_path  = local_assigns.fetch(:link_path,
+                 task_path(task, topic_slug: topic&.slug))
+  # #163 Phase 5b-2: blade_link-Modus — Klick appendet die Task als
+  # Blade an einen blade-stack im selben Page (via globales
+  # `blade-stack:append`-Event). Wenn gesetzt, geht der Title-Klick
+  # NICHT mehr als Voll-/Frame-Navigation; das href bleibt aber als
+  # Right-Click-/Open-in-new-tab-Fallback erhalten.
+  # #756 (Hans, 2026-06-23): Blade-Append ist der Default — ein Klick öffnet
+  # die Aufgabe als Karte im Stack. Der frühere task_detail-Frame-Fallback ist
+  # entfernt (Frame-Detailansicht gibt es nicht mehr).
+  blade_kind = local_assigns.fetch(:blade_kind, "task")
+  blade_id   = local_assigns.fetch(:blade_id, task.id)
+%>
+<%# #234: Drag-Handle ist die ganze Row (nicht mehr nur das Grip-
+    Span links). cursor:grab als visueller Hinweis auf Desktop;
+    SortableJS startet bei kleinen Bewegungen keinen Drag, sondern
+    laesst Klicks durch (touchStartThreshold + fallbackTolerance).
+    Mobile: 300ms Long-Press triggert Drag, kurzer Tap = Klick. %>
+<li id="task_row_<%= task.id %>"
+    <% unless nested %>data-task-id="<%= task.id %>"
+       data-section-key="<%= task.time_section_key %>"<% end %>
+    <% if has_subs %>data-controller="disclosure"<% end %>
+    class="relative border-l-4 border-l-transparent data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-50 <%= draggable ? 'md:cursor-grab' : '' %> <%= 'bg-emerald-50/30 not-draggable' if task.done? %>">
+
+  <div class="group flex items-center gap-2 px-2 py-1.5 border-b border-slate-100 hover:bg-slate-50">
+    <%# #388 (Hans, 2026-05-28): Bulk-Select-Checkbox. Default unsichtbar
+        (class `bulk-checkbox`); wird via .bulk-active auf dem
+        Listen-Wrapper eingeblendet (siehe shared/_bulk_select_bar). %>
+    <% unless nested %>
+      <input type="checkbox"
+             data-bulk-select-target="checkbox"
+             data-action="change->bulk-select#toggleRow"
+             data-task-id="<%= task.id %>"
+             class="bulk-checkbox hidden shrink-0 w-4 h-4 cursor-pointer accent-emerald-600"
+             aria-label="<%= t("tasks.select_task") %>" />
+    <% end %>
+    <%# Kompakter Block aus Subaufgaben-Pfeil und Topic-Punkt direkt
+        vor der Checkbox. Der Grip ist seit #136 absolut positioniert
+        außerhalb dieses Slot-Blocks. %>
+    <div class="flex items-center gap-0.5 shrink-0 [&_svg]:w-4 [&_svg]:h-4">
+      <%# 1. Subaufgaben-Pfeil (oder Spacer). %>
+      <% if has_subs %>
+        <button type="button"
+                data-action="click->disclosure#toggle"
+                class="p-0.5 text-slate-400 hover:text-slate-700"
+                aria-label="<%= t("tasks.toggle_subtasks") %>">
+          <span data-disclosure-target="icon" class="inline-block transition-transform">
+            <%= icon "chevron_right" %>
+          </span>
+        </button>
+      <% else %>
+        <span class="w-5"></span>
+      <% end %>
+
+      <%# 3. Topic-Marker (oder Spacer). Vor der Checkbox, damit der
+          Titel in jeder Zeile bei derselben x-Position startet. Form
+          des Markers signalisiert: Kreis = normales Topic-Mitglied,
+          gefülltes Dreieck nach rechts = diese Aufgabe ist der
+          nächste Schritt (next_step) für ihr Topic. %>
+      <span class="w-3 flex items-center justify-center">
+        <% if (row_topic = task.topics.first) %>
+          <% is_next = task_next_step_for?(task, row_topic) %>
+          <%# Marker ist Klick-Target zum Topic — bewusst eigener Link
+              außerhalb des Titel-Anchors (HTML erlaubt keine nested
+              <a>). turbo_frame: _top für Vollnavigation, sonst landet
+              das Topic im task_detail-Frame. %>
+          <%= link_to topic_path(row_topic),
+                data: { turbo_frame: "_top" },
+                title: is_next ? t("tasks.next_step_for", topic: row_topic.name) : row_topic.name,
+                class: "flex items-center justify-center hover:opacity-70" do %>
+            <%= topic_marker row_topic, next_step: is_next, milestone: task.client_milestone %>
+          <% end %>
+        <% end %>
+      </span>
+    </div>
+
+    <%# 3. Checkbox-Toggle.
+        #230: Wenn ein Actor (z.B. miolim_builder) gerade auf der Task
+        arbeitet, bekommt die Checkbox einen kraeftigen emerald-Rahmen
+        statt slate-300. Sichtbar in der Liste auf einen Blick: „dran". %>
+    <% wip_active = task.wip_actor_id.present? && !task.done? %>
+    <%= button_to toggle_done_task_path(task, topic_slug: topic&.slug),
+          method: :post,
+          form: { class: "inline shrink-0 m-0 p-0 leading-none" },
+          class: "w-4 h-4 rounded flex items-center justify-center p-0 cursor-pointer
+                  #{task.done? ? 'border bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600' : (wip_active ? 'border-2 bg-white border-emerald-500 hover:border-emerald-700' : 'border bg-white border-slate-300 hover:border-slate-500')}" do %>
+      <%# Stroke-Width 2.5: bei 12px-Checkbox bleibt der Outline-Haken
+          sonst zu dünn, um auf dem grünen Hintergrund zu lesen. %>
+      <%= icon "check", size: "w-3 h-3", stroke: 2.5 if task.done? %>
+    <% end %>
+
+    <%# 4. Aufgabentitel + Nummer (Link ins Detail-Frame).
+        #167: Drafts bekommen einen leichten Italic + opacity, plus
+        einen kleinen "Entwurf"-Pin links neben dem Titel. %>
+    <% link_class  = "flex-1 min-w-0 flex items-baseline gap-1.5 hover:underline" %>
+    <% title_class = "truncate " +
+                     (task.done?  ? "text-slate-400 line-through" : "text-slate-900") +
+                     (task.draft? ? " italic text-slate-500" : "") +
+                     (emphasize   ? " font-semibold" : "") %>
+    <%# Topic wird jetzt im Block links als Punkt angezeigt — kein
+        Inline-Chip mehr im Titel, damit Aufgaben-Titel in jeder Zeile
+        an derselben x-Position beginnen. show_topic-Local bleibt für
+        Rückwärtskompatibilität existieren, wird aber ignoriert. %>
+    <% if blade_kind && blade_id %>
+      <%# Blade-Modus: Klick dispatcht ein blade-stack:append-Event via
+          blade-link-Controller. href bleibt fuer Mittel-/Rechtsklick. %>
+      <a href="<%= link_path %>"
+         data-controller="blade-link"
+         data-blade-link-kind-value="<%= blade_kind %>"
+         data-blade-link-id-value="<%= blade_id %>"
+         data-action="click->blade-link#append"
+         class="<%= link_class %>">
+        <% if task.draft? %>
+          <%# #412 (Hans, 2026-05-30): Lucide pause-Icon in Pille statt
+              Schriftzug oder Unicode-Symbol. %>
+          <span class="shrink-0 inline-flex items-center justify-center w-4 h-4 rounded bg-amber-50 border border-amber-200 text-amber-800"
+                title="<%= t("tasks.draft_hint") %>">
+            <%= icon "pause", size: "w-2.5 h-2.5", stroke: 0, fill: "currentColor" %>
+          </span>
+        <% end %>
+        <%# #417 (Hans, 2026-05-30): Tag-Icon-Strip vor dem Titel,
+            zeigt nur Tags mit gemapptem Icon (Setting tag_icons). %>
+        <% Array(task.tags).sort.each do |t| %>
+          <% if (ic = tag_icon_html(t, size: "w-3.5 h-3.5")) %>
+            <span class="shrink-0 text-slate-500 inline-flex items-center" title="<%= t %>"><%= ic %></span>
+          <% end %>
+        <% end %>
+        <span class="<%= title_class %>"><%= task.title %></span>
+        <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= task.id %></span>
+      </a>
+    <% end %>
+
+    <% unless task.done? %>
+      <%# #174: Leere Spacer-Slots raus — Title bekommt den frei
+          werdenden Platz. Wenn blocked / due_date NICHT gesetzt sind,
+          rendern wir nichts mehr (vorher md:w-4 / md:w-14 als leere
+          Pseudo-Spalten). Die Wann-Icons-Reihe sitzt rechts via
+          natürlichem flex-Fluss. %>
+      <% if task.blocked? %>
+        <span class="shrink-0 w-4 text-center text-slate-400" title="<%= t("tasks.blocked") %>">🔒</span>
+      <% end %>
+
+      <% if task.due_date %>
+        <span class="shrink-0 text-right text-xs text-slate-500 tabular-nums">
+          <%= l(task.due_date, format: :short) %>
+        </span>
+      <% end %>
+
+      <%# Wann-Skala (#175): alle vier Icons in NATÜRLICHER COMMITMENTS-
+          Reihenfolge rendern, aktives bleibt farbig hervorgehoben.
+          commitment-collapse-Controller misst die Row-Breite via
+          ResizeObserver; ist der Container schmal, werden die nicht-
+          aktiven Icons via inline-style ausgeblendet. Klick aufs aktive
+          klappt sie wieder aus. %>
+      <% current_commit = task.commitment.presence || "inbox" %>
+      <span data-controller="commitment-collapse"
+            data-commitment-collapse-threshold-value="600"
+            class="shrink-0 inline-flex items-center gap-0.5 [&_svg]:w-4 [&_svg]:h-4">
+        <% CommitmentsHelper::COMMITMENTS.each do |meta| %>
+          <% is_active = meta[:key] == current_commit %>
+          <% if is_active %>
+            <button type="button"
+                    data-action="click->commitment-collapse#toggle"
+                    class="p-0.5 rounded <%= meta[:color] %> bg-transparent border-0 cursor-pointer"
+                    title="<%= t("tasks.sections.#{meta[:key]}") %>">
+              <%= icon meta[:icon] %>
+            </button>
+          <% else %>
+            <%= button_to set_commitment_task_path(task, commitment: meta[:key]),
+                  method: :post,
+                  form: { class: "inline-flex m-0 p-0 leading-none",
+                          data: { turbo_stream: true, commitment_collapse_target: "inactive" } },
+                  title: t("tasks.move_to", label: t("tasks.sections.#{meta[:key]}")),
+                  "aria-label": t("tasks.move_to_aria", label: t("tasks.sections.#{meta[:key]}")),
+                  class: "p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-white bg-transparent border-0 cursor-pointer leading-none" do %>
+              <%= icon meta[:icon] %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </span>
+
+      <%# #274: Prioritaet aus der Liste entfernt — Hans pflegt das Feld
+          eh nicht. Datenmodell bleibt, nur die Listen-Darstellung
+          faellt weg. Editierbar weiter im Task-Detail. %>
+    <% end %>
+
+    <%# #224 6f-2 cleanup: Plus-Icon-on-Hover (Desktop) bzw. immer
+        (Mobile) appendet die Task ans Sub-Stack-Ende (statt sie zu
+        ersetzen). Default-Klick auf den Titel macht weiterhin
+        REPLACE_SUBSTACK. %>
+    <% if blade_kind && blade_id %>
+      <%= render "shared/blade_plus_button", kind: blade_kind, id: blade_id %>
+    <% end %>
+  </div>
+
+  <% if has_subs %>
+    <ul data-disclosure-target="content" class="hidden pl-6">
+      <% task.subtasks.order(:created_at).each do |sub| %>
+        <%= render "tasks/row", task: sub, topic: topic, nested: true,
+              link_path: task_path(sub),
+              blade_kind: blade_kind, blade_id: blade_kind ? sub.id : nil %>
+      <% end %>
+    </ul>
+  <% end %>
+</li>

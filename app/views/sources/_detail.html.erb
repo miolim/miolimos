@@ -1,0 +1,74 @@
+<%# Source-Detail im split_pane-Pendant. Wird sowohl als Frame
+    (Klick aus der Liste) als auch initial via content_for :split_right
+    gerendert. Locals: source, cited_kis (optional).
+    #198 Phase 2: Inline-Edit direkt im Detail-Bereich — kein separates
+    Edit-Fenster mehr. Voll-Edit-Page bleibt für Identifier/Creators
+    erreichbar (Stift-Icon in der Toolbar). %>
+<%# #160: view-tracker stempelt actor_view nach 3s Sichtdauer. %>
+<%= turbo_frame_tag "source_detail" do %>
+  <div class="space-y-3"
+       data-controller="view-tracker"
+       data-view-tracker-viewable-type-value="Source"
+       data-view-tracker-viewable-id-value="<%= source.id %>">
+
+    <%# Sticky Toolbar — Title-Inline-Edit, Action-Icons. %>
+    <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex items-center gap-1">
+      <span class="shrink-0 text-blue-700"><%= icon "book_open", size: "w-6 h-6" %></span>
+      <%= form_with model: source, url: source_path(source.slug), method: :patch,
+            local: false, class: "flex-1 min-w-0" do |f| %>
+        <%= hidden_field_tag :in_pane, "1" %>
+        <%= f.text_field :title,
+              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+              onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }",
+              class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                      hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none truncate" %>
+      <% end %>
+      <div class="flex items-center gap-1 shrink-0 text-slate-500">
+        <%# KI-Picker mit der aktuellen Source als bib_source vorbelegt. %>
+        <%= render "knowledge_items/type_picker",
+              types:           %w[abstract transcript direct_quote indirect_quote],
+              bib_source_slug: source.slug,
+              target:          :cross_navigate %>
+        <% if source.url.present? %>
+          <%= link_to source.url, target: "_blank", rel: "noopener",
+                title: t("sources.open_url"), "aria-label": t("sources.open_url"),
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+            <%= icon "external_link" %>
+          <% end %>
+        <% end %>
+        <%# #584: Pencil entfernt — alles ist in der Details-Section
+            inline editierbar (inkl. Titel/Slug/Creators/Identifier). %>
+        <%= button_to source_path(source.slug), method: :delete,
+              title: t("actions.delete"), "aria-label": t("actions.delete"),
+              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top",
+                        turbo_confirm: t("sources.delete_confirm") } },
+              class: "p-1 rounded text-slate-400 hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
+          <%= icon "trash" %>
+        <% end %>
+      </div>
+    </div>
+
+    <%= render "sources/inline_fields", source: source, respond_target: "in_pane" %>
+
+    <% local_cited = local_assigns[:cited_kis] %>
+    <% if local_cited && local_cited.any? %>
+      <section class="border-t border-slate-100 pt-2">
+        <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-1"><%= t("sources.cited_in") %></h2>
+        <ul class="text-[13px] space-y-0.5">
+          <% local_cited.each do |ki| %>
+            <li class="flex items-center gap-2">
+              <span class="text-slate-500"><%= knowledge_type_icon(ki.item_type) %></span>
+              <%= link_to ki.title, knowledge_item_path(ki.uuid),
+                    data: { turbo_frame: "_top" },
+                    class: "hover:underline flex-1" %>
+              <% if ki.locator_label.present? %>
+                <span class="text-xs text-slate-500"><%= ki.locator_label %> <%= ki.locator_value %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+<% end %>

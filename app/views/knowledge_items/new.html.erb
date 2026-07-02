@@ -1,0 +1,71 @@
+<% content_for :title, t("knowledge.new") %>
+
+<div class="max-w-2xl bg-white rounded border border-slate-200 p-4">
+  <h1 class="text-lg font-semibold mb-3"><%= t("knowledge.new") %></h1>
+  <%= form_with url: knowledge_items_path, method: :post, local: true, class: "space-y-3" do |f| %>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("knowledge.form.title") %></label>
+      <%= f.text_field :title, required: true, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("knowledge.form.type") %></label>
+      <%= f.select :item_type, KnowledgeItem.item_types.keys.map { |k| [t("knowledge.item_types.#{k}"), k] },
+            {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+    </div>
+
+    <%# Themen mit Slug-Autocomplete %>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("knowledge.form.topics_comma_slugs") %></label>
+      <div class="relative"
+           data-controller="slug-autocomplete"
+           data-slug-autocomplete-url-value="<%= suggest_topics_path %>">
+        <%= f.text_field :topics,
+              value: @default_topic_slugs,
+              data: { slug_autocomplete_target: "input" },
+              class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-xs" %>
+        <ul data-slug-autocomplete-target="list"
+            class="hidden absolute left-0 right-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+    </div>
+
+    <%# Erwähnungen (Person/Org-KIs) mit Slug-Autocomplete %>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("knowledge.form.persons_orgs_comma_slugs") %></label>
+      <div class="relative"
+           data-controller="slug-autocomplete"
+           data-slug-autocomplete-url-value="<%= suggest_knowledge_items_path(item_type: 'person,organization') %>">
+        <%= f.text_field :contacts,
+              data: { slug_autocomplete_target: "input" },
+              class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-xs" %>
+        <ul data-slug-autocomplete-target="list"
+            class="hidden absolute left-0 right-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+    </div>
+
+    <%# Inhalt mit Wikilink-Autocomplete %>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1">
+        <%= t("knowledge.form.content_markdown") %>
+        <span class="text-slate-400"><%= t("knowledge.form.wikilink_hint_html").html_safe %></span>
+      </label>
+      <div class="relative"
+           data-controller="wikilink-autocomplete cm6-editor"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cm6-editor-active-value="true">
+        <%= f.text_area :content, rows: 12,
+              data: { wikilink_autocomplete_target: "input",
+                      cm6_editor_target:            "textarea" },
+              class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-sm" %>
+        <ul data-wikilink-autocomplete-target="list"
+            class="hidden absolute left-0 right-0 bottom-full mb-1 z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <%= f.submit t("actions.create"),
+            class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+      <%= link_to t("actions.cancel"), knowledge_items_path,
+            class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+    </div>
+  <% end %>
+</div>

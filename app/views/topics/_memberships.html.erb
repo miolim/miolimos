@@ -1,0 +1,52 @@
+<%# #602 S1: Mitglieder + Sichtbarkeit eines Topics (Eigenschaften-Blade).
+    Muster: _portal_accesses. Admins sehen ohnehin alles — die Liste
+    steuert, was MITGLIEDER (Rolle „member") von diesem Topic sehen. %>
+<div id="topic_memberships_<%= topic.id %>" class="space-y-1.5">
+  <div class="text-xs uppercase tracking-wider text-slate-500"><%= t("topics.members_visibility") %></div>
+
+  <%# Sichtbarkeits-Schalter: nur Mitglieder vs. intern öffentlich. %>
+  <%= form_with url: topic_visibility_path(topic), method: :patch,
+        data: { turbo_stream: true }, class: "flex items-center gap-2 text-sm" do %>
+    <select name="visibility" onchange="this.form.requestSubmit()"
+            class="border border-slate-200 rounded px-2 py-0.5 text-sm bg-white">
+      <option value="members_only"    <%= "selected" if topic.members_only? %>><%= t("topics.members_only") %></option>
+      <option value="internal_public" <%= "selected" if topic.internal_public? %>>Intern öffentlich (alle Nutzer)</option>
+    </select>
+  <% end %>
+
+  <% memberships = topic.topic_memberships.includes(:actor).joins(:actor).order("actors.name") %>
+  <% memberships.each do |m| %>
+    <div class="flex items-center gap-2 text-sm">
+      <span class="text-slate-700"><%= m.actor.name %></span>
+      <%= form_with url: topic_membership_path(topic, m), method: :patch,
+            data: { turbo_stream: true }, html: { class: "inline m-0 p-0 ml-auto" } do %>
+        <select name="role" onchange="this.form.requestSubmit()"
+                title="<%= t("topics.role_title") %>"
+                class="border border-slate-200 rounded px-1.5 py-0.5 text-[11px] bg-white">
+          <option value="viewer" <%= "selected" if m.viewer? %>><%= t("topics.role_viewer") %></option>
+          <option value="editor" <%= "selected" if m.editor? %>><%= t("topics.role_editor") %></option>
+          <option value="owner"  <%= "selected" if m.owner?  %>><%= t("topics.role_owner") %></option>
+        </select>
+      <% end %>
+      <%= button_to t("topics.remove"), topic_membership_path(topic, m), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            class: "text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
+    </div>
+  <% end %>
+
+  <% candidates = HumanActor.active.where.not(id: memberships.map(&:actor_id)).order(:name) %>
+  <% if candidates.any? %>
+    <%= form_with url: topic_memberships_path(topic), method: :post,
+          data: { turbo_stream: true }, class: "flex items-center gap-2" do %>
+      <select name="actor_id" required
+              class="flex-1 min-w-0 border border-slate-200 rounded px-2 py-0.5 text-sm bg-white">
+        <option value="">Nutzer wählen …</option>
+        <% candidates.each do |a| %>
+          <option value="<%= a.id %>"><%= a.name %><%= " (Admin — sieht ohnehin alles)" if a.admin? %></option>
+        <% end %>
+      </select>
+      <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0">+ Mitglied</button>
+    <% end %>
+  <% end %>
+  <p class="text-[11px] text-slate-400">Mitglieder sehen dieses Thema samt Aufgaben, Wissen, Kommunikation &amp; Co. — Admins sehen immer alles. Rollen-Schreibrechte folgen in Stufe 2.</p>
+</div>

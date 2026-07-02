@@ -1,0 +1,117 @@
+<%# Wiederverwendbarer Picker für Many-to-Many-Verbindungen.
+    Standard-Zustand: [Icon] [Label] [chip] [chip]…
+    Klick auf das Icon ODER Label oeffnet rechts daneben das
+    Eingabefeld + Autocomplete-Dropdown. Das Icon bleibt dabei an
+    derselben Position — nur der Label-Bereich wechselt zwischen
+    Text und Input.
+
+    #389 (Hans, 2026-05-28): Picker-Mechanik umgebaut von „Input immer
+    sichtbar mit Chips drueber/drunter" auf „Icon+Begriff klickbar,
+    oeffnet Input neben dem Icon". Folgekorrektur: Icon wandert aus
+    dem Trigger raus in ein eigenes Element, damit es beim Switch
+    nicht verspringt.
+
+    Locals:
+      - chips_id       — DOM-ID des Chip-Containers (für Stream-Replace)
+      - chips_partial  — Pfad zum Chip-Partial
+      - chips_locals   — Hash für chips_partial
+      - suggest_url    — GET-Endpoint für Vorschläge (JSON)
+      - add_url        — POST-Endpoint zum Verbinden
+      - param_name     — z.B. "topic_id"
+      - placeholder    — Eingabe-Placeholder
+      - label          — optional, Text fuer den Trigger; Default:
+                         placeholder
+      - create_label   — z.B. "Thema anlegen"
+      - allow_create   — optional, default true
+      - icon           — optional Name eines Icons in shared/icons
+      - chips_position — IGNORIERT (#389-Refactor); nur fuer
+                         Rueckwaertskompat im Aufruferssignatur
+%>
+<%
+  allow_create = local_assigns.fetch(:allow_create, true)
+  leading_icon = local_assigns[:icon]
+  label_text   = local_assigns[:label].presence || placeholder
+  # #559 (Hans): close_after_pick = Einzelwert-Picker schließen nach Auswahl;
+  # chips_first = Chips (Wert) zuerst rendern, damit sie linksbündig mit den
+  # übrigen Feldern stehen (Trigger/Icon dann dahinter zum Ändern).
+  close_after_pick = local_assigns.fetch(:close_after_pick, false)
+  chips_first      = local_assigns.fetch(:chips_first, false)
+  # #603 R5 (Hans): chips_below = Chips linksbündig UNTER der Zeile
+  # (z.B. mehrere Unteraufgaben) statt inline.
+  chips_below      = local_assigns.fetch(:chips_below, false)
+  # #559 (Hans): icon_only = kein Text-Trigger ("wählen…"), nur das Icon
+  # öffnet. Setzt ein leading_icon voraus (sonst gäbe es keinen Öffner).
+  # #603 R3 (Hans, 2026-06-11, Experiment): Picker zeigen nur noch Icons —
+  # Default umgedreht; Text-Trigger nur noch auf expliziten Wunsch.
+  icon_only        = local_assigns.fetch(:icon_only, true) && leading_icon.present?
+%>
+<div data-controller="entity-picker"
+     data-entity-picker-url-value="<%= suggest_url %>"
+     data-entity-picker-add-url-value="<%= add_url %>"
+     data-entity-picker-param-name-value="<%= param_name %>"
+     data-entity-picker-create-label-value="<%= create_label %>"
+     data-entity-picker-allow-create-value="<%= allow_create %>"
+     data-entity-picker-close-after-pick-value="<%= close_after_pick %>">
+
+  <%# #603 R4 (Hans): ganze Zeile klickbar + Hover zeigt den Label-Text
+      inline; min-h-7 hält die Zeilenhöhe konstant (kein Springen beim
+      Öffnen des Inputs). %>
+  <div class="group/erow flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs
+              min-h-7 rounded px-1.5 -mx-1.5 hover:bg-slate-50 cursor-pointer"
+       data-action="click->entity-picker#openFromRow">
+    <% if chips_first %><%= render chips_partial, **chips_locals %><% end %>
+
+    <%# Icon — bleibt an derselben Position, egal ob Trigger oder
+        Input aktiv ist. Click auf Icon oeffnet ebenfalls das Input. %>
+    <% if leading_icon %>
+      <button type="button"
+              data-action="click->entity-picker#openInput"
+              title="<%= label_text %>"
+              class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none"
+              aria-label="<%= label_text %> hinzufuegen">
+        <%= icon leading_icon %>
+      </button>
+      <%# #603 R4: Label erscheint beim Zeilen-Hover (statt trägem Tooltip). %>
+      <% if icon_only %>
+        <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 shrink-0 select-none"><%= label_text %></span>
+      <% end %>
+    <% end %>
+
+    <%# Label-Trigger: nur Text, kein Hover-Pille. Wird beim Klick
+        versteckt und durch das Input ersetzt. Border-transparent gibt
+        dieselbe vertikale Hoehe wie das Input → Icon+Folgezeile
+        verspringen nicht. Bei icon_only (#559) entfällt der Text-Trigger
+        ganz — das Icon ist der einzige Öffner. %>
+    <% unless icon_only %>
+      <button type="button"
+              data-action="click->entity-picker#openInput"
+              data-entity-picker-target="trigger"
+              class="px-1 py-0.5 border border-transparent leading-snug text-sm text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent">
+        <%= label_text %>
+      </button>
+    <% end %>
+
+    <%# Input-Box: erscheint nach Klick. Wenn offen, ist der Trigger
+        versteckt. Padding + Border-Width identisch zum Trigger, damit
+        Layout-Stabilitaet gewahrt bleibt. %>
+    <div data-entity-picker-target="inputBox"
+         hidden
+         class="relative flex-1 min-w-[8rem]">
+      <input type="text"
+             data-entity-picker-target="input"
+             placeholder="<%= placeholder %>"
+             autocomplete="off"
+             class="w-full rounded border border-slate-200 bg-white px-2 py-0.5 leading-snug text-sm focus:outline-none focus:border-slate-400">
+      <ul data-entity-picker-target="list"
+          class="hidden absolute left-0 right-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+    </div>
+
+    <%# Verknuepfte Chips inline. Bleiben in der gleichen Zeile wie
+        Trigger/Input, wrappen bei vielen Eintraegen. Bei chips_first stehen
+        sie schon oben (zuerst) — dann hier nicht doppeln. %>
+    <% unless chips_first || chips_below %><%= render chips_partial, **chips_locals %><% end %>
+  </div>
+  <% if chips_below %>
+    <div class="mt-0.5"><%= render chips_partial, **chips_locals %></div>
+  <% end %>
+</div>

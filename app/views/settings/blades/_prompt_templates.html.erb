@@ -1,0 +1,41 @@
+<%# #613: aus app/views/prompt_templates/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_prompt_templates. %>
+<div class="max-w-3xl mx-auto space-y-3">
+  <header class="flex items-center gap-3">
+    <h1 class="text-lg font-semibold"><%= t("settings.prompt_templates.heading") %></h1>
+    <span class="text-xs text-slate-500"><%= @prompt_templates.size %></span>
+    <%# #613 St.2: als Blade statt Einzelfenster. %>
+    <button type="button" data-controller="blade-link"
+            data-blade-link-kind-value="settings_sub" data-blade-link-id-value="prompt_templates:new"
+            data-action="click->blade-link#append"
+            class="ml-auto text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 border-0 cursor-pointer"><%= t("settings.prompt_templates.new_button") %></button>
+  </header>
+
+  <% if @prompt_templates.empty? %>
+    <p class="text-slate-500 italic px-4 py-3"><%= t("settings.prompt_templates.empty") %></p>
+  <% else %>
+    <ul class="bg-white rounded border border-slate-200 divide-y divide-slate-100">
+      <% @prompt_templates.each do |t| %>
+        <li class="px-4 py-2 hover:bg-slate-50">
+          <%# #613 St.2: öffnet das Vorlagen-Blade statt der Einzelseite. %>
+          <button type="button" data-controller="blade-link"
+                  data-blade-link-kind-value="settings_sub" data-blade-link-id-value="prompt_templates:<%= t.slug %>"
+                  data-action="click->blade-link#append"
+                  class="block w-full text-left bg-transparent border-0 cursor-pointer p-0">
+            <div class="flex items-baseline gap-3">
+              <span class="font-medium text-[13px]"><%= t.name %></span>
+              <span class="text-xs font-mono text-slate-400">@<%= t.slug %></span>
+              <% if t.default_model.present? %>
+                <span class="text-xs text-slate-500 ml-auto"><%= t.default_model %></span>
+              <% end %>
+            </div>
+            <% if t.description.present? %>
+              <p class="text-xs text-slate-500 mt-1"><%= t.description %></p>
+            <% end %>
+          </button>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>
+

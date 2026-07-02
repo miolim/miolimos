@@ -1,0 +1,22 @@
+<% content_for :title, t("history.title") %>
+
+<%# #631: /history ist ein Blade-Stack (Bedienprinzip wie /inbox, #618):
+    Einstiegs-Blade = Verlauf-Liste, Klick auf einen Eintrag öffnet die
+    Entität als nächstes Blade. Eigener History-Key = eigener
+    Stack-Verlauf. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="history.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "history" %>
+        <%= render "history/list_blade_card" %>
+      <% else %>
+        <%= render stack_item.partial, **stack_item.partial_locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

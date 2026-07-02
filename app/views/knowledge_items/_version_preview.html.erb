@@ -1,0 +1,26 @@
+<%= turbo_frame_tag "ki_version_#{item.uuid}" do %>
+  <div class="px-3 py-2">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-[11px] font-mono text-slate-500"><%= sha[0,8] %></span>
+      <span class="ml-auto">
+        <%= button_to t("knowledge.list.version.restore"),
+              restore_version_knowledge_item_path(uuid: item.uuid, sha: sha),
+              method: :post,
+              class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700",
+              form: { class: "inline",
+                      data: { turbo_confirm: t("knowledge.list.version.restore_confirm", sha: sha[0,8]) } } %>
+      </span>
+    </div>
+
+    <% if frontmatter.present? %>
+      <details class="mb-2">
+        <summary class="text-[11px] uppercase tracking-wider text-slate-500 cursor-pointer">
+          <%= t("knowledge.list.version.frontmatter") %>
+        </summary>
+        <pre class="text-[11px] font-mono whitespace-pre-wrap bg-slate-50 rounded border border-slate-100 px-2 py-1 mt-1"><%= YAML.dump(frontmatter).sub(/\A---\n/, "") %></pre>
+      </details>
+    <% end %>
+
+    <pre class="text-[12px] font-mono whitespace-pre-wrap leading-relaxed bg-slate-50 rounded border border-slate-100 px-2 py-2 max-h-[55vh] overflow-y-auto"><%= body %></pre>
+  </div>
+<% end %>

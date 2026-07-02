@@ -1,0 +1,27 @@
+<%# #613 Stufe 2: aus app/views/prompt_templates/show.html.erb ins Blade gezogen. Locals: template %>
+  <header class="flex items-baseline gap-2">
+    <%= link_to t("settings.prompt_templates.back_to_list"), prompt_templates_path,
+          class: "text-xs text-slate-500 hover:text-slate-900" %>
+    <span class="ml-auto flex items-center gap-2 text-xs">
+      <%# #613 St.2: Bearbeiten als Blade. %>
+      <button type="button" data-controller="blade-link"
+              data-blade-link-kind-value="settings_sub" data-blade-link-id-value="prompt_templates:<%= template.slug %>:edit"
+              data-action="click->blade-link#append"
+              class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer"><%= t("actions.edit") %></button>
+      <%= button_to t("actions.delete"), prompt_template_path(template.slug), method: :delete,
+            class: "px-2 py-1 rounded text-rose-700 hover:bg-rose-50",
+            form: { class: "inline", data: { turbo_confirm: t("settings.prompt_templates.delete_confirm") } } %>
+    </span>
+  </header>
+
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-2">
+    <h1 class="text-xl font-semibold"><%= template.name %></h1>
+    <p class="text-xs font-mono text-slate-500">@<%= template.slug %></p>
+    <% if template.default_model.present? %>
+      <p class="text-xs text-slate-600"><%= t("settings.prompt_templates.model_label") %> <span class="font-mono"><%= template.default_model %></span></p>
+    <% end %>
+    <% if template.description.present? %>
+      <p class="text-sm text-slate-700"><%= template.description %></p>
+    <% end %>
+    <pre class="bg-slate-50 rounded border border-slate-200 px-3 py-2 text-xs font-mono whitespace-pre-wrap mt-2"><%= template.prompt_text %></pre>
+  </section>

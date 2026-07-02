@@ -1,0 +1,7 @@
+<% content_for :title, (@communication.subject.presence || "(ohne Betreff)") %>
+
+<div class="max-w-3xl">
+  <section class="bg-white rounded border border-slate-200 p-4">
+    <%= render "communications/detail", comm: @communication, expanded: true %>
+  </section>
+</div>

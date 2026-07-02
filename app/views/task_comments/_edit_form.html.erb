@@ -1,0 +1,44 @@
+<%# Edit-Form für einen Kommentar. Wird aus tasks/:task_id/comments/:id/edit
+    in den body-Frame geladen. Cancel zieht den Body via show
+    wieder rein. Locals: comment %>
+<%= turbo_frame_tag "task_comment_body_#{comment.id}" do %>
+  <%= form_with model: comment,
+        url: task_comment_path(comment.task, comment),
+        method: :patch,
+        local: false,
+        class: "mt-0.5 space-y-1" do |f| %>
+    <%# #165: field-sizing:content lässt die Textarea mit dem Inhalt
+        mitwachsen, damit auch lange existierende Kommentare nicht
+        in eine Mini-3-Zeilen-Box gequetscht werden.
+        #168: Wikilink-/Cite-Autocomplete wie im KI-Editor. %>
+    <%# #373 Phase D (Hans, 2026-05-26): CM6 auch fuer Kommentar-Edit. %>
+    <div class="relative"
+         data-controller="wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+         data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+         data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+         data-cm6-editor-active-value="true">
+      <%= text_area_tag :body, comment.body,
+            rows: 3,
+            data: { wikilink_autocomplete_target: "input",
+                    cite_autocomplete_target:     "input",
+                    cm6_editor_target:            "textarea" },
+            class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm
+                    resize-y [field-sizing:content]
+                    focus:outline-none focus:border-slate-400" %>
+      <ul data-wikilink-autocomplete-target="list"
+          class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      <ul data-cite-autocomplete-target="list"
+          class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <button type="submit" class="px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+        <%= t("actions.save") %>
+      </button>
+      <%= link_to t("actions.cancel"),
+            task_comment_path(comment.task, comment),
+            data: { turbo_frame: "task_comment_body_#{comment.id}" },
+            class: "text-slate-500 hover:text-slate-900 hover:underline" %>
+    </div>
+  <% end %>
+<% end %>

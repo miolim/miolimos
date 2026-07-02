@@ -1,0 +1,177 @@
+<%# #163 Phase 6d (Topic): list:topic-Blade fuer die /topics/:slug-
+    Stack-Seite. Eine breite Card mit Topic-Header oben, Tab-Nav mittig,
+    Tab-spezifischem Body unten. Tab-Wechsel ist heute noch ein Full-
+    Page-Reload (?tab=X) — die Card wird neu gerendert, der Rest des
+    Stacks bleibt; 6d-2 wird das auf turbo_frame-Loads umstellen.
+
+    Knowledge/Persons-Tabs: flache KI-Liste ohne nested aside. Klick auf
+    KI-Row triggert blade-stack#openFromList — das Event delegiert nach
+    oben zum outer blade-stack, der die Card appended.
+
+    Locals: optional `topic` (sonst aus @topic uebernommen — Daten von
+    controller#show / load_*-helpers).
+    #247 follow-up (2026-05-19): stable-id mit Slug, damit mehrere
+    Topic-Listen-Blades parallel im Stack koexistieren koennen
+    (Sidebar-Plus-Pfad). %>
+<% topic = local_assigns.fetch(:topic, @topic) %>
+<% @topic ||= topic %>
+<%# #325-Bugfix (Hans-Report, 2026-05-24): wenn das Partial via
+    BladeStackLoader-Pfad gerendert wird (z.B. /dashboard?stack=...),
+    setzt der Dashboard-Controller @tab nicht. Default-Tab "tasks"
+    hier defensiv setzen — sonst rendert die Card nur die Tab-Leiste
+    ohne aktiven Tab und mit leerem Body.
+    #350 (Hans, 2026-05-25): wenn das Partial ein `tab:`-Local
+    bekommt (= aus dem Stack-URL `list:topic:slug:tab`), gewinnt das
+    ueber den @tab-Default. %>
+<% @tab = local_assigns[:tab].presence || @tab || "tasks" %>
+<%# #592-Konsolidierung (Hans): EIN Reiter "Gliederungen" statt
+    Work-Tree/Zweckgeflecht-Doppelung — alte Tab-Keys (auch aus
+    persistierten Stack-URLs) aliasen. %>
+<% @tab = "trees" if %w[work_tree zweck].include?(@tab) %>
+<% stack_id = "list:topic:#{topic.slug}" %>
+<%# #350: data-uuid bekommt jetzt optional einen `:tab`-Suffix, damit
+    Stack-URL den Tab-State persistiert. Default-Tab `tasks` wird NICHT
+    in der ID kodiert (kuerzere URLs). %>
+<% stack_uuid = (@tab == "tasks") ? stack_id : "#{stack_id}:#{@tab}" %>
+<%
+  tasks_count          = topic.tasks.open.count
+  waiting_count        = topic.awaitings.open.count
+  communications_count = topic.communications.unread.count
+  knowledge_count      = topic.knowledge_items.non_reply.count  # #436: Replies nicht mitzaehlen
+  persons_count        = topic.knowledge_items.where(item_type: "person").count
+  sources_count        = topic.knowledge_items.where.not(bib_source_id: nil).distinct.count(:bib_source_id)
+  subtopics_count      = topic.sub_topics.count
+  # #592-Konsolidierung: ein Gliederungen-Reiter für alle Bäume.
+  trees_count          = topic.work_nodes.count
+  times_count          = TimeEntry.for_topic(topic).count   # #533 1d
+  # #384 Phase 2 (Hans, 2026-05-27): Diskussions-Counter — KIs des
+  # Topics, die mindestens einen App-Nutzer per @-Mention adressieren.
+  discussion_count     = topic.knowledge_items.joins(:actor_mentions).distinct.count
+  # #484 (Hans, 2026-06-03): Reiter-Reihenfolge linksbündig festgelegt;
+  # Diskussion rechtsbündig (separat, mit ml-auto im nav).
+  tabs = [
+    ["tasks",          t("topics.tabs.tasks"),          "tasks",          (tasks_count          if tasks_count          > 0)],
+    ["waiting",        t("topics.tabs.waiting"),        "waiting",        (waiting_count        if waiting_count        > 0)],
+    ["communications", t("topics.tabs.communications"), "communications", (communications_count if communications_count > 0)],
+    ["persons",        t("topics.tabs.persons"),        "users",          (persons_count        if persons_count        > 0)],
+    ["subtopics",      t("topics.tabs.subtopics"),      "folder",         (subtopics_count      if subtopics_count      > 0)],
+    ["sources",        t("topics.tabs.sources"),        "quote",          (sources_count        if sources_count        > 0)],
+    ["knowledge",      t("topics.tabs.knowledge"),      "knowledge",      (knowledge_count      if knowledge_count      > 0)],
+    # #325/#592 (Hans): Gliederungen — alle Bäume (Werk + Zweckgeflecht).
+    ["trees",          "Gliederungen", "file_text", (trees_count if trees_count > 0)],
+    # #533 1d: Zeiten-Reiter (Projekt-Zeitbuchungen).
+    ["times",          t("topics.tabs.times", default: "Zeiten"), "timer", (times_count if times_count > 0)],
+    # #573 v2: Kalender-Reiter (Zeitobjekte dieses Topics).
+    ["kalender",       "Kalender", "calendar", nil]
+  ]
+  discussion_tab = ["discussion", t("topics.tabs.discussion", default: "Diskussion"), "message_square", (discussion_count if discussion_count > 0)]
+%>
+<%# #484 (Hans, 2026-06-03): topic-tabs jetzt auf der <article>, damit nicht
+    nur die Tab-Nav, sondern AUCH die Toggle-Icons im Tab-Body den
+    In-Place-Card-Reload (#switch) nutzen koennen — sonst macht ein Toggle
+    eine Full-Page-Navigation (neuer Stack + Breiten-Flimmern). %>
+<article id="stack_card_<%= stack_uuid %>"
+         data-controller="topic-tabs"
+         data-uuid="<%= stack_uuid %>"
+         data-current-tab="<%= @tab %>"
+         class="stack-card shrink-0 relative
+                w-[60rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= @topic.name %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="inline-block w-3 h-3 rounded-full shrink-0 mt-1"
+          style="background: <%= @topic.color.presence || '#94a3b8' %>"></span>
+    <%# #630: Topic-Link kopieren. %>
+    <%= blade_copy_button("topic:#{@topic.slug}") %>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= @topic.name %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto"
+       data-controller="view-tracker"
+       data-view-tracker-viewable-type-value="Topic"
+       data-view-tracker-viewable-id-value="<%= @topic.id %>">
+    <%# #348 Phase 2 (Hans, 2026-05-24): Toolbar-Zeile als ersten
+        Block im Card-Body. Analog tasks/_blade_card. Topic-Detail
+        (Title + ggf. Recherche-Frage) folgt darunter. %>
+    <section class="px-3 pt-3">
+      <%= render "topics/blade_toolbar", topic: @topic %>
+      <div class="mt-3">
+        <%= render "topics/detail", topic: @topic, expanded: true %>
+      </div>
+    </section>
+
+    <%# Tab-Nav. Full-Page-Reload bei Wechsel (turbo_frame: _top sorgt
+        dafuer, dass NICHT die Card-Inhalte allein, sondern die ganze
+        Stack-Seite neu geladen wird — sonst wuerden wir das Tabs-
+        Markup nur partiell ersetzen und der Rest waere stale). %>
+    <%# #252: Tabs immer als Icons (kein Label-Text), damit sie nicht aus
+        dem Blade laufen wenn schmal. Label sitzt im title-Attribut als
+        Tooltip; Badge bleibt als kleiner Zaehler rechts vom Icon.
+        #253 follow-up: Tab-Wechsel ist KEINE Full-Page-Navigation mehr —
+        topic-tabs#switch fetched list_card?tab=X und ersetzt nur die
+        Card. Sonst zerstoert ein Tab-Klick in einer gestackten Topic-
+        Blade den ganzen Stack. Das href bleibt als Rechtsklick-/Neuer-
+        Tab-Fallback. %>
+    <%# #637: overflow-x-auto — auf schmalen Screens (Handy, große
+        Schrift) lief die Leiste über und hintere Reiter waren ohne
+        Scroll schlicht unerreichbar. %>
+    <nav class="flex gap-1 border-b border-slate-200 text-sm shrink-0 items-center px-3 mt-2 overflow-x-auto">
+      <%# #399 (Hans, 2026-05-28): Badge oberhalb des Icons. #484 (Hans,
+          2026-06-03): Diskussion rechtsbündig (ml-auto am Diskussions-Reiter). %>
+      <% (tabs + [discussion_tab]).each do |(key, label, icon_name, badge)| %>
+        <%= link_to topic_path(@topic, tab: key),
+              title: label, "aria-label": label,
+              data: { action: "click->topic-tabs#switch",
+                      "topic-tabs-url-param": list_card_topic_path(@topic, tab: key) },
+              class: "flex flex-col items-center shrink-0 px-1.5 py-1 -mb-px border-b-2 leading-none #{'ml-auto' if key == 'discussion'} #{@tab == key ? "border-emerald-500 text-emerald-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-800"}" do %>
+          <span class="text-[10px] tabular-nums h-3 leading-3">
+            <%= badge if badge %>
+          </span>
+          <%= icon icon_name %>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <%# Tab-Body. Liegt direkt in der Card, kein split_pane mehr —
+        Detail-Klicks (Task/Awaiting/Communication/KI-Row) gehen via
+        blade-link bzw. openFromList an den outer blade-stack.
+        #348 (Hans, 2026-05-25): `min-h-full` damit der Scroll-Bereich
+        auch bei kurzem Tab-Inhalt mindestens die volle Card-Hoehe
+        einnimmt — der obere Teil (Toolbar + Detail + Tab-Nav) kann so
+        immer weggescrollt werden, sodass der Sticky-Header des Tabs
+        oben am Card-Rand sitzt. %>
+    <div class="p-3 space-y-3 min-h-full">
+      <% if @tab == "tasks" %>
+        <%= render "topics/index_blade_tasks_tab", topic: @topic %>
+      <% elsif @tab == "waiting" %>
+        <%= render "topics/index_blade_waiting_tab", topic: @topic %>
+      <% elsif @tab == "communications" %>
+        <%= render "topics/index_blade_communications_tab", topic: @topic %>
+      <% elsif @tab == "knowledge" || @tab == "persons" %>
+        <%= render "topics/index_blade_knowledge_tab", topic: @topic, tab: @tab %>
+      <% elsif @tab == "discussion" %>
+        <%= render "topics/index_blade_discussion_tab", topic: @topic %>
+      <% elsif @tab == "sources" %>
+        <%= render "topics/index_blade_sources_tab", topic: @topic %>
+      <% elsif @tab == "subtopics" %>
+        <%= render "topics/index_blade_subtopics_tab", topic: @topic %>
+      <% elsif @tab == "trees" %>
+        <%= render "topics/index_blade_work_tree_tab", topic: @topic %>
+      <% elsif @tab == "times" %>
+        <%= render "topics/index_blade_times_tab", topic: @topic %>
+      <% elsif @tab == "kalender" %>
+        <%= render "topics/index_blade_calendar_tab", topic: @topic %>
+      <% end %>
+    </div>
+  </div>
+</article>

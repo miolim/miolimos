@@ -1,0 +1,13 @@
+<%# #363 (Hans, 2026-05-25): KI-Person/Org-Picker. Aus _detail.html.erb
+    extrahiert. %>
+<%= render "shared/entity_picker",
+      icon:           "users",
+      chips_id:       "knowledge_contacts_chips_#{item.uuid}",
+      chips_partial:  "knowledge_items/contacts_chips",
+      chips_locals:   { item: item },
+      suggest_url:    suggest_knowledge_items_path(item_type: "person,organization"),
+      add_url:        knowledge_item_mentions_path(knowledge_item_uuid: item.uuid),
+      param_name:     "mentioned_uuid",
+      label:          t("knowledge.detail.person_org"),
+      placeholder:    t("knowledge.detail.person_org_placeholder"),
+      create_label:   t("knowledge.detail.create_person") %>

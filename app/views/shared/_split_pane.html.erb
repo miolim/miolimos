@@ -1,0 +1,56 @@
+<%# Zweispalten-Layout mit Splitter. Linkes Pane = Block-Inhalt,
+    rechtes Pane = Detail-Frame (oder content_for :split_right).
+
+    Locals:
+      key              — localStorage-Schlüssel, z.B. "splitter.tasks"
+      right_frame_id   — optional: Turbo-Frame-Name fürs rechte Pane
+      right_placeholder — optional: Platzhalter-Text
+      right_controller — optional: Stimulus-Controller auf dem aside
+                         (z.B. "multi-detail-frames" im Dashboard)
+      left_class       — optional: Zusatz-Klassen für das linke Pane
+
+    Komplexere rechte Spalten (z.B. gestapelte Frames) verwenden
+    content_for :split_right statt right_frame_id. %>
+<%# Beide Panes scrollen unabhängig. md:sticky + md:max-h-[calc(100dvh-5rem)] +
+    md:overflow-y-auto: jeder Pane hat eine eigene Höhe = Viewport minus
+    Topbar (3rem) + main-padding (1rem) + top-4-Offset (1rem). Wird die
+    Liste oder das Detail länger, kriegen sie ihren eigenen Scrollbar.
+    Auf Mobile (<md) bleibt alles single-column und page-scrollt. %>
+<% pane_scroll = "md:sticky md:top-4 md:max-h-[calc(100dvh-5rem)] md:overflow-y-auto" %>
+<%# mobile_show_aside: wenn true, ist das rechte Pane auch im Mobile
+    sichtbar und das linke Pane hidden. Wird von Tasks#show genutzt,
+    damit der Mobile-User nach Klick auf eine Aufgabe das Detail sieht. %>
+<% mobile_show_aside = local_assigns.fetch(:mobile_show_aside, false) %>
+<% left_visibility   = mobile_show_aside ? "hidden md:block" : "" %>
+<% aside_visibility  = mobile_show_aside ? "block md:block" : "hidden md:block" %>
+<% left_class  = "flex-1 min-w-0 md:mr-2 #{left_visibility} #{pane_scroll} #{local_assigns[:left_class]}".strip %>
+<% aside_cls   = "#{aside_visibility} bg-white rounded border border-slate-200 p-4 shrink-0 md:ml-2 #{pane_scroll} #{local_assigns[:right_class]}".strip %>
+<div class="md:flex md:items-start"
+     data-controller="splitter"
+     data-splitter-key-value="<%= key %>">
+  <div class="<%= left_class %>">
+    <%= yield %>
+  </div>
+  <div data-splitter-target="handle"
+       data-action="pointerdown->splitter#startDrag"
+       class="hidden md:block w-1 self-stretch shrink-0 bg-slate-200 hover:bg-emerald-400 cursor-col-resize touch-none"></div>
+  <aside data-splitter-target="right"
+         <% if local_assigns[:right_controller] %>data-controller="<%= right_controller %>"<% end %>
+         class="<%= aside_cls %>">
+    <% if local_assigns[:right_frame_id] %>
+      <%= turbo_frame_tag local_assigns[:right_frame_id] do %>
+        <%# Wenn ein content_for :split_right bereitgestellt ist, wird er
+            INNERHALB des Frames als Initial-Inhalt gerendert (z.B. ein
+            vorausgewähltes Detail bei direktem URL-Aufruf). Sonst
+            zeigt der Frame nur den Placeholder, bis der User klickt. %>
+        <% if content_for?(:split_right) %>
+          <%= content_for :split_right %>
+        <% else %>
+          <p class="text-sm text-slate-400 italic"><%= local_assigns[:right_placeholder] || t("shared.split_pane.select_left") %></p>
+        <% end %>
+      <% end %>
+    <% else %>
+      <%= content_for :split_right %>
+    <% end %>
+  </aside>
+</div>

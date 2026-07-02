@@ -1,0 +1,60 @@
+<%# Inhalt der Source-Stack-Card als TurboFrame, sodass jedes Inline-
+    Edit-Submit (auto-submit on-blur) den Frame neu rendert ohne
+    Page-Reload. Locals: source. %>
+<%= turbo_frame_tag "source_detail_#{source.slug}" do %>
+  <div class="space-y-3">
+    <%# Sticky Toolbar — Title-Inline-Edit, Action-Icons. %>
+    <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex items-center gap-1">
+      <span class="shrink-0 text-blue-700"><%= icon "book_open", size: "w-6 h-6" %></span>
+      <%= form_with model: source, url: source_path(source.slug), method: :patch,
+            local: false, class: "flex-1 min-w-0" do |f| %>
+        <%= hidden_field_tag :in_stack, "1" %>
+        <%= f.text_field :title,
+              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+              onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }",
+              class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                      hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none truncate" %>
+      <% end %>
+      <div class="flex items-center gap-1 shrink-0 text-slate-500">
+        <% if source.url.present? %>
+          <%= link_to source.url, target: "_blank", rel: "noopener",
+                title: t("sources.open_url"), "aria-label": t("sources.open_url"),
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+            <%= icon "external_link" %>
+          <% end %>
+        <% end %>
+        <%# #584: Pencil entfernt — alles ist in der Details-Section
+            inline editierbar (inkl. Titel/Slug/Creators/Identifier). %>
+        <%= link_to source_path(source.slug), data: { turbo_frame: "_top" },
+              title: t("sources.open_full_view"), "aria-label": t("sources.full_view"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+          <%= icon "expand" %>
+        <% end %>
+      </div>
+    </div>
+
+    <%= render "sources/inline_fields", source: source, respond_target: "in_stack" %>
+
+    <%# "Zitiert in"-Liste — read-only. %>
+    <% cited = source.knowledge_items.order(:title) %>
+    <% if cited.any? %>
+      <div class="border-t border-slate-100 pt-2">
+        <span class="text-xs uppercase tracking-wider text-slate-500"><%= t("sources.cited_in") %></span>
+        <ul class="text-[13px] mt-1 space-y-0.5">
+          <% cited.each do |ki| %>
+            <li class="flex items-center gap-2">
+              <span class="text-slate-500"><%= knowledge_type_icon(ki.item_type) %></span>
+              <%= link_to ki.title, knowledge_item_path(ki.uuid),
+                    data: { action: "click->blade-stack#openInStack", target_uuid: ki.uuid },
+                    class: "wikilink hover:underline flex-1 truncate" %>
+              <% if ki.locator_label.present? %>
+                <span class="text-xs text-slate-500"><%= ki.locator_label %> <%= ki.locator_value %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+<% end %>

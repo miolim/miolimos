@@ -1,0 +1,34 @@
+<%# #536: Portal-Zugänge eines Projekts — Liste + Anlegen + Kill-Switch.
+    Nur bei Projekt-Topics (customer gesetzt) gerendert. Stable-ID für
+    Turbo-Stream-Replace aus PortalAccessesController. %>
+<div id="topic_portal_accesses_<%= topic.id %>" class="space-y-1">
+  <div class="text-xs uppercase tracking-wider text-slate-500"><%= t("topics.portal") %></div>
+  <% accesses = PortalAccess.where(topic: topic).order(:email) %>
+  <% accesses.each do |a| %>
+    <div class="flex items-center gap-2 text-sm">
+      <span class="<%= a.active? ? "text-slate-700" : "text-slate-400 line-through" %>"><%= a.email %></span>
+      <% if a.last_login_at %><span class="text-xs text-slate-400">zuletzt <%= l a.last_login_at.to_date, format: :default %></span><% end %>
+      <%# #570: Link-Versand entkoppelt vom Anlegen — expliziter Knopf
+          (funktioniert auch als erneutes Senden nach Ablauf). %>
+      <% if a.active? %>
+        <%= button_to t("topics.send_link"), send_link_portal_access_path(a), method: :post,
+              form: { class: "inline m-0 p-0 ml-auto", data: { turbo_stream: true } },
+              title: t("topics.send_link_title"),
+              class: "text-[11px] px-1.5 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+      <% end %>
+      <%= button_to a.active? ? "deaktivieren" : "aktivieren",
+            portal_access_path(a, active: a.active? ? 0 : 1), method: :patch,
+            form: { class: "inline m-0 p-0 #{'ml-auto' unless a.active?}", data: { turbo_stream: true } },
+            class: "text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
+    </div>
+  <% end %>
+  <%= form_with url: topic_portal_accesses_path(topic), method: :post,
+        data: { turbo_stream: true }, class: "flex items-center gap-2" do %>
+    <input type="email" name="email" required placeholder="<%= t("topics.portal_email_placeholder") %>"
+           class="flex-1 min-w-0 border border-slate-200 rounded px-2 py-0.5 text-sm bg-white">
+    <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0">+ Zugang</button>
+  <% end %>
+  <p class="text-[11px] text-slate-400"><%= t("topics.portal_label") %> <a href="https://<%= PortalMailer.portal_host %>/portal" target="_blank" class="underline"><%= PortalMailer.portal_host %>/portal</a> — der Anmelde-Link geht erst über „Link senden“ raus.
+    · <%= link_to t("topics.export_zip"), topic_portal_export_path(topic), class: "underline hover:text-slate-600",
+          title: t("topics.handover_title") %></p>
+</div>

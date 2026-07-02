@@ -1,0 +1,47 @@
+<%# Chips für die Themen einer Task. Stream-replaced bei add/remove und
+    bei Toggle des Next-Step-Markers. Pro Topic ein Mini-Toggle: gefülltes
+    Dreieck = diese Aufgabe ist der nächste Schritt für das Topic; leere
+    Dreieck-Outline = klickbar zum Setzen. %>
+<div id="task_topics_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% task.topics.order(:name).each do |topic| %>
+    <% is_next = task_next_step_for?(task, topic) %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= topic_dot topic %>
+      <%= topic.name %>
+
+      <%# Toggle: Aufgabe ↔ next_step für dieses Topic. Beide Varianten
+          sind Buttons mit Turbo-Stream-Antwort, die die Chips frisch
+          rendert (siehe topics_controller#set_next_step/clear_next_step). %>
+      <% if is_next %>
+        <%= button_to clear_next_step_topic_path(topic, task_id: task.id),
+              method: :delete,
+              form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+              title: t("tasks.no_longer_next_step"),
+              "aria-label": t("tasks.no_longer_next_step"),
+              class: "p-0 bg-transparent border-0 cursor-pointer leading-none flex items-center" do %>
+          <svg class="w-3 h-3 text-emerald-600" viewBox="0 0 10 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <polygon points="2,2 7,5 2,8"/>
+          </svg>
+        <% end %>
+      <% else %>
+        <%= button_to set_next_step_topic_path(topic, task_id: task.id),
+              method: :post,
+              form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+              title: "Als nächsten Schritt für '#{topic.name}' setzen",
+              "aria-label": "Als nächsten Schritt setzen",
+              class: "p-0 bg-transparent border-0 cursor-pointer leading-none flex items-center" do %>
+          <svg class="w-3 h-3 text-slate-300 hover:text-slate-700" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <polygon points="2,2 7,5 2,8"/>
+          </svg>
+        <% end %>
+      <% end %>
+
+      <%= button_to task_topic_path(task, topic), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

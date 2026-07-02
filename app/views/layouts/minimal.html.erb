@@ -1,0 +1,19 @@
+<%# Minimal-Layout: nur Browser-Reset, keine Topbar/Sidebar/Stack-Chrome.
+    Fuer Render-Vorschauen (#325 Phase 3a) und kuenftige Publish-Ansichten. %>
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title><%= content_for(:title).presence || "Vorschau" %></title>
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="bg-white text-slate-900 antialiased">
+    <main class="max-w-3xl mx-auto px-6 py-10 markdown-body">
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<%# #573: Kalender-Blade — Zeitraum-Renderer (calendar/_period: Monat/Woche,
+    Mischung aller Zeitobjekte) + Schnell-Erfassung + ICS-Abo. Navigation
+    läuft in-place über den turbo-frame (Stack bleibt stehen). %>
+<%
+  stack_id = "list:calendar"
+  raw_anchor = local_assigns[:month_param].presence || params[:month].presence
+  anchor = begin
+    raw_anchor ? (Date.strptime(raw_anchor, "%Y-%m-%d") rescue Date.strptime(raw_anchor, "%Y-%m")) : Date.current
+  rescue ArgumentError
+    Date.current
+  end
+  view = %w[month week day].include?(params[:view].to_s) ? params[:view] : "month"
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[44rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: stack_id, title: t("calendar.title"),
+        icon_html: icon("calendar"), label: t("calendar.title") %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
+    <turbo-frame id="calendar_list_frame" class="contents" target="_top">
+      <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20 border-b border-slate-100">
+        <span class="font-semibold text-sm"><%= t("calendar.title") %></span>
+      </div>
+
+      <%= render "calendar/period", anchor: anchor, view: view, topic: nil,
+            base_path: calendar_list_card_path, frame_id: "calendar_list_frame",
+            editable: true %>
+
+      <%# ── Schnell-Erfassung ── %>
+      <div class="grid sm:grid-cols-2 gap-3 pt-3 mt-2 border-t border-slate-300 text-[13px]">
+        <details class="border border-slate-200 rounded p-2">
+          <summary class="cursor-pointer text-slate-600 font-medium text-xs"><%= t("calendar.add_event") %></summary>
+          <%= form_with url: calendar_events_path, method: :post, class: "space-y-1.5 mt-2",
+                data: { turbo_stream: true } do %>
+            <input type="text" name="event[title]" required placeholder="<%= t("calendar.title_placeholder") %>"
+                   class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white">
+            <div class="grid grid-cols-2 gap-1.5">
+              <input type="datetime-local" name="event[starts_at]" required
+                     class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+              <input type="datetime-local" name="event[ends_at]"
+                     class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+            </div>
+            <input type="text" name="event[location]" placeholder="<%= t("calendar.location_optional") %>"
+                   class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white">
+            <select name="event[topic_id]" class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+              <option value=""><%= t("calendar.no_topic") %></option>
+              <% Topic.non_templates.active.order(:name).each do |tp| %>
+                <option value="<%= tp.id %>"><%= tp.name %><%= " #{t("calendar.project_suffix")}" if tp.project? %></option>
+              <% end %>
+            </select>
+            <label class="flex items-center gap-1.5 text-xs text-slate-500">
+              <input type="checkbox" name="event[portal_visible]" value="1" class="rounded border-slate-300">
+              <%= t("calendar.show_in_portal") %>
+            </label>
+            <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("actions.create") %></button>
+          <% end %>
+        </details>
+
+        <details class="border border-slate-200 rounded p-2">
+          <summary class="cursor-pointer text-slate-600 font-medium text-xs"><%= t("calendar.add_call") %></summary>
+          <%= form_with url: calendar_calls_path, method: :post, class: "space-y-1.5 mt-2",
+                data: { turbo_stream: true } do %>
+            <%# #598: Personen-Vorschläge; der Server verknüpft die
+                Person (bestehend oder neuer Stub). %>
+            <input type="text" name="wer" required placeholder="<%= t("calendar.call_with") %>" list="call-person-suggestions"
+                   class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white">
+            <datalist id="call-person-suggestions">
+              <% KnowledgeItem.persons_and_orgs.order(:title).limit(500).pluck(:title).each do |t| %>
+                <option value="<%= t %>"></option>
+              <% end %>
+            </datalist>
+            <div class="grid grid-cols-2 gap-1.5">
+              <select name="direction" class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+                <option value="inbound"><%= t("calendar.direction_inbound") %></option>
+                <option value="outbound"><%= t("calendar.direction_outbound") %></option>
+              </select>
+              <input type="datetime-local" name="at" value="<%= Time.current.strftime("%Y-%m-%dT%H:%M") %>"
+                     class="border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+            </div>
+            <%# #765 (Hans): Dauer in Minuten — setzt Endzeit am Event und
+                bucht die Zeit bei den Zeiten mit. %>
+            <input type="number" name="dauer" min="0" step="1" inputmode="numeric"
+                   placeholder="<%= t("calendar.call_duration_placeholder") %>"
+                   class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+            <textarea name="notiz" rows="2" placeholder="<%= t("calendar.call_note_placeholder") %>"
+                      class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white"></textarea>
+            <select name="topic_id" class="w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-xs">
+              <option value=""><%= t("calendar.no_topic") %></option>
+              <% Topic.non_templates.active.order(:name).each do |tp| %>
+                <option value="<%= tp.id %>"><%= tp.name %><%= " #{t("calendar.project_suffix")}" if tp.project? %></option>
+              <% end %>
+            </select>
+            <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("calendar.call_save") %></button>
+          <% end %>
+        </details>
+      </div>
+
+      <p class="text-[11px] text-slate-400 pt-1">
+        <%= t("calendar.subscribe_label") %> <code class="select-all break-all"><%= request.base_url + calendar_feed_path(token: CalendarController.feed_token(current_actor)) %></code>
+        <%= t("calendar.subscribe_hint") %><%= " #{t("calendar.google_push_active")}" if GcalPush.enabled? %>
+      </p>
+    </turbo-frame>
+  </div>
+</article>

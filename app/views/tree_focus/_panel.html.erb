@@ -1,0 +1,136 @@
+<%# #592 Z2: Panel der Fokusansicht (Frame-Inhalt). Locals: entry, focus. %>
+<%
+  tree   = focus.tree
+  parent = focus.parent
+  # Vorfahren OBERHALB der Kontext-Ebene (parent ist im Kontext-Kasten).
+  ancestors = []
+  a = parent&.parent
+  while a
+    ancestors.unshift(a)
+    a = a.parent
+  end
+  level = ancestors.size + (parent ? 1 : 0) + 1
+  nav = ->(node, label_html, klass, title = nil) {
+    link_to(label_html, tree_focus_card_path(entry, focus: node.id),
+            data: { turbo_frame: "tree_focus_frame_#{entry.id}" },
+            class: klass, title: title)
+  }
+  junctor_badge = ->(node) {
+    j = node.junctor.presence || "and"
+    return "".html_safe if node.children.none?
+    content_tag(:span, j == "or" ? t("tree_focus.junctor_or") : t("tree_focus.junctor_and"),
+      class: "text-[10px] px-1.5 py-0.5 rounded-full shrink-0 #{j == 'or' ? 'bg-sky-50 text-sky-800' : 'bg-emerald-50 text-emerald-700'}")
+  }
+  # Kinder eines Knotens in Junktor-Orientierung rendern.
+  render_children = ->(node, mode) {
+    j = node.junctor.presence || "and"
+    items = node.children.map do |kid|
+      is_focus = mode == :context && kid.id == focus.id
+      base = "rounded border px-2.5 py-1.5 text-[13px] cursor-pointer block"
+      cls =
+        if is_focus
+          "#{base} border-emerald-500 ring-1 ring-emerald-500 bg-white font-medium text-slate-900"
+        elsif mode == :context && j == "or"
+          "#{base} border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-600"
+        elsif mode == :context
+          "#{base} border-slate-200 bg-slate-50/60 text-slate-500 hover:text-slate-700"
+        else
+          "#{base} border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-400"
+        end
+      inner = capture do
+        concat content_tag(:span, kid.knowledge_item.title)
+        concat content_tag(:span, " ●", class: "text-emerald-600", title: t("tree_focus.actual")) if kid.chosen?
+        if mode == :context && j == "and" && !is_focus
+          concat content_tag(:div, t("tree_focus.still_applies"), class: "text-[10px] text-slate-400 mt-0.5")
+        end
+      end
+      nav.call(kid, inner, cls)
+    end
+    sep = j == "or" ?
+      content_tag(:div, safe_join([content_tag(:span, "", class: "flex-1 h-px bg-slate-200"),
+                                   content_tag(:span, t("tree_focus.or"), class: "text-[10px] text-slate-400 px-2"),
+                                   content_tag(:span, "", class: "flex-1 h-px bg-slate-200")]),
+                  class: "flex items-center my-1") :
+      content_tag(:span, "+", class: "text-slate-300 self-center px-1")
+    if j == "or"
+      content_tag(:div, safe_join(items.flat_map.with_index { |it, i| i.zero? ? [it] : [sep, it] }), class: "flex flex-col")
+    else
+      content_tag(:div, safe_join(items.flat_map.with_index { |it, i| i.zero? ? [it] : [sep, it] }), class: "flex flex-wrap gap-y-1 items-stretch [&>a]:flex-1 [&>a]:min-w-[8rem]")
+    end
+  }
+  # Mehrfach-Vorkommen desselben Items im Baum (geteiltes Element).
+  occurrences = tree.nodes.where(knowledge_item_uuid: focus.knowledge_item_uuid).order(:id).to_a
+  next_occ = occurrences.size > 1 ? occurrences[(occurrences.index { |o| o.id == focus.id } + 1) % occurrences.size] : nil
+%>
+<div class="space-y-2 text-[13px]" id="tree_focus_panel_<%= entry.id %>">
+  <%# Statuszeile + Zur-Wurzel. %>
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-slate-500"><%= t("tree_focus.focus_level_html", level: level, title: content_tag(:span, focus.knowledge_item.title, class: "font-medium text-slate-700")) %></span>
+    <% root = ancestors.first || parent || focus %>
+    <% if root.id != focus.id %>
+      <%= nav.call(root, t("tree_focus.to_root"), "ml-auto text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50") %>
+    <% end %>
+  </div>
+  <p class="text-[10px] text-slate-400"><%= t("tree_focus.legend") %></p>
+
+  <%# Pfadleisten (kollabierte Vorfahren). %>
+  <% ancestors.each do |anc| %>
+    <% j = anc.junctor.presence || "and" %>
+    <% hidden_count = [anc.children.size - 1, 0].max %>
+    <% hint = j == "or" ? t("tree_focus.alternatives_hidden", count: hidden_count) : t("tree_focus.parts_apply", count: hidden_count) %>
+    <%= nav.call(anc,
+          safe_join([content_tag(:span, anc.knowledge_item.title, class: "font-medium"),
+                     junctor_badge.call(anc),
+                     content_tag(:span, hint, class: "ml-auto text-[10px] text-slate-400")]),
+          "flex items-center gap-2 px-3 py-1 rounded bg-slate-50 border border-slate-100 hover:border-slate-300 text-slate-600") %>
+  <% end %>
+
+  <%# Warum? — eine Ebene hoch. %>
+  <% if parent %>
+    <div class="text-center">
+      <%= nav.call(parent, t("tree_focus.why"), "inline-block text-xs px-3 py-0.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50") %>
+    </div>
+
+    <%# Kontext-Kasten: Eltern + Geschwister (Fokus hervorgehoben). %>
+    <div class="rounded-lg border border-slate-300 p-2.5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="font-medium text-slate-800"><%= parent.knowledge_item.title %></span>
+        <%= junctor_badge.call(parent) %>
+      </div>
+      <%= render_children.call(parent, :context) %>
+    </div>
+  <% end %>
+
+  <%# Wie? — eine Ebene hinunter. %>
+  <div class="text-center">
+    <% if focus.children.any? %>
+      <%= nav.call(focus.children.first, t("tree_focus.how"), "inline-block text-xs px-3 py-0.5 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50") %>
+    <% else %>
+      <span class="inline-block text-xs px-3 py-0.5 text-slate-300"><%= t("tree_focus.how_leaf") %></span>
+    <% end %>
+  </div>
+
+  <%# Verfeinerungs-Kasten: Fokus + seine Kinder. %>
+  <div class="rounded-lg border border-emerald-400 p-2.5">
+    <div class="flex items-center gap-2 mb-2 flex-wrap">
+      <span class="font-medium text-slate-900"><%= focus.knowledge_item.title %></span>
+      <%= junctor_badge.call(focus) %>
+      <% if next_occ %>
+        <%= nav.call(next_occ,
+              t("tree_focus.also_under_html", parent: (next_occ.parent&.knowledge_item&.title || t("tree_focus.root"))),
+              "text-[10px] text-sky-700 hover:underline", t("tree_focus.next_occurrence_title")) %>
+      <% end %>
+      <%# KI im Stack öffnen. %>
+      <%= link_to t("tree_focus.open_ki"), knowledge_item_path(focus.knowledge_item_uuid),
+            data: { controller: "blade-link", "blade-link-kind-value": "ki",
+                    "blade-link-id-value": focus.knowledge_item_uuid,
+                    action: "click->blade-link#append", turbo_frame: "_top" },
+            class: "ml-auto text-[10px] text-slate-400 hover:text-slate-700 hover:underline" %>
+    </div>
+    <% if focus.children.any? %>
+      <%= render_children.call(focus, :refine) %>
+    <% else %>
+      <p class="text-xs text-slate-400 italic"><%= t("tree_focus.no_refinement") %></p>
+    <% end %>
+  </div>
+</div>

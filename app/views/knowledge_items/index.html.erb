@@ -1,0 +1,38 @@
+<% content_for :title, t("knowledge.index_title") %>
+
+<%# #163 Phase 6c (KI): /knowledge_items ist jetzt eine Blade-Stack-
+    Seite ohne separates Aside. Die ehemalige Liste lebt als
+    list:knowledge_items-Card im Stack — Klick auf eine Zeile appendet
+    die KI-Card rechts und collapsed die Liste auf den Spine (Phase 6b).
+
+    Topic-Knowledge-Tab und /knowledge_stack/pinned nutzen weiterhin
+    knowledge_items/_stack (mit Aside) — dort ist die Aside-Spalte
+    inhaltlich anders kontextualisiert (Topic-spezifisch, Pin-Liste). %>
+<div data-controller="blade-stack"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="knowledge.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "knowledge_items" %>
+        <%= render "knowledge_items/index_list_blade" %>
+      <% else %>
+        <% locals = stack_item.partial_locals %>
+        <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+        <%= render stack_item.partial, **locals %>
+      <% end %>
+    <% end %>
+
+    <%# Cross-Navigation-Hook: ?new_type=… öffnet sofort eine New-Card
+        im Stack (z.B. wenn der User von Source-Detail "+ Quote" klickt). %>
+    <% if @new_card_type %>
+      <%= render "knowledge_items/stack_new_card",
+            topic_slugs:        nil,
+            default_type:       @new_card_type,
+            default_bib_source: @new_card_bib_source %>
+    <% end %>
+  </main>
+</div>

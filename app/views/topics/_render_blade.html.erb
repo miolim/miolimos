@@ -1,0 +1,151 @@
+<%# #352 (Hans, 2026-05-25): Rendering-Blade — zeigt den Work-Tree
+    eines Topics als gerenderte KI-Inhalts-Sequenz innerhalb des
+    Stack-Layouts (kein neuer Browser-Tab wie Render-Vorschau).
+
+    Pro Knoten ein Chevron-Toggle (disclosure-controller):
+    - Heading-Rolle: Chevron + Gliederungs-Path + KI-Titel; Body nur
+      wenn KI Inhalt hat; Default eingeklappt.
+    - Content-Rolle: Chevron + (Titel wenn eingeklappt, Body wenn
+      aufgeklappt); Default aufgeklappt.
+
+    Locals: topic (Topic).
+
+    Layout-Konvention analog _index_list_blade: aside-Spine links,
+    Body rechts. data-uuid `render:topic:<slug>`. %>
+<% topic = local_assigns.fetch(:topic, @topic) %>
+<% @topic ||= topic %>
+<%
+  stack_uuid = "render:topic:#{topic.slug}"
+  roots = topic.work_tree_roots
+               .includes(:knowledge_item, children: :knowledge_item)
+               .to_a
+%>
+<article id="stack_card_<%= stack_uuid %>"
+         data-uuid="<%= stack_uuid %>"
+         class="stack-card shrink-0 relative
+                w-[60rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <%# #352 Hans-Follow (2026-05-25): Spine-Label nimmt den Werks-Titel
+      auf, sofern gepflegt — Format „<Topic> • Render: <Titel>\".
+      Ohne Titel faellt es auf das alte Schema „<Topic> · Render\"
+      zurueck. %>
+  <%
+    spine_label = if topic.work_tree_title.present?
+                    "#{topic.name} • Render: #{topic.work_tree_title}"
+                  else
+                    "#{topic.name} · Render"
+                  end
+  %>
+  <%# #740 (Hans): Spine-Hintergrund rot (wie der Werk-Render-Button),
+      Icon + Label weiß. %>
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-red-700 border-r border-red-800
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-red-800"
+         title="<%= spine_label %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="inline-block w-3 h-3 rounded-full shrink-0 mt-1"
+          style="background: <%= topic.color.presence || '#94a3b8' %>"></span>
+    <span class="shrink-0 text-white [&_svg]:w-5 [&_svg]:h-5"
+          title="<%= t("topics.render") %>"><%= icon "list_tree" %></span>
+    <span class="text-xs text-white font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= spine_label %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto"
+       data-controller="render-blade-toggles">
+    <%# Toolbar-Header: sticky am oberen Card-Rand. %>
+    <header class="sticky top-0 z-20 px-3 py-2 bg-white/95 backdrop-blur border-b border-slate-200 flex items-center gap-2 flex-wrap">
+      <h2 class="font-semibold text-sm">
+        <%= t("topics.rendering_heading", topic: topic.name) %>
+      </h2>
+      <span class="text-xs text-slate-500"><%= t("topics.nodes_count", count: topic.work_nodes.size) %></span>
+
+      <%# #352 Hans-Follow: Bulk-Toggles fuer alle Heading- bzw. Content-
+          Knoten. data-bulk-state-target=icon zeigt aktuell den naechsten
+          Zustand an (collapse-down ⇄ collapse-up). %>
+      <div class="flex items-center gap-1 ml-2">
+        <button type="button"
+                data-action="click->render-blade-toggles#toggleAllHeadings"
+                title="<%= t("topics.toggle_headings") %>"
+                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 cursor-pointer">
+          H
+          <span data-render-blade-toggles-target="iconHeading"
+                class="inline-block transition-transform">
+            <%= icon "chevron_right", size: "w-3 h-3" %>
+          </span>
+        </button>
+        <button type="button"
+                data-action="click->render-blade-toggles#toggleAllContent"
+                title="<%= t("topics.toggle_contents") %>"
+                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">
+          ¶
+          <span data-render-blade-toggles-target="iconContent"
+                class="inline-block transition-transform rotate-90">
+            <%= icon "chevron_right", size: "w-3 h-3" %>
+          </span>
+        </button>
+      </div>
+
+      <div class="ml-auto flex items-center gap-1">
+        <%# #360 (Hans, 2026-05-25): Per-Blade-Reload. Holt den Render-
+            Blade-Inhalt frisch vom Server, ersetzt die Card in-place.
+            Brauchts wenn der Work-Tree (in einem anderen Blade)
+            modifiziert wurde und der Render-Blade noch den alten
+            Stand zeigt. %>
+        <button type="button"
+                data-action="click->blade-stack#reloadCard"
+                title="<%= t("topics.reload_render") %>"
+                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+          <%= icon "refresh", size: "w-3.5 h-3.5" %>
+        </button>
+        <%# #352 Hans-Follow: Reference-Blade auch aus Rendering-Blade
+            heraus aufrufbar — `refs:topic:<slug>` aggregiert alle
+            Wikilink-Ziele aus allen Work-Tree-KIs.
+            #352-follow2: Voll-Render-Button entfernt — Rendering-Blade
+            ist der Default-Render-Pfad. %>
+        <button type="button"
+                data-action="click->blade-stack#openInStack"
+                data-target-uuid="refs:topic:<%= topic.slug %>"
+                title="<%= t("topics.refs_full_title") %>"
+                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer">
+          <%= icon "book_open", size: "w-3 h-3" %>
+          <%= t("topics.refs") %>
+        </button>
+      </div>
+    </header>
+
+    <%# Body. min-h-full damit die Toolbar bei kurzem Inhalt
+        weggescrollt werden kann (analog #348). %>
+    <div class="markdown-body p-4 space-y-1 min-h-full">
+      <%# #359 (Hans, 2026-05-25): Werks-Kopf. Title + Subtitle aus
+          Topic; Title-Fallback ist der Topic-Name, Subtitle bleibt
+          weg wenn leer. %>
+      <% display_title    = topic.work_tree_title.presence || topic.name %>
+      <% display_subtitle = topic.work_tree_subtitle.presence %>
+      <% if display_title.present? || display_subtitle.present? %>
+        <header class="not-prose pb-3 mb-3 border-b border-slate-200">
+          <h1 class="text-2xl font-bold text-slate-900 my-0">
+            <%= display_title %>
+          </h1>
+          <% if display_subtitle %>
+            <p class="text-sm text-slate-600 italic mt-1"><%= display_subtitle %></p>
+          <% end %>
+        </header>
+      <% end %>
+      <% if roots.empty? %>
+        <p class="text-sm text-slate-400 italic">
+          <%= t("topics.no_work_tree") %>
+        </p>
+      <% else %>
+        <%= render "topics/render_blade_subtree",
+              nodes: roots, depth: 1, topic: topic %>
+      <% end %>
+    </div>
+  </div>
+</article>

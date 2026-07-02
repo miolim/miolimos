@@ -1,0 +1,55 @@
+<%# Detail-Frame für ein KnowledgeItem.
+    Locals:
+      - item       [required]
+      - expanded   [optional] — true auf der Vollansicht (/show)
+      - mode       [:preview|:edit, default :preview]
+      - body_html  [String] für Vorschau
+      - body_markdown [String] für Edit-Textarea
+      - in_stack   [optional] — true → Close-Button für blade-stack einblenden %>
+<%
+  mode      = local_assigns.fetch(:mode, :preview)
+  expanded  = local_assigns[:expanded]
+  in_stack  = local_assigns[:in_stack]
+  edit_form = "knowledge_edit_form_#{item.uuid}"
+%>
+<%# Frame-ID muss pro Item eindeutig sein, weil im Sliding-Pane-Stack
+    mehrere Cards gleichzeitig im DOM stehen. Edit- und Cancel-Links
+    laden automatisch in den enclosing turbo_frame, der somit zur
+    richtigen Card gehört. %>
+<%# #160: view-tracker stempelt actor_view nach 3s Sichtdauer. %>
+<%= turbo_frame_tag "knowledge_detail_#{item.uuid}" do %>
+  <div id="knowledge_<%= item.uuid %>" class="focus-section-host space-y-4"
+       data-controller="view-tracker sticky-offset"
+       data-view-tracker-viewable-type-value="KnowledgeItem"
+       data-view-tracker-viewable-id-value="<%= item.id %>">
+
+    <%= render "knowledge_items/detail_header",
+          item: item, mode: mode, expanded: expanded,
+          in_stack: in_stack, edit_form: edit_form %>
+
+    <%# #389 Phase B.2 (Hans, 2026-05-28): „Details" + „Verknuepfungen"
+        in einer einzigen Section konsolidiert, 3 interne Bereiche
+        (Stempel · Felder · Picker). Tag-Picker, Versionshistorie und
+        Frontmatter wandern in den Picker-Bereich. %>
+    <%# #546 (Hans): Zeiten ist jetzt eine Subsection INNERHALB der Details
+        (siehe _detail_section), nicht mehr eine eigene Section daneben. %>
+    <%= render "knowledge_items/detail_section", item: item, in_stack: in_stack %>
+
+
+    <%= render "knowledge_items/detail_link_panels", item: item, in_stack: in_stack %>
+
+    <%= render "knowledge_items/detail_body_section",
+          item: item, mode: mode, in_stack: in_stack, edit_form: edit_form,
+          body_html: local_assigns[:body_html], body_markdown: local_assigns[:body_markdown] %>
+
+    <%# #384 Phase 3a (Hans, 2026-05-27): Dialog-Antworten an der KI.
+        Nur fuer Nicht-Reply-KIs, weil eine Reply ihrerseits keine
+        Sub-Replies hat (Threading bewusst flach, MVP). %>
+    <% unless item.reply? %>
+      <%# #232 Phase 1 (B): Live-Updates. Abonniert den KI-Stream — eine neue
+          veroeffentlichte Antwort broadcastet ein Turbo-Refresh hierher. %>
+      <%= turbo_stream_from item %>
+      <%= render "knowledge_items/replies_section", item: item %>
+    <% end %>
+  </div>
+<% end %>

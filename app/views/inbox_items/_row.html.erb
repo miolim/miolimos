@@ -1,0 +1,19 @@
+<%# #618 v4: eine Zeile der Inbox-Liste — eigenes Partial, damit
+    FetchInboxTitleJob sie nach dem Titel-Fetch live ersetzen kann
+    (broadcast_replace_to auf inbox_items_user_<creator>).
+    Locals: item. %>
+<li id="inbox_row_<%= item.id %>" class="group hover:bg-slate-50">
+  <button type="button"
+          data-controller="blade-link"
+          data-blade-link-kind-value="inbox_item"
+          data-blade-link-id-value="<%= item.id %>"
+          data-action="click->blade-link#append"
+          class="w-full flex items-center gap-2 px-1 py-1.5 text-left bg-transparent border-0 cursor-pointer">
+    <span class="shrink-0 text-slate-400 text-[11px] uppercase"><%= item.source_kind %></span>
+    <%# #755: lange URLs hart auf 50 Zeichen kürzen (Ellipse), Vollform im Tooltip. %>
+    <span class="flex-1 min-w-0 truncate text-slate-700" title="<%= item.display_title %>"><%= item.display_title_short %></span>
+    <%= status_pill(item.status) %>
+    <span class="shrink-0 text-[11px] text-slate-400 tabular-nums"
+          title="<%= l(item.created_at, format: :short) %>"><%= l(item.created_at.to_date, format: :short) rescue item.created_at.strftime("%d.%m.") %></span>
+  </button>
+</li>

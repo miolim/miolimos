@@ -1,0 +1,26 @@
+<%# Offene Aufgaben des Themas, drag-sortierbar. Next-Step-Task ist
+    hier ausgeschlossen (siehe TopicsController#load_topic_show_lists).
+    Group-Value verbindet diese Liste mit dem Next-Step-Slot.
+
+    #388 (Hans, 2026-05-28): In Bulk-Select-Wurzel gewrappt — Multi-
+    Select + Batch-Edit fuer Aufgaben dieses Topics. %>
+<%# #484 (Hans, 2026-06-03): bulk-select-Controller sitzt jetzt auf der
+    Tab-Section (Icon in der Befehlszeile), nicht mehr hier — daher kein
+    eigener Controller/Toggle-Button mehr, nur die Apply-Leiste (unten). %>
+<div>
+  <ol id="open_tasks_list"
+      data-controller="sortable"
+      data-sortable-reorder-url-value="<%= reorder_tasks_topic_path(topic) %>"
+      data-sortable-group-value="topic-tasks-<%= topic.id %>"
+      class="flex flex-col">
+    <% if tasks.empty? %>
+      <li id="tasks_empty" class="px-4 py-3 text-slate-500"><%= t("topics.no_tasks") %></li>
+    <% else %>
+      <% tasks.each do |task| %>
+        <%= render "tasks/row", task: task, topic: topic,
+              link_path: task_path(task),
+              blade_kind: "task", blade_id: task.id %>
+      <% end %>
+    <% end %>
+  </ol>
+</div>

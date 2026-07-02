@@ -1,0 +1,18 @@
+<%# Aktivitäts-Log — letzte 10 Einträge, klappbar.
+    In Vollansicht aufgeklappt, im Split-View zusammengeklappt. %>
+<% logs = task.audit_logs.includes(:actor).order(created_at: :desc).limit(10) %>
+<% if logs.any? %>
+  <details class="border-t border-slate-100 pt-3 text-[13px]" <%= 'open' if local_assigns[:expanded] %>>
+    <summary class="text-xs text-slate-500 cursor-pointer list-none hover:text-slate-700">
+      <%= t("tasks.activity") %> (<%= logs.size %>)
+    </summary>
+    <ul class="mt-2 space-y-1">
+      <% logs.each do |log| %>
+        <li class="text-xs text-slate-600 flex items-baseline gap-2">
+          <span class="text-slate-400 w-16 shrink-0 tabular-nums"><%= l(log.created_at, format: :short) %></span>
+          <span class="flex-1 min-w-0"><%= audit_log_summary(log) %></span>
+        </li>
+      <% end %>
+    </ul>
+  </details>
+<% end %>

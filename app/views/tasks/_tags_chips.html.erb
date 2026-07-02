@@ -1,0 +1,25 @@
+<%# #162: Chips für die Tags einer Task. Stream-replaced bei add/remove
+    via TaskTagsController. Wenn keine Tags vorhanden: leerer Container,
+    der Picker rendert dann nur das Eingabefeld. %>
+<div id="task_tags_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% Array(task.tags).sort.each do |tag| %>
+    <%# #428 Phase 4 (Hans, 2026-05-31): Chip in der Tag-Farbe + Beschreibung
+        als Tooltip (beides aus der zentralen Tag-Registry). %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs <%= tag_color_classes(tag) %>"
+          <% if (d = tag_description(tag)).present? %>title="<%= d %>"<% end %>>
+      <%# #417 (Hans, 2026-05-30): Tag-Icon (optional) vor dem Namen,
+          wenn in Setting tag_icons gemappt. %>
+      <% if (ic = tag_icon_html(tag, size: "w-3 h-3")) %>
+        <span class="inline-flex items-center opacity-70"><%= ic %></span>
+      <% end %>
+      <span><%= tag %></span>
+      <%= button_to task_tag_path(task, tag: tag), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.remove_tag"),
+            "aria-label": t("tasks.remove_tag_named", tag: tag),
+            class: "p-0 bg-transparent border-0 cursor-pointer leading-none text-slate-400 hover:text-rose-600" do %>
+        <span class="text-sm leading-none">×</span>
+      <% end %>
+    </span>
+  <% end %>
+</div>

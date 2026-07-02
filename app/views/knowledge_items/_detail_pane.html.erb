@@ -1,0 +1,10 @@
+<%# #196: KI-Detail in einer statischen `knowledge_detail`-Frame-
+    Hülle für die History-Page. Inneres `_detail`-Partial behält
+    seinen per-UUID-Frame; verschachtelt im äußeren ist unkritisch
+    bei Single-Pane-Anzeige. %>
+<%= turbo_frame_tag "knowledge_detail" do %>
+  <div class="space-y-3">
+    <%= render "knowledge_items/detail", item: item,
+          expanded: false, in_stack: false, body_html: body_html %>
+  </div>
+<% end %>

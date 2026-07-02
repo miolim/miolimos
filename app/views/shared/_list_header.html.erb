@@ -1,0 +1,39 @@
+<%# #703 (Hans, 2026-06-15): Einheitlicher Topbereich aller Hauptlisten.
+    Zwei Zeilen + Trennlinie (border-b dient als Trennlinie zur Liste):
+      Zeile 1: lead_icon + title links, `add` rechts (Hinzufügen, circle-plus).
+      Zeile 2: Zähler „angezeigt/gesamt" (5/20) + `search` links,
+               `controls` rechts (von rechts: Filter, Sort/Gruppierung,
+               Toggles, Mehrfachauswahl).
+    Locals:
+      lead_icon  — Icon-Name (String) links
+      title      — Listentitel
+      count      — angezeigte Anzahl
+      total      — Gesamtanzahl (optional; default = count)
+      count_slot — HTML für den Zähler-Numerator (optional, z.B. Live-Count-
+                   Span); default = count
+      add        — HTML rechts in Zeile 1 (optional)
+      search     — HTML der Suchzeile (optional)
+      controls   — HTML rechts in Zeile 2 (optional) %>
+<%
+  total      = local_assigns.fetch(:total, count)
+  count_slot = local_assigns[:count_slot]
+  add        = local_assigns[:add]
+  search     = local_assigns[:search]
+  controls   = local_assigns[:controls]
+%>
+<div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+            border-b border-slate-100 space-y-1.5"
+     data-ui-label="Listen-Kopf: <%= title %>"><%# #704: Beschriftungs-Modus %>
+  <%# Zeile 1 %>
+  <div class="flex items-center gap-2">
+    <span class="shrink-0 text-slate-500 [&_svg]:w-5 [&_svg]:h-5"><%= icon lead_icon %></span>
+    <span class="font-semibold text-sm flex-1 min-w-0 truncate"><%= title %></span>
+    <% if add %><span class="shrink-0 flex items-center gap-1"><%= add %></span><% end %>
+  </div>
+  <%# Zeile 2 %>
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= count_slot || count %>/<%= total %></span>
+    <div class="flex-1 min-w-0"><%= search if search %></div>
+    <% if controls %><span class="shrink-0 flex items-center gap-1"><%= controls %></span><% end %>
+  </div>
+</div>

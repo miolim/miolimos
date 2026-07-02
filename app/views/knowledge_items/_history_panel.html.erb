@@ -1,0 +1,42 @@
+<%# Verlauf-Drawer eines KIs. Lädt sich in einen Turbo-Frame
+    `ki_history_<uuid>` rein. Klick auf Commit zeigt rechts die
+    Version-Preview im Frame `ki_version_<uuid>`. %>
+<%= turbo_frame_tag "ki_history_#{item.uuid}" do %>
+  <section class="border border-slate-200 rounded bg-white">
+    <header class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
+      <span class="text-xs uppercase tracking-wider text-slate-600">🕒 <%= t("knowledge.list.history.title") %></span>
+      <span class="text-xs text-slate-400">· <%= commits.size %></span>
+    </header>
+
+    <% if commits.empty? %>
+      <p class="text-xs text-slate-500 italic px-3 py-3">
+        <%= t("knowledge.list.history.empty") %>
+      </p>
+    <% else %>
+      <div class="grid grid-cols-[14rem_1fr]">
+        <%# Linke Spalte: Commit-Liste. %>
+        <ul class="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto text-[12px]">
+          <% commits.each_with_index do |c, i| %>
+            <li>
+              <%= link_to version_knowledge_item_path(uuid: item.uuid, sha: c.sha),
+                    data: { turbo_frame: "ki_version_#{item.uuid}" },
+                    class: "block px-3 py-1.5 hover:bg-slate-50 #{'bg-slate-50' if i.zero?}" do %>
+                <div class="font-mono text-[11px] text-slate-500"><%= c.short_sha %></div>
+                <div class="text-slate-800 truncate"><%= c.subject %></div>
+                <div class="text-[11px] text-slate-500"><%= c.relative_age %> · <%= c.author %></div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+
+        <%# Rechte Spalte: Version-Preview. Default: erste/neueste Version. %>
+        <%= turbo_frame_tag "ki_version_#{item.uuid}",
+              src: version_knowledge_item_path(uuid: item.uuid, sha: commits.first.sha),
+              loading: "lazy",
+              class: "block min-h-[40vh]" do %>
+          <p class="text-xs text-slate-500 italic px-3 py-3"><%= t("knowledge.list.history.loading") %></p>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>

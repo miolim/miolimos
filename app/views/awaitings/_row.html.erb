@@ -1,0 +1,87 @@
+<%# Zeile in der Awaiting-Liste. Zwei Modi:
+    - Blade-Mode (`blade_kind`/`blade_id` Locals): Klick appendet die
+      Detail-Blade an den aktuellen Stack (#163 Phase 6c).
+    - Frame-Mode (Default): Klick laedt das Detail ins
+      `awaiting_detail`-Frame der Split-Pane-Page (z.B. Topic-Tab
+      `?tab=waiting`, das ist heute noch keine Stack-Seite). %>
+<%
+  today = Date.today
+  overdue = awaiting.follow_up_at.present? && awaiting.follow_up_at < today
+  soon    = awaiting.follow_up_at.present? && !overdue && awaiting.follow_up_at <= (today + 3)
+  days_delta = awaiting.follow_up_at ? (awaiting.follow_up_at - today).to_i : nil
+  blade_kind = local_assigns[:blade_kind]
+  blade_id   = local_assigns[:blade_id]
+%>
+<li id="awaiting_row_<%= awaiting.id %>"
+    class="group flex items-center gap-3 px-4 py-1.5 border-l-4 border-l-transparent border-b border-slate-100 hover:bg-slate-50
+           data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-50
+           <%= 'bg-rose-50/40' if overdue %>
+           <%= 'bg-amber-50/40' if soon && !overdue %>">
+
+  <span class="shrink-0 <%= overdue ? 'text-rose-500' : 'text-amber-500' %>" title="Wartepunkt">⏳</span>
+
+  <% if blade_kind && blade_id %>
+    <a href="<%= awaiting_path(awaiting) %>"
+       data-controller="blade-link"
+       data-blade-link-kind-value="<%= blade_kind %>"
+       data-blade-link-id-value="<%= blade_id %>"
+       data-action="click->blade-link#append"
+       class="flex-1 min-w-0 hover:underline">
+      <div class="truncate <%= overdue ? 'font-medium text-slate-900' : 'text-slate-900' %>">
+        <%= awaiting.title %>
+      </div>
+      <div class="text-xs text-slate-500 truncate flex items-center gap-2 flex-wrap">
+        <% if awaiting.contact_ki %>
+          <span><%= awaiting.contact_ki.display_name %></span>
+        <% end %>
+        <% awaiting.topics.each do |t| %>
+          <span class="inline-flex items-center gap-1"><%= topic_dot t %><%= t.name %></span>
+        <% end %>
+        <span>seit <%= awaiting.days_waiting %>&nbsp;Tagen</span>
+      </div>
+    </a>
+  <% else %>
+    <%# #756 (Hans, 2026-06-23): Blade-Append statt awaiting_detail-Frame. %>
+    <%= link_to awaiting_path(awaiting),
+          data: { controller: "blade-link", "blade-link-kind-value": "awaiting",
+                  "blade-link-id-value": awaiting.id, action: "click->blade-link#append",
+                  turbo_frame: "_top" },
+          class: "flex-1 min-w-0 hover:underline" do %>
+      <div class="truncate <%= overdue ? 'font-medium text-slate-900' : 'text-slate-900' %>">
+        <%= awaiting.title %>
+      </div>
+      <div class="text-xs text-slate-500 truncate flex items-center gap-2 flex-wrap">
+        <% if awaiting.contact_ki %>
+          <span><%= awaiting.contact_ki.display_name %></span>
+        <% end %>
+        <% awaiting.topics.each do |t| %>
+          <span class="inline-flex items-center gap-1"><%= topic_dot t %><%= t.name %></span>
+        <% end %>
+        <span>seit <%= awaiting.days_waiting %>&nbsp;Tagen</span>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if awaiting.follow_up_at %>
+    <span class="text-xs w-28 text-right shrink-0 <%= overdue ? 'text-rose-700 font-medium' : (soon ? 'text-amber-700' : 'text-slate-500') %>">
+      <% if overdue %>
+        seit <%= days_delta.abs %>&nbsp;Tagen
+      <% elsif days_delta == 0 %>
+        heute fällig
+      <% else %>
+        in <%= days_delta %>&nbsp;Tagen
+      <% end %>
+    </span>
+  <% end %>
+
+  <% if blade_kind && blade_id %>
+    <%= render "shared/blade_plus_button", kind: blade_kind, id: blade_id %>
+  <% end %>
+
+  <%= button_to resolve_awaiting_path(awaiting), method: :post,
+        form: { class: "inline shrink-0 m-0 p-0" },
+        class: "p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 bg-transparent border-0 cursor-pointer text-slate-500",
+        title: t("awaitings.resolve"), "aria-label": t("awaitings.resolve") do %>
+    <%= icon "check", size: "w-4 h-4" %>
+  <% end %>
+</li>

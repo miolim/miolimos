@@ -1,0 +1,62 @@
+<%# #532 (Hans, 2026-06-08): Detail-Blade eines Dokuments. Meta-Felder +
+    Picker für die Verknüpfungen (Aussteller/Empfänger/Topic/Body-KI), inline
+    auto-save (PATCH, Turbo-Stream ersetzt den Felder-Block). Vorschau/PDF
+    rendern den Record über das DIN-5008-Theme. %>
+<% labels = DocumentsController::KIND_LABELS %>
+<%# #559 (Hans): Benennung (Rechnung = Aussteller · Nr · Datum, sonst Betreff)
+    im Header und — hinter der Art — im Spine. %>
+<% name  = document.display_name %>
+<% spine = name ? "#{labels[document.kind]} · #{name}" : labels[document.kind] %>
+<article id="stack_card_document:<%= document.id %>"
+         data-uuid="document:<%= document.id %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: "document:#{document.id}", title: spine,
+        icon_html: icon("file_text"), label: spine, topics: [document.topic] %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <header class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                   border-b border-slate-100 flex items-center gap-2">
+      <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[document.kind] %></span>
+      <span class="font-semibold text-sm truncate"><%= name || t("documents.list.unnamed") %></span>
+    </header>
+
+    <%# #532/#556: bei Status final read-only (gesperrt), sonst editierbar.
+        Ein Wrapper mit stabiler id, damit der Status-Wechsel den Bereich
+        per Turbo-Stream live umschaltet (siehe update.turbo_stream). %>
+    <%= render "documents/editor", document: document %>
+
+    <%= render "documents/artifacts", document: document %>
+
+    <div class="flex flex-wrap gap-2 pt-3 mt-3 border-t border-slate-300 text-xs">
+      <%= link_to t("documents.show.preview"), document_path(document), target: "_blank", rel: "noopener",
+            class: "px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50" %>
+      <%= link_to t("documents.show.pdf"), rendered_pdf_document_path(document), target: "_blank", rel: "noopener",
+            class: "px-2 py-1 rounded bg-sky-600 text-white hover:bg-sky-700" %>
+      <%# #547: AES-signiertes PDF — nur wenn das Signier-Setup vorhanden ist. %>
+      <% if DocumentSigner.available? %>
+        <%= link_to t("documents.list.signed_pdf"), signed_pdf_document_path(document), target: "_blank", rel: "noopener",
+              title: t("documents.list.signed_pdf_title"),
+              class: "px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800" %>
+      <% end %>
+      <%# #541: ZUGFeRD/XRechnung — nur bei Rechnungen, wenn das Setup da ist. %>
+      <% if document.rechnung? && ZugferdGenerator.available? %>
+        <%= link_to t("documents.list.zugferd_pdf"), zugferd_pdf_document_path(document), target: "_blank", rel: "noopener",
+              title: t("documents.list.zugferd_pdf_title"),
+              class: "px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+        <%= link_to t("documents.list.xrechnung_xml"), xrechnung_xml_document_path(document),
+              title: t("documents.list.xrechnung_xml_title"),
+              class: "px-2 py-1 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50" %>
+      <% end %>
+      <%# #787 (Hans): Dokument löschen (Soft-Delete → Papierkorb, Toast mit
+          Undo). Rechtsbündig abgesetzt von den Ausgabe-Aktionen. %>
+      <%= button_to document_path(document), method: :delete,
+            form: { class: "inline m-0 p-0 ml-auto", data: { turbo_confirm: t("documents.trash.confirm") } },
+            title: t("documents.trash.delete_title"), "aria-label": t("documents.trash.delete"),
+            class: "px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer flex items-center gap-1 [&_svg]:w-3.5 [&_svg]:h-3.5" do %>
+        <%= icon "trash" %><%= t("documents.trash.delete") %>
+      <% end %>
+    </div>
+  </div>
+</article>

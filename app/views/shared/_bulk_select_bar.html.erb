@@ -1,0 +1,68 @@
+<%# #388 (Hans, 2026-05-28): Bulk-Select-Bar — Toggle-Button +
+    Action-Form fuer Aufgabenlisten. Der Caller muss um die ganze
+    Liste herum eine Wurzel-Div mit
+    `data-controller="bulk-select" class="bulk-select-root"`
+    setzen (sodass die Per-Row-Checkboxen via .bulk-active erreichbar
+    sind).
+
+    Locals:
+      key      — Stable-Id-Suffix (z.B. "topic-7", "dashboard")
+      topic    — optional, default add-Topic im Picker
+      position — :top (Toggle-Button) | :bottom (Action-Form). %>
+<%
+  position = local_assigns.fetch(:position, :top)
+  bar_id   = "bulk_bar_#{key}"
+%>
+<% if position == :top %>
+  <div class="flex items-center justify-end mb-1">
+    <button type="button"
+            data-action="bulk-select#toggleMode"
+            class="text-xs text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer">
+      <%= icon "check", size: "w-3.5 h-3.5" %>
+      <span class="bulk-toggle-label"><%= t("shared.bulk.multi_select") %></span>
+    </button>
+  </div>
+<% else %>
+  <%
+    assignee_choices = Actor.active.order(:name).pluck(:name, :id)
+    status_choices   = Task.statuses.keys.map { |k| [k.humanize, k] }
+    priority_choices = Task.priorities.keys.map { |k| [k.humanize, k] }
+    topic_choices    = Topic.visible_to(Current.actor).where(template: false).order(:name).pluck(:name, :id)
+  %>
+  <%= form_with url: bulk_update_tasks_path, method: :post,
+        data: { bulk_select_target: "applyForm bar",
+                action: "submit->bulk-select#apply",
+                turbo_stream: true },
+        id: bar_id,
+        hidden: true,
+        class: "sticky bottom-0 z-10 mt-2 p-2 rounded border border-emerald-300 bg-emerald-50 shadow-sm flex flex-wrap items-center gap-2 text-xs" do |f| %>
+    <span class="font-medium">
+      <span data-bulk-select-target="counter">0</span> <%= t("shared.bulk.selected") %>
+    </span>
+    <span class="text-slate-400">·</span>
+    <%= f.select :assignee_id,
+          [["— #{t("shared.bulk.assignment")} —", ""], [t("shared.bulk.remove"), "none"]] + assignee_choices,
+          {}, class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
+    <%= f.select :status,
+          [["— #{t("shared.bulk.status")} —", ""]] + status_choices,
+          {}, class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
+    <%= f.select :priority,
+          [["— #{t("shared.bulk.priority")} —", ""]] + priority_choices,
+          {}, class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
+    <%= f.select :add_topic_id,
+          [["— #{t("shared.bulk.add_topic")} —", ""]] + topic_choices,
+          { selected: topic&.id },
+          class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
+    <span class="ml-auto flex items-center gap-1.5">
+      <button type="submit"
+              class="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer border-0">
+        <%= t("shared.bulk.apply") %>
+      </button>
+      <button type="button"
+              data-action="bulk-select#cancel"
+              class="px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer border-0">
+        <%= t("actions.cancel") %>
+      </button>
+    </span>
+  <% end %>
+<% end %>

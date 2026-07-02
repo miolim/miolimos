@@ -1,0 +1,59 @@
+<%= form_with model: agent, url: (agent.persisted? ? settings_agent_path(agent) : settings_agents_path),
+      scope: :agent_actor, local: true, class: "space-y-3" do |f| %>
+  <% if agent.errors.any? %>
+    <div class="rounded border border-rose-200 bg-rose-50 p-3 text-rose-800">
+      <ul class="list-disc ml-4">
+        <% agent.errors.full_messages.each do |m| %><li><%= m %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_field :name, required: true, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :email, t("settings.agent_form.email_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.email_field :email, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :description, t("settings.agent_form.description_label"), class: "block text-xs text-slate-600 mb-1" %>
+    <%= f.text_area :description, rows: 2, required: true, class: "w-full rounded border border-slate-200 px-2 py-1" %>
+  </div>
+  <div>
+    <%= f.label :workflow_instructions, t("settings.agent_form.workflow_instructions_label"),
+          class: "block text-xs text-slate-600 mb-1" %>
+    <p class="text-[11px] text-slate-500 mb-1">
+      <%= t("settings.agent_form.workflow_instructions_help") %>
+    </p>
+    <%= f.text_area :workflow_instructions, rows: 10,
+          class: "w-full rounded border border-slate-200 px-2 py-1 font-mono text-xs" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :active %>
+    <%= f.label :active, t("settings.agent_form.active_label"), class: "text-xs text-slate-600" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :show_in_dashboard %>
+    <%= f.label :show_in_dashboard, t("settings.agent_form.show_in_dashboard_label"),
+          class: "text-xs text-slate-600" %>
+  </div>
+
+  <% unless agent.persisted? %>
+    <div class="flex items-center gap-2">
+      <%= f.check_box :include_delete %>
+      <%= f.label :include_delete, t("settings.agent_form.include_delete_label"),
+            class: "text-xs text-slate-600" %>
+    </div>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.agent_form.capabilities_help") %>
+    </p>
+  <% end %>
+
+  <div class="flex gap-2">
+    <%= f.submit t("actions.save"),
+          class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= link_to t("actions.cancel"), settings_agents_path,
+          class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
+  </div>
+<% end %>

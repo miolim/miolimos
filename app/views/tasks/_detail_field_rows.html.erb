@@ -1,0 +1,90 @@
+<%# #603 R5/R6: die vier Felder (Zugewiesen/Fällig/Wann/Priorität) im
+    Picker-Stil — eigenes Partial mit stabiler id, damit tasks#update
+    nach Feld-Änderungen GENAU diesen Block ersetzen kann (Icons springen
+    um, offene Eingabefelder schließen), ohne Beschreibung/Antworten zu
+    stompen. Locals: task. %>
+    <%# === Bereich 2: Felder === %>
+    <%# #603 R4/R5 (Hans): Felder untereinander im Picker-Stil.
+        - Zugewiesen/Fällig: Icon + Wert, Zeile klickbar (Datum öffnet
+          sofort den Picker); Hover-Hervorhebung NUR bei leerem Feld.
+        - Wann: die vier Commitment-Icons dauerhaft nebeneinander,
+          aktives farbig (wie in der Aufgabenliste).
+        - Priorität: Kästchen 1–4, gewähltes blass eingefärbt
+          (grau/blau/orange/rot).
+        min-h-7 hält die Zeilenhöhe konstant. %>
+    <div id="task_fields_<%= task.id %>" class="space-y-1 text-[13px]">
+      <% [
+        { icon: "user", label: t("tasks.field_assigned_to"), empty: task.assignee_id.blank?,
+          value: task.assignee&.name || "—", attr: :assignee_id },
+        { icon: "calendar", label: t("tasks.field_due"), empty: task.due_date.blank?,
+          value: (task.due_date ? l(task.due_date, format: "%d.%m.%Y") : "—"), attr: :due_date }
+      ].each do |fdef| %>
+        <div class="group/erow min-h-7 flex items-center gap-3 rounded px-1.5 -mx-1.5 cursor-pointer
+                    <%= 'hover:bg-slate-50' if fdef[:empty] %>"
+             data-controller="picker-toggle"
+             data-action="click->picker-toggle#openFromRow"
+             data-empty="<%= fdef[:empty] %>">
+          <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 group-hover/erow:text-slate-700"
+                title="<%= fdef[:label] %>">
+            <%= icon fdef[:icon] %>
+          </span>
+          <% if fdef[:empty] %>
+            <span class="erow-hover-label hidden group-hover/erow:inline text-xs text-slate-400 shrink-0 select-none"><%= fdef[:label] %></span>
+          <% end %>
+          <span data-picker-toggle-target="trigger" title="<%= fdef[:label] %>"
+                class="truncate <%= fdef[:empty] ? 'text-slate-400' : 'text-slate-700' %>"><%= fdef[:value] %></span>
+          <div data-picker-toggle-target="inputBox" hidden class="flex-1 min-w-0">
+            <%= form_with model: task, url: task_path(task), method: :patch, local: false, class: "block" do |f| %>
+              <% input_cls = "w-full rounded border border-slate-200 bg-white px-2 py-0.5 text-sm focus:outline-none focus:border-slate-400" %>
+              <% if fdef[:attr] == :assignee_id %>
+                <%= f.collection_select :assignee_id, Actor.active.order(:name), :id, :name,
+                      { include_blank: "—" }, class: input_cls, onchange: "this.form.requestSubmit()" %>
+              <% else %>
+                <%= f.date_field :due_date, class: input_cls, onchange: "this.form.requestSubmit()" %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Wann: vier Icons dauerhaft, aktives farbig (Liste-Muster #175). %>
+      <% current_commit = task.commitment.presence || "inbox" %>
+      <div class="min-h-7 flex items-center gap-3 px-1.5 -mx-1.5" data-empty="<%= task.commitment.blank? %>">
+        <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4" title="<%= t("tasks.field_when") %>"><%= icon "clock" %></span>
+        <span class="inline-flex items-center gap-0.5 [&_svg]:w-4 [&_svg]:h-4">
+          <% CommitmentsHelper::COMMITMENTS.each do |meta| %>
+            <% active = meta[:key] == current_commit %>
+            <%= form_with model: task, url: task_path(task), method: :patch, local: false,
+                  class: "inline-flex m-0 p-0 leading-none" do |f| %>
+              <%= f.hidden_field :commitment, value: (meta[:key] == "inbox" ? "" : meta[:key]) %>
+              <button type="submit" title="<%= t("tasks.sections.#{meta[:key]}") %>"
+                      class="p-0.5 rounded cursor-pointer bg-transparent border-0
+                             <%= active ? meta[:color] : 'text-slate-300 hover:text-slate-500' %>">
+                <%= icon meta[:icon] %>
+              </button>
+            <% end %>
+          <% end %>
+        </span>
+      </div>
+
+      <%# Priorität: Kästchen 1–4, gewähltes blass eingefärbt. %>
+      <div class="min-h-7 flex items-center gap-3 px-1.5 -mx-1.5" data-empty="false">
+        <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4" title="<%= t("tasks.filter_priority") %>"><%= icon "triangle_alert" %></span>
+        <span class="inline-flex items-center gap-0.5">
+          <% { "low"    => ["1", "bg-slate-200 text-slate-700 border-slate-300"],
+               "normal" => ["2", "bg-blue-100 text-blue-800 border-blue-300"],
+               "high"   => ["3", "bg-orange-100 text-orange-800 border-orange-300"],
+               "urgent" => ["4", "bg-red-100 text-red-800 border-red-300"] }.each do |key, (num, active_cls)| %>
+            <% active = task.priority == key %>
+            <%= form_with model: task, url: task_path(task), method: :patch, local: false,
+                  class: "inline-flex m-0 p-0 leading-none" do |f| %>
+              <%= f.hidden_field :priority, value: key %>
+              <button type="submit" title="<%= t("tasks.priority.#{key}") %>"
+                      class="w-5 h-5 rounded border text-[11px] tabular-nums leading-none cursor-pointer
+                             <%= active ? active_cls : 'border-slate-200 text-slate-400 hover:bg-slate-50' %>"><%= num %></button>
+            <% end %>
+          <% end %>
+        </span>
+      </div>
+    </div>
+

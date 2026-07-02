@@ -1,0 +1,148 @@
+<%# #352 (Hans, 2026-05-25): rekursives Sub-Tree-Partial fuer das
+    Rendering-Blade.
+
+    Heading-Knoten: Chevron + Path-Prefix + Titel; Body (sofern
+    vorhanden) im body-target; Default eingeklappt.
+    Content-Knoten: Chevron + Titel (immer sichtbar, dezent italic);
+    Body im body-target, Default aufgeklappt. Heading-Knoten ohne Body
+    bekommen keinen Chevron.
+
+    Heading-Nummerierung wie im Work-Tree (last_heading_path-Logik:
+    Sub-Headings unter Content-Knoten erben den Path des juengsten
+    vorangegangenen Heading-Geschwisters).
+
+    Body-Headings (KnowledgeMarkdown render) werden um die Tree-Tiefe
+    des umgebenden Heading-Knotens nach unten verschoben (#352 Hans-
+    Follow): KI auf Gliederungs-Ebene N → Body-H1 → H(N+1), Body-H2
+    → H(N+2), … (cap H6).
+
+    Locals:
+      nodes        — Array<WorkNode>
+      depth        — Int, 1-basiert; Tiefe = Hierarchie-Level fuer
+                     Headings UND fuer den Body-Headings-Shift
+      topic        — Topic
+      path_prefix  — Array<Int>, Default []
+%>
+<%
+  path_prefix = local_assigns[:path_prefix] || []
+  heading_counter = 0
+  last_heading_path = nil
+
+  # Body-Headings um `shift` Level nach unten schieben (h1 → h(1+shift)).
+  shift_body_headings = lambda do |html, shift|
+    return html if shift <= 0
+    html.gsub(/<(\/?)(h[1-6])(\s[^>]*)?>/i) do
+      slash, tag, attrs = Regexp.last_match(1), Regexp.last_match(2).downcase, Regexp.last_match(3)
+      n     = tag[1].to_i
+      new_n = [n + shift, 6].min
+      "<#{slash}h#{new_n}#{attrs}>"
+    end
+  end
+%>
+<div class="render-tree-list">
+  <% nodes.each do |node| %>
+    <%
+      ki = node.knowledge_item
+      next unless ki && ki.deleted_at.nil?
+
+      if node.role == "heading"
+        heading_counter += 1
+        node_path = path_prefix + [heading_counter]
+        last_heading_path = node_path
+      else
+        node_path = last_heading_path || path_prefix
+      end
+
+      has_body      = ki.body.to_s.strip.present?
+      can_toggle    = has_body
+      default_open  = node.role == "content"
+      indent_px     = (depth - 1) * 16  # 16px pro Stufe
+      # Heading-Level fuer den Titel des Knotens (cap H6).
+      heading_level = [depth + 1, 6].min
+      # Body-Headings shift: alle h1..h6 im KI-Body um die effektive
+      # Gliederungs-Tiefe des Knotens nach unten. Tiefe = laenge des
+      # Path-Pfades (path_prefix + 1 wenn heading, sonst path_prefix).
+      effective_depth = node.role == "heading" ? node_path.size : (last_heading_path&.size || 0)
+      body_html = has_body ? shift_body_headings.call(KnowledgeMarkdown.render(ki.body.to_s, item: ki), effective_depth) : ""
+    %>
+    <section data-controller="<%= 'render-node' if can_toggle %>"
+             data-render-node-open-value="<%= default_open %>"
+             data-node-id="<%= node.id %>"
+             data-role="<%= node.role %>"
+             class="render-node not-prose">
+      <header class="flex items-baseline gap-2 py-1"
+              style="padding-left: <%= indent_px %>px;">
+        <% if can_toggle %>
+          <button type="button"
+                  data-action="click->render-node#toggle"
+                  class="shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">
+            <span data-render-node-target="icon"
+                  class="inline-block transition-transform">
+              <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
+            </span>
+          </button>
+        <% else %>
+          <%# Platzhalter, damit Knoten ohne Toggle bündig mit den
+              toggle-baren stehen. %>
+          <span class="shrink-0 w-5 h-4 inline-block"></span>
+        <% end %>
+
+        <% if node.role == "heading" %>
+          <%# #352 Hans-Follow: Gliederungsziffer als <span> INNERHALB
+              des Heading-Tags, damit es die Schriftgroesse erbt.
+              #352-follow2: Heading + Ziffer in dunklem Rot (red-800),
+              damit sich die Gliederungs-Ebene von Body-Inhalt (slate)
+              abhebt. %>
+          <%= content_tag "h#{heading_level}", class: "flex-1 min-w-0 my-0 text-red-800 font-semibold" do %>
+            <span class="text-red-700 font-medium tabular-nums mr-2"><%= node_path.join(".") %>.</span><%= ki.title %>
+          <% end %>
+        <% else %>
+          <%# Content-Titel: immer sichtbar (Hans-Follow #352), dezent
+              italic — gleich ob collapsed oder open. %>
+          <span class="flex-1 min-w-0 text-xs text-slate-500 italic">
+            <%= ki.title %>
+          </span>
+        <% end %>
+      </header>
+
+      <% if has_body %>
+        <%# Body-Block. Eigene markdown-body-Wrapper + render-blade-body-
+            Klasse fuer Body-Heading-Override (dunkelgrau). %>
+        <div data-render-node-target="body"
+             class="render-node-body markdown-body render-blade-body <%= 'hidden' unless default_open %> pb-2"
+             style="padding-left: <%= indent_px + 28 %>px;">
+          <%= raw body_html %>
+        </div>
+      <% end %>
+
+      <% if node.children.any? %>
+        <% if node.junctor == "or" %>
+          <%# #592 (b): ODER-Verzweigung im Dokument — kompakte
+              Alternativen-Liste mit markiertem IST; voll gerendert wird
+              nur der gewählte Ast (der gelebte Inhalt). %>
+          <div class="not-prose my-1 rounded border border-sky-100 bg-sky-50/50 px-3 py-2"
+               style="margin-left: <%= indent_px + 28 %>px;">
+            <div class="text-[10px] uppercase tracking-wider text-sky-700 mb-1"><%= t("topics.alternatives") %></div>
+            <ul class="text-[13px] space-y-0.5">
+              <% node.children.each do |alt| %>
+                <li class="<%= alt.chosen? ? 'text-slate-900 font-medium' : 'text-slate-500' %>">
+                  <%= alt.chosen? ? "●" : "○" %>
+                  <%= alt.knowledge_item&.title %><%= " — IST" if alt.chosen? %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+          <% if (chosen = node.children.detect(&:chosen?)) %>
+            <%= render "topics/render_blade_subtree",
+                  nodes: [chosen], depth: depth + 1, topic: topic,
+                  path_prefix: node_path %>
+          <% end %>
+        <% else %>
+          <%= render "topics/render_blade_subtree",
+                nodes: node.children, depth: depth + 1, topic: topic,
+                path_prefix: node_path %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

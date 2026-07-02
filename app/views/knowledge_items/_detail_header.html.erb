@@ -1,0 +1,230 @@
+<%# #803 (aus #801 R6): Header-Bereich aus _detail extrahiert.
+    Zeile 1 = Action-Icons, Zeile 2 = Type-Icon + Title (sticky),
+    plus Supersession-Banner (#460).
+    Locals: item, mode, expanded, in_stack, edit_form %>
+<%# #363 (Hans, 2026-05-25): Zwei-Zeilen-Header. Zeile 1 = Action-
+    Icons (Card-Duplizieren links, Refs/Edit/Delete + Misc rechts).
+    Zeile 2 = Type-Icon + Title-Input, sticky am oberen Card-Rand;
+    Title bekommt whitespace-normal damit lange Titel umbrechen
+    statt zu truncaten. „In Vollansicht oeffnen\" entfernt. %>
+<div class="-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white border-b border-slate-100 flex items-center gap-1 text-slate-500">
+  <% if in_stack %>
+    <button type="button"
+            data-action="click->blade-stack#duplicateCard"
+            data-target-uuid="<%= item.uuid %>"
+            title="<%= t("knowledge.detail.duplicate_card") %>"
+            aria-label="<%= t("knowledge.detail.duplicate_card") %>"
+            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+      <%= icon "copy" %>
+    </button>
+    <%# #533 1c: Zeit für diese KI erfassen (Header-Timer übernimmt). %>
+    <button type="button"
+            data-controller="card-timer"
+            data-card-timer-subject-type-value="KnowledgeItem"
+            data-card-timer-subject-id-value="<%= item.uuid %>"
+            data-card-timer-label-value="<%= item.display_label || item.title %>"
+            data-card-timer-topics-value="<%= item.topics.map { |t| { id: t.id, name: t.name } }.to_json %>"
+            data-action="card-timer#start"
+            title="<%= t("knowledge.detail.track_time_for_ki") %>"
+            aria-label="<%= t("knowledge.detail.track_time") %>"
+            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+      <%= icon "timer" %>
+    </button>
+  <% end %>
+
+  <div class="ml-auto flex items-center gap-1 shrink-0">
+    <%# #360 (Hans, 2026-05-25): Per-Blade-Reload-Icon im Toolbar.
+        Funktioniert nur im Stack-Mode (in_stack), wo eine
+        blade-stack#reloadCard-Action sinnvoll ist. %>
+    <% if in_stack %>
+      <button type="button"
+              data-action="click->blade-stack#reloadCard"
+              title="<%= t("knowledge.detail.reload_card") %>"
+              aria-label="<%= t("knowledge.detail.reload_card") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+        <%= icon "refresh" %>
+      </button>
+      <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
+      <button type="button"
+              data-focus-trigger="blade"
+              title="<%= t("knowledge.detail.focus_card") %>"
+              aria-label="<%= t("knowledge.detail.focus_card_aria") %>"
+              class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+    <% end %>
+    <%# #625 (Hans, 2026-06-15): Überweisung an diese Person/Org — öffnet
+        das GiroCode-Formular mit dieser als Empfänger vorgewählt; die
+        IBAN lässt sich dort gleich hinterlegen. %>
+    <% if item.person? || item.organization? %>
+      <%= link_to giro_code_path(contact_uuid: item.uuid),
+            title: t("knowledge.detail.giro_transfer_to", name: item.title),
+            "aria-label": t("knowledge.detail.transfer"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&_svg]:w-4 [&_svg]:h-4" do %>
+        <%= icon "banknote" %>
+      <% end %>
+    <% end %>
+    <% external_url = item.bib_source&.url.presence %>
+    <% if external_url %>
+      <%= link_to external_url, target: "_blank", rel: "noopener",
+            title: t("knowledge.detail.open_source_url", url: external_url),
+            "aria-label": t("knowledge.detail.open_source"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "external_link" %>
+      <% end %>
+    <% end %>
+
+    <% if mode == :preview %>
+      <%# #705 (Hans): Body als HTML rendern (sandboxed iframe) ⇄ Markdown. %>
+      <%= button_to toggle_render_mode_knowledge_item_path(item.uuid),
+            method: :post,
+            form: { class: "inline" },
+            title: item.render_html? ? t("knowledge.detail.show_as_markdown") : t("knowledge.detail.render_as_html"),
+            "aria-label": t("knowledge.detail.toggle_render_mode"),
+            class: "p-1 rounded cursor-pointer [&_svg]:w-4 [&_svg]:h-4 #{item.render_html? ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}" do %>
+        <%= icon "code" %>
+      <% end %>
+      <% pinned_now = current_actor && KnowledgeItemPin.exists?(actor_id: current_actor.id, knowledge_item_id: item.uuid) %>
+      <button type="button"
+              data-controller="pin-toggle"
+              data-pin-toggle-uuid-value="<%= item.uuid %>"
+              data-pin-toggle-pinned-value="<%= pinned_now %>"
+              data-action="click->pin-toggle#toggle"
+              title="<%= pinned_now ? t("knowledge.detail.unpin") : t("knowledge.detail.pin_hint") %>"
+              aria-label="<%= t("knowledge.detail.pin") %>"
+              class="p-1 rounded hover:bg-amber-50 cursor-pointer <%= pinned_now ? 'text-amber-600' : 'text-slate-500' %>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 <%= pinned_now ? 'fill-current' : '' %>"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" x2="12" y1="17" y2="22"/>
+          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
+        </svg>
+      </button>
+      <div data-controller="bulk-entity-import"
+           data-bulk-entity-import-uuid-value="<%= item.uuid %>"
+           class="hidden">
+        <button type="button"
+                data-action="click->bulk-entity-import#submit"
+                data-bulk-entity-import-target="button"
+                title="<%= t("knowledge.detail.import_missing_entities") %>"
+                aria-label="<%= t("knowledge.detail.import_entities") %>"
+                class="p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer">
+          <%= icon "group" %>
+        </button>
+      </div>
+      <%# #343: Reference-Blade. %>
+      <button type="button"
+              data-action="click->blade-stack#openInStack"
+              data-target-uuid="refs:ki:<%= item.uuid %>"
+              title="<%= t("knowledge.detail.references_hint") %>"
+              aria-label="<%= t("knowledge.detail.references") %>"
+              class="p-1 rounded hover:bg-amber-50 hover:text-amber-700 cursor-pointer">
+        <%= icon "book_open" %>
+      </button>
+      <%# #761 (Hans, 2026-06-23): Kontaktdaten aus einer URL ergänzen —
+          nur an Personen/Organisationen. Natives <details> als Popover
+          (kein JS-Controller); das Formular postet per Turbo-Stream und
+          ersetzt danach das Detail. %>
+      <% if item.item_type.in?(%w[person organization]) %>
+        <details class="relative inline-block">
+          <summary class="list-none cursor-pointer p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 [&::-webkit-details-marker]:hidden [&_svg]:w-4 [&_svg]:h-4"
+                   title="<%= t("knowledge.detail.complete_from_url") %>"
+                   aria-label="<%= t("knowledge.detail.complete_from_url") %>"><%= icon "globe" %></summary>
+          <div class="absolute right-0 mt-1 z-20 w-80 bg-white border border-slate-200 rounded shadow-lg p-2">
+            <%= form_with url: complete_from_url_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+                  method: :post, data: { turbo: true }, class: "flex items-center gap-1" do %>
+              <input type="url" name="url" required
+                     placeholder="<%= t('knowledge.detail.complete_from_url_placeholder') %>"
+                     class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              <button type="submit" class="shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_url_go") %></button>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+      <%= link_to edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+            title: t("actions.edit"), "aria-label": t("actions.edit"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "pencil" %>
+      <% end %>
+      <%= button_to knowledge_item_path(item.uuid), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true,
+                      turbo_confirm: t("knowledge.detail.delete_confirm") } },
+            title: t("actions.delete"), "aria-label": t("actions.delete"),
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
+        <%= icon "trash" %>
+      <% end %>
+    <% else %>
+      <button type="submit" form="<%= edit_form %>"
+              title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
+              class="p-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer">
+        <%= icon "check" %>
+      </button>
+      <%= link_to knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+            title: t("actions.cancel"), "aria-label": t("actions.cancel"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "x" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Zeile 2: Title-Input, sticky, mit Umbruch. Type-Icon links.
+    #652: sticky-offset misst die Höhe (auch zweizeilig) für die
+    Haft-Kante des Beschreibungs-Headers. %>
+<div data-sticky-offset-target="bar"
+     class="sticky -top-4 -mx-4 px-4 py-2 bg-white/95 backdrop-blur z-20 border-b border-slate-100 flex items-start gap-2">
+  <span class="shrink-0 text-slate-500 mt-1"><%= knowledge_type_icon(item.item_type, size: "w-6 h-6") %></span>
+  <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "flex-1 min-w-0" do |f| %>
+    <%# textarea statt text_field, damit lange KI-Titel umbrechen
+        koennen statt zu truncaten. field-sizing:content laesst das
+        Textarea so hoch wachsen wie der Inhalt es braucht. %>
+    <%= f.text_area :title, value: item.title, rows: 1,
+          class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                  hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none
+                  resize-none [field-sizing:content] whitespace-normal break-words leading-snug",
+          onblur: "this.form.requestSubmit()",
+          onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
+  <% end %>
+</div>
+
+<%# Original-Chat-Titel kommt jetzt über die verlinkte Source
+    (csl_type personal_communication). %>
+<% if (chat_src = item.bib_source) && chat_src.csl_type == "personal_communication" && chat_src.title != item.title %>
+  <p class="px-2 -mt-1 text-xs text-slate-500 italic truncate"
+     title="<%= t("knowledge.detail.original_chat_title", title: chat_src.title) %>">
+    ↳ <%= chat_src.title %>
+  </p>
+<% end %>
+
+<%# #460 (Hans, 2026-06-04): Supersession (Achse B). Abgelöstes KI
+    trägt einen Deprecation-Banner mit Link auf den Nachfolger; der
+    Nachfolger zeigt „Löst ab". Beide Richtungen sind im Stack
+    navigierbar. Frühere Fassung bleibt erhalten/auffindbar. %>
+<% if item.superseded? %>
+  <% succ = item.superseded_by %>
+  <div class="mx-2 mt-1 mb-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] text-amber-900 flex items-start gap-2">
+    <span class="shrink-0 mt-0.5" aria-hidden="true">⚠</span>
+    <div class="flex-1 min-w-0">
+      <span class="font-medium"><%= t("knowledge.detail.superseded") %></span><% if succ %> <%= t("knowledge.detail.superseded_by") %>
+        <%= link_to succ.title.presence || t("knowledge.detail.untitled"), knowledge_item_path(succ.uuid),
+              data: { action: "click->blade-stack#openInStack", target_uuid: succ.uuid },
+              class: "underline hover:no-underline font-medium" %><% end %>
+      <% if item.superseded_at %><span class="text-amber-700 whitespace-nowrap">· <%= item.superseded_at.strftime("%Y-%m-%d") %></span><% end %>
+      <% if item.superseded_by_actor %><span class="text-amber-700">· <%= item.superseded_by_actor.name %></span><% end %>
+    </div>
+    <%= button_to supersede_knowledge_item_path(item.uuid), method: :delete,
+          form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+          class: "shrink-0 text-xs underline hover:no-underline text-amber-800 bg-transparent border-0 cursor-pointer p-0",
+          title: t("knowledge.detail.undo_supersede") do %><%= t("knowledge.detail.undo") %><% end %>
+  </div>
+<% end %>
+<% supersedes = item.supersedes.to_a %>
+<% if supersedes.any? %>
+  <div class="mx-2 mt-1 mb-2 text-[13px] text-slate-600 flex flex-wrap items-center gap-x-2">
+    <span class="text-slate-400"><%= t("knowledge.detail.supersedes_label") %></span>
+    <% supersedes.each do |old| %>
+      <%= link_to old.title.presence || t("knowledge.detail.untitled"), knowledge_item_path(old.uuid),
+            data: { action: "click->blade-stack#openInStack", target_uuid: old.uuid },
+            class: "text-emerald-700 hover:underline" %>
+    <% end %>
+  </div>
+<% end %>
+

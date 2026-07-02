@@ -1,0 +1,265 @@
+<%# Communications-Detail Body — ohne Turbo-Frame-Wrapper. Wird sowohl
+    im Master-Detail-Pane (via _detail) als auch im Cross-Entity-Blade-
+    Stack (#163 Phase 5b) eingebettet. %>
+<div id="communication_<%= comm.id %>" class="space-y-4">
+  <%# #696 (Hans): obere Icon-Leiste mit den Befehlen — ersetzt die Icons in
+      der Betreffzeile UND die Button-Befehle im Fußbereich. %>
+  <% gmail = comm.respond_to?(:gmail_url) ? comm.gmail_url : nil %>
+  <div class="flex items-center justify-end gap-1 text-slate-500 [&_svg]:w-5 [&_svg]:h-5">
+    <%# Aufgabe erstellen %>
+    <%= button_to create_task_communication_path(comm), method: :post,
+          form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+          title: t("communications.create_task_title"), "aria-label": t("communications.create_task"),
+          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer" do %>
+      <%= icon "tasks" %>
+    <% end %>
+
+    <%# Wartepunkt — Icon öffnet ein kleines Formular (Worauf? + Datum). %>
+    <details class="relative">
+      <summary class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer list-none inline-flex"
+               title="<%= t("communications.new_awaiting") %>" aria-label="<%= t("communications.new_awaiting") %>">
+        <%= icon "waiting" %>
+      </summary>
+      <div class="absolute z-30 right-0 mt-1 w-80 bg-white border border-slate-200 rounded shadow-lg p-3 text-left">
+        <%= form_with url: create_awaiting_communication_path(comm), method: :post, local: true, class: "space-y-2", data: { turbo_frame: "_top" } do |f| %>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1"><%= t("awaitings.title_label") %></label>
+            <%= f.text_area :description, rows: 2,
+                  value: "Antwort auf: #{comm.subject.presence || t("communications.no_subject")}",
+                  class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1"><%= t("awaitings.follow_up_at") %></label>
+            <%= f.date_field :follow_up_at, value: (Date.today + 7),
+                  class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+          </div>
+          <%= f.submit t("communications.new_awaiting"),
+                class: "text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+        <% end %>
+      </div>
+    </details>
+
+    <%# In Gmail öffnen %>
+    <% if gmail %>
+      <%= link_to gmail, target: "_blank", rel: "noopener",
+            title: t("communications.open_gmail"), "aria-label": t("communications.open_gmail"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "mail" %>
+      <% end %>
+    <% end %>
+
+    <%# Vollansicht / Zurück %>
+    <% if local_assigns[:expanded] %>
+      <%= link_to (request.referer.presence || communications_path),
+            title: t("communications.back_to_list"), "aria-label": t("communications.back"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "reduce" %>
+      <% end %>
+    <% else %>
+      <%= link_to communication_path(comm), data: { turbo_frame: "_top" },
+            title: t("communications.open_full"), "aria-label": t("communications.full_view"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+        <%= icon "expand" %>
+      <% end %>
+    <% end %>
+
+    <%# Entfernen %>
+    <%= button_to communication_path(comm), method: :delete,
+          form: { class: "inline m-0 p-0", data: { turbo_frame: "_top",
+                    turbo_confirm: t("communications.remove_confirm") } },
+          title: t("communications.remove_title"), "aria-label": t("communications.remove"),
+          class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
+      <%= icon "trash" %>
+    <% end %>
+  </div>
+
+  <%# Betreffzeile — ohne Icons (#696). %>
+  <div class="flex items-start gap-3">
+    <span class="text-xl shrink-0 <%= comm.inbound? ? 'text-blue-600' : 'text-slate-400' %>">
+      <%= comm.inbound? ? '↓' : '↑' %>
+    </span>
+    <div class="flex-1 min-w-0">
+      <h1 class="text-lg font-semibold"><%= comm.subject.presence || t("communications.no_subject") %></h1>
+      <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
+        <span><%= t("communications.direction.#{comm.direction}") %></span>
+        <span><%= l(comm.sent_at, format: :short) if comm.sent_at %></span>
+        <%# #765 (Hans): Anrufdauer — bei Anrufen direkt editierbar; setzt
+            Endzeit am Event und die Zeitbuchung mit. %>
+        <% if comm.is_a?(Call) %>
+          <%= form_with url: call_duration_communication_path(comm), method: :patch,
+                class: "inline-flex items-center gap-1" do %>
+            <%= icon "clock", size: "w-3 h-3" %>
+            <input type="number" name="duration_minutes" min="0" step="1" value="<%= comm.duration_minutes %>"
+                   class="w-14 border border-slate-200 rounded px-1 py-0.5 text-xs"
+                   aria-label="<%= t("communications.call_duration_label") %>">
+            <span><%= t("communications.call_duration_unit") %></span>
+            <button type="submit" class="text-xs text-emerald-700 hover:underline"><%= t("actions.save") %></button>
+          <% end %>
+        <% end %>
+        <% if comm.oauth_credential %>
+          <span class="font-mono"><%= comm.oauth_credential.email_address %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Classifier-Vorschlag: nur sichtbar wenn vorgeschlagen und noch
+      nicht entschieden, UND das Thema ist nicht bereits verknüpft. %>
+  <% if comm.suggested_topic_id.present? &&
+        comm.suggested_topic_decided_at.nil? &&
+        !comm.topics.exists?(id: comm.suggested_topic_id) %>
+    <% suggestion = comm.suggested_topic %>
+    <% score_pct = ((comm.suggested_topic_score || 0) * 100).round %>
+    <div class="flex items-center gap-2 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px]">
+      <span class="text-emerald-700"><%= t("communications.suggestion") %></span>
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white text-emerald-900 border border-emerald-200">
+        <%= topic_dot suggestion %><%= suggestion.name %>
+      </span>
+      <span class="text-xs text-emerald-700"><%= score_pct %>%</span>
+      <div class="ml-auto flex items-center gap-2">
+        <%= button_to t("communications.accept"), accept_topic_suggestion_communication_path(comm),
+              method: :post,
+              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+              class: "text-xs rounded bg-emerald-600 text-white px-2 py-1 hover:bg-emerald-700 cursor-pointer" %>
+        <%= button_to t("communications.reject"), reject_topic_suggestion_communication_path(comm),
+              method: :post,
+              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+              class: "text-xs rounded border border-slate-200 px-2 py-1 text-slate-600 hover:bg-white cursor-pointer" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# #696 R2 (Hans): Themen + Tags ÜBER dem Von/An-Bereich, mit EXAKT der
+      Picker-UX der Aufgaben-Details-Section — Icon + Label + Full-Row-Hover
+      (entity_picker mit icon:/label:; #695-Tags = bookmark wie task_tags). %>
+  <div class="border-t border-slate-100 pt-3 space-y-1">
+    <%= render "shared/entity_picker",
+          icon:          "folder", label: t("communications.field_topic"), placeholder: t("communications.field_topic"),
+          chips_id:      "comm_topics_chips_#{comm.id}",
+          chips_partial: "communications/topics_chips",
+          chips_locals:  { comm: comm },
+          suggest_url:   suggest_topics_path,
+          add_url:       communication_topics_path(comm),
+          param_name:    "topic_id",
+          create_label:  t("communications.create_topic") %>
+    <%= render "shared/entity_picker",
+          icon:          "bookmark", label: t("communications.field_tag"), placeholder: t("communications.field_tag"),
+          chips_id:      "comm_tags_chips_#{comm.id}",
+          chips_partial: "communications/tags_chips",
+          chips_locals:  { comm: comm },
+          suggest_url:   suggest_tags_tasks_path,
+          add_url:       communication_tags_path(comm),
+          param_name:    "tag_id",
+          create_label:  t("communications.create_tag") %>
+  </div>
+
+  <% any_participants = %w[sender recipient cc bcc].any? { |r| comm.participants_for(r).any? } %>
+  <% if any_participants %>
+    <dl class="text-[13px] space-y-1 border-t border-slate-100 pt-3">
+      <% %w[sender recipient cc bcc].each do |role| %>
+        <% entries = comm.participants_for(role) %>
+        <% next if entries.empty? %>
+        <div class="flex gap-2">
+          <dt class="text-xs text-slate-500 w-10 shrink-0"><%= t("communications.role_#{role}") %>:</dt>
+          <dd class="flex-1 flex flex-wrap gap-x-2 gap-y-1">
+            <% entries.each do |entry| %>
+              <% if entry[:ki] %>
+                <%# #763 (Hans, 2026-06-23): Person an den AKTUELLEN Stack
+                    anhängen (blade-link) statt einen neuen Stack zu öffnen.
+                    href + turbo_frame _top bleiben als Mittel-/Rechtsklick-
+                    Fallback. %>
+                <%= link_to entry[:ki].display_name,
+                      knowledge_item_path(entry[:ki].uuid),
+                      data: { controller: "blade-link", "blade-link-kind-value": "ki",
+                              "blade-link-id-value": entry[:ki].uuid,
+                              action: "click->blade-link#append", turbo_frame: "_top" },
+                      class: "hover:underline" %>
+              <% else %>
+                <span class="inline-flex items-center gap-1 font-mono text-slate-500">
+                  <%= entry[:email] %>
+                </span>
+              <% end %>
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  <% end %>
+
+  <%# #633: Anhänge (Metadaten aus raw_data) + Übernahme in die Inbox.
+      Schon übernommene zeigen den Link aufs Inbox-Item statt des Buttons. %>
+  <% atts = comm.attachments %>
+  <% if atts.any? %>
+    <%
+      imported = InboxItem.where("payload->>'communication_id' = ?", comm.id.to_s)
+                          .index_by { |i| i.payload["attachment_index"].to_i }
+    %>
+    <div class="border-t border-slate-100 pt-3 text-[13px]">
+      <div class="text-xs text-slate-500 mb-1"><%= t("communications.attachments") %></div>
+      <ul class="space-y-1">
+        <% atts.each_with_index do |a, idx| %>
+          <li class="flex items-center gap-2">
+            <span class="shrink-0 text-slate-400"><%= icon "paperclip", size: "w-3.5 h-3.5" %></span>
+            <span class="flex-1 min-w-0 truncate text-slate-700" title="<%= a[:filename] %>"><%= a[:filename] %></span>
+            <span class="shrink-0 text-[11px] text-slate-400"><%= number_to_human_size(a[:size]) %></span>
+            <% if (item = imported[idx]) %>
+              <button type="button"
+                      data-controller="blade-link"
+                      data-blade-link-kind-value="inbox_item"
+                      data-blade-link-id-value="<%= item.id %>"
+                      data-action="click->blade-link#append"
+                      title="<%= t("communications.open_in_inbox") %>"
+                      class="shrink-0 text-[11px] px-2 py-0.5 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer inline-flex items-center gap-1">
+                <%= t("communications.in_inbox_short") %> <%= icon "external_link", size: "w-3 h-3" %>
+              </button>
+            <% else %>
+              <%= button_to t("communications.import_to_inbox"),
+                    communication_import_attachment_path(comm, index: idx, stay_in_stack: 1),
+                    method: :post,
+                    form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+                    class: "shrink-0 text-[11px] px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if comm.body.present? %>
+    <div class="border-t border-slate-100 pt-3">
+      <div class="text-xs text-slate-500 mb-1"><%= t("communications.message") %></div>
+      <div class="text-sm text-slate-700 whitespace-pre-wrap max-h-[60vh] overflow-y-auto"><%= comm.body %></div>
+    </div>
+  <% end %>
+
+  <% if (tasks = comm.tasks).any? %>
+    <div class="border-t border-slate-100 pt-3 text-[13px]">
+      <div class="text-xs text-slate-500 mb-1"><%= t("communications.tasks_from_email") %></div>
+      <ul>
+        <% tasks.each do |t| %>
+          <li>
+            <%= link_to t.title, task_path(t), data: { turbo_frame: "_top" }, class: "hover:underline" %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# #696 (Hans): Die Button-Befehle im Fußbereich sind in die obere
+      Icon-Leiste gewandert (Aufgabe erstellen, In Gmail öffnen, Wartepunkt);
+      „In Gmail antworten + Wartepunkt" ist entfallen. %>
+
+  <%# #536 P3: Portal-Antwort — nur bei Portal-Nachrichten. Antwort wird im
+      Kundenportal sichtbar + der Kunde bekommt einen Mail-Hinweis. %>
+  <% if comm.is_a?(PortalMessage) && comm.inbound? %>
+    <div class="border border-sky-200 bg-sky-50/50 rounded px-3 py-2">
+      <div class="text-xs uppercase tracking-wider text-sky-700 mb-1"><%= t("communications.portal_reply") %></div>
+      <%= form_with url: communication_portal_replies_path(comm), method: :post, local: true, class: "space-y-2" do %>
+        <textarea name="body" rows="3" required placeholder="<%= t("communications.reply_placeholder") %>"
+                  class="w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm"></textarea>
+        <button type="submit" class="text-xs px-3 py-1.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer">
+          <%= t("communications.portal_reply_submit") %></button>
+      <% end %>
+    </div>
+  <% end %>
+</div>

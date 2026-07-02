@@ -1,0 +1,17 @@
+<%# #739 (Hans): Gemeinsame Hülle für ALLE Topbar-Quick-Create-Slots.
+    Vereinheitlicht Positionierung (fixed, zentriert), Box-Stil und die
+    Überschrift — der feld-heterogene Formularinhalt (Picker, Presets,
+    Datei, Selects …) kommt als Block (`render layout:` + yield).
+
+    So sind alle Slots strukturell gleich aufgebaut; Unterschiede liegen
+    nur noch im eingebetteten Formular.
+
+    Locals:
+      slot    – Slot-Key (= data-quick-create-slot-param der Icon-Buttons)
+      heading – Überschrift (bereits übersetzt übergeben) %>
+<div data-quick-create-target="slot" data-slot="<%= slot %>"
+     class="hidden fixed top-14 left-1/2 -translate-x-1/2 w-80 z-30
+            bg-white border border-slate-200 rounded-lg shadow-xl p-3">
+  <div class="text-xs font-semibold text-slate-700 mb-2"><%= heading %></div>
+  <%= yield %>
+</div>

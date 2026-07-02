@@ -1,0 +1,59 @@
+<%# #786 (Hans): SEPA-Lastschriftmandat-Formular — NUR der Body. Wird im
+    DIN-Layout (_render) gerendert, das Briefkopf + Anschriftfeld (Empfänger=
+    Gläubiger, fürs Kuvert-Fenster) liefert. Konvention: Aussteller(issuer)=
+    Zahlungspflichtiger/Schuldner, Empfänger(recipient)=Gläubiger.
+    Bankverbindung des Schuldners: document.effective_debtor_account.
+    Parteien zweispaltig (links Bezeichnung, rechts Angaben) — spart Platz. %>
+<% document = local_assigns.fetch(:document) %>
+<% acc        = document.effective_debtor_account %>
+<% glaeubiger = document.recipient %>
+<% schuldner  = document.issuer %>
+<% glaeubiger_id = glaeubiger&.identifiers&.detect { |i| i.label.to_s =~ /gläubiger|glaeubiger|creditor/i }&.value %>
+<div class="doc lastschrift">
+  <h1><%= t("documents.lastschrift.title") %></h1>
+
+  <%# Gläubiger — zweispaltig: links Bezeichnung (zweizeilig), rechts Angaben. %>
+  <div class="ls-party">
+    <div class="ls-party-label"><%= t("documents.lastschrift.creditor_label") %><span class="sub"><%= t("documents.lastschrift.creditor_sub") %></span></div>
+    <div class="ls-party-data">
+      <strong><%= glaeubiger&.title.presence || "—" %></strong>
+      <% document_address_lines(glaeubiger, override: document.chosen_recipient_address).each do |l| %><br><%= l %><% end %>
+      <table class="ls-fields">
+        <tr><td class="k"><%= t("documents.lastschrift.creditor_id") %></td><td><%= glaeubiger_id.presence || ls_blank %></td></tr>
+        <tr><td class="k"><%= t("documents.lastschrift.mandate_ref") %></td><td><%= ls_blank %></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p class="ls-auth"><%= t("documents.lastschrift.authorization") %></p>
+  <p class="ls-hint"><strong><%= t("documents.lastschrift.hint_label") %></strong> <%= t("documents.lastschrift.hint") %></p>
+
+  <p class="ls-payment">
+    <%= t("documents.lastschrift.payment_kind") %>
+    &nbsp;&nbsp;☐ <%= t("documents.lastschrift.one_off") %>
+    &nbsp;&nbsp;☐ <%= t("documents.lastschrift.recurring") %>
+  </p>
+
+  <%# Zahlungspflichtiger — zweispaltig. %>
+  <div class="ls-party">
+    <div class="ls-party-label"><%= t("documents.lastschrift.debtor_label") %><span class="sub"><%= t("documents.lastschrift.debtor_sub") %></span></div>
+    <div class="ls-party-data">
+      <strong><%= schuldner&.title.presence || "—" %></strong>
+      <% document_address_lines(schuldner).each do |l| %><br><%= l %><% end %>
+      <table class="ls-fields">
+        <tr><td class="k"><%= t("documents.lastschrift.bank") %></td><td><%= acc&.bank_name.presence || ls_blank %></td></tr>
+        <tr><td class="k">IBAN</td><td class="mono"><%= acc&.iban_pretty.presence || ls_blank %></td></tr>
+        <tr><td class="k">BIC</td><td class="mono"><%= acc&.bic.presence || ls_blank %></td></tr>
+        <% if acc&.holder.present? && acc.holder != schuldner&.title %>
+          <tr><td class="k"><%= t("documents.lastschrift.holder") %></td><td><%= acc.holder %></td></tr>
+        <% end %>
+      </table>
+    </div>
+  </div>
+
+  <div class="ls-sign">
+    <p class="ls-place"><%= t("documents.lastschrift.place_date") %></p>
+    <div class="line">&nbsp;</div>
+    <div class="name"><%= schuldner&.title.presence || t("documents.lastschrift.signature") %></div>
+  </div>
+</div>

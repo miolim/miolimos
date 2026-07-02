@@ -1,0 +1,25 @@
+<%# Chips für die Tasks, die diese KI erwähnen. Stream-replaced bei
+    add/remove via knowledge_task_mentions_controller. %>
+<div id="ki_task_mentions_chips_<%= item.uuid %>" class="flex flex-wrap gap-1.5">
+  <% item.mentioning_tasks.includes(:topics).order(updated_at: :desc).each do |task| %>
+    <% topic = task.topics.first %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <% if topic %><%= topic_dot topic %><% end %>
+      <% if task.done? %>
+        <span class="text-emerald-600" title="Erledigt">✓</span>
+      <% end %>
+      <%# #163 Phase 2: Klick oeffnet als Task-Blade im blade-stack
+          (statt Vollnavigation). %>
+      <%= link_to task.title.truncate(60), task_path(task),
+            data: { action: "click->blade-stack#openTask", task_id: task.id },
+            class: "hover:underline #{'line-through text-slate-400' if task.done?}" %>
+      <%= button_to knowledge_item_task_mention_path(item, task.id),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("knowledge.chip.unlink"), "aria-label": t("knowledge.chip.unlink_short"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

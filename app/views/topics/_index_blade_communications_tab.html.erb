@@ -1,0 +1,25 @@
+<%# #163 Phase 6d: Communications-Tab innerhalb der list:topic-Card.
+    #484 Increment C (Hans, 2026-06-03): auf das gemeinsame Tab-Gerüst
+    umgestellt. Quick-Add bleibt vorerst leer (Hans). %>
+<%
+  # #348 Phase 3: Lazy-Load fuer Dashboard-Stack-Loader-Pfad.
+  @communications ||= topic.communications.order(sent_at: :desc).limit(200).to_a
+%>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        t("topics.tabs.communications"),
+        count:        @communications.size,
+        row_selector: "li[id^='communication_row_']",
+        empty:        @communications.any?
+      } do %>
+  <% if @communications.empty? %>
+    <p class="px-4 py-3 text-slate-500 italic text-sm"><%= t("dashboard.no_communications") %></p>
+  <% else %>
+    <ul class="divide-y divide-slate-100">
+      <% @communications.each do |comm| %>
+        <%= render "communications/row", comm: comm,
+              blade_kind: "communication", blade_id: comm.id %>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

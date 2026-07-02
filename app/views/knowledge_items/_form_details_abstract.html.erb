@@ -1,0 +1,6 @@
+<%# Abstract-Sekundär-Felder: nur bib_source (mit Inline-Anlage). chat_title
+    und source_url sind keine KI-Eigenschaften mehr — der Original-Chat-
+    Title und die URL gehören zur Source.
+    Locals: f, default_bib_source %>
+<%= render "knowledge_items/bib_source_field", f: f,
+      default_bib_source: local_assigns[:default_bib_source] %>

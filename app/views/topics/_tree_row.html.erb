@@ -1,0 +1,30 @@
+<%# Topic-Tree-Row (#150): rendert ein Topic plus rekursiv all seine
+    Sub-Topics. Locals:
+      topic             — Topic
+      topics_by_parent  — Hash<parent_id => [Topic, …]>, vorgebuildet im Controller
+      depth             — Integer für Indent-Padding (0 = top-level) %>
+<li id="topic_row_<%= topic.id %>"
+    data-topic-slug="<%= topic.slug %>"
+    style="padding-left: <%= depth * 1.25 %>rem"
+    class="px-4 py-2 flex items-center gap-3 border-l-4 border-l-transparent data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-50 hover:bg-slate-50">
+  <% if depth > 0 %>
+    <span class="text-slate-300" aria-hidden="true">↳</span>
+  <% end %>
+  <%= topic_dot topic %>
+  <%# #756 (Hans, 2026-06-23): Blade-Append statt topic_detail-Frame. %>
+  <%= link_to topic.name, topic_path(topic),
+        data: { controller: "blade-link", "blade-link-kind-value": "topic",
+                "blade-link-id-value": topic.slug, action: "click->blade-link#append",
+                turbo_frame: "_top" },
+        class: "text-slate-900 hover:underline flex-1 truncate" %>
+  <% if topic.template? %>
+    <span class="text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded"><%= t("topics.template") %></span>
+  <% else %>
+    <%= status_badge topic.status, labels: { "active" => "aktiv", "paused" => "pausiert", "completed" => "abgeschlossen", "archived" => "archiviert" } %>
+  <% end %>
+  <span class="text-xs text-slate-400 font-mono w-32 text-right truncate"><%= topic.slug %></span>
+</li>
+<% Array(topics_by_parent[topic.id]).each do |child| %>
+  <%= render "topics/tree_row", topic: child,
+        topics_by_parent: topics_by_parent, depth: depth + 1 %>
+<% end %>

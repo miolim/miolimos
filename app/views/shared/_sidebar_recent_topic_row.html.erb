@@ -1,0 +1,17 @@
+<%# #435 (Hans, 2026-06-01): Flache Zeile fuer ein "zuletzt geoeffnetes"
+    Topic im Sticky-Bereich der Sidebar. Bewusst KEIN rekursives Sub-Topic-
+    Aufklappen wie in _sidebar_topic_row — das hier ist eine reine
+    Schnellzugriff-Liste nach Oeffnungs-Reihenfolge. Locals: topic. %>
+<% has_next = topic_has_next_step?(topic) %>
+<div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0">
+  <%= link_to topic_path(topic),
+        title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+        data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
+        class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{'bg-slate-800 text-white' if params[:slug] == topic.slug}" do %>
+    <span class="w-5 flex items-center justify-center shrink-0">
+      <%= topic_marker topic, next_step: has_next, size: :md %>
+    </span>
+    <span class="truncate group-data-[collapsed=true]/sidebar:hidden"><%= topic.name %></span>
+  <% end %>
+  <%= render "shared/sidebar_blade_plus", kind: "topic_list", id: topic.slug, title: topic.name %>
+</div>

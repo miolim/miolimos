@@ -1,0 +1,5 @@
+<%# Frame-Request (Klick aus Sources-Liste) → nur das Detail-Partial,
+    eingebettet im turbo-frame "source_detail". Vollbild-Aufrufe gehen
+    durch sources_controller#show in den Index-Pfad und landen nicht
+    hier. %>
+<%= render "sources/detail", source: @source, cited_kis: @cited_kis %>

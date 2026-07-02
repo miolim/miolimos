@@ -1,0 +1,78 @@
+<%# #163 Phase 6c (Awaitings): list:awaitings-Blade fuer die
+    /awaitings-Stack-Seite. Toolbar (Sort/Filter) als sticky Header,
+    Liste der Wartepunkte (mit ueberfaelligen Counter), Aktions-Link
+    "Neuer Wartepunkt". Klick auf eine Zeile appendet die Awaiting-
+    Detail-Blade — die Liste collapsed automatisch (Phase 6b).
+
+    Datenquelle: @awaitings (aus AwaitingsController#index/load_index_scope!). %>
+<% stack_id = "list:awaitings" %>
+<% overdue_n = @awaitings.count { |a| a.open? && a.overdue? } %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative
+                w-[34rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t('awaitings.index_title') %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="shrink-0 text-slate-500"><%= icon "waiting" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("awaitings.index_title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
+    <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>
+    <turbo-frame id="awaitings_list_frame" class="contents">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-2">
+      <h1 class="font-semibold text-sm"><%= t("awaitings.index_title") %></h1>
+      <span class="text-xs text-slate-500"><%= @awaitings.size %></span>
+      <% if overdue_n > 0 %>
+        <span class="text-xs text-rose-700 font-medium"><%= t("awaitings.overdue_count", count: overdue_n) %></span>
+      <% end %>
+      <span class="ml-auto flex items-center gap-2">
+        <%= render "shared/list_toolbar",
+              path:           awaitings_path,
+              frame:          "awaitings_list_frame",
+              sort_options:   [[t("awaitings.sort_urgency"), :urgent],
+                               [t("awaitings.sort_follow_up"), :follow_up_at],
+                               [t("awaitings.sort_created"), :created_at],
+                               [t("awaitings.sort_title"), :title]],
+              filter_fields:  [
+                { name: :q,             type: :text,   label: t("awaitings.search_label"),
+                  placeholder: t("awaitings.search_placeholder") },
+                { name: :overdue,       type: :toggle, label: t("awaitings.overdue_only"),
+                  toggle_label: t("awaitings.overdue_only") },
+                { name: :show_resolved, type: :toggle, label: t("awaitings.show_resolved"),
+                  toggle_label: t("awaitings.show_resolved") }
+              ],
+              current_sort:   @sort,
+              current_dir:    @dir,
+              filter_values:  { q: @q,
+                                overdue: (@overdue_only ? "1" : nil),
+                                show_resolved: (@show_resolved ? "1" : nil) }.compact_blank,
+              storage_key:    "awaitings" %>
+        <%= link_to t("awaitings.new"), new_awaiting_path,
+              class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700" %>
+      </span>
+    </header>
+
+    <% if @awaitings.empty? %>
+      <p id="awaitings_empty" class="px-4 py-6 text-center text-slate-500"><%= t("awaitings.none") %></p>
+    <% end %>
+    <ul id="awaitings_list" class="flex flex-col">
+      <% @awaitings.each do |awaiting| %>
+        <%= render "awaitings/row", awaiting: awaiting,
+              blade_kind: "awaiting", blade_id: awaiting.id %>
+      <% end %>
+    </ul>
+    </turbo-frame>
+  </div>
+</article>

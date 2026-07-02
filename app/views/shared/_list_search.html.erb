@@ -1,0 +1,27 @@
+<%# #306 (Hans): Schlankes Inline-Listen-Suchfeld. Wird AUSSCHLIESSLICH %>
+<%# innerhalb eines data-controller="list-search"-Containers benutzt, %>
+<%# der dann selber den Item-Selector ueber das `selector`-Value setzt. %>
+<%# %>
+<%# Aufrufer-Markup (Beispiel im Controller-Wrapper): %>
+<%#   div[data-controller=list-search][data-list-search-selector-value=li] %>
+<%#     render "shared/list_search", placeholder: "Aufgaben suchen ..." %>
+<%#     ul mit li-Eintraegen %>
+<%# %>
+<%# Locals (alle optional): %>
+<%#   placeholder:  String, default "Suchen ..." %>
+<%#   class_extra:  zusaetzliche CSS-Klassen am Wrapper %>
+<%
+  placeholder = local_assigns.fetch(:placeholder, t("shared.list_search.placeholder"))
+  class_extra = local_assigns.fetch(:class_extra, "")
+%>
+<div class="relative flex items-center <%= class_extra %>">
+  <span class="absolute left-2 text-slate-400 pointer-events-none [&_svg]:w-3.5 [&_svg]:h-3.5">
+    <%= icon "search" %>
+  </span>
+  <input type="text"
+         data-list-search-target="input"
+         data-action="input->list-search#filter"
+         placeholder="<%= placeholder %>"
+         class="w-full pl-7 pr-2 py-1 text-xs rounded border border-slate-200 bg-white
+                focus:outline-none focus:border-slate-400 placeholder:text-slate-400">
+</div>

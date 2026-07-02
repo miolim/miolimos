@@ -1,0 +1,4 @@
+<%# #786: nach dem Speichern den Bankverbindungs-Editor neu rendern. %>
+<%= turbo_stream.replace "bank_accounts_section_#{@item.uuid}" do %>
+  <%= render "knowledge_items/bank_account_editor", item: @item, in_stack: params[:in_stack].present? %>
+<% end %>

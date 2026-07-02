@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>miolimOS Inbox — Einstellungen</title>
+  <style>
+    body { font-family: system-ui, sans-serif; font-size: 14px; max-width: 520px; margin: 24px auto; padding: 0 16px; color: #0f172a; }
+    h1 { font-size: 18px; }
+    label { display: block; font-size: 12px; color: #64748b; margin-top: 12px; }
+    input { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 8px; font: inherit; }
+    button { background: #059669; color: white; border: 0; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px; font: inherit; }
+    button:hover { background: #047857; }
+    .hint { font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.5; }
+    .ok { color: #059669; margin-left: 8px; font-size: 12px; }
+    code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>miolimOS Inbox — Einstellungen</h1>
+
+  <label for="base_url">Base-URL der miolimOS-Instanz</label>
+  <input type="url" id="base_url" placeholder="https://os.miolim.de">
+
+  <label for="api_token">API-Token</label>
+  <input type="text" id="api_token" placeholder="Token aus Einstellungen → Agenten">
+
+  <p class="hint">
+    In miolimOS unter <em>Einstellungen → Agenten</em> einen neuen Agent
+    erzeugen (z.B. "Browser-Extension"), die <code>InboxItem</code>-
+    Capability granten und dessen <code>api_token</code> hier einsetzen.
+  </p>
+
+  <button id="save">Speichern</button>
+  <span id="status" class="ok"></span>
+
+  <script src="options.js"></script>
+</body>
+</html>

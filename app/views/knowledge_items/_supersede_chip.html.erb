@@ -1,0 +1,8 @@
+<%# #460 (Hans, 2026-06-04): Inline-Chip neben dem Supersession-Picker —
+    zeigt den aktuellen Nachfolger, falls dieses KI abgelöst ist. Die
+    volle Anzeige (Banner + „aufheben") sitzt oben in der Card. %>
+<% if item.superseded? && (s = item.superseded_by) %>
+  <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs">
+    → <%= (s.title.presence || t("knowledge.list.supersede.untitled")).truncate(40) %>
+  </span>
+<% end %>

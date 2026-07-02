@@ -1,0 +1,28 @@
+<%# #552/#559 (Hans): an/abwählbare ID-Felder der Aussteller↔Empfänger-
+    Beziehung. #559: gleiches 3-Spalten-Raster wie die übrigen Infoblock-Felder
+    — Checkbox in Spalte 1, ID-Bezeichnung in Spalte 2, Wert in Spalte 3.
+    Die Zuordnung ("Hans Siem Groth → …") steht als Unterzeile linksbündig
+    mit dem Key (Spalte 2), nicht unter dem Wert.
+    Eigener Wrapper mit stabiler id für #552-Auto-Refresh. %>
+<% document = local_assigns.fetch(:document) %>
+<% cands = document.identifier_candidates %>
+<div id="document_id_candidates_<%= document.id %>">
+  <% if cands.any? %>
+    <%= form_with url: select_identifiers_document_path(document), method: :patch, local: false do %>
+      <div class="grid grid-cols-[1.25rem_7rem_1fr_auto] gap-x-2 gap-y-1 items-start">
+        <% cands.each do |idr| %>
+          <input type="checkbox" name="identifier_ids[]" value="<%= idr.id %>"
+                 <%= "checked" if document.shown_identifier_ids.include?(idr.id) %>
+                 onchange="this.form.requestSubmit()" class="rounded border-slate-300 mt-1 cursor-pointer">
+          <span class="text-slate-500 mt-0.5"><%= idr.label %></span>
+          <span class="font-mono min-w-0 mt-0.5"><%= idr.value %></span>
+          <span></span>
+          <% if idr.knowledge_item || idr.counterparty %>
+            <%# Unterzeile: beginnt in Spalte 2 (Key), spannt bis zum Rand. %>
+            <span class="text-slate-400 text-[11px]" style="grid-column: 2 / -1;"><%= idr.knowledge_item&.title %><%= " → #{idr.counterparty.title}" if idr.counterparty %></span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

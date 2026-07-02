@@ -1,0 +1,26 @@
+<%# #163 Phase 5a-2: Wiederverwendbares Plus-Icon fuer Sidebar-Eintraege,
+    die als Blade an den aktuellen Stack appendbar sind.
+
+    Sichtbarkeit: `.sidebar-blade-plus` ist via CSS auf
+    `body.has-blade-stack` gegated — der Button erscheint nur, wenn die
+    aktuelle Seite einen Blade-Stack mountet (blade_stack_controller
+    toggled die Klasse). Auf z.B. /dashboard heute → unsichtbar.
+
+    Klick: feuert ein globales `blade-stack:append`-Event via
+    blade-link-Controller, das der blade-stack-Controller auf window
+    abfaengt und ins normale _appendBladeAtUrl routet.
+
+    Locals:
+      - kind  ("topic" | "task" | "source" | "list")
+      - id    (slug / id / list-typ)
+      - title (fuer title-Attribut / aria-label) %>
+<button type="button"
+        data-controller="blade-link"
+        data-blade-link-kind-value="<%= kind %>"
+        data-blade-link-id-value="<%= id %>"
+        data-action="click->blade-link#append click->sidebar#hoverCollapse click->mobile-nav#close"
+        class="sidebar-blade-plus shrink-0 p-1 text-slate-500 hover:text-white hover:bg-slate-800 cursor-pointer rounded group-data-[collapsed=true]/sidebar:hidden"
+        title="<%= title %> an Stack anhängen"
+        aria-label="An Stack anhängen">
+  <span class="text-base leading-none">+</span>
+</button>

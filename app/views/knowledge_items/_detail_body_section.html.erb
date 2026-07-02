@@ -1,0 +1,196 @@
+<%# #803 (aus #801 R6): Body-Disclosure-Section „Beschreibung" aus
+    _detail extrahiert (inkl. Highlight-Filter-Chips, Edit-Form/CM6,
+    HTML-Artifact-Zweig).
+    Locals: item, mode, in_stack, edit_form, body_html, body_markdown %>
+<%# #389 Phase C / #402 (Hans, 2026-05-28): Body in eigene
+    Disclosure-Section „Beschreibung" verpacken. Default expanded.
+    Section-Header bekommt das Edit-Pencil — Hans's Wunsch, dass
+    es naeher am Inhalt sitzt als oben in der Toolbar. %>
+<%
+  # #402 Phase B (Hans, 2026-05-28): Highlight-Counts pro Farbe fuer
+  # die Filter-Chips. Klick auf ein Color-Icon togglet die Farbe im
+  # `?hl=`-Query.
+  # #450 (Hans, 2026-06-01): aus der UNGEFILTERTEN Beschreibung PLUS
+  # allen Reply-Bodies zaehlen (Helper) — sonst (a) verschwanden die
+  # anderen Chips, sobald ein Filter aktiv war (body_html war dann
+  # schon gefiltert), und (b) zaehlten Reply-Highlights nicht mit.
+  hl_counts    = knowledge_highlight_counts(item)
+  active_hl    = params[:hl].to_s.split(",").map(&:strip).reject(&:blank?)
+  hl_color_bg  = { "gelb" => "bg-amber-200",   "rot" => "bg-rose-200",
+                   "gruen" => "bg-emerald-200", "blau" => "bg-sky-200",
+                   "lila" => "bg-violet-200" }
+  hl_color_ring = { "gelb" => "ring-amber-700",   "rot" => "ring-rose-700",
+                    "gruen" => "ring-emerald-700", "blau" => "ring-sky-700",
+                    "lila" => "ring-violet-700" }
+%>
+<%# #403 (Hans, 2026-05-29): Section-Header sticky, damit User in
+    langen KI-Bodies immer schnell zwischen Edit/Read togglen kann.
+    bg-white + z-10 deckt Scroll-Inhalt darunter.
+    #502 (Hans, 2026-06-04): top-9 statt top-0 — der Titel (Zeile 2)
+    haftet bei -top-4 und ist ~3rem hoch; top-9 (2.25rem) laesst diesen
+    Header DARUNTER haften statt ihn zu ueberdecken. Titel jetzt z-20 >
+    z-10, sodass er bei minimaler Ueberlappung nie verdeckt wird. %>
+<section data-controller="disclosure reply-search"
+         data-reply-search-scope-value="card"
+         <%# #782 (Hans): aktive Highlight-Farben an den Such-Controller —
+             ist eine gesetzt, filtert der Modus-Button (Alles/±1/Treffer)
+             die Highlights statt der Suchtreffer. %>
+         data-reply-search-highlight-colors-value="<%= active_hl.to_json %>"
+         data-focus-section
+         data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.body"
+         <%# #748 (Hans, 2026-06-21): Im Edit-Modus zwingend aufgeklappt,
+             sonst versteckt ein gespeicherter collapsed-State das
+             Bearbeiten-Formular. %>
+         data-disclosure-expanded-value="<%= mode == :edit %>"
+         class="border border-slate-200 rounded">
+  <%# #652: top aus der gemessenen Titelhöhe (zweizeilige Titel!). %>
+  <header style="top: var(--ki-title-h, 2.25rem)"
+          class="sticky z-10 bg-white w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 rounded-t">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer">
+      <span data-disclosure-target="icon"
+            class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.detail.description") %></span>
+    </button>
+    <%# #685 (Hans): Single-Section-Fokus — nur diese Beschreibung. %>
+    <button type="button"
+            data-focus-trigger="section"
+            title="<%= t("knowledge.detail.focus_description") %>"
+            aria-label="<%= t("knowledge.detail.focus_section_aria") %>"
+            class="focus-view-trigger shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+    <%# #615 (Hans): Suche über die GANZE Karte — Body + Antworten. %>
+    <input type="search" placeholder="<%= t("knowledge.detail.search_in_card_placeholder") %>" autocomplete="off"
+           data-reply-search-target="input"
+           data-action="input->reply-search#search"
+           class="flex-1 min-w-0 max-w-56 rounded border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+    <button type="button" data-action="click->reply-search#forceSearch"
+            title="<%= t("knowledge.detail.search_now_hint") %>" aria-label="<%= t("knowledge.detail.search_now") %>"
+            class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "search" %></button>
+    <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
+    <button type="button" data-reply-search-target="mode"
+               data-action="click->reply-search#cycleMode"
+               class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+    <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
+    <%# #402 Phase B: pro Farbe ein Color-Icon mit Zaehler. Klick
+        togglet die Farbe im ?hl=...-Query. %>
+    <span class="flex items-center gap-1">
+      <% hl_counts.each do |color, n| %>
+        <% selected = active_hl.include?(color) %>
+        <% next_hl =
+             selected ? (active_hl - [color]) : (active_hl + [color])
+        %>
+        <% href = knowledge_item_path(item.uuid,
+                   in_stack: in_stack ? 1 : nil,
+                   hl: next_hl.any? ? next_hl.join(",") : nil) %>
+        <%# #402-Fix (Hans, 2026-05-29): turbo-frame auf das KI-
+            Detail beschraenken, damit der Filter im Stack-Card
+            bleibt und nicht den ganzen Browser-Tab wechselt. %>
+        <%= link_to href,
+              data: { turbo_frame: "knowledge_detail_#{item.uuid}" },
+              title: "#{color}: #{t("knowledge.detail.highlights", count: n)}",
+              class: "inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 #{hl_color_bg[color]} text-[10px] tabular-nums font-semibold text-slate-800 #{'ring-2 ' + hl_color_ring[color] if selected}" do %>
+          <%= n %>
+        <% end %>
+      <% end %>
+      <% if active_hl.any? %>
+        <%= link_to knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+              data: { turbo_frame: "knowledge_detail_#{item.uuid}" },
+              title: t("knowledge.detail.clear_filter"),
+              class: "ml-1 px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600" do %>
+          <%= t("knowledge.detail.all") %>
+        <% end %>
+      <% end %>
+    </span>
+    <span class="ml-auto flex items-center gap-1 [&_svg]:w-3.5 [&_svg]:h-3.5">
+      <% if mode == :edit %>
+        <%# #403 (Hans, 2026-05-29): X-Icon im Edit-Modus speichert
+            jetzt und kehrt zur Vorschau zurueck (analog Aufgaben).
+            Submit auf der edit_form — Controller default-rendert
+            mode=:preview zurueck. %>
+        <button type="submit" form="<%= edit_form %>"
+                title="<%= t("knowledge.detail.save_and_close") %>" aria-label="<%= t("knowledge.detail.save_and_close") %>"
+                class="p-1 rounded text-emerald-700 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer">
+          <%= icon "check" %>
+        </button>
+      <% else %>
+        <%= link_to edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+              title: t("actions.edit"), "aria-label": t("actions.edit"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+          <%= icon "pencil" %>
+        <% end %>
+      <% end %>
+    </span>
+  </header>
+
+  <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3">
+    <% if mode == :edit %>
+      <%# #698 (Hans): draft-persist VOR cm6-editor — sichert den Text
+          lokal (localStorage) gegen Session-Ablauf/Browser-Close. %>
+      <div data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+       data-action="paste->image-paste#paste"
+           data-draft-persist-key-value="ki.<%= item.uuid %>.content"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+           data-cm6-editor-active-value="true">
+        <%# #770 (Hans, 2026-06-26): Tippen im KI-Body startet/fortsetzt den
+            Timer dieser KI — analog zur Aufgaben-Beschreibung (#560). Vorher
+            trackte nur der manuelle Timer-Button (card-timer oben), das
+            Editieren selbst lief unbemerkt → für KIs wurde faktisch keine
+            Zeit erfasst. reply-timer am Form: Vorfahre der Textarea
+            (input#begin) und fängt submit (#end) / focusout (#pause). %>
+        <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false,
+              id: edit_form, class: "block",
+              data: { controller: "reply-timer dirty-warn",
+                      reply_timer_subject_type_value: "KnowledgeItem",
+                      reply_timer_subject_id_value:   item.uuid,
+                      reply_timer_start_url_value:    reply_start_time_entries_path,
+                      reply_timer_end_url_value:      reply_end_time_entries_path,
+                      reply_timer_pause_url_value:    reply_pause_time_entries_path,
+                      action: "submit->reply-timer#end focusin->reply-timer#begin focusout->reply-timer#pause" } do |f| %>
+          <% if in_stack %>
+            <%= f.hidden_field :in_stack, value: "1" %>
+          <% end %>
+          <%= f.text_area :content, value: local_assigns[:body_markdown],
+                rows: 6,
+                data: { draft_persist_target:         "input",
+                        wikilink_autocomplete_target: "input",
+                        cite_autocomplete_target:     "input",
+                        cm6_editor_target:            "textarea",
+                        controller: "autosize",
+                        action:     "input->reply-timer#begin input->dirty-warn#mark" },
+                class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm font-mono focus:outline-none focus:border-slate-400" %>
+          <ul data-wikilink-autocomplete-target="list"
+              class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+          <ul data-cite-autocomplete-target="list"
+              class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+        <% end %>
+      </div>
+    <% elsif item.render_html? %>
+      <%# #705 (Hans): HTML-Body in einem sandboxed iframe. allow-scripts,
+          aber NICHT allow-same-origin → das HTML läuft isoliert und kommt
+          nicht an App/Session/Cookies. srcdoc kommt direkt aus dem KI-Body
+          (DB). Höhe wächst auf Inhalt (html-artifact). %>
+      <div data-controller="html-artifact" data-card-search-area>
+        <iframe data-html-artifact-target="frame"
+                sandbox="allow-scripts"
+                referrerpolicy="no-referrer"
+                class="w-full border border-slate-200 rounded bg-white"
+                style="height: 60vh;"
+                title="<%= t("knowledge.detail.html_iframe_title", title: item.title) %>"
+                srcdoc="<%= html_artifact_srcdoc(item.body) %>"></iframe>
+      </div>
+    <% elsif local_assigns[:body_html].present? %>
+      <div data-controller="sessions-toc paragraph-actions"
+           data-paragraph-actions-uuid-value="<%= item.uuid %>"
+           data-paragraph-actions-title-value="<%= item.title %>">
+        <article class="markdown-body" data-card-search-area>
+          <%= local_assigns[:body_html] %>
+        </article>
+      </div>
+    <% end %>
+  </div>
+</section>
+

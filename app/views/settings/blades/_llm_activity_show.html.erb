@@ -1,0 +1,102 @@
+<%# #613 Stufe 2: aus app/views/settings/llm_activities/show.html.erb ins Blade gezogen. Locals: activity %>
+  <div class="bg-white rounded border border-slate-200 p-4 space-y-3 text-sm">
+    <div class="flex items-center gap-3">
+      <%= link_to t("settings.llm.back"), settings_llm_activities_path,
+            class: "text-xs text-slate-500 hover:text-slate-900" %>
+
+      <%
+        cls = case activity.status
+              when "queued"    then "bg-slate-100 text-slate-700"
+              when "running"   then "bg-blue-100 text-blue-800"
+              when "succeeded" then "bg-emerald-100 text-emerald-800"
+              when "failed"    then "bg-rose-100 text-rose-800"
+              else                  "bg-slate-100 text-slate-600"
+              end
+      %>
+      <span class="text-[11px] px-2 py-0.5 rounded-full <%= cls %>"><%= activity.status %></span>
+      <h2 class="font-semibold"><%= activity.kind.humanize %></h2>
+
+      <% if activity.status == "failed" %>
+        <%= button_to t("settings.llm.retry"), retry_settings_llm_activity_path(activity),
+              method: :post,
+              class: "ml-auto text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+      <% end %>
+    </div>
+
+    <%# Metadaten als Definition-List %>
+    <dl class="grid grid-cols-[10rem_1fr] gap-y-1 text-xs">
+      <dt class="text-slate-500"><%= t("settings.llm.model") %></dt>
+      <dd><%= activity.model.presence || "—" %></dd>
+
+      <% if activity.prompt_template_slug.present? %>
+        <dt class="text-slate-500"><%= t("settings.llm.prompt_template") %></dt>
+        <dd><code><%= activity.prompt_template_slug %></code></dd>
+      <% end %>
+
+      <dt class="text-slate-500"><%= t("settings.llm.source") %></dt>
+      <dd>
+        <% if activity.source_kind == "knowledge_item" %>
+          <% uuid, anchor = activity.source_id.to_s.split("#", 2) %>
+          <%= link_to t("settings.llm.source_ki", short: uuid.to_s.first(8), anchor: anchor.present? ? "##{anchor}" : ''),
+                knowledge_items_path(stack: uuid),
+                data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline" %>
+        <% elsif activity.source_kind == "inbox_item" %>
+          <%= link_to t("settings.llm.source_inbox_item", id: activity.source_id),
+                inbox_item_path(activity.source_id),
+                data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline" %>
+        <% elsif activity.source_kind == "url" %>
+          <%= link_to activity.source_id, activity.source_id,
+                target: "_blank", rel: "noopener",
+                class: "text-emerald-700 hover:underline truncate inline-block max-w-md align-middle" %>
+        <% else %>
+          <span class="text-slate-500"><%= activity.source_kind %>:<%= activity.source_id %></span>
+        <% end %>
+      </dd>
+
+      <% if activity.result_id.present? %>
+        <dt class="text-slate-500"><%= t("settings.llm.result") %></dt>
+        <dd>
+          <% if activity.result_kind == "knowledge_item" %>
+            <%= link_to t("settings.llm.open_ki"), knowledge_items_path(stack: activity.result_id),
+                  data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline" %>
+          <% else %>
+            <%= activity.result_kind %>:<%= activity.result_id %>
+          <% end %>
+        </dd>
+      <% end %>
+
+      <dt class="text-slate-500"><%= t("settings.llm.created") %></dt>
+      <dd><%= l(activity.created_at, format: :short) %></dd>
+
+      <% if activity.duration_seconds %>
+        <dt class="text-slate-500"><%= t("settings.llm.duration") %></dt>
+        <dd><%= activity.duration_seconds %> s</dd>
+      <% end %>
+
+      <% if activity.input_tokens || activity.output_tokens %>
+        <dt class="text-slate-500"><%= t("settings.llm.tokens") %></dt>
+        <dd>in: <%= activity.input_tokens %> · out: <%= activity.output_tokens %></dd>
+      <% end %>
+    </dl>
+
+    <% if activity.error_message.present? %>
+      <section class="rounded border border-rose-200 bg-rose-50 p-3">
+        <div class="text-xs uppercase tracking-wider text-rose-700 mb-1"><%= t("settings.llm.error") %></div>
+        <pre class="text-xs whitespace-pre-wrap text-rose-900"><%= activity.error_message %></pre>
+      </section>
+    <% end %>
+
+    <% if activity.input_summary.present? %>
+      <details class="rounded border border-slate-200 bg-slate-50">
+        <summary class="px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900"><%= t("settings.llm.input") %></summary>
+        <pre class="px-3 pb-3 pt-1 text-xs whitespace-pre-wrap text-slate-800 max-h-96 overflow-y-auto"><%= activity.input_summary %></pre>
+      </details>
+    <% end %>
+
+    <% if activity.output_summary.present? %>
+      <details class="rounded border border-slate-200 bg-slate-50" open>
+        <summary class="px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900"><%= t("settings.llm.output") %></summary>
+        <pre class="px-3 pb-3 pt-1 text-xs whitespace-pre-wrap text-slate-800 max-h-96 overflow-y-auto"><%= activity.output_summary %></pre>
+      </details>
+    <% end %>
+  </div>

@@ -1,0 +1,41 @@
+<%# #253: Subtopics-Tab innerhalb der list:topic-Card. Zeigt die
+    Sub-Topic-Hierarchie (Sub, Sub-Sub, …) rekursiv. Klick auf ein
+    Sub-Topic appended dessen List-View-Blade (Multi-Tab) in den Stack.
+    #484 Increment C (Hans, 2026-06-03): auf das gemeinsame Tab-Gerüst
+    umgestellt. Quick-Add (neues Sub-Thema) bleibt erhalten; Anzahl zählt
+    alle Knoten (data-subtopic-row), Gesamt = Nachfahren-Anzahl.
+
+    Locals: topic. %>
+<% subs    = topic.sub_topics.order(:name).to_a %>
+<% n_total = topic.descendant_topics.size %>
+<% quick_add_html = capture do %>
+  <%= form_with url: topics_path, method: :post, local: true,
+        class: "flex items-center gap-2 w-full" do |f| %>
+    <%= hidden_field_tag "topic[parent_topic_id]", topic.id %>
+    <%= text_field_tag "topic[name]", nil,
+          placeholder: t("topics.new_subtopic_placeholder"),
+          class: "flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-emerald-400" %>
+    <button type="submit"
+            class="shrink-0 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer">
+      <%= t("actions.create") %>
+    </button>
+  <% end %>
+<% end %>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        t("topics.tabs.subtopics"),
+        count:        n_total,
+        row_selector: "li[data-subtopic-row]",
+        quick_add:    quick_add_html,
+        empty:        subs.any?
+      } do %>
+  <% if subs.empty? %>
+    <p class="px-4 py-3 text-slate-500 italic text-sm"><%= t("topics.no_subtopics") %></p>
+  <% else %>
+    <ul class="divide-y divide-slate-100">
+      <% subs.each do |sub| %>
+        <%= render "topics/subtopic_tree_row", topic: sub, depth: 0 %>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

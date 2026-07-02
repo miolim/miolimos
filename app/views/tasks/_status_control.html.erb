@@ -1,0 +1,33 @@
+<%# #747/#756 (Hans, 2026-06-21/22): Vereinheitlichtes Task-Status-Control als
+    EIN farbiges Icon (kein Label) in der Card-Toolbar. Entwurf → grüner globe
+    (Veröffentlichen), veröffentlicht → amber pause (Auf Entwurf zurücksetzen).
+    Nur der Creator, nur solange die Aufgabe nicht erledigt ist.
+    #756: Wurzel ist ein stabiler <span id="task_status_control_<id>"> (display:
+    contents, ohne Layout-Effekt), damit publish/unpublish + der Status-
+    Broadcast das Icon LIVE austauschen können (globe ⇄ pause). %>
+<span id="task_status_control_<%= task.id %>" class="contents">
+  <% if task.creator_id == current_actor&.id && !task.done? %>
+    <% if task.draft? %>
+      <%# #310: capture-description nimmt die ungespeicherte Beschreibung mit;
+          #451: data-task-publish für den Strg+Umschalt+Enter-Shortcut. %>
+      <%= form_with url: publish_task_path(task), method: :post,
+            data: { controller: "capture-description",
+                    action: "submit->capture-description#sync" },
+            class: "inline m-0 p-0" do |f| %>
+        <%= f.hidden_field :description, value: task.description %>
+        <button type="submit" data-task-publish
+                title="<%= t("tasks.publish") %>" aria-label="<%= t("tasks.publish") %>"
+                class="p-1 rounded text-emerald-600 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer shrink-0">
+          <%= icon "globe" %>
+        </button>
+      <% end %>
+    <% else %>
+      <%= button_to unpublish_task_path(task), method: :post,
+            title: t("tasks.to_draft"), "aria-label": t("tasks.to_draft"),
+            class: "p-1 rounded text-amber-600 hover:bg-amber-50 bg-transparent border-0 cursor-pointer shrink-0",
+            form: { class: "inline m-0 p-0" } do %>
+        <%= icon "pause", fill: "currentColor", stroke: 0 %>
+      <% end %>
+    <% end %>
+  <% end %>
+</span>

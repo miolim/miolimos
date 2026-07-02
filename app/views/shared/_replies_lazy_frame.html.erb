@@ -1,0 +1,9 @@
+<%# #232 (Hans, 2026-06-01): Broadcast-Ziel fuer Live-Reply-Updates.
+    Der Modell-Broadcast ersetzt den Replies-Listen-Frame durch DIESEN
+    leeren src-Frame; Turbo holt daraufhin in JEDER offenen Session das
+    Listen-Fragment per GET nach — viewer-korrekt (eigener current_actor,
+    eigene Drafts, eigenes editable?). So bleibt das Live-Update gezielt
+    auf die Liste beschraenkt (kein Full-Page-Morph-"Nachlaufen") und ist
+    idempotent (Reload statt Append -> kein Duplikat, kein Autor-Skip noetig).
+    Locals: frame_id, src %>
+<turbo-frame id="<%= frame_id %>" src="<%= src %>" loading="eager"></turbo-frame>

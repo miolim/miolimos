@@ -1,0 +1,94 @@
+<%# #384 Phase 3 (Hans, 2026-05-27): Antworten-Sektion an einer KI.
+    Stil analog task_comments/_thread.html.erb — bordered section mit
+    chevron-Header „Antworten\" + Count, aeltere Antworten in
+    eigener kollabierter Disclosure, letzte 2 expanded, Reply-Form
+    am Ende. Reply-Card aus shared/_reply_card.
+
+    Locals: item (= Parent-KI) %>
+<%
+  replies  = KnowledgeItem.replies_for(item, viewer: current_actor)
+  last_two = replies.last(2)
+  older    = replies[0...-2] || []
+%>
+<section id="knowledge_replies_<%= item.uuid %>"
+         data-controller="disclosure"
+         data-disclosure-storage-key-value="ki.<%= item.uuid %>.replies"
+         class="border border-slate-200 rounded mt-3">
+  <button type="button"
+          data-action="click->disclosure#toggle"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-disclosure-target="icon"
+          class="inline-block transition-transform rotate-90 text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("knowledge.list.replies.title") %></span>
+    <%# #232 (Hans, 2026-06-01): Count mit fester id, immer gerendert — der
+        Reply-Live-Broadcast aktualisiert ihn gezielt. %>
+    <span id="knowledge_replies_count_<%= item.uuid %>" class="text-slate-400">
+      <%= "· #{replies.size}" if replies.any? %>
+    </span>
+  </button>
+
+  <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3 space-y-2">
+    <%# #232 (Hans, 2026-06-01): Liste im turbo-frame -> gezielte Live-Updates
+        (siehe knowledge_items/_replies_list). Compose-Form bleibt ausserhalb
+        des Frames. %>
+    <%= render "knowledge_items/replies_list", item: item %>
+
+    <%# Reply-Box. data-turbo-frame="_top" bricht aus dem umgebenden
+        `knowledge_detail_<uuid>`-Frame aus, damit der turbo-stream-
+        Response sauber verarbeitet wird. %>
+    <%# #336 (Hans, 2026-05-31): Submit-Buttons nur sichtbar, wenn Text im
+        Reply-Feld steht — analog Task-Replies, konsistent gehalten. %>
+    <%# #437 (Hans, 2026-06-01): dirty-warn — warnt beim Wegnavigieren mit
+        ungespeicherter Antwort (analog Task-Replies). %>
+    <%# #451 (Hans, 2026-06-02): data-reply-compose markiert das Antwort-
+        Compose-Form fuer die Blade-Shortcuts. %>
+    <%= form_with url: knowledge_item_replies_path(item.uuid),
+          method: :post, local: false,
+          data: { reply_compose: true,
+                  turbo_frame: "_top",
+                  controller: "buttons-when-filled dirty-warn",
+                  action:     "input->buttons-when-filled#sync input->dirty-warn#mark" },
+          class: "flex flex-col gap-2 mt-2" do |f| %>
+      <%# #373 Phase-Reply-CM6 (Hans, 2026-05-28): Reply-Textarea
+          ueber CM6 visualisieren (Markdown-Highlights, Wikilink-/
+          Mention-Autocomplete, Mod-Enter→Submit). %>
+      <div data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+           data-draft-persist-key-value="reply.ki.<%= item.uuid %>.body"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+           data-cm6-editor-active-value="true"
+           <%# #451: nach Entwurf-Save Compose refokussieren, damit der
+               folgende Strg+Umschalt+Enter (Entwurf veroeffentlichen) greift. %>
+           data-cm6-editor-autofocus-value="<%= local_assigns[:focus_compose] ? true : false %>">
+        <%= f.text_area :body, rows: 2,
+              placeholder: t("knowledge.list.replies.compose_placeholder"),
+              data: { draft_persist_target:         "input",
+                      wikilink_autocomplete_target: "input",
+                      cite_autocomplete_target:     "input",
+                      buttons_when_filled_target:   "input",
+                      cm6_editor_target:            "textarea" },
+              class: "w-full rounded border border-slate-200 bg-white px-2 py-1.5 text-sm
+                      focus:outline-none focus:border-emerald-400
+                      resize-y" %>
+        <ul data-wikilink-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+        <ul data-cite-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+      <div class="flex items-center gap-2 hidden"
+           data-buttons-when-filled-target="actions">
+        <button type="submit" name="draft" value=""
+                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer">
+          <%= icon "globe", size: "w-3.5 h-3.5" %><%= t("knowledge.list.replies.send") %>
+        </button>
+        <button type="submit" name="draft" value="1"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 cursor-pointer">
+          <%= icon "check", size: "w-3.5 h-3.5" %><%= t("knowledge.list.replies.save_draft") %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+</section>

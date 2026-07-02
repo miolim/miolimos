@@ -1,0 +1,168 @@
+<%# #532 (Hans, 2026-06-08): datengetriebener Render eines echten Document-
+    Records auf der DIN-5008-Geometrie (Form B). Prosa (Brief/NDA) zieht den
+    Text aus dem verlinkten Body-KI; Rechnung/Angebot rendern die Positionen
+    + Summen + Steueraufschlüsselung aus den invoice_lines. %>
+<% document = local_assigns.fetch(:document) %>
+<% if document.nda? %>
+  <%# #562 (Hans): die NDA nutzt NICHT die DIN-Fenster-Geometrie (kein
+      Anschriftfeld, kein Infoblock) — eigener, mehrseitiger Vertrags-Layout. %>
+  <%= render "documents/render_nda", document: document %>
+<% else %>
+<div class="din-page">
+  <%= render "documents/letterhead", issuer: document.issuer %>
+
+  <div class="din-mark din-fold-1"></div>
+  <div class="din-mark din-hole"></div>
+  <div class="din-mark din-fold-2"></div>
+
+  <div class="din-address">
+    <div class="din-return"><%= document_sender_oneline(document.issuer) %></div>
+    <div class="din-zvz">&nbsp;</div>
+    <div class="din-recipient">
+      <% lines = document_recipient_lines(document.recipient, override: document.chosen_recipient_address) %>
+      <strong><%= lines.first %></strong><% lines.drop(1).each do |l| %><br><%= l %><% end %>
+    </div>
+  </div>
+
+  <%# Vertikale Trennlinie Anschriftfeld | Infoblock. %>
+  <div class="din-divider"></div>
+
+  <%# #541 (Hans, 2026-06-09): alle Rechnungsangaben sammeln sich hier im
+      Infoblock (keine Doppelung mehr unter der Überschrift). Reihenfolge:
+      Rechnungsnummer zuoberst … Datum zuunterst. §14 UStG schreibt nur den
+      INHALT vor, nicht die Position; DIN-5008-Konvention ist der Infoblock. %>
+  <div class="din-info">
+    <% if document.number.present? %>
+      <div class="row"><span class="k"><%= document.invoice? ? t("documents.render.invoice_number") : t("documents.render.number") %></span><span><%= document.number %></span></div>
+    <% end %>
+    <% if document.your_ref.present? %>
+      <div class="row"><span class="k"><%= t("documents.render.your_ref") %></span><span><%= document.your_ref %></span></div>
+    <% end %>
+    <% if document.our_ref.present? %>
+      <div class="row"><span class="k"><%= t("documents.render.our_ref") %></span><span><%= document.our_ref %></span></div>
+    <% end %>
+    <%# Datum: bei Nicht-Rechnungen oben (Brief-Konvention), bei Rechnungen unten. %>
+    <% unless document.invoice? %>
+      <div class="row"><span class="k"><%= t("documents.render.date") %></span><span><%= l(document.document_date, format: :long) if document.document_date %></span></div>
+    <% end %>
+    <% if document.invoice? %>
+      <% document.issuer_tax_ids.each do |label, value| %>
+        <div class="row"><span class="k"><%= label %></span><span><%= value %></span></div>
+      <% end %>
+      <% if document.service_start %>
+        <div class="row"><span class="k"><%= t("documents.render.service_period") %></span><span><%= l(document.service_start, format: :long) %><%= " – #{l(document.service_end, format: :long)}" if document.service_end %></span></div>
+      <% end %>
+    <% end %>
+    <% if document.topic %>
+      <div class="row"><span class="k"><%= t("documents.render.project") %></span><span><%= document.topic.name %></span></div>
+    <% end %>
+    <%# #532: freie Key-Value-Felder + ausgewählte Empfänger-IDs. %>
+    <% document.info_fields.each do |label, value| %>
+      <div class="row"><span class="k"><%= label %></span><span><%= value %></span></div>
+    <% end %>
+    <% if document.invoice? %>
+      <div class="row"><span class="k"><%= t("documents.render.date") %></span><span><%= l(document.document_date, format: :long) if document.document_date %></span></div>
+    <% end %>
+  </div>
+
+  <div class="din-spacer"></div>
+  <div class="din-body">
+    <% if document.lastschrift? %>
+      <%# #786 (Hans): SEPA-Mandat im DIN-Layout — Anschriftfeld (Empfänger=
+          Gläubiger, fürs Kuvert-Fenster) oben, das auto-befüllte Formular hier
+          im Body. %>
+      <%= render "documents/render_lastschrift", document: document %>
+    <% elsif document.invoice? %>
+      <div class="doc">
+        <h1><%= document.angebot? ? t("documents.render.heading_offer") : t("documents.render.heading_invoice") %></h1>
+        <% if document.subject.present? %><p><strong><%= document.subject %></strong></p><% end %>
+        <%# #541: Pflichtangaben (Nummer/Datum/Leistungszeitraum/Steuernr.) stehen
+            jetzt gesammelt im Infoblock oben — keine Doppelung mehr hier. %>
+
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th><%= t("documents.render.col_position") %></th>
+              <th class="num"><%= t("documents.render.col_quantity") %></th>
+              <th class="num"><%= t("documents.render.col_unit_price") %></th>
+              <th class="num"><%= t("documents.render.col_amount") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% document.invoice_lines.each do |line| %>
+              <tr>
+                <td><%= line.description %></td>
+                <td class="num"><%= number_with_precision(line.quantity, precision: (line.quantity.to_i == line.quantity ? 0 : 1), strip_insignificant_zeros: true) %><%= " #{line.unit}" if line.unit.present? %></td>
+                <td class="num"><%= document_euro(line.unit_price) %></td>
+                <td class="num"><%= document_euro(line.net) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="doc-totals">
+          <div class="row"><span><%= t("documents.render.net_total") %></span><span><%= document_euro(document.net_total) %></span></div>
+          <% document.tax_breakdown.each do |g| %>
+            <div class="row"><span><%= t("documents.render.plus_vat", rate: number_with_precision(g[:rate], precision: (g[:rate].to_i == g[:rate] ? 0 : 1), strip_insignificant_zeros: true)) %></span><span><%= document_euro(g[:tax]) %></span></div>
+          <% end %>
+          <div class="row grand"><span><%= t("documents.render.gross_total") %></span><span><%= document_euro(document.gross_total) %></span></div>
+        </div>
+
+        <% if document.vat_exempt? %>
+          <p style="margin-top:4mm; font-size:9pt; color:#374151;">
+            <%= t("documents.render.vat_exempt_note") %>
+          </p>
+        <% end %>
+
+        <%# #541: Zahlungsangaben — Frist + Bankverbindung (IBAN/BIC). %>
+        <p style="margin-top:10mm; font-size:9pt; color:#4b5563;">
+          <%= t("documents.render.payment_terms") %><%= t("documents.render.payment_to_account") if document.issuer_iban %><%= t("documents.render.payment_thanks") %>
+        </p>
+        <% if document.issuer_iban %>
+          <p style="margin-top:2mm; font-size:9pt; color:#374151;">
+            <%= t("documents.render.bank_details_iban", iban: document.issuer_iban) %><%= t("documents.render.bank_details_bic", bic: document.issuer_bic) if document.issuer_bic %>
+          </p>
+          <%# #625 (Hans): GiroCode — Kunde scannt mit der Banking-App und
+              zahlt direkt (IBAN + Betrag + Rechnungsnummer sind kodiert). %>
+          <% if (giro = document_giro_code_svg(document)) %>
+            <%# #625 R2 (Hans): mehr Abstand zwischen QR und Text (war gequetscht). %>
+            <div style="margin-top:4mm; display:flex; align-items:center; gap:7mm;">
+              <div style="width:26mm; height:26mm; flex:none;"><%= giro %></div>
+              <div style="font-size:8pt; color:#6b7280; line-height:1.4;"><%= t("documents.render.giro_scan_html") %></div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <%# Prosa: Betreff + Anrede + Body-KI-Text + Gruß/Signatur. %>
+      <% if document.subject.present? %><p class="din-subject"><%= document.subject %></p><% end %>
+      <%# #786: Das SEPA-Mandat ist ein Formular, kein Brief — keine Anrede,
+          kein Gruß, kein Brief-Signaturblock (Ort/Datum + Unterschrift stehen
+          im Formular-Body selbst). %>
+      <% unless document.lastschrift? %><p><%= document.salutation_line %>,</p><% end %>
+      <% if document.body_ki %>
+        <div class="markdown-body"><%= KnowledgeMarkdown.render(document.body_ki.body.to_s).html_safe %></div>
+      <% end %>
+      <% unless document.lastschrift? %>
+      <p class="din-greeting"><%= t("documents.render.greeting") %></p>
+      <div class="din-signature <%= 'din-signed' if @signed %>">
+        <%# #547: bei der signierten Ausgabe ein sichtbarer Vermerk über der
+            Linie; die kryptografische AES-Signatur liegt zusätzlich im PDF. %>
+        <% if @signed %>
+          <%# #547: Unterschriftsbild ragt mit dem unteren Teil über Vermerk +
+              Linie (negatives margin-bottom + z-index, wie händisch über der
+              Linie signiert). PNG mit transparentem Grund wirkt am besten. %>
+          <% if @signature_image.present? %>
+            <img src="<%= @signature_image %>" alt="<%= t("documents.render.signature_alt") %>"
+                 style="display:block; max-height:22mm; margin-bottom:-12mm; position:relative; z-index:2;">
+          <% end %>
+          <div style="font-size:7.5pt; color:#000; margin-bottom:1mm; position:relative; z-index:1;"><%= t("documents.render.signed_note", name: document.issuer&.title, date: l(Date.current, format: :long)) %></div>
+        <% end %>
+        <div class="line">&nbsp;</div>
+        <div class="name"><%= document.issuer&.title.presence || "—" %></div>
+      </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+<% end %>

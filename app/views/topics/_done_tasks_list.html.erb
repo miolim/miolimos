@@ -1,0 +1,15 @@
+<%# Erledigte Aufgaben, sortiert nach completed_at DESC (zuletzt erledigt
+    oben, früheste unten). Nicht drag-sortierbar — die Reihenfolge kommt
+    aus dem Erledigungs-Zeitpunkt. %>
+<ol id="done_tasks_list" class="flex flex-col">
+  <% if show_done && tasks.any? %>
+    <li class="px-4 py-1 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
+      Erledigt (<%= tasks.size %>)
+    </li>
+    <% tasks.each do |task| %>
+      <%= render "tasks/row", task: task, topic: topic, draggable: false,
+            link_path: task_path(task),
+            blade_kind: "task", blade_id: task.id %>
+    <% end %>
+  <% end %>
+</ol>

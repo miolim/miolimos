@@ -1,0 +1,17 @@
+<%# Chips für die Themen eines KnowledgeItems. Wird bei jedem
+    Add/Remove via Turbo-Stream replaced. %>
+<div id="knowledge_topics_chips_<%= item.uuid %>" class="flex flex-wrap gap-1.5">
+  <% item.topics.order(:name).each do |topic| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= topic_dot topic %>
+      <%= topic.name %>
+      <%= button_to knowledge_item_topic_path(knowledge_item_uuid: item.uuid, id: topic.slug),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("knowledge.chip.unlink"), "aria-label": t("knowledge.chip.unlink_short"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

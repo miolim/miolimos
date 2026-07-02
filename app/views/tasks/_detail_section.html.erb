@@ -1,0 +1,121 @@
+<%# #389 Phase B (Hans, 2026-05-28): Konsolidierte „Details"-Section
+    fuer Tasks. Vereint die alten Sektionen `_detail_fields`
+    („Details") + `_pickers` („Verknuepfungen") in eine einzige
+    chevron-Disclosure mit drei internen Bereichen:
+      (1) Stempel: Erstellt am … von | Geaendert am …
+      (2) Felder: Zugewiesen | Faellig | Wann | Prioritaet
+      (3) Picker: Thema/Quelle/Tag/Dateianhang/Blockierende
+                  Aufgabe/Unteraufgabe/Person-Org/Wissen
+                  (+ Wartepunkt, weil Hans's Liste das offen liess
+                  und der Picker existiert) %>
+<%
+  # Stempel — Creator + Datumstempel
+  creator_name = task.creator&.name.presence || t("tasks.creator_unknown")
+  created_at_s = l(task.created_at, format: "%d.%m.%Y, %H:%M") if task.created_at
+  updated_at_s = l(task.updated_at, format: "%d.%m.%Y, %H:%M") if task.updated_at
+
+  # Picker-Summary aus _pickers übernommen — pluralisiert via i18n (#619).
+  mentioned_by_type = task.mentioned_kis.to_a.group_by do |ki|
+    %w[person organization].include?(ki.item_type) ? :person_org : :other
+  end
+  picker_labels = [
+    [:attachment, task.attachments.size],
+    [:awaiting,   task.awaitings.open.count],
+    [:blocker,    task.predecessors.size + task.successors.size],
+    [:subtask,    task.subtasks.size],
+    [:person_org, (mentioned_by_type[:person_org] || []).size],
+    [:knowledge,  (mentioned_by_type[:other] || []).size],
+    [:source,     task.sources.size],
+    [:tag,        Array(task.tags).size]
+  ]
+  picker_summary = picker_labels.select { |_, n| n.to_i > 0 }
+                                .map { |key, n| t("tasks.picker.#{key}", count: n) }
+                                .join(" · ").presence
+%>
+<%# #581-Folge: tri-disclosure statt disclosure — zu → belegte Felder
+    (135°) → alle Felder (90°). Leere Blöcke tragen data-empty. %>
+<%# #603 R8: task-fields-summary-Controller entfernt — die Summary wird
+    server-gerendert (tasks/_fields_summary) und von tasks#update gestreamt. %>
+<section data-controller="tri-disclosure task-pickers-summary"
+         data-action="tri-disclosure:toggled->task-pickers-summary#refresh"
+         data-tri-disclosure-storage-key-value="tasks.<%= task.id %>.details"
+         class="border border-slate-200 rounded">
+  <button type="button"
+          data-action="click->tri-disclosure#cycle"
+          title="<%= t("tasks.fields_cycle") %>"
+          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <span data-tri-disclosure-target="icon"
+          class="inline-block transition-transform text-slate-400">
+      <%= icon "chevron_right" %>
+    </span>
+    <span class="font-medium"><%= t("tasks.details") %></span>
+    <%# Kompaktes Summary: Feldwerte + Picker-Counts. Beide
+        Stimulus-Controller updaten ihre Spans nach Änderung. %>
+    <%= render "tasks/fields_summary", task: task %>
+    <%# #458 (Hans, 2026-06-02): konkrete Themen mit Farbmarkierer statt
+        Anzahl. Server-Render fuer den Initial-Stand; der pickers-summary-
+        Controller haelt den Marker bei Topic-Aenderungen aktuell. %>
+    <span data-task-pickers-summary-target="topics"
+          class="text-slate-400 truncate inline-flex items-center gap-1 flex-wrap">
+      <% task.topics.order(:name).each do |topic| %>
+        <span class="inline-flex items-center gap-1">· <%= topic_dot topic %> <%= topic.name %></span>
+      <% end %>
+    </span>
+    <span data-task-pickers-summary-target="summary"
+          class="text-slate-400 truncate">
+      <%= "· #{picker_summary}" if picker_summary %>
+    </span>
+  </button>
+
+  <div data-tri-disclosure-target="content"
+       class="hidden px-3 pb-3 border-t border-slate-100 pt-3 space-y-3">
+
+    <%# === Bereich 1: Stempel === %>
+    <div class="text-[11px] text-slate-500 flex flex-wrap gap-x-3 gap-y-0.5">
+      <% if created_at_s %>
+        <span><%= t("tasks.created_by", date: created_at_s, by: creator_name) %></span>
+      <% end %>
+      <% if updated_at_s && updated_at_s != created_at_s %>
+        <span><%= t("tasks.changed_on", date: updated_at_s) %></span>
+      <% end %>
+    </div>
+
+    <%# === Bereich 2: Felder (#603 R6: eigenes Partial, damit
+        tasks#update es gezielt streamen kann — Auto-Update der Icons
+        und Schließen des Eingabefelds nach Auswahl) === %>
+    <%= render "tasks/detail_field_rows", task: task %>
+
+    <%# === Bereich 3: Picker === %>
+    <%# #581-Folge: data-empty je Picker-Block — in der Mittelstufe
+        („belegte Felder") erscheinen nur Picker mit Inhalt. %>
+    <div class="space-y-2 pt-2 border-t border-slate-100">
+      <div data-empty="<%= task.topics.none? %>"><%= render "tasks/detail_topics", task: task %></div>
+      <div data-empty="<%= task.sources.none? %>"><%= render "tasks/detail_sources", task: task %></div>
+      <div data-empty="<%= Array(task.tags).none? %>">
+        <%= render "shared/entity_picker",
+              chips_id:       "task_tags_chips_#{task.id}",
+              chips_partial:  "tasks/tags_chips",
+              chips_locals:   { task: task },
+              suggest_url:    suggest_tags_tasks_path,
+              add_url:        task_tags_path(task),
+              param_name:     "tag_id",
+              icon:           "bookmark",
+              label:          t("tasks.filter_tag"),
+              placeholder:    t("tasks.tag_field_placeholder"),
+              create_label:   t("tasks.create_tag") %>
+      </div>
+      <div data-empty="<%= task.attachments.none? %>"><%= render "tasks/attachments", task: task %></div>
+      <div data-empty="<%= task.predecessors.none? && task.successors.none? %>"><%= render "tasks/detail_dependencies", task: task %></div>
+      <div data-empty="<%= task.subtasks.none? %>"><%= render "tasks/detail_subtasks", task: task %></div>
+      <div data-empty="<%= (mentioned_by_type[:person_org] || []).none? %>"><%= render "tasks/detail_contacts", task: task %></div>
+      <div data-empty="<%= (mentioned_by_type[:other] || []).none? %>"><%= render "tasks/detail_knowledge", task: task %></div>
+      <div data-empty="<%= task.awaitings.none? %>"><%= render "tasks/detail_awaitings", task: task %></div>
+      <%# #533 (Hans-Wunsch): Zeiten als Sub-Section am Ende der Details.
+          anchor: Sprungziel für „Nach Aufgabe"-Klick aus der Gesamtliste (#5). %>
+      <%= render "shared/time_section", subject: task, storage_key: "task.#{task.id}.times",
+            anchor: "task_times_#{task.id}" %>
+    </div>
+  </div>
+</section>
+
+<%= render "tasks/description", task: task %>

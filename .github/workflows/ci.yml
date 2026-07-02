@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  scan_ruby:
+    name: Security scan (Brakeman)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Scan for security vulnerabilities
+        # bundle exec (not bin/brakeman, whose --ensure-latest fails CI on every
+        # new Brakeman release). Reports findings to the log; does not fail the
+        # build on existing warnings (see #735 security-triage follow-up).
+        run: bundle exec brakeman --no-pager
+
+  lint:
+    name: Lint (RuboCop)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Lint code for consistent style
+        run: bin/rubocop -f github
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      # Schema is structure.sql (schema_format :sql); db:test:prepare loads it.
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/miolimos_test"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips postgresql-client
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Prepare test database
+        run: bin/rails db:test:prepare
+      - name: Run tests
+        run: bin/rails test
+
+  # #801 P3: JS-Unit-Tests (test/javascript, node --test) — reine
+  # ES-Module aus app/javascript/lib, kein Build-Step nötig.
+  js_test:
+    name: JS unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run JS unit tests
+        run: node --test test/javascript/*.test.js
+
+  # #801 P3: System-Tests (Cuprite/headless Chromium) als eigener Job —
+  # `bin/rails test` schließt test/system aus, deshalb liefen sie bisher
+  # nirgends automatisiert. Chrome ist auf ubuntu-latest vorinstalliert.
+  system_test:
+    name: System tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/miolimos_test"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips postgresql-client
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Prepare test database
+        run: bin/rails db:test:prepare
+      - name: Run system tests
+        run: bin/rails test:system

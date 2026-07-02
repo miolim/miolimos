@@ -1,0 +1,150 @@
+<%# Awaiting-Detail Body — alles ohne den umschliessenden Turbo-Frame.
+    Wird sowohl im Master-Detail-Pane (via _detail) als auch im
+    Cross-Entity-Blade-Stack (#163 Phase 5b) eingebettet. %>
+<% today = Date.today
+   overdue = awaiting.open? && awaiting.follow_up_at && awaiting.follow_up_at < today %>
+
+<div id="awaiting_<%= awaiting.id %>" class="space-y-4"
+     data-controller="view-tracker"
+     data-view-tracker-viewable-type-value="Awaiting"
+     data-view-tracker-viewable-id-value="<%= awaiting.id %>">
+  <div class="flex items-start gap-3">
+    <span class="text-2xl shrink-0 <%= overdue ? 'text-rose-500' : 'text-amber-500' %>">⏳</span>
+    <div class="flex-1 min-w-0">
+      <%# #739 (Hans): inline editierbarer Titel (wie Aufgabe/KI) — damit ein
+          Quick-Add ohne Titel direkt hier benannt werden kann. %>
+      <%= form_with model: awaiting, url: awaiting_path(awaiting), method: :patch, local: false, class: "block" do |f| %>
+        <%= f.text_field :title,
+              class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
+                      hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none",
+              onblur: "this.form.requestSubmit()",
+              onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
+      <% end %>
+      <% if awaiting.description.present? %>
+        <p class="text-sm text-slate-600 whitespace-pre-wrap mt-1"><%= awaiting.description %></p>
+      <% end %>
+      <div class="text-xs text-slate-500 mt-1">
+        <%= t("awaitings.since_days", count: awaiting.days_waiting) %> ·
+        <% if awaiting.resolved? %>
+          <span class="text-emerald-700"><%= t("awaitings.resolved_on", date: l(awaiting.resolved_at, format: :short)) %></span>
+        <% else %>
+          <%= t("awaitings.status.open") %>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex items-center gap-1 shrink-0 text-slate-500">
+      <% if local_assigns[:expanded] %>
+        <%= link_to (request.referer.presence || awaitings_path),
+              title: t("awaitings.back"), "aria-label": t("awaitings.back"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+          <%= icon "reduce" %>
+        <% end %>
+      <% else %>
+        <%= link_to awaiting_path(awaiting), data: { turbo_frame: "_top" },
+              title: t("awaitings.open_full"), "aria-label": t("awaitings.full_view"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
+          <%= icon "expand" %>
+        <% end %>
+      <% end %>
+      <%= link_to t("actions.edit"), edit_awaiting_path(awaiting),
+            data: { turbo_frame: "_top" },
+            class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50" %>
+      <%= button_to t("actions.delete"), awaiting_path(awaiting), method: :delete,
+            form: { class: "inline m-0 p-0",
+                    data: (local_assigns[:expanded] ?
+                            { turbo_frame: "_top", turbo_confirm: "Wirklich löschen?" } :
+                            { turbo_stream: true,  turbo_confirm: "Wirklich löschen?" }) },
+            class: "text-xs px-2 py-1 rounded border border-slate-200 bg-transparent hover:bg-rose-50 hover:text-rose-700 cursor-pointer" %>
+    </div>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
+    <div>
+      <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.follow_up_at") %></dt>
+      <dd class="<%= overdue ? 'text-rose-700 font-medium' : 'text-slate-900' %>">
+        <%= l(awaiting.follow_up_at) %>
+        <% if overdue %>
+          <span class="text-xs"> <%= t("awaitings.overdue_since", count: (today - awaiting.follow_up_at).to_i) %></span>
+        <% end %>
+      </dd>
+    </div>
+
+    <% if awaiting.contact_ki %>
+      <div>
+        <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.contact") %></dt>
+        <dd><%= link_to awaiting.contact_ki.display_name, knowledge_item_path(awaiting.contact_ki.uuid),
+                  data: { turbo_frame: "_top" }, class: "hover:underline" %></dd>
+      </div>
+    <% end %>
+
+    <% if awaiting.communication %>
+      <div class="col-span-2">
+        <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.triggered_by_communication") %></dt>
+        <dd>
+          <%= link_to (awaiting.communication.subject.presence || t("communications.no_subject")),
+                communication_path(awaiting.communication),
+                data: { turbo_frame: "_top" }, class: "hover:underline" %>
+        </dd>
+      </div>
+    <% end %>
+
+    <% if awaiting.task %>
+      <div class="col-span-2">
+        <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.triggered_by_task") %></dt>
+        <dd><%= link_to awaiting.task.title, task_path(awaiting.task),
+                  data: { turbo_frame: "_top" }, class: "hover:underline" %></dd>
+      </div>
+    <% end %>
+
+    <div class="col-span-2">
+      <dt class="text-xs text-slate-500 mb-2"><%= t("awaitings.topics") %></dt>
+      <dd>
+        <%= render "shared/entity_picker",
+              chips_id:      "awaiting_topics_chips_#{awaiting.id}",
+              chips_partial: "awaitings/topics_chips",
+              chips_locals:  { awaiting: awaiting },
+              suggest_url:   suggest_topics_path,
+              add_url:       awaiting_topics_path(awaiting),
+              param_name:    "topic_id",
+              placeholder:   t("awaitings.topic_search_placeholder"),
+              create_label:  t("awaitings.create_topic") %>
+      </dd>
+    </div>
+
+    <% if awaiting.resolved? && awaiting.resolution_note.present? %>
+      <div class="col-span-2">
+        <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.resolution_note") %></dt>
+        <dd class="text-slate-700 whitespace-pre-wrap"><%= awaiting.resolution_note %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <% if awaiting.open? %>
+    <div class="border-t border-slate-100 pt-3 flex items-center gap-2 flex-wrap">
+      <%= button_to resolve_awaiting_path(awaiting), method: :post,
+            form: { class: "inline", data: { turbo_frame: "_top" } },
+            class: "text-xs rounded bg-emerald-600 text-white px-3 py-1.5 hover:bg-emerald-700 cursor-pointer" do %>
+        ✓ <%= t("awaitings.resolve") %>
+      <% end %>
+
+      <details class="relative">
+        <summary class="text-xs rounded bg-slate-700 text-white px-3 py-1.5 hover:bg-slate-800 cursor-pointer list-none">
+          + <%= t("awaitings.create_task") %>
+        </summary>
+        <div class="absolute z-10 left-0 mt-1 w-80 bg-white border border-slate-200 rounded shadow-lg p-3">
+          <%= form_with url: create_task_awaiting_path(awaiting), method: :post, local: true,
+                data: { turbo_frame: "_top" }, class: "space-y-2" do |f| %>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1"><%= t("awaitings.new_task_title") %></label>
+              <%= f.text_field :title, autofocus: true, required: true,
+                    value: "Folgeaufgabe: #{awaiting.title.truncate(40)}",
+                    class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+            </div>
+            <%= f.submit t("awaitings.create_task_and_resolve"),
+                  class: "text-xs px-3 py-1.5 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
+          <% end %>
+        </div>
+      </details>
+    </div>
+  <% end %>
+</div>

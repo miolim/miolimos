@@ -1,0 +1,93 @@
+<%# #546 (Hans): Kontaktdaten-Editor (E-Mails/Telefone/URLs …) eines Person/
+    Org-KI. Chevron + getrennte Anzeige/Edit + Add/Edit in der Titelzeile +
+    Lösch-Rückfrage. Speichert via PATCH ans KI (PersonOrgSync). Locals: item, in_stack %>
+<% return unless item.item_type.in?(%w[person organization]) %>
+<% cps = item.contact_points.ordered %>
+<%# #681 (Hans): leere Sektion standardmäßig eingeklappt. %>
+<% collapsed = cps.empty? %>
+<%# #762 (Hans, 2026-06-23): kind "address" entfernt — Adressen werden im
+    strukturierten Adress-Editor (PostalAddress) gepflegt, nicht hier. %>
+<% kinds = [["email", t("knowledge.editors.contacts.kind_email")], ["phone", t("knowledge.editors.contacts.kind_phone")], ["url", t("knowledge.editors.contacts.kind_url")], ["fax", t("knowledge.editors.contacts.kind_fax")], ["im", t("knowledge.editors.contacts.kind_im")]] %>
+<% kind_label = kinds.to_h %>
+<section data-controller="disclosure section-edit rows-editor"
+         data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.contacts"
+         class="border border-slate-200 rounded">
+  <header class="px-3 py-1.5 text-xs text-slate-600 border-b border-slate-100 font-medium flex items-center gap-2 bg-slate-50 rounded-t">
+    <button type="button" data-action="click->disclosure#toggle"
+            class="flex items-center gap-2 flex-1 text-left bg-transparent border-0 p-0 cursor-pointer text-slate-600">
+      <span data-disclosure-target="icon" class="inline-block transition-transform <%= 'rotate-90' unless collapsed %> text-slate-400 [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "chevron_right" %></span>
+      <span><%= t("knowledge.editors.contacts.title") %> · <%= cps.size %></span>
+    </button>
+    <button type="button" data-action="click->section-edit#edit" title="<%= t("actions.edit") %>"
+            class="p-0.5 text-slate-400 hover:text-slate-700 [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "pencil" %></button>
+    <button type="button" data-action="click->section-edit#edit click->rows-editor#add"
+            title="<%= t("knowledge.editors.contacts.add") %>" class="p-0.5 text-emerald-600 hover:text-emerald-800 [&_svg]:w-4 [&_svg]:h-4"><%= icon "plus_circle" %></button>
+  </header>
+
+  <div data-disclosure-target="content" class="<%= 'hidden' if collapsed %>">
+    <%# ── Anzeige ── %>
+    <div data-section-edit-target="display" class="px-3 py-2 text-[13px] space-y-1">
+      <% if cps.any? %>
+        <% cps.each do |cp| %>
+          <%# #723 (Hans): Action-Icons — E-Mail → Gmail-Compose; Telefon →
+              anrufen (mobil) bzw. Nummer kopieren (Desktop). %>
+          <div class="flex items-center gap-1.5">
+            <span class="min-w-0 break-all"><span class="text-slate-500"><%= kind_label[cp.kind] || cp.kind %>:</span> <%= cp.value %><% if cp.label.present? %> <span class="text-slate-400">(<%= cp.label %>)</span><% end %></span>
+            <% if cp.kind == "email" && cp.value.present? %>
+              <%= link_to "https://mail.google.com/mail/?view=cm&fs=1&to=#{CGI.escape(cp.value.to_s)}",
+                    target: "_blank", rel: "noopener",
+                    title: t("knowledge.editors.contacts.compose_email"), "aria-label": t("knowledge.editors.contacts.compose_email"),
+                    class: "shrink-0 p-0.5 rounded text-slate-400 hover:text-emerald-700 hover:bg-slate-100 [&_svg]:w-3.5 [&_svg]:h-3.5" do %><%= icon "mail" %><% end %>
+            <% elsif cp.kind == "phone" && cp.value.present? %>
+              <%= link_to "tel:#{cp.value.to_s.gsub(/[^+\d]/, '')}",
+                    title: t("knowledge.editors.contacts.call"), "aria-label": t("knowledge.editors.contacts.call"),
+                    class: "md:hidden shrink-0 p-0.5 rounded text-slate-400 hover:text-emerald-700 hover:bg-slate-100 [&_svg]:w-3.5 [&_svg]:h-3.5" do %><%= icon "phone" %><% end %>
+              <button type="button" data-controller="copy-clipboard" data-action="click->copy-clipboard#copy"
+                      data-copy-clipboard-content-value="<%= cp.value %>" data-copy-clipboard-toast-value="<%= t("knowledge.editors.contacts.number_copied") %>"
+                      title="<%= t("knowledge.editors.contacts.copy_number") %>" aria-label="<%= t("knowledge.editors.contacts.copy_number") %>"
+                      class="hidden md:inline-flex shrink-0 p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "copy" %></button>
+            <% end %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-slate-400 italic"><%= t("knowledge.editors.contacts.empty") %></p>
+      <% end %>
+    </div>
+
+    <%# ── Edit ── %>
+    <div data-section-edit-target="edit" hidden>
+      <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false do |f| %>
+        <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+        <% row = "grid grid-cols-[6rem_6rem_1fr_auto] gap-1 px-3 py-1.5 items-center text-[13px] border-b border-slate-50" %>
+        <template data-rows-editor-target="template">
+          <div data-row class="<%= row %>">
+            <select name="contact_points[][kind]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+              <% kinds.each do |v, l| %><option value="<%= v %>"><%= l %></option><% end %>
+            </select>
+            <input type="text" name="contact_points[][label]" placeholder="<%= t("knowledge.editors.contacts.label_placeholder") %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+            <input type="text" name="contact_points[][value]" placeholder="<%= t("knowledge.editors.contacts.value_placeholder") %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+            <button type="button" data-action="click->rows-editor#removeConfirm" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+          </div>
+        </template>
+
+        <div data-rows-editor-target="rows">
+          <% cps.each do |cp| %>
+            <div data-row data-existing="true" class="<%= row %>">
+              <select name="contact_points[][kind]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+                <% kinds.each do |v, l| %><option value="<%= v %>" <%= "selected" if cp.kind == v %>><%= l %></option><% end %>
+              </select>
+              <input type="text" name="contact_points[][label]" value="<%= cp.label %>" placeholder="<%= t("knowledge.editors.contacts.label_short_placeholder") %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+              <input type="text" name="contact_points[][value]" value="<%= cp.value %>" placeholder="<%= t("knowledge.editors.contacts.value_placeholder") %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+              <button type="button" data-action="click->rows-editor#removeConfirm" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-2 border-t border-slate-100 bg-slate-50/50">
+          <button type="button" data-action="click->section-edit#cancel" class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("actions.cancel") %></button>
+          <button type="submit" class="ml-auto text-xs px-3 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("actions.save") %></button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

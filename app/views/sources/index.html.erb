@@ -1,0 +1,21 @@
+<% content_for :title, t("sources.title") %>
+
+<%# #631 v3: /sources ist ein Blade-Stack (Bedienprinzip wie /inbox und
+    /history): Einstiegs-Blade = Quellen-Liste, Klick öffnet die Quelle
+    als nächstes Blade. Eigener History-Key = eigener Stack-Verlauf. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="sources.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "sources" %>
+        <%= render "sources/list_blade_card" %>
+      <% else %>
+        <%= render stack_item.partial, **stack_item.partial_locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

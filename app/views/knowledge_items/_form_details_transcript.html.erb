@@ -1,0 +1,5 @@
+<%# Transcript-Sekundär-Felder: nur bib_source (mit Inline-Anlage).
+    source_url wird in der Source gepflegt, nicht am KI.
+    Locals: f, default_bib_source %>
+<%= render "knowledge_items/bib_source_field", f: f,
+      default_bib_source: local_assigns[:default_bib_source] %>

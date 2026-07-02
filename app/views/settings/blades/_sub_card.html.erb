@@ -1,0 +1,27 @@
+<%# #613 Stufe 2: Unterseiten-Blade (Benutzer/Agent-Form, Agent-Detail,
+    LLM-Detail, Prompt-Vorlagen). Locals: page, sub. Lädt seine Daten
+    selbst (settings_sub_spec) — gelöschte Records fallen leise raus. %>
+<% spec = begin
+     settings_sub_spec(page, sub)
+   rescue ActiveRecord::RecordNotFound
+     nil
+   end %>
+<% if spec %>
+<article id="stack_card_settingssub:<%= page %>:<%= sub %>"
+         data-uuid="settingssub:<%= page %>:<%= sub %>"
+         class="stack-card shrink-0 relative w-[36rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: "settingssub:#{page}:#{sub}",
+        title: spec[:title], icon_html: icon(spec[:icon]), label: spec[:title] %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-3">
+    <header class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20
+                   border-b border-slate-100 flex items-center gap-2">
+      <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon spec[:icon] %></span>
+      <span class="flex-1 min-w-0 truncate font-semibold"><%= spec[:title] %></span>
+    </header>
+    <%= render spec[:partial], **spec[:locals] %>
+  </div>
+</article>
+<% end %>

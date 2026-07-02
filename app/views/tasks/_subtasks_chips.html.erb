@@ -1,0 +1,22 @@
+<%# Liste der Unteraufgaben einer Task. Stream-replaced bei add/remove.
+    Optisch keine Chip-Pille (zu lange Titel), sondern eine kompakte
+    Liste — gleiche Struktur wie vorher. Das × löst die Subtask-Beziehung
+    (setzt parent_id auf nil), löscht die Task aber nicht. %>
+<div id="task_subtasks_chips_<%= task.id %>" class="space-y-1">
+  <% task.subtasks.order(:created_at).each do |sub| %>
+    <div class="flex items-center gap-2 text-[13px]">
+      <%# #756: Blade-Append statt task_detail-Frame. %>
+      <%= link_to sub.title, task_path(sub),
+            data: { controller: "blade-link", blade_link_kind_value: "task",
+                    blade_link_id_value: sub.id, action: "click->blade-link#append" },
+            class: "hover:underline flex-1 min-w-0 truncate #{'text-slate-400 line-through' if sub.done?}" %>
+      <%= status_badge sub.status, labels: t("tasks.status") %>
+      <%= button_to task_subtask_path(task, sub), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.remove_subtask"), "aria-label": t("tasks.unlink"),
+            class: "p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer text-xs leading-none" do %>
+        ×
+      <% end %>
+    </div>
+  <% end %>
+</div>

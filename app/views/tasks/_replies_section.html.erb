@@ -1,0 +1,130 @@
+<%# #384 Phase 3b-Polish (Hans, 2026-05-27): Antworten-Sektion an
+    einer Task. Stil analog task_comments/_thread.html.erb.
+
+    Locals: task %>
+<%
+  replies  = KnowledgeItem.replies_for(task, viewer: current_actor)
+  last_two = replies.last(2)
+  older    = replies[0...-2] || []
+%>
+<section id="task_replies_<%= task.id %>"
+         data-controller="disclosure reply-search"
+         data-disclosure-storage-key-value="task.<%= task.id %>.replies"
+         class="border border-slate-200 rounded mt-3">
+  <%# #497 (Hans, 2026-06-03): Titelzeile mit Chevron + Antwort-Anzahl LINKS
+      und dem Such-Schlitz RECHTS in derselben Zeile, sticky am oberen
+      Scroll-Container-Rand (bleibt beim Scrollen sichtbar). %>
+  <%# #497 (Hans, 2026-06-03): UNTER dem (ebenfalls sticky) Aufgaben-Titel
+      andocken (top-9 ≈ 2.25rem, Titel klebt bei top-[-1rem], ~2.5rem hoch).
+      z-10 (wie der Titel) = blickdicht über dem scrollenden Antwort-Text;
+      bei einzeiligem Titel überlappt nichts (Position trennt sie). %>
+  <%# #589 R5: grauer Titelbalken wie bei den übrigen Chevron-Sections
+      (bleibt opak, weil sticky über dem scrollenden Text). %>
+  <div class="sticky top-9 z-10 bg-slate-50 flex items-center gap-2 px-3 py-1.5 rounded-t border-b border-slate-100">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="flex items-center gap-2 text-left text-xs text-slate-600 hover:text-slate-900 shrink-0 cursor-pointer">
+      <span data-disclosure-target="icon"
+            class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("tasks.replies") %></span>
+      <%# #232 (Hans, 2026-06-01): Count mit fester id, immer gerendert — der
+          Reply-Live-Broadcast aktualisiert ihn gezielt (viewer-agnostisch =
+          veroeffentlichte Anzahl). %>
+      <span id="task_replies_count_<%= task.id %>" class="text-slate-400">
+        <%= "· #{replies.size}" if replies.any? %>
+      </span>
+    </button>
+    <% if replies.any? %>
+      <input type="search" placeholder="<%= t("tasks.thread_search_placeholder") %>" autocomplete="off"
+             data-reply-search-target="input"
+             data-action="input->reply-search#search"
+             class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <button type="button" data-action="click->reply-search#forceSearch"
+                title="<%= t("tasks.search_now") %>" aria-label="<%= t("tasks.search_now_aria") %>"
+                class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "search" %></button>
+        <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
+      <button type="button" data-reply-search-target="mode"
+              data-action="click->reply-search#cycleMode"
+              class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+      <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
+    <% end %>
+  </div>
+
+  <div data-disclosure-target="content" class="px-3 pb-3 pt-3 space-y-2">
+    <%# #232 (Hans, 2026-06-01): Liste im turbo-frame -> Live-Updates laden
+        gezielt nur diese Liste neu (siehe tasks/_replies_list). Die
+        Compose-Form bleibt AUSSERHALB des Frames, damit ein eingehendes
+        Reply-Update einen halb getippten Entwurf nicht zerstoert. %>
+    <%= render "tasks/replies_list", task: task %>
+
+    <%# #336 (Hans, 2026-05-31): Submit-Buttons nur sichtbar, wenn Text im
+        Reply-Feld steht (Regression nach CM6-Umstellung — der alte
+        task_comments/_form hatte das via buttons-when-filled, der neue
+        Reply-Composer nicht). CM6 dispatcht synthetische input-Events,
+        daher greift der Toggle auch im CM6-Modus. %>
+    <%# #437 (Hans, 2026-06-01): dirty-warn — warnt beim Wegnavigieren, wenn
+        eine angefangene Antwort ungespeichert ist (ging beim Comment->Reply-/
+        CM6-Umbau verloren). Das Form faengt die gebubbelten input-Events
+        (auch die synthetischen aus CM6); submit setzt dirty zurueck. %>
+    <%# #451 (Hans, 2026-06-02): data-reply-compose markiert das Antwort-
+        Compose-Form fuer die Blade-Shortcuts (Strg+Enter=Entwurf,
+        Strg+Umschalt+Enter=Senden). %>
+    <%# #533 #1: Auto-Timer — beim aktiven Tippen startet der Aufgaben-Timer,
+        beim Absenden (Entwurf/Senden) endet er. %>
+    <%= form_with url: task_replies_path(task),
+          method: :post, local: false,
+          data: { reply_compose: true,
+                  turbo_frame: "_top",
+                  controller: "buttons-when-filled dirty-warn reply-timer",
+                  reply_timer_subject_type_value: "Task",
+                  reply_timer_subject_id_value:   task.id,
+                  reply_timer_start_url_value:    reply_start_time_entries_path,
+                  reply_timer_end_url_value:      reply_end_time_entries_path,
+                  reply_timer_pause_url_value:    reply_pause_time_entries_path,
+                  action:     "input->buttons-when-filled#sync input->dirty-warn#mark input->reply-timer#begin submit->reply-timer#end focusin->reply-timer#begin focusout->reply-timer#pause" },
+          class: "flex flex-col gap-2 mt-2" do |f| %>
+      <%# #373 Phase-Reply-CM6 (Hans, 2026-05-28): Reply-Textarea
+          ueber CM6 visualisieren (Markdown-Highlights, Wikilink-/
+          Mention-Autocomplete, Mod-Enter→Submit). %>
+      <div data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"
+           data-action="paste->image-paste#paste"
+           data-draft-persist-key-value="reply.task.<%= task.id %>.body"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cite-autocomplete-url-value="<%= suggest_sources_path %>"
+           data-cm6-editor-active-value="true"
+           <%# #451: nach Entwurf-Save Compose refokussieren, damit der
+               folgende Strg+Umschalt+Enter (Entwurf veroeffentlichen) greift. %>
+           data-cm6-editor-autofocus-value="<%= local_assigns[:focus_compose] ? true : false %>">
+        <%= f.text_area :body, rows: 2,
+              placeholder: t("tasks.reply_placeholder"),
+              data: { draft_persist_target:         "input",
+                      wikilink_autocomplete_target: "input",
+                      cite_autocomplete_target:     "input",
+                      buttons_when_filled_target:   "input",
+                      cm6_editor_target:            "textarea" },
+              class: "w-full rounded border border-slate-200 bg-white px-2 py-1.5 text-sm
+                      focus:outline-none focus:border-emerald-400
+                      resize-y" %>
+        <ul data-wikilink-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+        <ul data-cite-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+      <%# #767 (Hans, 2026-06-23): einheitliche Anordnung — Speichern (grau)
+          links, Veröffentlichen (grün) rechts, rechtsbündig. %>
+      <div class="flex items-center justify-end gap-2 hidden"
+           data-buttons-when-filled-target="actions">
+        <button type="submit" name="draft" value="1"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 cursor-pointer">
+          <%= icon "check", size: "w-3.5 h-3.5" %><%= t("tasks.reply_save_draft") %>
+        </button>
+        <button type="submit" name="draft" value=""
+                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer">
+          <%= icon "globe", size: "w-3.5 h-3.5" %><%= t("tasks.reply_send") %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+</section>

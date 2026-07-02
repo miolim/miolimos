@@ -1,0 +1,218 @@
+<%# #803 (aus #801 R6): Verknüpfungs-Panels aus _detail extrahiert —
+    Person/Org-Editoren + Mirrors, Source-Verweis, Backlinks/Linked
+    Mentions, typed Relations.
+    Locals: item, in_stack %>
+<%# Affiliations + Beziehungen — inline-editbarer Tabellen-Editor.
+    Render nur für Person/Organization-KIs. Submit-Pfad: pro Save
+    geht der ganze Array via PATCH ans Frontmatter (DB-Sync läuft
+    automatisch). %>
+<% if item.item_type.in?(%w[person organization]) %>
+  <%= render "knowledge_items/postal_address_editor", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/bank_account_editor", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/contact_points_editor", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/identifiers_editor", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/affiliations_editor", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/relationships_editor", item: item, in_stack: in_stack %>
+
+  <%# #207 Item 2: Read-Only-Mirror-Sektionen (Org-Personen,
+      eingehende Beziehungen, Sub-Org-Hierarchie) sind in einen
+      eigenen Partial gewandert — der Block hier wuerde sonst 80
+      LOC anschwellen. %>
+  <%# #608/#681: Bekanntheits-Toggle ist in die Details-Section (über die
+      Typ-Auswahl) gewandert — siehe _detail_section. %>
+  <%= render "knowledge_items/detail_person_org_mirrors", item: item %>
+<% end %>
+
+<%# Source-Verweis (wenn dieses KI eine Quelle zitiert): zeigt
+    Quelle + Locator und Backlink. %>
+<% if item.bib_source %>
+  <section class="border border-blue-200 bg-blue-50/50 rounded px-3 py-2">
+    <div class="text-xs uppercase tracking-wider text-blue-700 mb-1"><%= t("knowledge.detail.source") %></div>
+    <div class="text-[13px] flex items-center gap-2">
+      <%= link_to item.bib_source.title, source_path(item.bib_source.slug),
+            data: { action: "click->blade-stack#openSource",
+                    source_slug: item.bib_source.slug },
+            class: "text-blue-700 hover:underline flex-1 truncate" %>
+      <% if item.locator_label.present? || item.locator_value.present? %>
+        <span class="text-xs text-slate-600 shrink-0">
+          <%= item.locator_label %> <%= item.locator_value %>
+        </span>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# Verknüpfte Aufgaben wurden in #131 in die Details-Sektion verschoben.
+
+    Person/Org-KIs bekommen zusätzlich ein erweitertes Backlinks-Panel
+    mit Sektionen (KIs, Tasks, E-Mails, Wartepunkte) — die normale
+    Backlinks-Liste reicht da nicht. %>
+<% if item.item_type.in?(%w[person organization]) %>
+  <%= render "knowledge_items/person_backlinks", item: item %>
+<% end %>
+
+<%# Linked-Mentions-Panel: alle KIs, die auf DIESES verweisen.
+    outgoing_references zeigt umgekehrt, was die aktuelle KI
+    referenziert. Klick auf einen Eintrag öffnet die Card im Stack. %>
+<% incoming_sources = item.incoming_references.includes(:source).filter_map(&:source).uniq %>
+<% if incoming_sources.any? && !item.item_type.in?(%w[person organization]) %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.backlinks"
+           class="border border-slate-200 rounded">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+      <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.detail.backlinks") %></span>
+      <span class="text-slate-400">· <%= incoming_sources.size %></span>
+    </button>
+    <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
+      <%# #501 (Hans, 2026-06-04): Antwort-Quellen als Aufgaben-/KI-Titel
+          + „: Antwort" mit passendem Icon; Klick öffnet die ganze
+          Aufgabe/KI und scrollt zur Antwort (nav_uuid/scroll_to). %>
+      <% incoming_sources.each do |src| %>
+        <% d = backlink_source_descriptor(src) %>
+        <% link_data = { action: "click->blade-stack#openInStack", target_uuid: d[:nav_uuid] } %>
+        <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
+        <div class="text-[13px] flex items-center gap-2">
+          <span class="w-5 flex justify-center text-slate-500">
+            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src.item_type) %>
+          </span>
+          <%= link_to d[:label], knowledge_item_path(src.uuid),
+                data: link_data,
+                class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% outgoing_targets = item.outgoing_references.filter_map(&:target).uniq %>
+<% if outgoing_targets.any? %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.outgoing"
+           class="border border-slate-200 rounded">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+      <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.detail.references_to") %></span>
+      <span class="text-slate-400">· <%= outgoing_targets.size %></span>
+    </button>
+    <div data-disclosure-target="content" class="hidden px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
+      <% outgoing_targets.each do |tgt| %>
+        <div class="text-[13px] flex items-center gap-2">
+          <span class="w-5 flex justify-center text-slate-500"><%= knowledge_type_icon(tgt.item_type) %></span>
+          <%= link_to tgt.title, knowledge_item_path(tgt.uuid),
+                data: { action: "click->blade-stack#openInStack", target_uuid: tgt.uuid },
+                class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# #239 Phase C: typed Wikilink-Relations — was zeigt mit benanntem
+    Label/Description auf DIESE KI? Plus orphaned (Anchor verschwunden
+    aus dem Source-Body) in klein darunter. Outgoing-typed-Relations
+    sind im Body selbst sichtbar, deshalb hier nur incoming. %>
+<% typed_incoming = item.incoming_relations.active.includes(:recognized_by).order(Arel.sql("COALESCE(recognized_at, created_at) DESC")) %>
+<% typed_orphaned = item.incoming_relations.orphaned.order(Arel.sql("COALESCE(orphaned_at, updated_at) DESC")) %>
+<%# Phase D: Inverse-Name-Lookup einmal, statt N+1. %>
+<% type_map = RelationType.where("LOWER(name) IN (?)", typed_incoming.filter_map { |r| r.label&.downcase }.uniq).index_by { |t| t.name.downcase } %>
+<% if typed_incoming.any? || typed_orphaned.any? %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.relations"
+           class="border border-slate-200 rounded">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+      <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.detail.relations_to_note") %></span>
+      <span class="text-slate-400">· <%= typed_incoming.size %></span>
+      <% if typed_orphaned.any? %>
+        <span class="text-slate-400 italic"><%= t("knowledge.detail.orphaned_count", count: typed_orphaned.size) %></span>
+      <% end %>
+    </button>
+    <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-2">
+      <% typed_incoming.each do |rel| %>
+        <% src = KnowledgeItem.find_by(uuid: rel.source_uuid) %>
+        <div class="text-[13px] space-y-0.5">
+          <div class="flex items-center gap-2">
+            <span class="w-5 flex justify-center text-slate-500">
+              <%= src ? knowledge_type_icon(src.item_type) : "" %>
+            </span>
+            <% if src %>
+              <%= link_to src.title, knowledge_item_path(src.uuid),
+                    data: { action: "click->blade-stack#openInStack", target_uuid: src.uuid },
+                    class: "wikilink text-emerald-700 hover:underline truncate" %>
+            <% else %>
+              <span class="text-slate-500 truncate"><%= rel.source_uuid %></span>
+            <% end %>
+            <span class="text-slate-400 text-xs">
+              <%= case rel.direction
+                  when "bidirectional" then "↔"
+                  when "undirected"    then "—"
+                  else                      "→"
+                  end %>
+            </span>
+            <% if rel.label.present? %>
+              <% rtype = type_map[rel.label.downcase] %>
+              <% shown_label = (rtype&.inverse_name.presence) || rel.label %>
+              <%# #155 Phase 5a: Ebene-Farbcode auf dem Chip. Default
+                  emerald (= ohne Ebene), inhaltlich emerald, organisatorisch
+                  blue, sozial purple, politisch amber. Tooltip zeigt Original. %>
+              <% chip_cls = case rtype&.ebene
+                            when "organisatorisch" then "bg-blue-50 text-blue-700"
+                            when "sozial"          then "bg-purple-50 text-purple-700"
+                            when "politisch"       then "bg-amber-50 text-amber-700"
+                            else                        "bg-emerald-50 text-emerald-700"
+                            end %>
+              <span class="px-1.5 py-0.5 rounded text-xs font-medium <%= chip_cls %>"
+                    title="<%= rel.label %><%= " · #{rtype.ebene}" if rtype&.ebene %>"><%= shown_label %></span>
+            <% else %>
+              <span class="text-slate-400 text-xs italic"><%= t("knowledge.detail.without_label") %></span>
+            <% end %>
+            <span class="ml-auto text-slate-300 font-mono text-xs">^<%= rel.anchor_id %></span>
+          </div>
+          <% if rel.description.present? %>
+            <div class="pl-7 text-slate-500 text-xs whitespace-pre-wrap"><%= rel.description %></div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if typed_orphaned.any? %>
+        <div class="pt-2 border-t border-slate-100 space-y-1">
+          <div class="text-xs text-slate-400 italic"><%= t("knowledge.detail.orphaned_anchor_hint") %></div>
+          <% typed_orphaned.each do |rel| %>
+            <% src = KnowledgeItem.find_by(uuid: rel.source_uuid) %>
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+              <span class="w-5"></span>
+              <% if src %>
+                <%= link_to src.title, knowledge_item_path(src.uuid),
+                      data: { action: "click->blade-stack#openInStack", target_uuid: src.uuid },
+                      class: "line-through hover:text-slate-600 truncate" %>
+              <% else %>
+                <span class="line-through truncate"><%= rel.source_uuid %></span>
+              <% end %>
+              <% if rel.label.present? %>
+                <span class="line-through"><%= rel.label %></span>
+              <% end %>
+              <span class="ml-auto font-mono">^<%= rel.anchor_id %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# Versionshistorie und Frontmatter (YAML) wurden in #131 in die
+    Details-Sektion (verschachtelte Disclosures) verschoben. %>
+

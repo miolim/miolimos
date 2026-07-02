@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# #201 Backfill: vorhandene YT- und WebClip-Sources ohne source_creators
+# bekommen ihren `publisher`-String als Organization-/Person-KI mit
+# role=author verknuepft. Idempotent ueber SourceCreatorLink (skipt,
+# wenn die Source schon Creators hat).
+#
+# Verwendung: RAILS_ENV=production bin/rails runner bin/backfill_source_creators
+#
+# Nur einmal laufen lassen. Bei Wiederholung passiert nichts (kein No-Op-
+# Schaden — Idempotenz greift).
+
+stats = { yt: 0, web: 0, skipped_no_publisher: 0, skipped_has_creators: 0 }
+
+Source.where(csl_type: %w[motion_picture webpage])
+      .left_outer_joins(:source_creators)
+      .where(source_creators: { id: nil })
+      .find_each do |s|
+
+  if s.publisher.to_s.strip.empty?
+    stats[:skipped_no_publisher] += 1
+    next
+  end
+
+  if s.source_creators.exists?
+    stats[:skipped_has_creators] += 1
+    next
+  end
+
+  actor = s.creator || Actor.find_by(email: "hans@miolim.de") || Actor.first
+  result =
+    case s.csl_type
+    when "motion_picture"
+      Inbox::SourceCreatorLink.link_organization!(s, s.publisher, actor: actor)
+    when "webpage"
+      Inbox::SourceCreatorLink.link_person!(s, s.publisher, actor: actor)
+    end
+
+  if result
+    stats[(s.csl_type == "motion_picture" ? :yt : :web)] += 1
+    puts "  #{s.slug} (#{s.csl_type}) -> #{result.title} (#{result.item_type})"
+  else
+    puts "  ! #{s.slug} (#{s.csl_type}) — link skipped (publisher=#{s.publisher.inspect})"
+  end
+end
+
+puts
+puts "── Backfill done ────────────────────────────────────"
+puts "  YT-Channels als Organization-KI:   #{stats[:yt]}"
+puts "  Web-Authors als Person-KI:         #{stats[:web]}"
+puts "  Ohne publisher (skipped):          #{stats[:skipped_no_publisher]}"
+puts "  Hatten schon Creators (skipped):   #{stats[:skipped_has_creators]}"

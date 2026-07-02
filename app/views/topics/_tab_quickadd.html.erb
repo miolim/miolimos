@@ -1,0 +1,37 @@
+<%# #484 (Hans, 2026-06-03): Picker-Quick-Add für die Topic-Reiter. Tippen
+    schlägt EXISTIERENDE KIs des Typs vor (topic-item-picker). Auswahl eines
+    Treffers weist dem KI das Topic zu; „Neu anlegen" / Enter ohne Auswahl
+    legt ein neues KI an (bekommt automatisch das Topic). Beides prependet
+    die frische Row in die Liste; form-reset leert den Schlitz danach.
+    Locals: topic, item_type ("note"/"person"), placeholder (optional),
+            list_id (optional, default "knowledge_list") %>
+<% _list_id = local_assigns.fetch(:list_id, "knowledge_list") %>
+<div class="relative"
+     data-controller="topic-item-picker"
+     data-topic-item-picker-url-value="<%= suggest_knowledge_items_path %>"
+     data-topic-item-picker-item-type-value="<%= item_type %>"
+     data-topic-item-picker-topic-slug-value="<%= topic.slug %>"
+     data-topic-item-picker-topic-color-value="<%= topic.try(:color).presence || "#94a3b8" %>"
+     data-topic-item-picker-list-id-value="<%= _list_id %>">
+  <%= form_with url: knowledge_items_path, method: :post,
+        class: "flex gap-2 items-center",
+        data: { controller: "form-reset", action: "turbo:submit-end->form-reset#reset" } do |f| %>
+    <%= f.hidden_field :item_type,    value: item_type %>
+    <%= f.hidden_field :topics,       value: topic.slug %>
+    <%= f.hidden_field :quick_create, value: "1" %>
+    <%= f.hidden_field :tab_list,     value: _list_id %>
+    <%= f.hidden_field :tab_topic,    value: topic.slug %>
+    <%= f.text_field :title,
+          placeholder: local_assigns.fetch(:placeholder, "Hinzufügen …"),
+          autocomplete: "off",
+          data: {
+            "topic-item-picker-target": "input",
+            action: "input->topic-item-picker#fetch focus->topic-item-picker#fetch keydown->topic-item-picker#keydown blur->topic-item-picker#blur"
+          },
+          class: "flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    <%= f.submit t("tasks.add"),
+          class: "shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+  <% end %>
+  <ul data-topic-item-picker-target="list"
+      class="hidden absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+</div>

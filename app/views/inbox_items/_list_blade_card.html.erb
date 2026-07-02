@@ -1,0 +1,155 @@
+<%# #163 Phase 5a-2 / #618 (Hans): Inbox-Listen-Blade. Kopf v2:
+    Zeile 1 nur Titel + ＋-Popover (Quick-Add-Formular wie in der
+    Topbar — URL/Text/Datei/Thema + Scan). Darunter zwei Reiter, die
+    Prozess und Ergebnis trennen: „WIP" (Eingang/Bestätigen/Läuft/
+    Archiv=abgebrochen) und „Importe" (Verarbeitet/Fehler/Archiviert).
+    Pro Reiter Suchschlitz + inklusive-ODER-Statusauswahl (Muster
+    Verlauf-Blade). „Archiv" vs. „Archiviert" wird über processed_at
+    unterschieden (archiviert ohne Verarbeitung = Prozess abgebrochen).
+    Navigation läuft per Turbo-Frame gegen list_card?tab=…&st[]=…;
+    Zeilen öffnen das Detail als Blade (kind inbox_item). %>
+<%
+  stack_id = "list:inbox_items"
+  tabs = {
+    "wip" => { label: t("inbox_items.tab_wip"),
+               keys: [["pending", t("inbox_items.status_pending")],
+                      ["awaiting_confirmation", t("inbox_items.status_awaiting")],
+                      ["processing", t("inbox_items.status_processing")],
+                      ["archived_wip", t("inbox_items.status_archived_wip")]] },
+    "importe" => { label: t("inbox_items.tab_importe"),
+                   keys: [["processed", t("inbox_items.status_processed")],
+                          ["failed", t("inbox_items.status_failed")],
+                          ["archived_done", t("inbox_items.status_archived_done")]] },
+  }
+  key_scope = lambda do |base, key|
+    case key
+    when "archived_wip"  then base.where(status: "archived", processed_at: nil)
+    when "archived_done" then base.where(status: "archived").where.not(processed_at: nil)
+    else base.where(status: key)
+    end
+  end
+
+  tab = params[:tab].to_s.presence_in(tabs.keys)
+  raw = Array(params[:st]).map(&:to_s)
+  # Legacy-Param ?status=… (alte Links/Restores) → passender Reiter + Einzelauswahl.
+  if tab.nil? && (legacy = params[:status].to_s.presence)
+    legacy = "archived_done" if legacy == "archived"
+    tab = tabs.find { |_, t| t[:keys].any? { |k, _| k == legacy } }&.first
+    raw = [legacy]
+  end
+  tab ||= "wip"
+  tab_keys = tabs[tab][:keys].map(&:first)
+  raw &= tab_keys
+  raw = [] if raw.sort == tab_keys.sort   # explizit alle = Default
+  selected = raw.presence || tab_keys
+
+  base   = InboxItem.visible_to(Current.actor)
+  items  = selected.map { |k| key_scope.call(base, k) }.inject(:or)
+                   .order(created_at: :desc).limit(100).to_a
+  status_counts = base.group(:status).count
+  arch_wip      = key_scope.call(base, "archived_wip").count
+  key_counts    = status_counts.except("archived")
+                    .merge("archived_wip" => arch_wip,
+                           "archived_done" => status_counts["archived"].to_i - arch_wip)
+  tab_counts    = tabs.transform_values { |t| t[:keys].sum { |k, _| key_counts[k].to_i } }
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[30rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: stack_id,
+        title: "Inbox", icon_html: icon("inbox"), label: "Inbox" %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2"
+       data-controller="list-search">
+    <%# #618 v4: Live-Zeilenupdate, sobald der Titel-Fetch fertig ist. %>
+    <%= turbo_stream_from "inbox_items_user_#{Current.actor.id}" %>
+    <%= turbo_frame_tag "inbox_list_blade_frame" do %>
+      <div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                  border-b border-slate-100 space-y-2">
+        <%# Zeile 1: nur Titel (+ Quick-Add-Popover rechts, #618 v2). %>
+        <div class="flex items-center gap-2">
+          <span class="text-slate-500"><%= icon "inbox" %></span>
+          <span class="font-semibold text-sm">Inbox</span>
+          <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= items.size %></span>
+          <span class="flex-1"></span>
+          <details class="relative shrink-0">
+            <summary title="<%= t("inbox_items.add_to_inbox") %>" aria-label="<%= t("inbox_items.add_to_inbox") %>"
+                     class="list-none p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&::-webkit-details-marker]:hidden">
+              <%# #629: Lucide statt ＋-Glyphe. %>
+              <%= icon "plus_circle", size: "w-4 h-4" %>
+            </summary>
+            <div class="absolute right-0 top-7 w-80 z-30 bg-white border border-slate-200 rounded-lg shadow-xl p-3 text-left">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-700"><%= t("inbox_items.add_to_inbox") %></span>
+                <%= button_to t("inbox_items.scan_folder"), scan_inbox_items_path, method: :post,
+                      form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
+                      class: "text-[11px] px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer text-slate-600" %>
+              </div>
+              <%= form_with url: inbox_items_path, method: :post, local: true,
+                    multipart: true, data: { turbo_frame: "_top" }, class: "space-y-2" do |f| %>
+                <%= f.url_field :source_url,
+                      placeholder: t("inbox_items.url_placeholder"), autocomplete: "off",
+                      class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" %>
+                <%= f.text_area :raw_content,
+                      placeholder: t("inbox_items.text_placeholder"), rows: 3,
+                      class: "w-full rounded border border-slate-200 px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400 [field-sizing:content] resize-y" %>
+                <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                  <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "paperclip" %></span>
+                  <%= f.file_field :file, accept: "application/pdf,image/*,.md,.markdown,text/markdown",
+                        class: "text-xs flex-1 min-w-0" %>
+                </label>
+                <%= select_tag "topic_ids[]",
+                      options_for_select([[t("inbox_items.topic_option_blank"), ""]] +
+                        Topic.visible_to(Current.actor).non_templates.active.order(:name).pluck(:name, :slug)),
+                      class: "w-full text-xs px-2 py-1 rounded border border-slate-200" %>
+                <div class="flex justify-end">
+                  <%= f.submit t("inbox_items.submit_add"),
+                        class: "text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+                </div>
+              <% end %>
+            </div>
+          </details>
+        </div>
+        <%# Zeile 2: Reiter WIP | Importe (Prozess vs. Ergebnis). %>
+        <nav class="flex items-center gap-4 text-xs border-b border-slate-200">
+          <% tabs.each do |t, spec| %>
+            <%= link_to list_card_inbox_items_path(tab: t),
+                  data: { turbo_frame: "inbox_list_blade_frame" },
+                  class: "pb-1.5 -mb-px border-b-2 #{t == tab ? 'border-slate-700 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-900'}" do %>
+              <%= spec[:label] %><span class="text-slate-400">&nbsp;(<%= tab_counts[t] %>)</span>
+            <% end %>
+          <% end %>
+        </nav>
+        <%# Zeile 3: Filterschlitz + inklusive-ODER-Statusauswahl des Reiters. %>
+        <%= render "shared/list_search", placeholder: t("inbox_items.search_placeholder") %>
+        <div class="flex flex-wrap items-center gap-1 text-[11px]">
+          <% tabs[tab][:keys].each do |key, label| %>
+            <%
+              # Inklusives ODER: Chip togglet seinen Status in der Auswahl.
+              # Alle aktiv + Klick = nur dieser; letzter abgewählt = wieder alle.
+              nxt = raw.empty? ? [key] : (raw.include?(key) ? raw - [key] : raw + [key])
+              nxt = [] if nxt.sort == tab_keys.sort
+              active = selected.include?(key)
+            %>
+            <%= link_to list_card_inbox_items_path(tab: tab, st: nxt.presence),
+                  data: { turbo_frame: "inbox_list_blade_frame" },
+                  class: "px-2 py-0.5 rounded border #{active ? 'border-slate-300 bg-slate-100 text-slate-900 font-medium' : 'border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50'}" do %>
+              <%= label %><% if key_counts[key].to_i > 0 %><span class="<%= active ? 'text-slate-500' : 'text-slate-300' %>">&nbsp;<%= key_counts[key] %></span><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <% if items.empty? %>
+        <p class="text-sm text-slate-400 italic py-3"><%= t("inbox_items.empty_selection") %></p>
+      <% else %>
+        <ul class="divide-y divide-slate-100 text-[13px]">
+          <%= render partial: "inbox_items/row", collection: items, as: :item %>
+        </ul>
+        <p data-list-search-target="empty" class="hidden text-xs text-slate-400 italic py-2"><%= t("inbox_items.no_matches") %></p>
+      <% end %>
+    <% end %>
+  </div>
+</article>

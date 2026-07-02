@@ -1,0 +1,21 @@
+<%# #572: Meilenstein-Toggle als Icon in der Blade-Leiste — Raute, rot wenn
+    aktiv. Stable-ID für den Live-Replace aus tasks#toggle_milestone.
+    Nur bei Aufgaben in einem Projekt (Topic mit Kunde). %>
+<% if task.topics.any?(&:project?) %>
+  <%= button_to toggle_milestone_task_path(task), method: :post,
+        form: { id: "task_milestone_btn_#{task.id}", class: "inline m-0 p-0 leading-none shrink-0",
+                data: { turbo_stream: true } },
+        title: task.client_milestone ? "Meilenstein — aus der Kunden-Roadmap entfernen"
+                                     : "Als Meilenstein in die Kunden-Roadmap aufnehmen",
+        "aria-label": t("tasks.milestone"),
+        class: "p-1 rounded hover:bg-slate-100 bg-transparent border-0 cursor-pointer
+                #{task.client_milestone ? 'text-rose-600 hover:text-rose-700' : 'text-slate-500 hover:text-slate-900'}" do %>
+    <%# Raute: rotiertes Quadrat — gefüllt wenn aktiv, Umriss wenn nicht. %>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5" aria-hidden="true"
+         fill="<%= task.client_milestone ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="1.5">
+      <rect x="7.5" y="7.5" width="9" height="9" transform="rotate(45 12 12)" rx="1"/>
+    </svg>
+  <% end %>
+<% else %>
+  <span id="task_milestone_btn_<%= task.id %>" hidden></span>
+<% end %>

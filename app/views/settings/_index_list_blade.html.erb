@@ -1,0 +1,41 @@
+<%# #613: Einstellungs-Liste als Einstiegs-Blade — löst die Reiter-Leiste
+    ab (mobil liefen die Tabs über). Klick öffnet die Seite als nächstes
+    Blade (blade-link, kind settings_page). %>
+<article id="stack_card_list:settings"
+         data-uuid="list:settings"
+         class="stack-card shrink-0 relative w-72 max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: "list:settings",
+        title: t("settings.title"),
+        icon_html: icon("settings"), label: t("settings.title") %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
+    <header class="sticky top-0 z-20 px-3 py-2 bg-white/95 backdrop-blur border-b border-slate-200 flex items-center gap-2">
+      <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "settings" %></span>
+      <span class="flex-1 min-w-0 truncate font-semibold"><%= t("settings.title") %></span>
+    </header>
+    <ul class="divide-y divide-slate-100 text-[13px]">
+      <% Settings::BladesController::PAGES.each do |key, spec| %>
+        <li class="group hover:bg-slate-50 flex items-center">
+          <button type="button"
+                  data-controller="blade-link"
+                  data-blade-link-kind-value="settings_page"
+                  data-blade-link-id-value="<%= key %>"
+                  data-action="click->blade-link#append"
+                  class="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 text-left
+                         bg-transparent border-0 cursor-pointer text-slate-700 hover:text-slate-900">
+            <span class="shrink-0 text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon spec[:icon] %></span>
+            <span class="flex-1 min-w-0 truncate"><%= t("settings.pages.#{key}") %></span>
+            <span class="shrink-0 text-slate-300 group-hover:text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "chevron_right" %></span>
+          </button>
+        </li>
+      <% end %>
+    </ul>
+
+    <%# #745: dezente Versionsanzeige am Fuß der Einstellungen. %>
+    <footer class="px-3 py-2 text-[11px] text-slate-400 border-t border-slate-100">
+      miolimOS v<%= app_version %>
+    </footer>
+  </div>
+</article>

@@ -1,0 +1,65 @@
+<%# Anhänge einer Aufgabe (#133). Drop-Zone für Upload + Liste der
+    bereits hochgeladenen Dateien.
+    #142/#789: leading Büroklammer-Icon (Lucide paperclip) links neben dem
+    Trigger — analog zu den entity_picker-Rows; klein (w-4), daher kein
+    Höhen-Sprung wie damals beim Paperclip IM Eingabefeld. Kein dashed-Border.
+    Border-Spacing kommt vom umgebenden Disclosure-Wrapper. %>
+<section id="task_attachments_<%= task.id %>" class="space-y-2">
+  <%# #603 R3/R4 (Hans): icon-only, GANZE Zeile = Upload-Label (Klick
+      öffnet den Datei-Dialog), Hover hebt die Zeile hervor und blendet
+      den Text ein; min-h-7 gegen Höhen-Springen. %>
+  <%= form_with url: task_attachments_path(task), method: :post,
+        multipart: true, local: false, class: "block" do |f| %>
+    <label title="<%= t("tasks.attachment") %>"
+           class="group/erow min-h-7 flex items-center gap-3 text-xs rounded px-1.5 -mx-1.5
+                  hover:bg-slate-50 cursor-pointer">
+      <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 group-hover/erow:text-slate-700">
+        <%= icon "paperclip" %>
+      </span>
+      <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 select-none"><%= t("tasks.attachment") %></span>
+      <%= f.file_field :file,
+            onchange: "this.form.requestSubmit()",
+            class: "sr-only" %>
+    </label>
+  <% end %>
+
+  <% if task.attachments.any? %>
+    <ul class="space-y-1">
+      <% task.attachments.each do |att| %>
+        <li class="task-attachments-list-item flex items-start gap-2 text-[13px] border border-slate-200 rounded px-2 py-1 bg-white">
+          <% if att.image? %>
+            <%= link_to task_attachment_path(task, att.id),
+                  target: "_blank", rel: "noopener",
+                  class: "shrink-0" do %>
+              <img src="<%= task_attachment_path(task, att.id) %>"
+                   alt="<%= att.original_filename %>"
+                   class="w-16 h-16 object-cover rounded border border-slate-200">
+            <% end %>
+          <% else %>
+            <%# #789 (Hans): Lucide-Icon statt Emoji ("Comic-Icon") — Dokument
+                (PDF) = file_text, sonstige Dateien = file. %>
+            <span class="shrink-0 text-slate-400 mt-0.5"><%= icon(att.pdf? ? "file_text" : "file", size: "w-6 h-6") %></span>
+          <% end %>
+          <div class="flex-1 min-w-0">
+            <%= link_to att.original_filename,
+                  task_attachment_path(task, att.id),
+                  target: "_blank", rel: "noopener",
+                  class: "text-emerald-700 hover:underline truncate block" %>
+            <div class="text-xs text-slate-500">
+              <%= number_to_human_size(att.byte_size) if att.byte_size %>
+              · <%= l(att.created_at, format: "%d.%m.%Y, %H:%M") %>
+              · <%= att.uploader.name %>
+            </div>
+          </div>
+          <%= button_to task_attachment_path(task, att.id),
+                method: :delete,
+                form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.remove_attachment_confirm") } },
+                title: t("actions.delete"), "aria-label": t("tasks.remove_attachment"),
+                class: "p-1 rounded text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer self-center" do %>
+            ×
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

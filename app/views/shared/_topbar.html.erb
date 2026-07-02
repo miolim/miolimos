@@ -1,0 +1,124 @@
+<header class="focus-chrome-hide border-b border-slate-200 bg-white h-12 flex items-center px-4 gap-3 shrink-0"
+        data-controller="keyboard blade-counts"
+        data-ui-label="Topbar (Kopfleiste)">
+  <%# #262: Mobile-Indikator — Anzahl Blades LINKS der sichtbaren Card.
+      #262 follow-up: Platz ist immer reserviert (min-w-4), Pfeile sind
+      raus, Zahl ist fett; bei 0 nur abgedimmt (Controller). %>
+  <span data-blade-counts-target="left"
+        class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center"
+        aria-label="<%= t("shared.topbar.cards_left") %>">0</span>
+  <button type="button"
+          data-action="click->mobile-nav#toggle"
+          aria-label="<%= t("shared.topbar.open_nav") %>"
+          class="md:hidden p-1 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+    <%= icon "menu" %>
+  </button>
+
+  <%# #301: Suchfeld kollabiert auf Mobile zum Lupe-Icon. Desktop:
+      Panel immer sichtbar (md:block), inline. Mobile: Lupe-Button,
+      Klick klappt das Feld als fixed Full-Width-Leiste unter der
+      Topbar auf. %>
+  <div data-controller="search-collapse" class="flex-1 md:max-w-lg">
+    <button type="button"
+            data-action="search-collapse#toggle"
+            aria-label="<%= t("shared.topbar.search") %>"
+            class="md:hidden p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+      <%= icon "search", size: "w-5 h-5" %>
+    </button>
+    <div data-search-collapse-target="panel"
+         class="hidden md:block fixed md:static top-12 left-0 right-0 z-30
+                p-2 md:p-0 bg-white md:bg-transparent border-b md:border-0 border-slate-200">
+      <%= form_with url: search_path, method: :get, local: false, data: { turbo_frame: "search_results" } do |f| %>
+        <%= f.search_field :q,
+              value: params[:q],
+              placeholder: t("nav.search_placeholder"),
+              class: "w-full rounded border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400",
+              data: { controller: "search", action: "input->search#submit", search_target: "input" } %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# #301: Quick-Create-Icon-Leiste — neue Entitaet direkt in den Stack. %>
+  <%= render "shared/quick_create_bar" %>
+
+  <%# #533 Phase 1b: Zeit-Timer (laufende Uhr + Start/Nachtragen-Popup). %>
+  <%= render "shared/time_timer" %>
+
+  <div class="ml-auto flex items-center gap-3 text-slate-600">
+    <%# #772 (Hans, 2026-06-27): Dark-Mode-Umschalter. Mond im Hell-Modus
+        (Klick → dunkel), Sonne im Dunkel-Modus (Klick → hell); per CSS
+        umgeschaltet (html.dark), kein JS-Icon-Tausch nötig. %>
+    <button type="button"
+            data-controller="theme"
+            data-action="click->theme#toggle"
+            data-ui-label="Dark-Mode-Umschalter"
+            title="<%= t("shared.topbar.theme_title") %>"
+            aria-label="<%= t("shared.topbar.theme_label") %>"
+            aria-pressed="<%= cookies[:theme] == "dark" %>"
+            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+      <span class="theme-icon-moon flex [&_svg]:w-4 [&_svg]:h-4"><%= icon "moon" %></span>
+      <span class="theme-icon-sun hidden [&_svg]:w-4 [&_svg]:h-4"><%= icon "sun" %></span>
+    </button>
+    <%# #759 (Hans, 2026-06-23): Tastatur-Shortcut-Übersicht. Öffnet dasselbe
+        Modal wie die Taste „?" — der shortcut-help-Controller fängt das vom
+        Blade-Stack dispatchte Event ab, daher funktioniert der Trigger auch
+        hier in der Topbar (außerhalb des Stack-Scopes). %>
+    <button type="button"
+            data-controller="shortcut-help"
+            data-action="click->shortcut-help#open"
+            data-ui-label="Tastatur-Shortcuts (Hilfe)"
+            title="<%= t("shared.topbar.shortcuts_title") %>"
+            aria-label="<%= t("shared.topbar.shortcuts_label") %>"
+            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+      <%= icon "keyboard", size: "w-4 h-4" %>
+    </button>
+    <%# #704 (Hans): Beschriftungs-Modus — Labels per Hover anzeigen, per
+        Klick kopieren. Erleichtert das eindeutige Beschreiben von UI-
+        Elementen. Shortcut: Cmd/Ctrl + . %>
+    <button type="button"
+            data-controller="ui-inspector"
+            data-action="click->ui-inspector#toggle"
+            data-ui-label="Beschriftungs-Modus (Schalter)"
+            title="<%= t("shared.topbar.inspector_title") %>"
+            aria-label="<%= t("shared.topbar.inspector_label") %>"
+            aria-pressed="false"
+            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+      <%= icon "locate", size: "w-4 h-4" %>
+    </button>
+    <%# #339 (Hans): Diagnose-Knopf — schreibt einen JSON-Snapshot des
+        aktuellen Blade-Stack-Zustands in ein Overlay. Hilft, wenn ein
+        Bug im Stack ohne DevTools-Zugriff reproduziert werden soll. %>
+    <button type="button"
+            data-controller="diagnostic-snapshot"
+            data-action="click->diagnostic-snapshot#snapshot"
+            title="<%= t("shared.topbar.diagnostic_title") %>"
+            aria-label="<%= t("shared.topbar.diagnostic_label") %>"
+            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+      <%= icon "info", size: "w-4 h-4" %>
+    </button>
+    <span class="hidden sm:inline text-[13px]"><%= current_actor&.name %></span>
+    <%# #302 follow-up (Hans): Abmelden als On/Off-Icon — auf Mobile
+        sparen wir die Textbreite, Desktop bleibt's konsistent. %>
+    <%= button_to logout_path, method: :delete,
+          form: { class: "inline" },
+          title: t("nav.logout"), "aria-label": t("nav.logout"),
+          class: "p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-rose-600 cursor-pointer" do %>
+      <%= icon "power", size: "w-4 h-4" %>
+    <% end %>
+    <%# #262: Mobile-Indikator — Anzahl Blades RECHTS der sichtbaren Card. %>
+    <span data-blade-counts-target="right"
+          class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center"
+          aria-label="<%= t("shared.topbar.cards_right") %>">0</span>
+  </div>
+</header>
+
+<%# #476 (Hans, 2026-06-02): Mobil sitzt das Suchfeld in einer fixed-Leiste
+    bei top-12 (~3,2rem hoch). Die Ergebnis-Liste lag bei top-12 GENAU
+    darunter -> die ersten Treffer waren verdeckt. Mobil daher fixed unter
+    die Such-Leiste (top-[6.25rem]); Desktop bleibt das Inline-Dropdown bei
+    top-12 (Suche steckt dort in der Topbar).
+    #476 follow-up (Hans): zusaetzlich verdeckte der STICKY Aufgabentitel
+    (sticky top-[-1rem] z-10) die Ergebnisse — z-10 == z-10, der Titel
+    gewann den Gleichstand. Ergebnis-Frame daher auf z-40 heben (ueber alle
+    sticky Card-Inhalte; bleibt non-overlapping mit der Such-Leiste z-30). %>
+<%= turbo_frame_tag "search_results", class: "fixed md:absolute top-[6.25rem] md:top-12 left-0 md:left-60 right-0 z-40" %>

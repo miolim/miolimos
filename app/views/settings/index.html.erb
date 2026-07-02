@@ -1,0 +1,22 @@
+<% content_for :title, t("settings.title") %>
+
+<%# #613: /settings ist ein Blade-Stack (Bedienprinzip wie /tasks):
+    Einstiegs-Blade = Liste der Einstellungs-Bereiche (frühere Reiter),
+    Klick öffnet den Bereich als nächstes Blade. Eigener History-Key =
+    eigener Stack-Verlauf. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="settings.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "settings" %>
+        <%= render "settings/index_list_blade" %>
+      <% else %>
+        <%= render stack_item.partial, **stack_item.partial_locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

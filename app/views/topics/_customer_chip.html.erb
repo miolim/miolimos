@@ -1,0 +1,13 @@
+<%# #566: aktueller Kunde eines Topics als Chip (im Eigenschaften-Blade).
+    Stable-ID für Turbo-Replace aus topics#set_customer. %>
+<span id="topic_customer_chip_<%= topic.id %>" class="inline-flex items-center gap-1 min-w-0">
+  <% if topic.customer %>
+    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-xs max-w-full">
+      <span class="truncate"><%= topic.customer.title %></span>
+      <%= button_to set_customer_topic_path(topic, value: ""), method: :post,
+            form: { class: "inline m-0 p-0 leading-none", data: { turbo_stream: true } },
+            title: t("topics.unlink_customer"),
+            class: "text-slate-400 hover:text-rose-600 bg-transparent border-0 p-0 cursor-pointer leading-none" do %>×<% end %>
+    </span>
+  <% end %>
+</span>

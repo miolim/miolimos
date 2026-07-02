@@ -1,0 +1,35 @@
+<% content_for :title, @topic.name %>
+<% content_for :head do %>
+  <%# Topic-Page-Snapshot wird beim Re-Visit nicht als Preview gezeigt —
+      sonst kann eine im Hintergrund abgehakte Aufgabe vorübergehend
+      wieder als offen erscheinen, bis der AJAX-Refresh durch ist. %>
+  <meta name="turbo-cache-control" content="no-preview">
+<% end %>
+
+<%# #163 Phase 6d: /topics/:slug ist eine Blade-Stack-Seite. Default
+    `?stack=list:topic`. Die list:topic-Card enthaelt Topic-Header,
+    Tab-Nav und Tab-Body in einer einzigen Card; Klicks auf Items im
+    Tab-Body appenden Detail-Blades rechts.
+
+    Tab-Wechsel ist heute noch Full-Page-Reload (?tab=X). 6d-2 wird
+    den Body via turbo_frame austauschen — Stack bleibt dann unangetastet
+    beim Wechsel. %>
+<div data-controller="blade-stack"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="topic.<%= @topic.slug %>.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-5rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :list && stack_item.id == "topic" %>
+        <%= render "topics/index_list_blade" %>
+      <% else %>
+        <% locals = stack_item.partial_locals %>
+        <% locals = locals.merge(body_html: @initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+        <%= render stack_item.partial, **locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

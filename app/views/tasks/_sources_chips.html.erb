@@ -1,0 +1,21 @@
+<%# Chips für die verknüpften Sources einer Task. Stream-replaced
+    bei add/remove. Klick führt zur Source-Detail-Seite. %>
+<div id="task_sources_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% task.sources.order(:title).each do |source| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= link_to source.title, source_path(source.slug),
+            data: { turbo_frame: "_top" },
+            class: "hover:underline" %>
+      <% if source.display_year.present? %>
+        <span class="text-slate-400">(<%= source.display_year %>)</span>
+      <% end %>
+      <%= button_to task_source_path(task, source.slug),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

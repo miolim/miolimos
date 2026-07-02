@@ -1,0 +1,66 @@
+<%# Plus-Button mit Popover, das eine kontextspezifische Liste an
+    item_types öffnet. Zwei Modi:
+
+    - target: :stack_inline (Default) — innerhalb einer Stack-Page.
+      Klick navigiert zu /knowledge_items/new?type=… und der blade-stack-
+      Controller appended das typspezifische New-Card-Fragment.
+    - target: :cross_navigate — auf einer Page ohne Stack-Layout
+      (z.B. Source-Show). Klick navigiert zu /knowledge_items mit
+      ?new_type=…&bib_source=…, der Index rendert dort die New-Card
+      direkt im initial-Stack.
+
+    Locals:
+      types:           Array<String> — die anzubietenden Types
+      topic_slug:      String? — wird in den new-Pfad weitergereicht
+      bib_source_slug: String? — vorbelegt für direct/indirect_quote (Block C)
+      align:           :left | :right (default :right)
+      target:          :stack_inline (default) oder :cross_navigate %>
+<%
+  types           = local_assigns.fetch(:types, %w[note abstract transcript direct_quote indirect_quote comment doc])
+  topic_slug      = local_assigns[:topic_slug]
+  bib_source_slug = local_assigns[:bib_source_slug]
+  align           = local_assigns.fetch(:align, :right)
+  target          = local_assigns.fetch(:target, :stack_inline)
+  popover_align   = align == :right ? "right-0" : "left-0"
+%>
+<%# #260: fixed-Popover, damit das New-KI-Menue nicht vom
+    overflow-y-auto der Blade-Card abgeschnitten wird, wenn die
+    Liste kurz ist. %>
+<div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
+  <button type="button"
+          data-action="click->popover#toggle"
+          title="<%= t("knowledge.new") %>"
+          aria-label="<%= t("knowledge.new") %>"
+          class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer [&_svg]:w-4 [&_svg]:h-4">
+    <%# #703 (Hans): einheitliches circle-plus-Icon zum Hinzufügen. %>
+    <%= icon "plus_circle" %>
+  </button>
+  <div data-popover-target="content"
+       class="hidden absolute <%= popover_align %> top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-56">
+    <% types.each do |type| %>
+      <%
+        link_target =
+          if target == :cross_navigate
+            knowledge_items_path(new_type: type, bib_source: bib_source_slug)
+          else
+            new_knowledge_item_path(type: type,
+                                    topic_slug: topic_slug,
+                                    bib_source: bib_source_slug,
+                                    in_stack: 1)
+          end
+        link_data =
+          if target == :cross_navigate
+            { action: "click->popover#close" }
+          else
+            { action: "click->blade-stack#openNewCard click->popover#close" }
+          end
+      %>
+      <%= link_to link_target,
+            data: link_data,
+            class: "flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
+        <span class="w-5 flex justify-center text-slate-500"><%= knowledge_type_icon(type) %></span>
+        <span><%= t("knowledge.item_types.#{type}") %></span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

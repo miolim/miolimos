@@ -1,0 +1,49 @@
+<%# Antwort auf das Frontend-Polling, sobald ein processing-Item den
+    Status verlässt. Zwei Effekte:
+      1. Detail-Frame ersetzen (zeigt jetzt Resultat / Banner / Fehler).
+      2. Toast in den globalen toast_stack appenden — sichtbar auch wenn
+         der User mittlerweile auf einer anderen Seite ist (toast_stack
+         lebt im application-Layout). %>
+
+<%= turbo_stream.replace "inbox_detail_#{@item.id}" do %>
+  <%= render "inbox_items/detail",
+        item: @item,
+        processors: @processors,
+        prompt_templates: @prompt_templates,
+        suggested: @suggested %>
+<% end %>
+
+<%
+  link_text  = @item.display_title.to_s.truncate(50)
+  link_url   = inbox_item_path(@item)
+
+  toast_message =
+    case @item.status
+    when "processed"
+      created = Array(@item.result["created"]).find { |c| c["kind"] == "knowledge_item" }
+      ki = created && KnowledgeItem.find_by(uuid: created["uuid"])
+      # #629: ohne Emoji-Präfixe — die renderten je nach Gerät als Kästchen.
+      if ki
+        link_url  = knowledge_items_path(stack: ki.uuid)
+        t("inbox_items.toast_processed", title: ki.title.to_s.truncate(50))
+      else
+        t("inbox_items.toast_processed", title: link_text)
+      end
+    when "awaiting_confirmation"
+      t("inbox_items.toast_awaiting", title: link_text)
+    when "failed"
+      t("inbox_items.toast_failed", title: link_text)
+    else
+      t("inbox_items.toast_status", status: @item.status)
+    end
+%>
+
+<%= turbo_stream.append "toast_stack" do %>
+  <% message_html = capture do %>
+    <%= toast_message %>
+    <%= link_to t("inbox_items.toast_show"), link_url,
+          data: { turbo_frame: "_top" },
+          class: "ml-2 text-emerald-300 hover:text-emerald-200 underline" %>
+  <% end %>
+  <%= render "shared/toast", message: message_html %>
+<% end %>

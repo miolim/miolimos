@@ -1,0 +1,108 @@
+<%# #163 Phase 5b: Task als Blade im Cross-Entity-Blade-Stack.
+    #217 follow-up: Hans wollte das volle Bearbeiten-View (statt einer
+    schmalen Glance-Card), damit er Title/Status/Topics/Kommentare etc.
+    direkt im Stack editieren kann statt in die Vollansicht zu springen.
+    Daher: Blade-Card wrappt jetzt das gleiche tasks/_detail_body wie
+    der bisherige Master-Detail-Pane — nur in eigener Card-Hülle mit
+    Spine und Close-Button.
+
+    Stable-ID-Prefix `task:` — blade-stack dedupliziert über data-uuid. %>
+<% task_id = "task:#{task.id}" %>
+<%# #270: optionaler focus-Local → blade-stack#focus-after-add fokussiert
+    das passende Eingabefeld nach dem Anhaengen. Wird vom Quickadd-Pfad
+    in TasksController#create mit focus: :description durchgereicht. %>
+<article id="stack_card_<%= task_id %>"
+         data-uuid="<%= task_id %>"
+         <% if local_assigns[:focus].present? %>data-focus-after-add="<%= local_assigns[:focus] %>"<% end %>
+         class="stack-card shrink-0 relative
+                w-[36rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <%# #326: Aufgabennummer hinter dem Titel — auch im collapsten Zustand sichtbar. %>
+  <%= render "shared/blade_spine", stack_id: task_id, title: task.title,
+        icon_html: icon("tasks"), topics: task.topics,
+        label: capture { %><%= task.title %><span class="text-slate-400 tabular-nums"> · #<%= task.id %></span><% } %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">
+    <%# #223: konsolidierte Titelzeile — Aufgabennummer, In-Thema-um-
+        wandeln, Loeschen, Schliessen. Das fruehere Doppel (sticky-
+        toolbar oben + action-icon-reihe in _detail_header) faellt weg.
+        „Vollansicht" entfernt (#223: redundant, da /tasks/:id zur
+        Stack-Seite redirected). %>
+    <%# #263 follow-up: diese Zeile (#-Nummer, Promote, Delete) ist NICHT
+        mehr sticky — sie scrollt mit; statt dessen wird die Detail-Header-
+        Zeile (Checkbox + Titel) sticky (siehe tasks/_detail_header). %>
+    <div data-ui-label="Card-Werkzeugleiste"
+         class="-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white
+                border-b border-slate-100 flex items-center gap-2 justify-end text-slate-500">
+      <span class="text-xs text-slate-400 tabular-nums" title="<%= t("tasks.task_number") %>">#<%= task.id %></span>
+      <%# #572: Meilenstein-Toggle (Portal-Roadmap) — rot = aktiv. %>
+      <%= render "tasks/milestone_button", task: task %>
+      <%# #321 (Hans): Card-Duplizieren direkt rechts neben der
+          Aufgabennummer. Stimulus-Action appendet eine zweite Instanz
+          dieser Card an den Stack — fuer Vergleichs-Use-Case. %>
+      <button type="button"
+              data-action="click->blade-stack#duplicateCard"
+              data-target-uuid="<%= task_id %>"
+              title="<%= t("tasks.duplicate_card") %>"
+              aria-label="<%= t("tasks.duplicate_card") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+        <%= icon "copy" %>
+      </button>
+      <%# #533 1c: Zeit für diese Aufgabe erfassen (Header-Timer übernimmt). %>
+      <button type="button"
+              data-controller="card-timer"
+              data-card-timer-subject-type-value="Task"
+              data-card-timer-subject-id-value="<%= task.id %>"
+              data-card-timer-label-value="<%= task.title %>"
+              data-card-timer-topics-value="<%= task.topics.map { |t| { id: t.id, name: t.name } }.to_json %>"
+              data-action="card-timer#start"
+              title="<%= t("tasks.track_time") %>"
+              aria-label="<%= t("tasks.track_time_aria") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+        <%= icon "timer" %>
+      </button>
+      <div class="mr-auto"></div>
+      <%# #360 (Hans, 2026-05-25): Per-Blade-Reload-Icon. %>
+      <button type="button"
+              data-action="click->blade-stack#reloadCard"
+              title="<%= t("tasks.reload_card") %>"
+              aria-label="<%= t("tasks.reload_card") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0">
+        <%= icon "refresh" %>
+      </button>
+      <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
+      <button type="button"
+              data-focus-trigger="blade"
+              title="<%= t("tasks.focus_card") %>"
+              aria-label="<%= t("tasks.focus_card_aria") %>"
+              class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+      <% unless task.done? %>
+        <%= button_to promote_to_topic_task_path(task), method: :post,
+              class: "p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 bg-transparent border-0 cursor-pointer shrink-0",
+              title: t("tasks.to_topic"), "aria-label": t("tasks.to_topic"),
+              form: { class: "inline m-0 p-0",
+                      data: { turbo_frame: "_top",
+                              turbo_confirm: t("tasks.to_topic_confirm") } } do %>
+          <%= icon "group" %>
+        <% end %>
+        <%# #747 (Hans, 2026-06-21): EIN Status-Control (farbiges Icon) —
+            Entwurf → grüner globe (Veröffentlichen), veröffentlicht → amber
+            pause (Auf Entwurf). Hier in der Card-Toolbar; auf der
+            Frame-Detailansicht (keine Toolbar) rendert es der Header. %>
+        <%= render "tasks/status_control", task: task %>
+      <% end %>
+      <%= button_to task_path(task), method: :delete,
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0",
+            title: t("actions.delete"), "aria-label": t("actions.delete"),
+            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
+        <%= icon "trash" %>
+      <% end %>
+    </div>
+
+    <div class="mt-3">
+      <%= render "tasks/detail_body", task: task %>
+    </div>
+  </div>
+</article>

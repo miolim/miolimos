@@ -1,0 +1,81 @@
+<%# #207 Item 2: Read-Only-Spiegel-Sektionen fuer Person-/Organisation-
+    KIs. Vorher inline im _detail.html.erb (lines 373-442). Drei
+    cohesive Bloecke:
+
+    - Org-seitige Personen-Liste (alle, die zur Org affiliiert sind)
+    - Eingehende Beziehungen (Person-seitig: wer hat einen Bezug auf mich)
+    - Sub-Org-Hierarchie (parent + children) %>
+
+<%# Org-seitige Personen-Liste. %>
+<% if item.item_type == "organization" && (org_affs = item.affiliations_as_organization.includes(:person).ordered).any? %>
+  <section class="border border-slate-200 rounded">
+    <header class="px-3 py-1.5 text-xs text-slate-600 border-b border-slate-100 font-medium bg-slate-50 rounded-t">
+      <%= t("knowledge.detail.persons") %> · <%= org_affs.size %>
+    </header>
+    <ul class="divide-y divide-slate-100 text-[13px]">
+      <% org_affs.each do |aff| %>
+        <li class="px-3 py-1.5 flex items-center gap-2">
+          <span class="text-slate-400 text-xs w-32 shrink-0 font-mono">
+            <%= aff.start_at&.year || "—" %>–<%= aff.end_at&.year || "" %>
+          </span>
+          <%= link_to aff.person.title, knowledge_item_path(aff.person.uuid),
+                data: { action: "click->blade-stack#openInStack", target_uuid: aff.person.uuid },
+                class: "wikilink text-emerald-700 hover:underline truncate" %>
+          <span class="text-slate-500 text-xs ml-auto truncate"><%= aff.role %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<%# Eingehende Beziehungen (read-only, Mirror der outgoing rel auf der
+    anderen Seite). %>
+<% rels_in = item.incoming_relationships.includes(:from_person).ordered %>
+<% if rels_in.any? %>
+  <section class="border border-slate-200 rounded">
+    <header class="px-3 py-1.5 text-xs text-slate-600 border-b border-slate-100 font-medium bg-slate-50 rounded-t">
+      <%= t("knowledge.detail.incoming_relationships") %> · <%= rels_in.size %>
+    </header>
+    <ul class="divide-y divide-slate-100 text-[13px]">
+      <% rels_in.each do |r| %>
+        <li class="px-3 py-1.5 flex items-center gap-2 text-slate-600">
+          <span class="text-slate-400 text-xs w-32 shrink-0">↩ <%= t("knowledge.detail.relationship_kind_from", kind: r.kind) %></span>
+          <%= link_to r.from_person.title, knowledge_item_path(r.from_person.uuid),
+                data: { action: "click->blade-stack#openInStack", target_uuid: r.from_person.uuid },
+                class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
+          <span class="text-slate-400 text-xs">
+            <%= r.start_at&.year %><%= "–#{r.end_at&.year}" if r.end_at %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<%# Sub-Org-Hierarchie: parent + children. %>
+<% if item.item_type == "organization" && (item.parent_org || item.sub_organizations.any?) %>
+  <section class="border border-slate-200 rounded px-3 py-2 text-[13px] space-y-1">
+    <% if item.parent_org %>
+      <div class="text-xs text-slate-600">
+        <span class="text-slate-400"><%= t("knowledge.detail.part_of") %></span>
+        <%= link_to item.parent_org.title, knowledge_item_path(item.parent_org.uuid),
+              data: { action: "click->blade-stack#openInStack", target_uuid: item.parent_org.uuid },
+              class: "wikilink text-emerald-700 hover:underline" %>
+      </div>
+    <% end %>
+    <% if item.sub_organizations.any? %>
+      <div class="text-xs text-slate-600">
+        <div class="text-slate-400 mb-0.5"><%= t("knowledge.detail.sub_units") %></div>
+        <ul class="ml-4 space-y-0.5">
+          <% item.sub_organizations.each do |sub| %>
+            <li>
+              <%= link_to sub.title, knowledge_item_path(sub.uuid),
+                    data: { action: "click->blade-stack#openInStack", target_uuid: sub.uuid },
+                    class: "wikilink text-emerald-700 hover:underline" %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </section>
+<% end %>

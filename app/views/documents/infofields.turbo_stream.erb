@@ -1,0 +1,4 @@
+<%# #532: nach Speichern/Auswahl die Infoblock-Felder-Section neu rendern. %>
+<%= turbo_stream.replace "document_infofields_#{@document.id}" do %>
+  <%= render "documents/infofields", document: @document %>
+<% end %>

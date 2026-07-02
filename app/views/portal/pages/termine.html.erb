@@ -1,0 +1,30 @@
+<% content_for :title, "#{t("portal.termine.title")} — #{portal_topic.name}" %>
+<h1><%= t("portal.termine.title") %></h1>
+
+<% if (@events || []).any? %>
+  <table>
+    <tr><th><%= t("portal.termine.col_date") %></th><th><%= t("portal.termine.col_appointment") %></th><th><%= t("portal.termine.col_location") %></th></tr>
+    <% @events.each do |e| %>
+      <tr>
+        <td style="white-space:nowrap"><%= l e.starts_at.to_date, format: :long %><% if e.starts_at.strftime("%H:%M") != "00:00" %>, <%= t("portal.termine.time_oclock", time: e.starts_at.strftime("%H:%M")) %><% end %></td>
+        <td><%= e.title %></td>
+        <td class="muted"><%= e.location %></td>
+      </tr>
+    <% end %>
+  </table>
+  <h2><%= t("portal.termine.milestones") %></h2>
+<% end %>
+<% if @dated.empty? && (@events || []).empty? %>
+  <p class="muted"><%= t("portal.termine.no_appointments") %></p>
+<% elsif @dated.any? %>
+  <table>
+    <tr><th><%= t("portal.termine.col_date") %></th><th><%= t("portal.termine.col_milestone") %></th><th><%= t("portal.termine.col_status") %></th></tr>
+    <% @dated.each do |m| %>
+      <tr>
+        <td style="white-space:nowrap"><%= l m.due_date, format: :long %></td>
+        <td><%= m.title %></td>
+        <td><span class="pill <%= 'done' if m.status == 'done' %>"><%= m.status == "done" ? t("portal.termine.status_done") : t("portal.termine.status_planned") %></span></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

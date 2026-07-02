@@ -1,0 +1,76 @@
+<%# Topic-Gruppierte Aufgabenliste. „Ohne Projekt" zuoberst, dann
+    Topics alphabetisch. Innerhalb jeder Sektion sind Tasks bereits
+    nach Wann (inbox→today→soon→later) vorsortiert (Controller).
+
+    Wann-Trennlinien werden in <li>-Form zwischen Tasks eingefügt,
+    wenn sich das Commitment beim nächsten Task ändert. Keine
+    Subheadings — nur leichte Trennlinien.
+
+    Drag-Drop: jeder topic-Container ist eine `topic-sortable`-Liste.
+    Cross-bucket-Drag ändert das Topic des verschobenen Tasks.
+
+    Locals:
+      topic_sections — Array<[Topic|nil, Array<Task>]> %>
+<% topic_sections.each do |topic, rows| %>
+  <%
+    section_id     = topic ? "tasks_topic_#{topic.slug}" : "tasks_topic_none"
+    section_title  = topic ? topic.name : "Ohne Projekt"
+    section_storage = topic ? "tasks.topic.#{topic.slug}" : "tasks.topic.none"
+    expanded_default = true
+    empty_text     = topic ? "Keine offenen Aufgaben in diesem Projekt." : "Alle Aufgaben sind einem Projekt zugeordnet."
+  %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="<%= section_storage %>"
+           class="bg-white rounded border border-slate-200 overflow-hidden">
+    <header class="px-4 py-2 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center gap-2">
+      <button type="button"
+              data-action="click->disclosure#toggle"
+              class="flex items-center gap-2 hover:bg-slate-100 -ml-1 px-1 py-0.5 rounded">
+        <span data-disclosure-target="icon"
+              class="inline-block transition-transform <%= 'rotate-90' if expanded_default %> text-slate-400">
+          <%= icon "chevron_right" %>
+        </span>
+        <% if topic %>
+          <%= topic_dot topic %>
+        <% end %>
+        <h2 class="font-medium text-slate-900"><%= section_title %></h2>
+      </button>
+      <span class="text-xs text-slate-500"
+            data-controller="list-count"
+            data-list-count-list-ids-value='<%= [section_id].to_json %>'><%= rows.size %></span>
+      <%# Quick-Add inline für Topic-View — Default-Commitment "inbox",
+          Default-Topic = aktuelles Topic der Sektion (oder leer für
+          „Ohne Projekt"). %>
+      <%= render "tasks/section_quickadd",
+            section_key: "inbox",
+            topic_id: topic&.id,
+            placeholder: t("tasks.topic_quickadd_placeholder", section: section_title) %>
+    </header>
+
+    <div data-disclosure-target="content" <%= 'class=hidden'.html_safe unless expanded_default %>>
+      <ol id="<%= section_id %>"
+          data-controller="topic-sortable"
+          data-topic-sortable-topic-id-value="<%= topic&.id %>"
+          data-topic-sortable-topic-slug-value="<%= topic&.slug %>"
+          data-empty-text="<%= empty_text %>"
+          class="flex flex-col min-h-[2.5rem] [&:not(:has(li))]:before:content-[attr(data-empty-text)] [&:not(:has(li))]:before:block [&:not(:has(li))]:before:px-4 [&:not(:has(li))]:before:py-3 [&:not(:has(li))]:before:text-slate-400 [&:not(:has(li))]:before:italic [&:not(:has(li))]:before:text-sm">
+        <%
+          last_commit = nil
+          rows.each do |task|
+            this_commit = task.commitment.presence || "inbox"
+        %>
+          <% if last_commit && last_commit != this_commit %>
+            <%# Visueller Trennstrich zwischen Wann-Gruppen — keine Subheadline. %>
+            <li aria-hidden="true" class="not-draggable border-t border-dashed border-slate-200"></li>
+          <% end %>
+          <%= render "tasks/row", task: task, topic: topic, show_topic: false,
+                link_path: task_path(task),
+                blade_kind: "task", blade_id: task.id %>
+        <%
+            last_commit = this_commit
+          end
+        %>
+      </ol>
+    </div>
+  </section>
+<% end %>

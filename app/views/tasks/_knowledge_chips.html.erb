@@ -1,0 +1,20 @@
+<%# Chips für die mit dieser Task verknüpften Wissens-KIs (alles außer
+    Person/Organization — die landen in `_contacts_chips`). Klick auf
+    den Titel öffnet die KI als Stack-Card. Stream-replaced. %>
+<div id="task_knowledge_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
+  <% task.mentioned_kis.where.not(item_type: %w[person organization]).order(:title).each do |ki| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <span aria-hidden="true" class="text-slate-500"><%= knowledge_type_icon(ki.item_type, size: "w-3.5 h-3.5") %></span>
+      <%= link_to ki.title, knowledge_items_path(stack: ki.uuid),
+            data: { turbo_frame: "_top" },
+            class: "hover:underline" %>
+      <%= button_to task_mention_path(task, ki.uuid, kind: :knowledge),
+            method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

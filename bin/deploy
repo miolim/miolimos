@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# miolimOS – Post-Deploy-Script
+#
+# Wird nach jedem `git pull` aufgerufen, um:
+#   1. evtl. neue Gems zu installieren (idempotent, schnell wenn nichts neu)
+#   2. pending Migrations anzuwenden
+#   3. Assets neu zu precompilen (Propshaft serviert aus public/assets/ —
+#      reine tailwindcss:build-Aufrufe reichen nicht)
+#   4. den Puma-Prozess zu beenden; systemd Restart=always bringt ihn zurück
+#
+# Bei CI/CD später einfach per post-merge-Git-Hook automatisieren:
+#   ln -s ../../bin/deploy .git/hooks/post-merge
+#
+# Verwendung: ./bin/deploy
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+export RAILS_ENV="${RAILS_ENV:-production}"
+echo "── miolimOS deploy (RAILS_ENV=$RAILS_ENV) ──────────────────────────"
+
+# DB-Passwort übernehmen wir aus dem laufenden systemd-Service, falls nicht
+# schon exportiert. Spart eine zweite Quelle der Wahrheit.
+if [[ "$RAILS_ENV" == "production" && -z "${MIOLIMOS_SRC_DATABASE_PASSWORD:-}" ]]; then
+  pid="$(systemctl show miolimos_src.service --property=MainPID --value 2>/dev/null || true)"
+  if [[ -n "$pid" && "$pid" != "0" && -r "/proc/$pid/environ" ]]; then
+    pw="$(tr '\0' '\n' < "/proc/$pid/environ" | grep '^MIOLIMOS_SRC_DATABASE_PASSWORD=' | cut -d= -f2-)"
+    [[ -n "$pw" ]] && export MIOLIMOS_SRC_DATABASE_PASSWORD="$pw"
+  fi
+fi
+
+# 1. Gems — deployment-mode (bundle-cache + vendor/bundle + ohne dev/test).
+#    .bundle/config ist auf dem Server schon so gesetzt; hier nur nachziehen
+#    falls das Lockfile neu ist.
+echo "• bundle install"
+bundle install --quiet
+
+# 1b. #564: Test-Gate — kein Deploy auf Rot. Die Suite läuft in ~60s
+#     (parallel). Notausstieg für echte Notfälle: SKIP_TESTS=1 bin/deploy.
+#     set -e bricht das Script bei roten Tests automatisch ab.
+if [[ "${SKIP_TESTS:-0}" != "1" ]]; then
+  echo "• Tests (RAILS_ENV=test) — Überspringen: SKIP_TESTS=1 bin/deploy"
+  RAILS_ENV=test bundle exec rails db:test:prepare test
+else
+  echo "• Tests ÜBERSPRUNGEN (SKIP_TESTS=1)"
+fi
+
+# 2. Migrations
+echo "• rails db:migrate"
+bundle exec rails db:migrate
+
+# 2b. Capabilities synchronisieren (neue Resource-Types auf bestehende
+#     Actors übertragen). Idempotent, erzeugt keine Example-Daten.
+echo "• rails capabilities:sync"
+bundle exec rails capabilities:sync
+
+# 3. Assets: public/assets/ komplett neu bauen, damit Propshaft garantiert
+#    den frischen tailwind-<digest>.css serviert.
+echo "• assets:precompile (clean)"
+rm -rf public/assets tmp/cache/assets
+bundle exec rails assets:precompile > /dev/null
+
+# 4. Puma neu starten — nur wenn systemd den Service kennt.
+# #378 Phase 7 (Hans, 2026-05-26): Post-Restart-Health-Probe gegen
+# `/up`. Erkennt Autoload-Deadlocks beim Puma-Start (passiert 2026-05-26:
+# neuer PID kam hoch, Port 3007 nie gebunden, SIGTERM ignoriert).
+# Wenn nach `HEALTH_PROBE_TIMEOUT`s noch kein 200, sigkill + systemd
+# bringt es noch einmal hoch.
+HEALTH_PROBE_URL="${HEALTH_PROBE_URL:-http://127.0.0.1:3007/up}"
+HEALTH_PROBE_TIMEOUT="${HEALTH_PROBE_TIMEOUT:-30}"
+
+probe_health() {
+  local probed_pid="$1"
+  for i in $(seq 1 "$HEALTH_PROBE_TIMEOUT"); do
+    if curl -sf -o /dev/null --max-time 2 "$HEALTH_PROBE_URL"; then
+      echo "  → health OK (${i}s)"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "  → health-probe TIMEOUT (${HEALTH_PROBE_TIMEOUT}s); SIGKILL $probed_pid"
+  kill -9 "$probed_pid" 2>/dev/null || true
+  # systemd Restart=always faengt das auf; einmal nachprobieren.
+  for i in $(seq 1 "$HEALTH_PROBE_TIMEOUT"); do
+    sleep 1
+    if curl -sf -o /dev/null --max-time 2 "$HEALTH_PROBE_URL"; then
+      echo "  → health OK nach SIGKILL+Restart (${i}s)"
+      return 0
+    fi
+  done
+  echo "  → health FAIL — Puma weiterhin nicht erreichbar"
+  return 1
+}
+
+if pid="$(systemctl show miolimos_src.service --property=MainPID --value 2>/dev/null)" \
+   && [[ -n "$pid" && "$pid" != "0" ]]; then
+  echo "• restart puma (PID=$pid, systemd Restart=always)"
+  kill -TERM "$pid"
+  new_pid=""
+  for i in {1..40}; do
+    sleep 1
+    new_pid="$(systemctl show miolimos_src.service --property=MainPID --value 2>/dev/null || echo 0)"
+    if [[ "$new_pid" != "$pid" && "$new_pid" != "0" ]]; then
+      echo "  → neue PID: $new_pid"
+      break
+    fi
+  done
+  if [[ "$new_pid" != "$pid" && "$new_pid" != "0" ]]; then
+    probe_health "$new_pid" || true
+  else
+    echo "  → systemd hat keinen neuen MainPID innerhalb 40s gemeldet"
+  fi
+else
+  echo "• systemd kennt miolimos_src.service nicht — Restart übersprungen"
+fi
+
+echo "── done ──────────────────────────────────────────────────────────"

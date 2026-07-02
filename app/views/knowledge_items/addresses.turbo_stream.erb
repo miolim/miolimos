@@ -1,0 +1,4 @@
+<%# #532: nach dem Speichern den Adress-Editor neu rendern. %>
+<%= turbo_stream.replace "postal_addresses_section_#{@item.uuid}" do %>
+  <%= render "knowledge_items/postal_address_editor", item: @item, in_stack: params[:in_stack].present? %>
+<% end %>

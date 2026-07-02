@@ -1,0 +1,22 @@
+<%# Organization-Sekundär-Felder: parent_org (Datalist mit Org-Titles),
+    Aliases. Body bleibt optional und prominent.
+    Locals: f %>
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.parent_org") %></span>
+  <%= f.text_field :parent_org,
+        list: "org-parent-suggestions-new",
+        placeholder: t("knowledge.form.parent_org_placeholder"),
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  <datalist id="org-parent-suggestions-new">
+    <% org_titles_for_datalist.each do |t| %>
+      <option value="<%= t %>"></option>
+    <% end %>
+  </datalist>
+</label>
+
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.aliases_comma") %></span>
+  <%= f.text_field :aliases,
+        placeholder: t("knowledge.form.aliases_placeholder_org"),
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+</label>

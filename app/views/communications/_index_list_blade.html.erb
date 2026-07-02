@@ -1,0 +1,87 @@
+<%# #163 Phase 6c (Communications): list:communications-Blade fuer die
+    /communications-Stack-Seite. Toolbar (Sort/Filter, Klassifikator-
+    Button) im sticky Header, Liste der Kommunikationen.
+
+    Datenquelle: @communications + @unclassified_count + @classifier_available
+    (aus CommunicationsController#index). %>
+<% stack_id = "list:communications" %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative
+                w-[38rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0
+                flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0
+                bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2
+                cursor-pointer hover:bg-slate-100"
+         title="<%= t('communications.index_title') %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
+    <span class="shrink-0 text-slate-500"><%= icon "communications" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("communications.index_title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
+    <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>
+    <turbo-frame id="communications_list_frame" class="contents">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-2">
+      <h1 class="font-semibold text-sm"><%= t("communications.index_title") %></h1>
+
+      <% if @unclassified_count > 0 %>
+        <%= button_to classify_all_communications_path,
+              method: :post,
+              form: { class: "inline m-0 p-0",
+                      data: { turbo_confirm: t("communications.classify_confirm", count: @unclassified_count) } },
+              disabled: !@classifier_available,
+              title: (@classifier_available ? nil : t("communications.ollama_unavailable")),
+              class: "text-xs rounded px-2 py-1 #{@classifier_available ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}" do %>
+          🧠 <%= t("communications.classify", count: @unclassified_count) %>
+        <% end %>
+      <% elsif !@classifier_available %>
+        <span class="text-xs text-amber-700" title="<%= t("communications.setup_hint") %>">
+          <%= t("communications.classifier_off") %>
+        </span>
+      <% end %>
+
+      <span class="ml-auto">
+        <%= render "shared/list_toolbar",
+              path:           communications_path,
+              frame:          "communications_list_frame",
+              sort_options:   [[t("communications.sort_date"), :sent_at],
+                               [t("communications.sort_sender"), :sender],
+                               [t("communications.sort_subject"), :subject]],
+              filter_fields:  [
+                { name: :q,         type: :text,   label: t("communications.search_label"),
+                  placeholder: t("communications.search_placeholder") },
+                { name: :direction, type: :select, label: t("communications.direction_label"),
+                  options: [[t("communications.all_directions"), ""],
+                            [t("communications.direction.inbound"),  "inbound"],
+                            [t("communications.direction.outbound"), "outbound"]] }
+              ],
+              current_sort:   @sort,
+              current_dir:    @dir,
+              filter_values:  { q: params[:q], direction: params[:direction] }.compact_blank,
+              storage_key:    "communications" %>
+      </span>
+    </header>
+
+    <section data-controller="active-row">
+      <% if @communications.empty? %>
+        <p class="px-4 py-3 text-slate-500"><%= t("dashboard.no_communications") %></p>
+      <% else %>
+        <ul class="divide-y divide-slate-100">
+          <% @communications.each do |c| %>
+            <%= render "communications/row", comm: c,
+                  blade_kind: "communication", blade_id: c.id %>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+    </turbo-frame>
+  </div>
+</article>

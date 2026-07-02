@@ -1,0 +1,100 @@
+<%# Ein Kommentar im Task-Thread. Locals: comment, collapsed (Bool).
+    Per-Comment-Disclosure (#143): nur der letzte Comment ist
+    expanded; alle früheren via Chevron einklappbar. Word-Count im
+    Header gibt dem User vorab eine Größenabschätzung. Body steckt im
+    body_frame (Turbo), damit Edit-Replace funktioniert; das Frame
+    sitzt INNERHALB des Disclosure-Content-Containers — der Edit-Link
+    löst zusätzlich `disclosure#expand` aus, damit der Edit-Form auch
+    in einem collapsed Comment auftaucht. %>
+<%
+  collapsed_default = local_assigns.fetch(:collapsed, false)
+  body_text = comment.body.to_s
+  word_count = body_text.scan(/[\p{L}\p{N}]+/).size
+%>
+<li id="task_comment_<%= comment.id %>"
+    data-controller="disclosure"
+    class="group flex gap-3 py-2 border-b border-slate-100 last:border-0">
+  <div class="shrink-0 mt-0.5 text-slate-400 w-5 flex justify-center">
+    <% if comment.actor.is_a?(AgentActor) %>
+      <%= icon "bot" %>
+    <% else %>
+      <%= icon "user" %>
+    <% end %>
+  </div>
+  <div class="flex-1 min-w-0">
+    <%# #144: Header explizit in zwei Zeilen — oben Name + Aktionen,
+        unten Datum + Wortzahl. Vorher waren alle Infos in einer
+        flex-Reihe; auf schmalen Spalten wurde jedes Element zur
+        eigenen Zeile. %>
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <button type="button"
+              data-action="click->disclosure#toggle"
+              class="flex items-center gap-1 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer">
+        <span data-disclosure-target="icon"
+              class="inline-block transition-transform <%= 'rotate-90' unless collapsed_default %> text-slate-400">
+          <%= icon "chevron_right" %>
+        </span>
+        <span class="font-medium text-slate-700"><%= comment.actor.name %></span>
+      </button>
+      <%# #167: Entwurfs-Pill + Veröffentlichen-Aktion. Drafts sind nur
+          für den Autor sichtbar (visible_to?-Filter in tasks/_detail_comments). %>
+      <% if comment.draft? %>
+        <span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[10px] uppercase tracking-wider">
+          <%= t("task_comments.draft") %>
+        </span>
+        <% if comment.actor_id == current_actor.id %>
+          <%= button_to t("task_comments.publish"), publish_task_comment_path(comment.task, comment),
+                method: :post,
+                form: { class: "inline m-0 p-0 leading-none" },
+                class: "px-1.5 py-0 rounded bg-emerald-600 text-white text-[11px] hover:bg-emerald-700 cursor-pointer border-0" %>
+        <% end %>
+      <% end %>
+      <span class="ml-auto flex items-center gap-1 [&_svg]:w-3.5 [&_svg]:h-3.5">
+        <%# #345 (Hans, 2026-05-24): Copy-Link-Icon — kopiert eine
+            stabile URL zu diesem Comment in die Zwischenablage. Ankert
+            ueber `#task_comment_<id>` direkt im Task-Stack. %>
+        <% comment_link = "#{root_url.chomp('/')}#{task_path(comment.task)}##{ 'task_comment_' + comment.id.to_s }" %>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= comment_link %>"
+                data-copy-clipboard-toast-value="<%= t("task_comments.link_copied") %>"
+                title="<%= t("task_comments.copy_link_title") %>"
+                aria-label="<%= t("task_comments.copy_link") %>"
+                class="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 bg-transparent border-0 cursor-pointer">
+          <%= icon "external_link" %>
+        </button>
+        <% if comment.editable_by?(current_actor) %>
+          <%= link_to edit_task_comment_path(comment.task, comment),
+                data: { turbo_frame: "task_comment_body_#{comment.id}",
+                        action: "click->disclosure#expand" },
+                title: t("actions.edit"), "aria-label": t("actions.edit"),
+                class: "p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100" do %>
+            <%= icon "pencil" %>
+          <% end %>
+          <%= button_to task_comment_path(comment.task, comment),
+                method: :delete,
+                form: { class: "inline m-0 p-0 leading-none",
+                        data: { turbo_confirm: t("task_comments.delete_confirm") } },
+                title: t("actions.delete"), "aria-label": t("actions.delete"),
+                class: "p-1 rounded text-rose-700 hover:bg-rose-50 bg-transparent border-0 cursor-pointer" do %>
+            <%= icon "trash" %>
+          <% end %>
+        <% end %>
+      </span>
+    </div>
+    <%# #144 follow-up: Datum/Wortzahl-Zeile beginnt linksbündig mit dem
+        Kommentator-Namen (also rechts vom Chevron), nicht direkt unterm
+        Chevron — sonst sieht der Stack visuell gequetscht aus. Padding
+        entspricht Chevron-Breite (w-3.5 = 14px) + gap-1 (4px) = 18px. %>
+    <div class="flex items-center gap-2 pl-[18px] text-[11px] text-slate-400">
+      <span><%= l(comment.created_at, format: "%d.%m.%Y, %H:%M") %></span>
+      <span title="<%= t("task_comments.words_title") %>">
+        · <%= t("task_comments.word_count", count: word_count) %>
+      </span>
+    </div>
+    <div data-disclosure-target="content" class="<%= 'hidden' if collapsed_default %>">
+      <%= render "task_comments/body_frame", comment: comment %>
+    </div>
+  </div>
+</li>

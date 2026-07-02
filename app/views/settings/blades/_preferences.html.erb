@@ -1,0 +1,104 @@
+<%# #613: aus app/views/settings/preferences/show.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_preferences. %>
+  
+  <%= form_with url: settings_preferences_path, method: :patch,
+        class: "bg-white rounded border border-slate-200 divide-y divide-slate-100",
+        data: { turbo: false } do |f| %>
+
+    <%# #619 (Hans): UI-Sprache pro Nutzer (DE/EN). %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.language_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.language_help") %></p>
+      <select name="preferences[locale]"
+              class="text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+        <% ActorPreferences::LOCALES.each do |loc| %>
+          <option value="<%= loc %>" <%= "selected" if current_actor.pref_locale == loc %>><%= t("languages.#{loc}") %></option>
+        <% end %>
+      </select>
+    </section>
+
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.card_widths_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.card_widths_help") %></p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
+        <% current_actor.pref_card_widths.each do |kind, width| %>
+          <label class="flex items-center gap-2">
+            <span class="w-32 text-slate-700"><%= kind %></span>
+            <input type="number" name="preferences[card_widths][<%= kind %>]"
+                   value="<%= width.to_i %>" min="16" max="120" step="1"
+                   class="w-20 rounded border border-slate-200 px-2 py-1 tabular-nums">
+            <span class="text-xs text-slate-400">rem</span>
+          </label>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.wheel_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.wheel_help") %></p>
+      <div class="flex gap-4 text-sm">
+        <% ActorPreferences::WHEEL_PRESETS.keys.each do |preset| %>
+          <label class="flex items-center gap-1.5">
+            <input type="radio" name="preferences[wheel_preset]" value="<%= preset %>"
+                   <%= "checked" if current_actor.pref_wheel_preset == preset %>>
+            <span><%= preset %></span>
+          </label>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.sidebar_click_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.sidebar_click_help") %></p>
+      <div class="flex flex-col gap-1 text-sm">
+        <label class="flex items-center gap-1.5">
+          <input type="radio" name="preferences[sidebar_click_mode]" value="navigate"
+                 <%= "checked" if current_actor.pref_sidebar_click_mode == "navigate" %>>
+          <span><%= t("preferences.sidebar_click_replace_html") %></span>
+        </label>
+        <label class="flex items-center gap-1.5">
+          <input type="radio" name="preferences[sidebar_click_mode]" value="append"
+                 <%= "checked" if current_actor.pref_sidebar_click_mode == "append" %>>
+          <span><%= t("preferences.sidebar_click_append_html") %></span>
+        </label>
+      </div>
+    </section>
+
+    <%# #435 (Hans, 2026-06-01): Anzahl der zuletzt geoeffneten Themen in der Sidebar. %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.recent_topics_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.recent_topics_help_html") %></p>
+      <input type="number" name="preferences[sidebar_recent_topics_count]"
+             min="0" max="20" step="1"
+             value="<%= current_actor.pref_sidebar_recent_topics_count %>"
+             class="w-20 text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+    </section>
+
+    <%# #709 (Hans): CM6 ist jetzt der Standard-Editor (kein Umschalter mehr;
+        die alte Plain-Textarea-Ansicht ist abgeschafft). Per-Request-
+        Override für Tests bleibt via ?cm6=0 möglich. %>
+
+    <%# #768 (Hans): explizite Selbst-Identität — verknüpft Dich mit Deiner
+        Personen-KI. Daraus zieht der Mail-Sync Deine eigenen Adressen. %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.self_ki_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.self_ki_help") %></p>
+      <input type="text" name="preferences[person_ki_title]" list="self-ki-persons"
+             value="<%= current_actor.person_ki&.title %>"
+             placeholder="<%= t('preferences.self_ki_placeholder') %>"
+             class="w-full max-w-md text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+      <datalist id="self-ki-persons">
+        <% KnowledgeItem.persons.where(deleted_at: nil).order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |ti| %>
+          <option value="<%= ti %>"></option>
+        <% end %>
+      </datalist>
+      <% if current_actor.person_ki %>
+        <p class="text-xs text-slate-400 mt-1"><%= t("preferences.self_ki_addresses", n: current_actor.self_email_addresses.size) %></p>
+      <% end %>
+    </section>
+
+    <div class="px-4 py-3 flex justify-end">
+      <%= f.submit t("preferences.save"),
+            class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+    </div>
+  <% end %>

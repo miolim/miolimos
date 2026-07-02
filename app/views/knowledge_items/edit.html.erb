@@ -1,0 +1,15 @@
+<% content_for :title, t("knowledge.form.edit_title", title: @item.title) %>
+
+<%# Edit-Mode rendert dasselbe Detail-Partial wie show, nur mit
+    mode: :edit. Wenn ?in_stack=1 mitkommt, wird's im Stack-Modus
+    gerendert (Close-×, kein Expand) — der Frame-Aufruf aus einer
+    Stack-Card landet hier. %>
+<% in_stack_edit = params[:in_stack].present? %>
+<div class="<%= 'max-w-3xl bg-white rounded border border-slate-200 p-4' unless in_stack_edit %>">
+  <%= render "knowledge_items/detail",
+        item:          @item,
+        mode:          :edit,
+        body_markdown: @body_markdown,
+        expanded:      !in_stack_edit,
+        in_stack:      in_stack_edit %>
+</div>

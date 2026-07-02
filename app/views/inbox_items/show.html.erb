@@ -1,0 +1,12 @@
+<% content_for :title, @item.display_title %>
+
+<%# Vollansicht (z.B. wenn Detail direkt aufgerufen wird, nicht via
+    Frame-Replacement). Detail-Partial bringt seinen turbo_frame_tag
+    selbst mit. %>
+<div class="max-w-3xl">
+  <%= render "inbox_items/detail",
+        item: @item,
+        processors: @processors,
+        prompt_templates: @prompt_templates,
+        suggested: @suggested %>
+</div>

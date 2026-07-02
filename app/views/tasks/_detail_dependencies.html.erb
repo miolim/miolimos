@@ -1,0 +1,35 @@
+<%# Abhängigkeiten: Predecessors als Chips + Picker zum Hinzufügen.
+    Successors read-only — die Verbindung wird ja vom Predecessor aus
+    gepflegt; hier nur Anzeige.
+    #142: leading Entity-Icon, Border via Disclosure-Wrapper. %>
+<div class="text-[13px] space-y-2">
+  <% excluded_ids = ([task.id] + task.predecessors.pluck(:id) + task.successors.pluck(:id)).join(",") %>
+  <%= render "shared/entity_picker",
+        icon:           "later",
+        chips_id:       "task_dependencies_chips_#{task.id}",
+        chips_partial:  "tasks/dependencies_chips",
+        chips_locals:   { task: task },
+        suggest_url:    suggest_tasks_path(exclude_ids: excluded_ids),
+        add_url:        task_dependencies_path(task),
+        param_name:     "predecessor_id",
+        label:          "Blockierende Aufgabe",
+        placeholder:    "Blockierende Aufgabe",
+        create_label:   "Aufgabe anlegen",
+        allow_create:   false %>
+
+  <% if task.successors.any? %>
+    <div class="text-xs text-slate-500 mt-3 mb-1"><%= t("tasks.blocks") %></div>
+    <ul>
+      <% task.successors.each do |s| %>
+        <li class="task-successors-list-item py-0.5">
+          <%# #756: Blade-Append statt task_detail-Frame. %>
+          <%= link_to s.title, task_path(s),
+                data: { controller: "blade-link", blade_link_kind_value: "task",
+                        blade_link_id_value: s.id, action: "click->blade-link#append" },
+                class: "hover:underline" %>
+          <%= status_badge s.status, labels: t("tasks.status") %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

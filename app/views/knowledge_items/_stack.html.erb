@@ -1,0 +1,217 @@
+<%# Sliding-Pane-Stack-Layout für Knowledge-Items.
+    Wiederverwendbar — wird vom Index (/knowledge_items) UND vom Topic-
+    Tab (/topics/:slug?tab=knowledge) genutzt.
+
+    Locals:
+      - items                — Array<KnowledgeItem> für die linke Liste
+      - initial_stack_items  — Array<BladeStackLoader::Item> für den Initial-Stack
+                               (kann KIs, Tasks, Topics, Sources mischen)
+      - initial_stack_bodies — Hash<KI-uuid => body_html> (vom Controller vorgerendet,
+                               nur fuer KI-Items befuellt)
+      - header_title         — Optional, Default "Wissen"
+      - list_storage_key     — Optional, Default "knowledge.list_visible"
+      - history_storage_key  — Optional, Default "knowledge.stack.history"
+      - header_actions       — Optional Block-Helper für Buttons rechts oben %>
+<%
+  header_title        = local_assigns.fetch(:header_title, t("knowledge.index_title"))
+  list_storage_key    = local_assigns.fetch(:list_storage_key, "knowledge.list_visible")
+  list_width_key      = local_assigns.fetch(:list_width_key, "knowledge.list_width")
+  history_storage_key = local_assigns.fetch(:history_storage_key, "knowledge.stack.history")
+  header_actions      = local_assigns[:header_actions]
+%>
+<%# Höhe übernimmt der Stack vom Parent (h-full) — Aufrufer wickelt
+    ihn in einen Container mit definierter Höhe. Auf der KI-Index-Seite
+    ist der Wrapper genau die Viewport-Höhe abzüglich Topbar; auf der
+    Topic-Show-Seite ist es ein flex-1 in einem flex-col-Layout, sodass
+    Topic-Detail + Tabs darüber Platz bekommen, ohne dass die Page als
+    Ganzes scrollt (siehe #89 — vorher gab es zwei Scrollbalken). %>
+<div data-controller="blade-stack list-splitter"
+     data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
+     data-blade-stack-history-storage-key-value="<%= history_storage_key %>"
+     data-list-splitter-storage-key-value="<%= list_width_key %>"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex items-stretch h-full">
+
+  <%# Liste — Mobile volle Breite, ab md mit dynamischer Breite (vom
+      list-splitter-Controller gesetzt). Eingeklappt wird die ganze
+      Aside zu einem schmalen Vertikal-Streifen mit gedrehtem Title +
+      Counter; in dem Modus übernimmt `data-[collapsed=true]:md:w-9`
+      die Breite. Default-Collapse bei < lg (1024px). %>
+  <aside data-list-splitter-target="leftPane"
+         data-controller="disclosure list-columns"
+         data-disclosure-storage-key-value="<%= list_storage_key %>"
+         data-disclosure-collapse-below-value="1024px"
+         data-list-columns-storage-key-value="knowledge.list_columns_expanded"
+         class="group/list group/cols flex flex-col bg-white border border-slate-200 rounded
+                max-h-full overflow-hidden shrink-0 mr-2
+                data-[collapsed=true]:w-9 transition-[width] duration-150">
+    <header class="px-2 py-2 border-b border-slate-200 flex items-center gap-2 bg-slate-50
+                   group-data-[collapsed=true]/list:px-0 group-data-[collapsed=true]/list:justify-center">
+      <button type="button"
+              data-action="click->disclosure#toggle"
+              aria-label="<%= t("knowledge.form.toggle_list") %>"
+              class="flex items-center gap-2 hover:bg-slate-100 px-1 py-0.5 rounded">
+        <span data-disclosure-target="icon"
+              class="inline-block transition-transform rotate-90 text-slate-400">
+          <%= icon "chevron_right" %>
+        </span>
+        <h1 class="font-semibold text-sm group-data-[collapsed=true]/list:hidden"><%= header_title %></h1>
+      </button>
+      <span class="text-xs text-slate-500 group-data-[collapsed=true]/list:hidden"><%= items.size %></span>
+
+      <%# Spalten-Toggle: Chevron rechts; klappt Creator+Erstelldatum
+          ein. Drehung über Tailwind-data-Variant am inner-span. %>
+      <button type="button"
+              data-action="click->list-columns#toggle"
+              title="<%= t("knowledge.form.expand_columns") %>" aria-label="<%= t("knowledge.form.expand_columns") %>"
+              class="ml-auto p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100
+                     group-data-[collapsed=true]/list:hidden cursor-pointer">
+        <span class="inline-block transition-transform group-data-[cols-expanded=true]/cols:rotate-180">
+          <%= icon "chevron_right" %>
+        </span>
+      </button>
+
+      <% if header_actions.present? %>
+        <span class="flex items-center gap-2 group-data-[collapsed=true]/list:hidden">
+          <%= header_actions %>
+        </span>
+      <% end %>
+    </header>
+
+    <%# Vertikales Label im Collapsed-Modus — zeigt Title + Counter
+        gedreht. #163-Folge: das div fuellt jetzt die GESAMTE Spine-
+        Hoehe (flex-1), damit Klick ueberall auf dem Streifen die
+        Liste expandiert — nicht nur auf Title/Counter oder Chevron. %>
+    <div class="hidden group-data-[collapsed=true]/list:flex flex-1 flex-col items-center pt-3 gap-2 cursor-pointer hover:bg-slate-50"
+         data-action="click->disclosure#toggle">
+      <span class="text-xs font-semibold text-slate-700 [writing-mode:vertical-rl] rotate-180"><%= header_title %></span>
+      <span class="text-xs text-slate-500 [writing-mode:vertical-rl] rotate-180"><%= items.size %></span>
+    </div>
+
+    <div data-disclosure-target="content" class="flex-1 overflow-y-auto min-h-0">
+      <ul id="knowledge_list" class="divide-y divide-slate-100">
+        <% items.each do |k| %>
+          <%= render "knowledge_items/list_row", item: k %>
+        <% end %>
+        <% if items.empty? %>
+          <li class="px-4 py-3 text-slate-500 text-sm">—</li>
+        <% end %>
+      </ul>
+    </div>
+  </aside>
+
+  <%# Splitter zwischen Liste und Stack-Bereich. Wird vom
+      list-splitter-Controller versteckt, wenn die Liste collapsed
+      ist — im Streifen-Modus toggelt man via Klick auf den Streifen. %>
+  <div data-list-splitter-target="handle"
+       data-action="pointerdown->list-splitter#startDrag"
+       class="block w-1 self-stretch shrink-0 mx-1 bg-slate-200 hover:bg-emerald-400 cursor-col-resize touch-none"></div>
+
+  <%# Stack-Bereich rechts: Trail-Toolbar + Card-Container.
+      min-w-0 + overflow-hidden zwingt das overflow-x-auto auf <main>
+      darunter, das Hinausragen sticky-right-positionierter Cards zu
+      clippen — sonst wandert die Scrollbar an die Liste links. %>
+  <div class="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden relative"
+       data-controller="stack-history"
+       data-stack-history-resolve-url-value="<%= resolve_knowledge_items_path %>"
+       data-stack-history-storage-key-value="<%= history_storage_key %>">
+
+    <div class="flex items-center gap-2 px-2 py-1 bg-white border border-slate-200 rounded mb-2 text-xs">
+      <button type="button"
+              data-blade-stack-target="trailBack"
+              data-action="click->blade-stack#trailBack"
+              title="<%= t("knowledge.form.trail_back_title") %>" aria-label="<%= t("knowledge.form.trail_back") %>"
+              class="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed">
+        ←
+      </button>
+      <button type="button"
+              data-blade-stack-target="trailForward"
+              data-action="click->blade-stack#trailForward"
+              title="<%= t("knowledge.form.trail_forward_title") %>" aria-label="<%= t("knowledge.form.trail_forward") %>"
+              class="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed">
+        →
+      </button>
+      <span data-blade-stack-target="trailStep" class="hidden text-slate-400"></span>
+
+      <button type="button"
+              data-action="click->stack-history#toggle"
+              title="<%= t("knowledge.form.open_history") %>" aria-label="<%= t("knowledge.form.history") %>"
+              class="ml-auto p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100">
+        📚 <%= t("knowledge.form.history") %>
+      </button>
+      <%# #759 (Hans, 2026-06-23): Das ⌨-Shortcut-Icon ist hier entfernt —
+          es sitzt jetzt global in der Topbar (Lucide-Icon). Die Übersicht
+          öffnet weiterhin auch die Taste „?". %>
+    </div>
+
+    <%# Bewusst KEIN `snap-x` — Cards sind sticky-positioniert mit
+        kumulativem left/right-Offset (siehe blade_stack#restickify),
+        Browser-Scroll-Snap wirft den Scroll dann zurück zur ersten
+        Snap-Position. Sanftes Scrollen erhalten wir trotzdem über
+        scroll-smooth. %>
+    <main id="blade_stack_container" data-blade-stack-target="container"
+          class="flex-1 flex overflow-x-auto scroll-smooth
+                 bg-slate-50 rounded border border-slate-200 min-h-0">
+      <% new_card_type       = local_assigns[:new_card_type] %>
+      <% new_card_bib_source = local_assigns[:new_card_bib_source] %>
+      <% if initial_stack_items.empty? && new_card_type.blank? %>
+        <p class="m-auto text-sm text-slate-400 italic"><%= t("knowledge.form.select_entry_left") %></p>
+      <% else %>
+        <%# #163 Phase 5a: initial_stack_items sind BladeStackLoader::Item-Objekte;
+            jedes Item kennt sein partial und seine locals. KI-Items
+            bekommen body_html aus der initial_stack_bodies-Map mit. %>
+        <% initial_stack_items.each do |stack_item| %>
+          <% locals = stack_item.partial_locals %>
+          <% locals = locals.merge(body_html: initial_stack_bodies[stack_item.record.uuid]) if stack_item.kind == :ki %>
+          <%= render stack_item.partial, **locals %>
+        <% end %>
+        <%# Cross-Navigation-Hook: ?new_type=… öffnet sofort ein New-Card
+            mit ggf. vorbelegter bib_source (z.B. von der Source-Detail). %>
+        <% if new_card_type %>
+          <%= render "knowledge_items/stack_new_card",
+                topic_slugs:        nil,
+                default_type:       new_card_type,
+                default_bib_source: new_card_bib_source %>
+        <% end %>
+      <% end %>
+    </main>
+
+    <%# History-Drawer schiebt sich über den Stack ein, wenn geöffnet.
+        Zwei gleich breite Spalten: links Gepinnt, rechts Verlauf.
+        Bei sehr schmalem Drawer (Container-Query < 32rem) klappen sie
+        vertikal (Pinned oben, Verlauf darunter). %>
+    <div data-stack-history-target="drawer"
+         class="@container hidden absolute right-0 top-0 bottom-0 w-[44rem] max-w-[calc(100vw-2rem)]
+                bg-white border-l border-slate-200 shadow-xl z-30 flex flex-col">
+      <header class="px-3 py-2 border-b border-slate-200 flex items-center gap-2">
+        <h2 class="font-semibold text-sm"><%= t("knowledge.form.stack_history") %></h2>
+        <span data-stack-history-target="count" class="text-xs text-slate-500"></span>
+        <button type="button"
+                data-action="click->stack-history#clear"
+                class="ml-auto text-xs text-slate-500 hover:text-rose-600">
+          <%= t("knowledge.form.clear_history") %>
+        </button>
+        <button type="button"
+                data-action="click->stack-history#toggle"
+                aria-label="<%= t("knowledge.form.close") %>"
+                class="text-slate-500 hover:text-slate-900 text-lg leading-none">×</button>
+      </header>
+      <div class="flex flex-col @[32rem]:flex-row flex-1 min-h-0 overflow-y-auto @[32rem]:overflow-y-hidden">
+        <div class="@[32rem]:flex-1 @[32rem]:border-r border-b @[32rem]:border-b-0 border-slate-200 bg-slate-50 flex flex-col min-h-0">
+          <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200 bg-white/50">
+            📌 <%= t("knowledge.form.pinned") %>
+          </div>
+          <div data-stack-history-target="pinnedList"
+               class="flex-1 @[32rem]:overflow-y-auto px-2 py-2 space-y-1.5"></div>
+        </div>
+        <div class="@[32rem]:flex-1 flex flex-col min-h-0">
+          <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200">
+            <%= t("knowledge.form.history") %>
+          </div>
+          <div data-stack-history-target="list"
+               class="flex-1 @[32rem]:overflow-y-auto px-2 py-2 space-y-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

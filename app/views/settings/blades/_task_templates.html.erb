@@ -1,0 +1,97 @@
+<%# #613: aus app/views/settings/task_templates/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_task_templates. %>
+<%# #299: Aufgabenvorlagen. Liste links, Anlege-/Edit-Form rechts.
+    Vorlagen haben Titel + Beschreibung + optional einen Default-
+    Agent (priorisiert in dessen Quickadd-Picker). %>
+<div class="space-y-3">
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <%# Linke Spalte: Liste der vorhandenen Vorlagen. %>
+    <section class="md:col-span-2 bg-white rounded border border-slate-200 divide-y divide-slate-100">
+      <header class="px-4 py-3 flex items-center gap-3">
+        <h2 class="text-sm font-semibold text-slate-900"><%= t("settings.task_templates.existing") %></h2>
+        <span class="text-xs text-slate-500"><%= @task_templates.size %></span>
+      </header>
+      <% if @task_templates.any? %>
+        <ul class="divide-y divide-slate-100">
+          <% @task_templates.each do |t| %>
+            <li class="px-4 py-2 flex items-start gap-3 group hover:bg-slate-50">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-slate-900 truncate"><%= t.title %></span>
+                  <% if t.agent_actor %>
+                    <span class="shrink-0 inline-flex items-center px-1.5 py-0 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] uppercase tracking-wider"
+                          title="<%= t("settings.task_templates.default_agent_badge") %>">
+                      <%= t.agent_actor.name %>
+                    </span>
+                  <% end %>
+                </div>
+                <% if t.description.present? %>
+                  <div class="text-xs text-slate-500 truncate"><%= t.description %></div>
+                <% end %>
+              </div>
+              <%= link_to t("actions.edit"), edit_settings_task_template_path(t),
+                    class: "text-xs text-slate-500 hover:text-slate-900 shrink-0" %>
+              <%= button_to t("actions.delete"), settings_task_template_path(t),
+                    method: :delete,
+                    form: { class: "inline shrink-0", data: { turbo_confirm: t("settings.task_templates.delete_confirm", title: t.title) } },
+                    class: "text-xs text-rose-600 hover:text-rose-800 bg-transparent border-0 cursor-pointer p-0" %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="px-4 py-3 text-sm text-slate-500 italic">
+          <%= t("settings.task_templates.empty") %>
+        </p>
+      <% end %>
+    </section>
+
+    <%# Rechte Spalte: Anlege-/Edit-Form. %>
+    <section class="bg-white rounded border border-slate-200">
+      <header class="px-4 py-3 border-b border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-900">
+          <%= @new_task_template.persisted? ? t("settings.task_templates.form_edit_title") : t("settings.task_templates.form_new_title") %>
+        </h2>
+      </header>
+      <%= form_with model: @new_task_template,
+            url: @new_task_template.persisted? ? settings_task_template_path(@new_task_template) : settings_task_templates_path,
+            class: "px-4 py-3 space-y-3",
+            data: { turbo: false } do |f| %>
+        <% if @new_task_template.errors.any? %>
+          <div class="text-xs text-rose-700">
+            <%= @new_task_template.errors.full_messages.to_sentence %>
+          </div>
+        <% end %>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_title") %></span>
+          <%= f.text_field :title, required: true, autofocus: true,
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_description") %></span>
+          <%= f.text_area :description, rows: 6,
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none font-mono [field-sizing:content]" %>
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_default_agent") %></span>
+          <%= f.select :agent_actor_id,
+                @agent_actors.map { |a| [a.name, a.id] },
+                { include_blank: t("settings.task_templates.agent_global") },
+                class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+          <span class="block text-[11px] text-slate-500 mt-0.5">
+            <%= t("settings.task_templates.default_agent_hint") %>
+          </span>
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <% if @new_task_template.persisted? %>
+            <%= link_to t("actions.cancel"), settings_task_templates_path,
+                  class: "text-xs text-slate-500 hover:text-slate-900 self-center" %>
+          <% end %>
+          <%= f.submit @new_task_template.persisted? ? t("settings.task_templates.submit_update") : t("actions.create"),
+                class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</div>
+

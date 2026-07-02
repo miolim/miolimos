@@ -1,0 +1,48 @@
+<%# #564: gemeinsamer Spine aller Detail-Blades. Vorher 8× kopiert
+    (tasks/awaitings/communications/time_entries/topics/documents/KIs/
+    invoice_lines) — jede Spine-Änderung musste überall nachgezogen werden.
+
+    Locals:
+      - stack_id   — data-target-uuid der Card (Pflicht)
+      - title      — title-Attribut (Tooltip)
+      - label      — vertikaler Text; HTML via capture-Block erlaubt
+      - icon_html  — Inhalt des Icon-Slots (z.B. icon "tasks", topic_marker, "⏳")
+      - icon_class — optionale Zusatzklassen für den Icon-Slot
+                     (Default text-slate-500; "" für eigene Färbung im icon_html)
+      - topics     — optional, Topics des Items (#636): Farbpunkte unter
+                     dem Icon, Klick öffnet das Topic als Blade
+      - extra_actions — optional, zusätzliche Icon-Buttons (HTML) direkt
+                     unter dem Kopier-Button (z.B. PDF-Aktionen #683) %>
+<%
+  icon_class   = local_assigns.fetch(:icon_class, "text-slate-500")
+  spine_topics = Array(local_assigns[:topics]).compact.first(3)
+%>
+<aside class="stack-spine self-stretch w-7 shrink-0
+              bg-slate-50 border-r border-slate-200
+              flex flex-col items-center pt-2 gap-2
+              cursor-pointer hover:bg-slate-100"
+       title="<%= title %>"
+       data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+       data-target-uuid="<%= stack_id %>">
+  <span class="shrink-0 <%= icon_class %>"><%= icon_html %></span>
+  <%# #630: Referenz (Wikilink bzw. URL) in die Zwischenablage. %>
+  <%= blade_copy_button(stack_id) %>
+  <%# #683: optionale Zusatz-Aktionen (z.B. PDF Full-Blade + neuer Tab). %>
+  <%= local_assigns[:extra_actions] %>
+  <%# #636: Topic-Farbpunkte — Klick öffnet das Thema als Blade. %>
+  <% spine_topics.each do |t| %>
+    <button type="button"
+            data-controller="blade-link"
+            data-blade-link-kind-value="topic"
+            data-blade-link-id-value="<%= t.slug %>"
+            data-action="click->blade-link#append"
+            title="Thema: <%= t.name %>" aria-label="Thema <%= t.name %>"
+            class="shrink-0 w-3 h-3 rounded-full cursor-pointer border border-slate-300/60 hover:scale-125 transition-transform p-0"
+            style="background: <%= t.color.presence || '#94a3b8' %>"></button>
+  <% end %>
+  <%# `[writing-mode:vertical-rl]` lässt den Text nach unten laufen, OHNE
+      rotate-180 (würde bottom-up umdrehen) — Start grenzt ans Icon an. %>
+  <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+               [writing-mode:vertical-rl] min-h-0 flex-1"><%= label %></span>
+  <%= render "shared/blade_close_button" %>
+</aside>

@@ -1,0 +1,16 @@
+<%# #631 v2: nächste Verlaufs-Seite — Antwort auf den „Mehr laden"-Frame.
+    Ersetzt den Frame durch die nächsten Zeilen + neuen Schwanz. %>
+<%
+  before    = params[:before].to_s
+  views     = history_recent_views(before: before)
+  viewables = history_preload_viewables(views)
+%>
+<%= turbo_frame_tag "history_more_#{before.tr('.', '-')}", class: "contents" do %>
+  <%= render "history/rows", views: views, viewables: viewables %>
+  <% if views.size >= HistoryHelper::HISTORY_PAGE_SIZE %>
+    <%= render "history/more_frame", before: views.last.viewed_at.to_f.to_s %>
+  <% end %>
+  <% if views.empty? %>
+    <li class="py-2 text-center text-xs text-slate-400 italic list-none"><%= t("history.end_of_history") %></li>
+  <% end %>
+<% end %>

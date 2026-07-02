@@ -1,0 +1,74 @@
+<%# Resultat eines erfolgreich verarbeiteten Inbox-Items. Zeigt erzeugte
+    KIs/Tasks (mit Filter auf existierende Records, damit gelöschte
+    Einträge nicht zu 404-Klicks führen) und die ggf. verlinkte Source.
+
+    Locals: item %>
+<%
+  created = Array(item.result["created"]).select do |c|
+    case c["kind"]
+    when "knowledge_item" then KnowledgeItem.exists?(uuid: c["uuid"])
+    when "task"           then Task.exists?(id: c["id"])
+    else true
+    end
+  end
+
+  # Source-Verknüpfung kommt nicht über result["created"], sondern direkt
+  # über die KI: KI.bib_source. Wir holen die zur ersten erzeugten KI.
+  source = nil
+  first_ki_uuid = created.find { |c| c["kind"] == "knowledge_item" }&.dig("uuid")
+  if first_ki_uuid
+    ki = KnowledgeItem.find_by(uuid: first_ki_uuid)
+    source = ki&.bib_source
+  end
+%>
+
+<section class="rounded border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-2">
+  <div class="text-xs uppercase tracking-wider text-emerald-800"><%= t("inbox_items.result") %></div>
+  <% if created.empty? && source.nil? %>
+    <p class="text-sm text-emerald-900 italic"><%= t("inbox_items.no_artifacts") %></p>
+  <% else %>
+    <ul class="text-[13px] space-y-1">
+      <%# data-turbo-frame="_top" verhindert, dass Turbo den Klick in den
+          inbox_detail-Frame zu legen versucht („Content missing"). KIs
+          öffnen wir direkt in der Stack-Ansicht — dort hat der User die
+          gewohnte Card-UX, kann Wikilinks/Sources aufstapeln und per
+          Sidebar-Klick zurück zur Inbox. %>
+      <% created.each do |c| %>
+        <li class="flex items-center gap-2">
+          <%# #629: Lucide-Icons statt Emoji (renderten als Kästchen). %>
+          <% if c["kind"] == "knowledge_item" %>
+            <span class="shrink-0 text-emerald-700" aria-hidden="true"><%= icon "knowledge", size: "w-4 h-4" %></span>
+            <%= link_to c["title"], knowledge_items_path(stack: c["uuid"]),
+                  data: { turbo_frame: "_top" },
+                  class: "hover:underline text-emerald-900 truncate" %>
+          <% elsif c["kind"] == "task" %>
+            <span class="shrink-0 text-emerald-700" aria-hidden="true"><%= icon "tasks", size: "w-4 h-4" %></span>
+            <%= link_to c["title"], task_path(c["id"]),
+                  data: { turbo_frame: "_top" },
+                  class: "hover:underline text-emerald-900 truncate" %>
+          <% end %>
+        </li>
+      <% end %>
+      <% if source %>
+        <% reused = item.result.dig("source", "reused") %>
+        <li class="flex items-center gap-2">
+          <span class="shrink-0 text-emerald-700" aria-hidden="true"><%= icon "book_open", size: "w-4 h-4" %></span>
+          <%= link_to source.title.presence || source.slug,
+                source_path(source.slug),
+                data: { turbo_frame: "_top" },
+                class: "hover:underline text-emerald-900 truncate",
+                title: t("inbox_items.bibliographic_source") %>
+          <span class="text-[11px] text-emerald-700">
+            <%= reused ? t("inbox_items.source_reused") : t("inbox_items.source_new") %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if item.processed_at %>
+    <div class="text-[11px] text-emerald-700/80 pt-1">
+      <%= t("inbox_items.processed_at", time: l(item.processed_at, format: :short)) %>
+    </div>
+  <% end %>
+</section>

@@ -1,0 +1,55 @@
+<%# #198: Dreizeilige Quellen-Zeile — Autoren / Titel / CSL-Typ.
+    Slug wandert in den Hover-Tooltip (nicht mehr sichtbar in der Liste).
+    #291: blade-link statt nur viewport_frame_data, damit Klick auf
+    Stack-Seiten (Topic-Detail) die Quelle als Blade an den aktuellen
+    Stack appendet statt einen neuen Stack zu eroeffnen. Auf Seiten
+    ohne blade-stack faellt es auf href = source_path zurueck (Default-
+    Nav), weil der blade-link-Controller den preventDefault nur dann
+    macht, wenn document.body has-blade-stack-Klasse traegt. %>
+<%# #291 follow-up: li-Layout auf flex umgestellt, damit das JS-injected
+    Jump-Chevron (#287, blade-stack-Controller _refreshInStackMarkers)
+    LINKS NEBEN den 3-Zeilen-Block sitzt statt darueber — der wird vor
+    dem <a> eingefuegt. flex+items-center zentriert das Chevron vertikal,
+    flex-1 am Link nimmt den Rest. %>
+<li id="source_row_<%= source.slug %>"
+    data-source-slug="<%= source.slug %>"
+    title="@<%= source.slug %>"
+    class="group px-4 py-2 flex items-center gap-2 odd:bg-white even:bg-slate-50/60 hover:bg-emerald-50 border-l-4 border-l-transparent data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-100">
+  <%= link_to source_path(source.slug),
+        data: {
+          controller: "blade-link",
+          "blade-link-kind-value": "source",
+          "blade-link-id-value": source.slug,
+          action: "click->blade-link#append",
+          turbo_frame: "_top"
+        },
+        class: "flex-1 min-w-0 block hover:underline" do %>
+    <% if (authors = source.display_authors_list).present? %>
+      <div class="text-[12px] text-slate-600 truncate"><%= authors %></div>
+    <% end %>
+    <div class="font-medium text-[13px] text-slate-900 truncate"><%= source.title %></div>
+    <div class="text-[11px] text-slate-500"><%= source.csl_type_label %></div>
+  <% end %>
+
+  <%# #494 Option 1 (Hans, 2026-06-04): „+ ins Thema" an einer zitierten
+      Quelle übernimmt sie als Recherche-Quelle (Relevanz/Notiz/Toggle).
+      Nur im Topic-Kontext (add_to_topic gesetzt) und nur, solange sie
+      noch nicht zugeordnet ist. %>
+  <% if (att = local_assigns[:add_to_topic]) %>
+    <% assigned = local_assigns[:assigned_source_ids] || [] %>
+    <% if assigned.include?(source.id) %>
+      <span class="shrink-0 text-[10px] text-emerald-600" title="<%= t("sources.row.already_in_topic_title") %>"><%= t("sources.row.in_topic") %></span>
+    <% else %>
+      <%= button_to source_topics_path(source.slug),
+            params: { topic_id: att.id, relevance: "relevant" },
+            form: { class: "inline-block m-0 p-0 leading-none shrink-0" },
+            class: "text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 cursor-pointer whitespace-nowrap",
+            title: t("sources.row.add_to_topic_title") do %><%= t("sources.row.add_to_topic") %><% end %>
+    <% end %>
+  <% else %>
+    <%# #509 (Hans, 2026-06-04): außerhalb des Topic-Kontexts ein „+", das
+        die Quelle an den Stack anhängt statt zu ersetzen. Im Topic-Kontext
+        steht stattdessen „+ ins Thema" (andere Aktion), daher else. %>
+    <%= render "shared/blade_plus_button", kind: "source", id: source.slug %>
+  <% end %>
+</li>

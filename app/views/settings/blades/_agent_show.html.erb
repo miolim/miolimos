@@ -1,0 +1,319 @@
+<%# #613 Stufe 2: aus app/views/settings/agents/show.html.erb ins Blade gezogen. Locals: agent %>
+  <%# Header: Name + Status + Actions %>
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 flex items-center gap-3 flex-wrap">
+    <h1 class="font-semibold flex-1"><%= agent.name %></h1>
+    <span class="text-xs px-2 py-0.5 rounded
+                 <%= agent.active? ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800' %>">
+      <%= agent.active? ? t("settings.agents.common.active") : t("settings.agents.common.inactive") %>
+    </span>
+    <%# #613 St.2: Bearbeiten als Blade. %>
+    <button type="button" data-controller="blade-link"
+            data-blade-link-kind-value="settings_sub" data-blade-link-id-value="agents:<%= agent.id %>:edit"
+            data-action="click->blade-link#append"
+            class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer"><%= t("actions.edit") %></button>
+    <%= button_to t("settings.agents.common.trigger_inbox_run"), trigger_inbox_run_settings_agent_path(agent),
+          method: :post,
+          class: "text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer",
+          form: { class: "inline m-0 p-0" } %>
+    <%= button_to t("actions.delete"), settings_agent_path(agent), method: :delete,
+          class: "text-xs px-2 py-1 rounded text-rose-600 hover:bg-rose-50",
+          form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.agents.common.delete_confirm", name: agent.name) } } %>
+  </div>
+
+  <%# Heartbeat + Description %>
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 text-sm space-y-1">
+    <% if agent.email.present? %>
+      <div><span class="text-xs text-slate-500"><%= t("settings.agents.common.email_label") %></span> <%= agent.email %></div>
+    <% end %>
+    <div><span class="text-xs text-slate-500"><%= t("settings.agents.common.description_label") %></span> <%= agent.description %></div>
+    <div>
+      <span class="text-xs text-slate-500"><%= t("settings.agents.common.last_heartbeat_label") %></span>
+      <% if agent.last_seen_at %>
+        <span title="<%= l(agent.last_seen_at, format: :short) %>">
+          <%= t("settings.agents.common.time_ago", time: time_ago_in_words(agent.last_seen_at)) %>
+        </span>
+        <% age = Time.current - agent.last_seen_at %>
+        <span class="inline-block w-2 h-2 rounded-full ml-1
+                     <%= age < 600 ? 'bg-emerald-500' : age < 3600 ? 'bg-amber-500' : 'bg-rose-500' %>"></span>
+      <% else %>
+        <span class="text-slate-400 italic"><%= t("settings.agents.common.never") %></span>
+      <% end %>
+    </div>
+    <% if agent.inbox_run_requested_at %>
+      <div class="text-xs text-amber-700">
+        <%= t("settings.agents.common.pending_trigger_since", time: l(agent.inbox_run_requested_at, format: :short)) %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# #639: Trigger-Verdrahtung sichtbar machen — Pokes laufen über die
+      Crontab-Zeile mit Marker (id=<id>) in die tmux-Session; fehlt sie,
+      verpuffen Trigger kommentarlos (nur ein Log-Warn). %>
+  <% session, prompt = BuilderInboxPoke.wiring_for(agent) %>
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 text-sm space-y-1">
+    <h2 class="font-medium text-sm"><%= t("settings.agents.blade.wiring_heading") %></h2>
+    <% if session %>
+      <div><span class="text-xs text-slate-500"><%= t("settings.agents.blade.session_label") %></span> <code class="font-mono text-xs"><%= session %></code></div>
+      <div class="text-xs text-slate-500"><%= t("settings.agents.blade.prompt_label") %></div>
+      <div class="text-xs font-mono bg-slate-50 border border-slate-200 rounded px-2 py-1 break-all"><%= prompt %></div>
+    <% else %>
+      <p class="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1.5">
+        <%= t("settings.agents.blade.no_wiring_html", id: tag.code("(id=#{agent.id})", class: "font-mono"), pattern: tag.code("# */10 * * * * tmux send-keys -t <session> -l 'Inbox-Check für #{agent.name} (id=#{agent.id}). …' && sleep 1 && tmux send-keys -t <session> Enter", class: "font-mono break-all")) %>
+      </p>
+    <% end %>
+  </div>
+
+  <%# API-Token + Regenerate %>
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-2">
+    <h2 class="font-medium text-sm"><%= t("settings.agents.common.api_token") %></h2>
+    <div class="flex items-center gap-2">
+      <code class="flex-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 break-all">
+        <%= agent.api_token %>
+      </code>
+      <button type="button"
+              data-controller="copy-clipboard"
+              data-action="click->copy-clipboard#copy"
+              data-copy-clipboard-content-value="<%= agent.api_token %>"
+              data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_token_copied") %>"
+              class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+        <%= t("settings.agents.common.copy") %>
+      </button>
+    </div>
+    <%= button_to t("settings.agents.common.rotate_token"),
+          regenerate_token_settings_agent_path(agent), method: :post,
+          class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer",
+          form: { class: "inline m-0 p-0",
+                  data: { turbo_confirm: t("settings.agents.common.rotate_token_confirm") } } %>
+  </div>
+
+  <%# Setup-Snippets — jeder Schritt ist ein direkt ausführbarer Shell-
+      Befehl: Heredoc-Datei-Anlegen, MEMORY.md-Index-Append, tmux-Start,
+      Crontab-Append. Hans kopiert vier Befehle, fertig. %>
+  <% safe_session   = agent.name.parameterize %>
+  <% memory_dir     = "~/.claude/projects/#{Rails.root.to_s.tr('/', '-')}/memory" %>
+  <% workflow_file  = "#{memory_dir}/#{safe_session}_workflow.md" %>
+  <% memory_index   = "#{memory_dir}/MEMORY.md" %>
+  <% inbox_prompt   = "Inbox-Check für #{agent.name} (id=#{agent.id}). Workflow-Details liegen in der Memory `#{safe_session}_workflow.md`. Schritte wie im Memory-File." %>
+  <% workflow_body  = agent.workflow_instructions.presence || t("settings.agents.common.workflow_body_fallback") %>
+  <% memory_file_content = "---\nname: #{agent.name} Async-Inbox-Workflow\ndescription: Workflow für Agent #{agent.name} (id=#{agent.id})\ntype: project\n---\n#{workflow_body}\n\n**Identität:**\n- Actor: `#{agent.email}` (id=#{agent.id} in Prod-DB)\n- API-Token: `#{agent.api_token}`\n- Auth-Header: `Authorization: Bearer <token>`\n- API-Base: `https://#{ENV.fetch(%[MIOLIMOS_HOST], %[os.miolim.de])}/api/v1/`\n" %>
+  <%# Heredoc mit quoted EOF — verhindert $-Expansion und Backtick-
+      Interpretation in der Memory-Inhalt-Sektion, sodass Tokens und
+      Sonderzeichen wortwörtlich landen. %>
+  <% create_file_cmd = "mkdir -p #{memory_dir} && cat > #{workflow_file} <<'MIOLIM_END'\n#{memory_file_content}MIOLIM_END" %>
+  <% index_line      = "- [#{agent.name} Async-Inbox-Workflow](#{safe_session}_workflow.md) — Workflow für Agent #{agent.name} (id=#{agent.id})" %>
+  <%# Idempotenter Append: vorhandene Zeile mit diesem Workflow-File-
+      Namen rauswerfen, frische via Heredoc anhängen (single-quoted EOF
+      lässt Em-Dash und sonstige Sonderzeichen unverändert). %>
+  <% index_cmd = [
+       "( grep -vF '(#{safe_session}_workflow.md)' #{memory_index} 2>/dev/null",
+       "cat <<'MIOLIM_IDX'",
+       index_line,
+       "MIOLIM_IDX",
+       ") > #{memory_index}.tmp && mv #{memory_index}.tmp #{memory_index}",
+     ].join("\n") %>
+  <% tmux_cmd        = "tmux new -d -s #{safe_session} 'cd #{Rails.root} && claude'" %>
+  <%# #155: Prompt-Text und Enter MÜSSEN als zwei separate send-keys-
+      Aufrufe laufen. Wenn man beides in einem Aufruf bündelt
+      (`send-keys 'text' Enter`), interpretiert claudes TUI das Enter
+      als Newline-im-Input statt als Submit — der Prompt landet im
+      Eingabefeld und akkumuliert bei jedem Tick einen weiteren Absatz,
+      ohne je abgeschickt zu werden. `sleep 1` zwischendrin sorgt
+      dafür, dass Enter als frische Keystroke-Event ankommt. %>
+  <%# #749 (Hans, 2026-06-21): KEINE aktive Cron-Zeile — Pokes laufen
+      event-getrieben über BuilderInboxPoke (Task-Publish/Antwort/@-Mention/
+      Trigger-Button). Diese Zeile ist nur die Registry: auskommentiert, kein
+      aktiver Cron-Tick. BuilderInboxPoke liest daraus tmux-Session + Prompt
+      (Marker (id=<id>) steckt im Prompt) und stupst direkt an. Format
+      identisch zur Handbuch-KI „miolimOS - Neuen Agenten einrichten". %>
+  <% cron_line       = "# [Registry für BuilderInboxPoke — kein aktiver Cron-Tick] */10 * * * * tmux send-keys -t #{safe_session} -l '#{inbox_prompt}' && sleep 1 && tmux send-keys -t #{safe_session} Enter" %>
+  <%# Idempotenter Crontab-Append: alte Zeile für diese tmux-Session
+      rauswerfen, neue (auskommentierte) Registry-Zeile via Heredoc anhängen —
+      die single-quoted Heredoc-Grenze schützt die im Prompt eingebetteten
+      Backticks und Single-Quotes vor jeder Shell-Interpretation. %>
+  <% cron_cmd = [
+       "( crontab -l 2>/dev/null | grep -vF 'send-keys -t #{safe_session} '",
+       "cat <<'MIOLIM_CRON'",
+       cron_line,
+       "MIOLIM_CRON",
+       ") | crontab -",
+     ].join("\n") %>
+
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-3">
+    <h2 class="font-medium text-sm"><%= t("settings.agents.common.setup_steps_heading") %></h2>
+    <p class="text-xs text-slate-600">
+      <%= t("settings.agents.common.setup_intro") %>
+    </p>
+    <p class="text-[11px] text-slate-500">
+      <%= t("settings.agents.common.setup_workflow_note_html") %>
+    </p>
+
+    <%# 1. Memory-File anlegen (Heredoc) %>
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1">
+          <%= t("settings.agents.common.step1_label_html", file: tag.code(workflow_file, class: "font-mono")) %>
+        </span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= create_file_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_cmd_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap"><%= create_file_cmd %></pre>
+      <details class="text-[11px] text-slate-500">
+        <summary class="cursor-pointer hover:text-slate-700"><%= t("settings.agents.common.file_content_preview") %></summary>
+        <pre class="mt-1 text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap"><%= memory_file_content %></pre>
+      </details>
+    </div>
+
+    <%# 2. MEMORY.md-Index-Zeile ergänzen %>
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1">
+          <%= t("settings.agents.common.step2_label_html", file: tag.code(memory_index, class: "font-mono")) %>
+          <span class="text-slate-400"><%= t("settings.agents.common.idempotent_note") %></span>
+        </span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= index_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_index_cmd_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto whitespace-pre-wrap"><%= index_cmd %></pre>
+    </div>
+
+    <%# 2.5 (Optional): pro-Agent Permission-Block für die Claude-Inkarnation.
+        Claude Code hat keinen --settings-dir-Flag — die Settings-Datei muss
+        in einem `.claude/`-Unterordner relativ zum CWD liegen, in dem
+        claude gestartet wird. Daher: per-Agent Working-Dir + .claude/-
+        Verzeichnis darin. Schritt 3 (tmux) cd't in dieses Verzeichnis. %>
+    <%
+      claude_workdir       = "~/.claude/agents/#{safe_session}"
+      claude_settings_dir  = "#{claude_workdir}/.claude"
+      claude_settings_file = "#{claude_settings_dir}/settings.local.json"
+      claude_settings_json = <<~JSON
+        {
+          "permissions": {
+            "allow": [
+              "WebSearch",
+              "WebFetch",
+              "Read",
+              "Bash(curl:*)",
+              "Bash(jq:*)",
+              "Bash(pdftotext:*)",
+              "Bash(python3:*)"
+            ],
+            "deny": [
+              "Edit",
+              "Write",
+              "NotebookEdit",
+              "Bash(git:*)",
+              "Bash(rm:*)",
+              "Bash(sudo:*)",
+              "Bash(mv:*)",
+              "Bash(cp:*)",
+              "Bash(chmod:*)",
+              "Bash(chown:*)",
+              "Bash(npm:*)",
+              "Bash(yarn:*)",
+              "Bash(bundle:*)",
+              "Bash(gem:*)"
+            ]
+          }
+        }
+      JSON
+      claude_settings_cmd = "mkdir -p #{claude_settings_dir} && cat > #{claude_settings_file} <<'MIOLIM_PERMS'\n#{claude_settings_json}MIOLIM_PERMS"
+      restricted_tmux_cmd = "tmux new -d -s #{safe_session} 'cd #{claude_workdir} && claude'"
+    %>
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1">
+          <%= t("settings.agents.common.step25_label") %>
+          <span class="text-slate-400"><%= t("settings.agents.common.step25_hint") %></span>
+        </span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= claude_settings_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_permission_block_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <p class="text-[11px] text-slate-500">
+        <%= t("settings.agents.common.step25_help_html", settings_file: tag.code("#{claude_workdir}/.claude/settings.local.json"), workdir: tag.code("cd #{claude_workdir}")) %>
+      </p>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-48 whitespace-pre-wrap"><%= claude_settings_cmd %></pre>
+
+      <div class="flex items-center gap-2 mt-2">
+        <span class="text-xs text-slate-600 flex-1">
+          <%= t("settings.agents.common.alt_tmux_label") %>
+        </span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= restricted_tmux_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_restricted_tmux_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto"><%= restricted_tmux_cmd %></pre>
+    </div>
+
+    <%# 3. tmux session start %>
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1"><%= t("settings.agents.common.step3_label") %></span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= tmux_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_tmux_cmd_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto"><%= tmux_cmd %></pre>
+    </div>
+
+    <%# 4. crontab entry (idempotent append) %>
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1">
+          <%= t("settings.agents.common.step4_label") %> <span class="text-slate-400"><%= t("settings.agents.common.idempotent_note_session") %></span>
+        </span>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= cron_cmd %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_crontab_cmd_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+      <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto whitespace-pre-wrap"><%= cron_cmd %></pre>
+    </div>
+  </div>
+
+  <%# Capabilities %>
+  <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-2">
+    <h2 class="font-medium text-sm"><%= t("settings.agents.common.capabilities") %></h2>
+    <div class="flex flex-wrap gap-1">
+      <% agent.capabilities.order(:resource_type, :effect).each do |cap| %>
+        <span class="text-xs px-1.5 py-0.5 rounded
+                     <%= cap.allow? ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800' %>">
+          <%= cap.resource_type %>:<%= cap.effect %> [<%= cap.actions.join(",") %>]
+        </span>
+      <% end %>
+    </div>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.agents.common.capabilities_note_html") %>
+    </p>
+  </div>

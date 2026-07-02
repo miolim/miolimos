@@ -1,0 +1,17 @@
+<%# Topics als Chips + Picker zum Hinzufügen / Quick-Create.
+    #142: leading Entity-Icon, kein eigener Border mehr — die
+    Picker-Sektion (`_detail_pickers`) gruppiert alle Picker visuell. %>
+<%= render "shared/entity_picker",
+      icon:           "folder",   # #603 R3: wie Sidebar-Themen
+      chips_id:       "task_topics_chips_#{task.id}",
+      chips_partial:  "tasks/topics_chips",
+      chips_locals:   { task: task },
+      suggest_url:    suggest_topics_path,
+      add_url:        task_topics_path(task),
+      param_name:     "topic_id",
+      label:          "Thema",
+      placeholder:    "Thema",
+      create_label:   "Thema anlegen" %>
+
+<%# #602 S3: Wer sieht diese Aufgabe? (privat / Mitglieder / intern öffentlich) %>
+<div class="mt-1"><%= visibility_badge(task) %></div>

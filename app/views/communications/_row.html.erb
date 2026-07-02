@@ -1,0 +1,57 @@
+<%# Zwei Modi:
+    - Blade-Mode (`blade_kind`/`blade_id` Locals): Klick appendet die
+      Detail-Blade an den aktuellen Stack (#163 Phase 6c).
+    - Frame-Mode (Default): Klick laedt das Detail ins
+      `communication_detail`-Frame (Topic-Tab `?tab=communications`). %>
+<% blade_kind = local_assigns[:blade_kind] %>
+<% blade_id   = local_assigns[:blade_id] %>
+<li id="communication_row_<%= comm.id %>"
+    class="group px-4 py-2 flex items-center gap-3 hover:bg-slate-50 text-[13px] border-l-4 border-l-transparent data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-50 <%= 'bg-blue-50/40' if comm.unread? %>">
+  <span class="<%= comm.inbound? ? 'text-blue-600' : 'text-slate-400' %>"><%= comm.inbound? ? '↓' : '↑' %></span>
+  <%# Unread-Indikator: kleiner blauer Punkt vor dem Betreff. %>
+  <% if comm.unread? %>
+    <span class="inline-block w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Ungelesen"></span>
+  <% end %>
+  <div class="flex-1 min-w-0">
+    <% if blade_kind && blade_id %>
+      <a href="<%= communication_path(comm) %>"
+         data-controller="blade-link"
+         data-blade-link-kind-value="<%= blade_kind %>"
+         data-blade-link-id-value="<%= blade_id %>"
+         data-action="click->blade-link#append"
+         class="block truncate hover:underline <%= comm.unread? ? 'font-semibold text-slate-900' : 'text-slate-700' %>">
+        <%= comm.subject.presence || "(ohne Betreff)" %>
+      </a>
+    <% else %>
+      <%# #756 (Hans, 2026-06-23): Blade-Append statt communication_detail-Frame. %>
+      <%= link_to (comm.subject.presence || "(ohne Betreff)"),
+            communication_path(comm),
+            data: { controller: "blade-link", "blade-link-kind-value": "communication",
+                    "blade-link-id-value": comm.id, action: "click->blade-link#append",
+                    turbo_frame: "_top" },
+            class: "block truncate hover:underline #{comm.unread? ? 'font-semibold text-slate-900' : 'text-slate-700'}" %>
+    <% end %>
+    <div class="text-xs text-slate-500 truncate">
+      <% senders = comm.communication_mentions.select { |cm| cm.role == "sender" }.map(&:mentioned).compact %>
+      <% senders.each do |s| %><%= s.display_name %><%= " · " %><% end %>
+      <% if comm.oauth_credential&.label.present? %><span><%= comm.oauth_credential.label %></span><% end %>
+    </div>
+  </div>
+  <% if comm.topics.empty? %>
+    <span class="text-xs text-amber-600"><%= t("communications.no_topic") %></span>
+  <% else %>
+    <span class="flex items-center gap-1">
+      <% comm.topics.each do |topic| %>
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-xs">
+          <%= topic_dot topic %><%= topic.name %>
+        </span>
+      <% end %>
+    </span>
+  <% end %>
+  <span class="text-xs text-slate-500 w-24 text-right shrink-0">
+    <%= l(comm.sent_at, format: :short) if comm.sent_at %>
+  </span>
+  <% if blade_kind && blade_id %>
+    <%= render "shared/blade_plus_button", kind: blade_kind, id: blade_id %>
+  <% end %>
+</li>

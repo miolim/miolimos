@@ -1,0 +1,23 @@
+<%# #532 (Hans, 2026-06-08): Standalone-Ansicht eines echten Document-Records
+    (kein App-Layout/Turbo-Frame), damit das Papierblatt sauber lädt. %>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= @document.kind.titleize %><%= " #{@document.number}" if @document.number.present? %></title>
+  <%= render "documents/print_theme" %>
+</head>
+<body>
+  <div class="doc-toolbar">
+    <strong><%= @document.kind.titleize %><%= " · #{@document.display_name}" if @document.display_name %></strong>
+    <span style="margin-left:auto;"></span>
+    <a href="<%= rendered_pdf_document_path(@document) %>" class="pdf"><%= t("documents.show.download_pdf") %></a>
+    <button type="button" onclick="window.print()"><%= t("documents.show.print") %></button>
+  </div>
+
+  <div class="doc-canvas">
+    <%= render "documents/render", document: @document %>
+  </div>
+</body>
+</html>

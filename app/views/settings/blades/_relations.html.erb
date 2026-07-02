@@ -1,0 +1,147 @@
+<%# #613: aus app/views/settings/relations/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_relations. %>
+  
+  <%# Vokabular — kuratierte Typen mit Inverse-Name %>
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
+      <span class="font-semibold"><%= t("settings.relations.vocab_title") %></span>
+      <span class="ml-auto text-xs text-slate-500">
+        <%= t("settings.relations.types", count: @relation_types.size) %>
+      </span>
+    </header>
+
+    <p class="px-4 py-2 text-xs text-slate-500 border-b border-slate-100">
+      <%= t("settings.relations.intro_html") %>
+    </p>
+
+    <% if @relation_types.any? %>
+      <table class="w-full text-[13px]">
+        <thead class="text-xs text-slate-500 border-b border-slate-100">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium"><%= t("settings.relations.col_name") %></th>
+            <th class="px-4 py-2 text-left font-medium"><%= t("settings.relations.col_inverse") %></th>
+            <th class="px-4 py-2 text-left font-medium"><%= t("settings.relations.col_description") %></th>
+            <th class="px-4 py-2 text-left font-medium w-32"><%= t("settings.relations.col_level") %></th>
+            <th class="px-4 py-2 text-right font-medium w-20"><%= t("settings.relations.col_used") %></th>
+            <th class="px-4 py-2 w-32"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @relation_types.each do |rt| %>
+            <tr class="hover:bg-slate-50">
+              <%= form_with model: rt, url: settings_relation_path(rt), method: :patch,
+                    class: "contents", data: { turbo: false } do |f| %>
+                <td class="px-4 py-2">
+                  <%= f.text_field :name, class: "w-full bg-transparent border border-transparent focus:border-slate-300 rounded px-1 py-0.5" %>
+                </td>
+                <td class="px-4 py-2">
+                  <%= f.text_field :inverse_name, class: "w-full bg-transparent border border-transparent focus:border-slate-300 rounded px-1 py-0.5" %>
+                </td>
+                <td class="px-4 py-2">
+                  <%= f.text_field :description, class: "w-full bg-transparent border border-transparent focus:border-slate-300 rounded px-1 py-0.5" %>
+                </td>
+                <td class="px-4 py-2">
+                  <%= f.select :ebene, [["—", ""]] + RelationType::EBENEN.map { |e| [e, e] },
+                        {}, class: "w-full bg-transparent border border-transparent focus:border-slate-300 rounded px-1 py-0.5" %>
+                </td>
+                <td class="px-4 py-2 text-right tabular-nums text-slate-700"><%= rt.usage_count %></td>
+                <td class="px-4 py-2 flex gap-1 justify-end">
+                  <%= f.submit t("actions.save"), class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+                </td>
+              <% end %>
+              <td class="hidden"></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="px-4 py-3 text-slate-500 text-sm">
+        <%= t("settings.relations.none") %>
+      </p>
+    <% end %>
+
+    <div class="border-t border-slate-100 px-4 py-3 bg-slate-50/50">
+      <%= form_with model: @new_type, url: settings_relations_path,
+            class: "grid grid-cols-1 md:grid-cols-5 gap-2 items-end", data: { turbo: false } do |f| %>
+        <div>
+          <label class="block text-xs text-slate-500 mb-0.5"><%= t("settings.relations.col_name") %></label>
+          <%= f.text_field :name, placeholder: t("settings.relations.ph_name"),
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-0.5"><%= t("settings.relations.col_inverse") %></label>
+          <%= f.text_field :inverse_name, placeholder: t("settings.relations.ph_inverse"),
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-0.5"><%= t("settings.relations.col_description") %></label>
+          <%= f.text_field :description,
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-0.5"><%= t("settings.relations.col_level") %></label>
+          <%= f.select :ebene, [["—", ""]] + RelationType::EBENEN.map { |e| [e, e] },
+                {}, class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
+        </div>
+        <div class="flex gap-2">
+          <%= f.submit t("settings.relations.add"),
+                class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Labels — Aggregations-Sicht, weiterhin %>
+  <div class="bg-white rounded border border-slate-200">
+    <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
+      <span class="font-semibold"><%= t("settings.relations.labels_title") %></span>
+      <span class="ml-auto text-xs text-slate-500">
+        <%= t("settings.relations.label_count", count: @label_stats.size) %>
+        <% if @unlabeled > 0 %>· <%= t("settings.relations.no_label", count: @unlabeled) %><% end %>
+        <% if @orphaned > 0 %>· <%= t("settings.relations.orphaned", count: @orphaned) %><% end %>
+      </span>
+    </header>
+
+    <% if @label_stats.empty? %>
+      <p class="px-4 py-3 text-slate-500 text-sm">
+        <%= t("settings.relations.labels_none") %>
+      </p>
+    <% else %>
+      <table class="w-full text-[13px]">
+        <thead class="text-xs text-slate-500 border-b border-slate-100">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium"><%= t("settings.relations.col_label") %></th>
+            <th class="px-4 py-2 text-right font-medium w-24"><%= t("settings.relations.col_relations") %></th>
+            <th class="px-4 py-2 text-right font-medium w-24"><%= t("settings.relations.col_sources") %></th>
+            <th class="px-4 py-2 text-left font-medium"><%= t("settings.relations.col_example") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @label_stats.each do |row| %>
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-2 font-medium text-slate-900">
+                <%= row[:label] %>
+                <% if row[:has_type] %>
+                  <span class="ml-1 text-xs text-emerald-700">●</span>
+                <% else %>
+                  <span class="ml-1 text-xs text-slate-300" title="<%= t("settings.relations.no_type_title") %>">○</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 text-right tabular-nums text-slate-700"><%= row[:count] %></td>
+              <td class="px-4 py-2 text-right tabular-nums text-slate-700"><%= row[:source_count] %></td>
+              <td class="px-4 py-2 text-slate-600">
+                <% if row[:example_source] %>
+                  <%= link_to row[:example_source].title,
+                        knowledge_item_path(row[:example_source].uuid),
+                        class: "text-emerald-700 hover:underline truncate" %>
+                  <span class="text-slate-400 font-mono text-xs">^<%= row[:example_anchor] %></span>
+                <% else %>
+                  <span class="text-slate-400">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>

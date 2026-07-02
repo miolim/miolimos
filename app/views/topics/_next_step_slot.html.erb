@@ -1,0 +1,27 @@
+<%# Next-Step-Slot: genau EINE Aufgabe kann hier liegen. Sortable.js
+    verbindet Slot und Open-Liste über denselben Group-Namen — Touch
+    + Maus gleichermaßen. Inhalt ist eine reguläre tasks/_row mit
+    emphasize: true (Titel font-semibold), kein Stern-Icon.
+
+    #164: Slot sitzt jetzt im selben Block wie die Aufgabenliste,
+    direkt über dem QuickAdd-Form. Kein grüner Rahmen mehr — die
+    Hervorhebung passierte durch border-2 emerald, die ist weg.
+    Belegt wird der Slot subtil mit bg-emerald-50 markiert; leer
+    bleibt dezent gestrichelt als visueller Hinweis. %>
+<section id="next_step_slot"
+         class="<%= task ? 'bg-emerald-50/50' : 'border-b border-dashed border-slate-200' %>">
+  <ul data-controller="next-step-slot"
+      data-next-step-slot-set-url-value="<%= set_next_step_topic_path(topic) %>"
+      data-next-step-slot-group-value="topic-tasks-<%= topic.id %>"
+      class="min-h-[2.5rem] flex flex-col justify-center">
+    <% if task %>
+      <%= render "tasks/row", task: task, topic: topic, draggable: true, emphasize: true,
+            link_path: task_path(task),
+            blade_kind: "task", blade_id: task.id %>
+    <% else %>
+      <li class="text-center text-sm text-slate-400 italic px-4 py-2">
+        Nächster Schritt — Aufgabe hier hin ziehen
+      </li>
+    <% end %>
+  </ul>
+</section>

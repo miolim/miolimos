@@ -1,0 +1,7 @@
+<%# Read-Only-Body als turbo_frame, damit Edit-Aktion ihn ersetzen
+    kann. Locals: comment %>
+<%= turbo_frame_tag "task_comment_body_#{comment.id}" do %>
+  <div class="markdown-body text-sm text-slate-800 break-words mt-0.5">
+    <%= render_inline_markdown(comment.body) %>
+  </div>
+<% end %>

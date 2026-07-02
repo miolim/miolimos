@@ -1,0 +1,68 @@
+<%# #163 Phase 5a-3: Listen-Blade fuer Gepinnte KIs des current_actors. %>
+<%
+  stack_id = "list:pinned"
+  pin_ids  = KnowledgeItemPin.for_actor(current_actor).pluck(:knowledge_item_id)
+  items    = KnowledgeItem.where(uuid: pin_ids)
+                          .joins("INNER JOIN knowledge_item_pins ON knowledge_item_pins.knowledge_item_id = knowledge_items.uuid")
+                          .where("knowledge_item_pins.actor_id = ?", current_actor.id)
+                          .order("knowledge_item_pins.pinned_at DESC")
+                          .limit(50)
+                          .to_a
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
+         title="<%= t('knowledge.list.pinned.title') %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+         data-target-uuid="<%= stack_id %>">
+    <span class="shrink-0 text-slate-500"><%= icon "pin" %></span>
+    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
+                 [writing-mode:vertical-rl] min-h-0 flex-1">
+      <%= t("knowledge.list.pinned.title") %>
+    </span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2">
+    <%# #703 (Hans): einheitlicher Topbereich. %>
+    <%= render "shared/list_header",
+          lead_icon: "pin", title: t("knowledge.list.pinned.title"), count: items.size %>
+
+    <% if items.empty? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= t("knowledge.list.pinned.empty") %></p>
+    <% else %>
+      <%# #229 follow-up Hans 2026-05-18: gleiches Klick-Muster wie auf
+          /knowledge_items — Default-Klick ersetzt den Sub-Stack (REPLACE),
+          Plus-Icon-on-Hover appendet stattdessen. %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <% items.each do |ki| %>
+          <li class="group py-1.5 px-1 hover:bg-slate-50 flex items-center gap-2">
+            <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki.item_type, size: "w-4 h-4") %></span>
+            <%= link_to ki.title,
+                  knowledge_item_path(ki.uuid),
+                  data: {
+                    action: "click->blade-stack#openFromList",
+                    target_uuid: ki.uuid
+                  },
+                  class: "flex-1 hover:underline truncate text-slate-700" %>
+            <button type="button"
+                    data-action="click->blade-stack#appendFromList"
+                    data-target-uuid="<%= ki.uuid %>"
+                    title="<%= t('knowledge.list.pinned.append_title') %>"
+                    aria-label="<%= t('knowledge.list.pinned.append_aria') %>"
+                    class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                           w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                           hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
+                           leading-none text-base">
+              +
+            </button>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</article>

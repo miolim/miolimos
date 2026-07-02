@@ -1,0 +1,163 @@
+<%# #541 (Hans, 2026-06-09): Detail-Blade einer Rechnungsposition. Felder
+    bearbeiten + Zeitbuchungen zuordnen/lösen. Sind Zeiten zugeordnet, ist die
+    Menge die Summe ihrer Stunden (read-only); sonst frei wählbar. %>
+<% line   = local_assigns.fetch(:line) %>
+<% doc    = line.document %>
+<% locked = doc.locked? %>
+<% exempt = doc.vat_exempt? %>
+<article id="stack_card_invoiceline:<%= line.id %>"
+         data-uuid="invoiceline:<%= line.id %>"
+         class="stack-card shrink-0 relative w-[24rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+  <%= render "shared/blade_spine", stack_id: "invoiceline:#{line.id}", title: t("documents.invoice.line_title"),
+        icon_html: icon("file_text"), label: t("documents.invoice.line_label") %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3 text-[13px]">
+    <header class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20 border-b border-slate-100">
+      <span class="font-semibold text-sm"><%= t("documents.invoice.line_title") %></span>
+    </header>
+
+    <% if locked %>
+      <div class="flex items-center gap-2 text-xs px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">🔒 <%= t("documents.invoice.locked_final") %></div>
+      <div><span class="text-slate-500"><%= t("documents.invoice.description") %>:</span> <%= line.description.presence || "—" %></div>
+      <div><span class="text-slate-500"><%= t("documents.invoice.quantity") %>:</span> <%= number_with_precision(line.quantity, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %><%= " #{line.unit}" if line.unit.present? %></div>
+      <div><span class="text-slate-500"><%= t("documents.invoice.unit_price") %>:</span> <%= document_euro(line.unit_price) %></div>
+      <% unless exempt %><div><span class="text-slate-500"><%= t("documents.invoice.vat") %>:</span> <%= number_with_precision(line.tax_rate, precision: 1, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> %</div><% end %>
+    <% else %>
+      <%# — Beschreibung — %>
+      <label class="flex flex-col gap-0.5">
+        <span class="text-slate-500"><%= t("documents.invoice.description") %></span>
+        <%= form_with url: invoice_line_path(line), method: :patch, local: false, class: "contents" do %>
+          <%= text_field_tag :description, line.description, placeholder: t("documents.invoice.description_placeholder"),
+                onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+        <% end %>
+      </label>
+
+      <%# — Menge — aus Zeiten abgeleitet (read-only) oder frei. — %>
+      <div class="grid grid-cols-2 gap-2">
+        <label class="flex flex-col gap-0.5">
+          <span class="text-slate-500"><%= t("documents.invoice.quantity") %><% if line.time_based? %> <span class="text-slate-400 font-normal">(<%= t("documents.invoice.from_times") %>)</span><% end %></span>
+          <% if line.time_based? %>
+            <input type="text" value="<%= number_with_precision(line.quantity, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= line.unit.presence || t("documents.invoice.hours_short") %>"
+                   readonly class="border border-slate-100 rounded px-2 py-0.5 bg-slate-50 text-slate-500 tabular-nums">
+          <% else %>
+            <%= form_with url: invoice_line_path(line), method: :patch, local: false, class: "contents" do %>
+              <div class="flex gap-1">
+                <%= text_field_tag :quantity, number_with_precision(line.quantity, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true),
+                      inputmode: "decimal", onchange: "this.form.requestSubmit()",
+                      class: "w-16 border border-slate-200 rounded px-2 py-0.5 bg-white text-right tabular-nums" %>
+                <%= text_field_tag :unit, line.unit, placeholder: t("documents.invoice.unit_placeholder"), onchange: "this.form.requestSubmit()",
+                      class: "w-14 border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+              </div>
+            <% end %>
+          <% end %>
+        </label>
+        <%# — Einzelpreis — %>
+        <label class="flex flex-col gap-0.5">
+          <span class="text-slate-500"><%= t("documents.invoice.unit_price_eur") %></span>
+          <%= form_with url: invoice_line_path(line), method: :patch, local: false, class: "contents" do %>
+            <%= text_field_tag :unit_price, number_with_precision(line.unit_price, precision: 2, separator: ",", delimiter: ""),
+                  inputmode: "decimal", onchange: "this.form.requestSubmit()",
+                  class: "border border-slate-200 rounded px-2 py-0.5 bg-white text-right tabular-nums" %>
+          <% end %>
+        </label>
+      </div>
+
+      <%# — USt — (entfällt bei Befreiung) — %>
+      <% unless exempt %>
+        <label class="flex flex-col gap-0.5">
+          <span class="text-slate-500"><%= t("documents.invoice.vat_percent") %></span>
+          <%= form_with url: invoice_line_path(line), method: :patch, local: false, class: "contents" do %>
+            <%= text_field_tag :tax_rate, number_with_precision(line.tax_rate, precision: 1, separator: ",", delimiter: "", strip_insignificant_zeros: true),
+                  inputmode: "decimal", onchange: "this.form.requestSubmit()",
+                  class: "w-20 border border-slate-200 rounded px-2 py-0.5 bg-white text-right tabular-nums" %>
+          <% end %>
+        </label>
+      <% end %>
+    <% end %>
+
+    <%# — Beträge der Position — %>
+    <div class="flex justify-between pt-2 border-t border-slate-100">
+      <span class="text-slate-500"><%= t("documents.invoice.net") %></span><span class="tabular-nums"><%= document_euro(line.net) %></span>
+    </div>
+    <% unless exempt %>
+      <div class="flex justify-between"><span class="text-slate-500"><%= t("documents.invoice.gross") %></span><span class="tabular-nums font-medium"><%= document_euro(line.gross) %></span></div>
+    <% end %>
+
+    <%# — Zugeordnete Zeiten — %>
+    <div class="pt-2 border-t border-slate-100 space-y-1">
+      <div class="text-slate-500 font-medium"><%= t("documents.invoice.assigned_times") %> · <%= line.time_entries.size %></div>
+      <% line.time_entries.sort_by { |t| t.started_at || Time.zone.at(0) }.reverse.each do |te| %>
+        <div class="flex items-center gap-2">
+          <span class="tabular-nums text-slate-400 shrink-0"><%= l(te.started_at.to_date, format: :default) if te.started_at %></span>
+          <span class="tabular-nums shrink-0"><%= number_with_precision(te.hours, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
+          <span class="truncate text-slate-600 min-w-0 flex-1"><%= te.bill_label %></span>
+          <% unless locked %>
+            <%= button_to t("documents.invoice.unassign"), unassign_time_invoice_line_path(line, time_entry_id: te.id), method: :delete,
+                  form: { data: { turbo_stream: true } },
+                  class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if line.time_entries.empty? %><p class="text-slate-400 italic"><%= t("documents.invoice.no_times_assigned") %></p><% end %>
+    </div>
+
+    <%# — Zuordenbare Zeiten — #541 (Hans): auf Item-Level konsolidiert, plus
+        projekt-only-Buchungen. Klick auf ein Item öffnet dessen Blade (Zeiten).
+        Section bleibt offen (open). — %>
+    <% unless locked %>
+      <% if doc.topic %>
+        <% cands = TimeEntry.for_topic(doc.topic).invoiceable.includes(:time_segments).to_a %>
+        <% if cands.any? %>
+          <% item_groups = cands.select(&:subject_type).group_by { |te| [te.subject_type, te.subject_id_int, te.subject_uuid] } %>
+          <% project_only = cands.reject(&:subject_type).sort_by { |te| te.started_at || Time.zone.at(0) }.reverse %>
+          <details open class="pt-2 border-t border-slate-100">
+            <summary class="cursor-pointer text-slate-500 font-medium select-none"><%= t("documents.invoice.assign_times") %> · <%= cands.size %></summary>
+            <div class="mt-1 space-y-1">
+              <%# Item-Gruppen: ein Eintrag je Aufgabe/KI mit Stundensumme. %>
+              <% item_groups.each do |_key, list| %>
+                <% subj = list.first.subject %>
+                <% hrs  = list.sum(&:hours) %>
+                <% link_kind = { "Task" => "task", "KnowledgeItem" => "ki", "Communication" => "communication" }[list.first.subject_type] %>
+                <% link_id   = list.first.subject_type == "KnowledgeItem" ? list.first.subject_uuid : list.first.subject_id_int %>
+                <% link_anchor = case list.first.subject_type
+                                 when "Task"          then "task_times_#{list.first.subject_id_int}"
+                                 when "KnowledgeItem" then "ki_times_#{list.first.subject_uuid}"
+                                 end %>
+                <div class="flex items-center gap-2">
+                  <span class="tabular-nums shrink-0"><%= number_with_precision(hrs, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
+                  <% if link_kind && link_id %>
+                    <button type="button" class="truncate text-sky-700 hover:underline min-w-0 flex-1 text-left bg-transparent border-0 p-0 cursor-pointer"
+                            data-controller="blade-link" data-blade-link-kind-value="<%= link_kind %>"
+                            data-blade-link-id-value="<%= link_id %>" <%= "data-blade-link-anchor-value=#{link_anchor}".html_safe if link_anchor %>
+                            data-action="click->blade-link#append"><%= subj&.try(:title) || subj&.try(:subject) || t("documents.invoice.item") %> · <%= list.size %></button>
+                  <% else %>
+                    <span class="truncate text-slate-600 min-w-0 flex-1"><%= subj&.try(:title) || t("documents.invoice.item") %> · <%= list.size %></span>
+                  <% end %>
+                  <%= button_to t("documents.invoice.assign"), assign_time_invoice_line_path(line, time_entry_ids: list.map(&:id)), method: :post,
+                        form: { data: { turbo_stream: true } },
+                        class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
+                </div>
+              <% end %>
+              <%# Projekt-only-Buchungen (ohne Item) einzeln. %>
+              <% project_only.each do |te| %>
+                <div class="flex items-center gap-2">
+                  <span class="tabular-nums shrink-0"><%= number_with_precision(te.hours, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
+                  <span class="truncate text-slate-500 min-w-0 flex-1"><%= te.bill_label %> <span class="text-slate-400 text-[11px]">(<%= t("documents.invoice.project_only") %>)</span></span>
+                  <%= button_to t("documents.invoice.assign"), assign_time_invoice_line_path(line, time_entry_id: te.id), method: :post,
+                        form: { data: { turbo_stream: true } },
+                        class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
+                </div>
+              <% end %>
+            </div>
+          </details>
+        <% else %>
+          <p class="pt-2 border-t border-slate-100 text-slate-400 text-[12px] italic"><%= t("documents.invoice.no_billable_times") %></p>
+        <% end %>
+      <% else %>
+        <p class="pt-2 border-t border-slate-100 text-slate-400 text-[12px] italic"><%= t("documents.invoice.no_project_no_assign") %></p>
+      <% end %>
+    <% end %>
+  </div>
+</article>

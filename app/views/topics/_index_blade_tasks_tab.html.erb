@@ -1,0 +1,110 @@
+<%# #163 Phase 6d: Tasks-Tab innerhalb der list:topic-Card.
+    Heute war das ein split_pane (Liste links, task_detail-Frame rechts) —
+    jetzt eine flache Sektion in der Card; Detail-Klicks gehen via
+    blade-link an den outer blade-stack.
+
+    #325-Bugfix (Hans-Report #347, 2024-05-24): die @open_tasks/@done_tasks
+    /@next_step_task-Vars werden NUR von TopicsController#list_card
+    bzw. #show gefuellt. Wird das Partial vom BladeStackLoader-Pfad
+    (z.B. /dashboard?stack=...) gerendert, sind sie nil → tasks.empty?
+    crasht. Lazy-Load hier defensiv.
+
+    #484 Increment D (Hans, 2026-06-03): gemeinsames Tab-Gerüst.
+    #484 Toggle-Nachtrag (Hans, 2026-06-03): in der Befehlszeile (a) zwei
+    tri-state Toggle-Icons — Zuweisung (Mir/Andere/Alle) + Status (Offen/
+    Erledigt/Alle) — und (b) das Sortieren/Filtern-Menü (Priorität/Tag).
+    Backend: load_topic_show_lists wertet task_status + assignee_id("others")
+    aus. Gruppieren weggelassen (in EINEM Thema sinnlos). %>
+<%
+  if @open_tasks.nil?
+    open_pool = topic.tasks.where(status: %w[backlog in_progress])
+                           .order(:position).limit(200).to_a
+    next_step_id = topic.task_topics.where(next_step: true).pluck(:task_id).first
+    @next_step_task = next_step_id ? open_pool.find { |t| t.id == next_step_id } : nil
+    @open_tasks  = open_pool.reject { |t| t == @next_step_task }
+    @done_tasks  = topic.tasks.where(status: "done").order(updated_at: :desc).limit(20).to_a
+    @show_done   = false
+    @task_status = "open"
+  end
+  @task_status ||= "open"
+
+  # Sortieren/Filtern-Menü (ohne Zuweisung/Status — die haben eigene Toggles).
+  priority_options = [["Alle Prioritäten", ""]] +
+                     Task.priorities.keys.map { |k| [t("tasks.priority.#{k}"), k] }
+  tag_options      = [["Alle Tags", ""]] +
+                     topic.tasks.where.not(tags: []).pluck(:tags).flatten.uniq.sort.map { |t_| [t_, t_] }
+  base_params = { tab: "tasks", sort: @sort, dir: @dir, priority: @filter_priority,
+                  tag: @filter_tag, q: @q, assignee_id: @filter_assignee_id,
+                  task_status: @task_status }.compact_blank
+
+  # tri-state Toggle: Zuweisung (Mir / Andere / Alle) -> assignee_id.
+  assignee_state = (%w[others all].include?(@filter_assignee_id) ? @filter_assignee_id : "mine")
+  assignee_cfg   = { "mine"   => { label: t("tasks.assignee_mine"),    icon: "user",  nextp: "others" },
+                     "others" => { label: t("tasks.assignee_others"), icon: "users", nextp: "all" },
+                     "all"    => { label: t("tasks.assignee_all"),   icon: "users", nextp: nil } }[assignee_state]
+  # tri-state Toggle: Status (Offen / Erledigt / Alle) -> task_status.
+  status_cfg = { "open" => { label: t("tasks.status.open"),    nextp: "done" },
+                 "done" => { label: t("tasks.status.done"), nextp: "all" },
+                 "all"  => { label: t("tasks.status_all"),     nextp: "open" } }[@task_status]
+%>
+<% tasks_toolbar = capture do %>
+    <%# #484 Toggle-Nachtrag (Hans, 2026-06-03): Multi-Select als Icon in der
+        Befehlszeile (bulk-select-Controller sitzt jetzt auf der Section). %>
+    <button type="button" data-action="bulk-select#toggleMode"
+            title="<%= t("tasks.multi_select") %>"
+            class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+      <%= icon "check", size: "w-3.5 h-3.5" %>
+    </button>
+    <%# #484 (Hans, 2026-06-03): In-Place-Card-Reload via topic-tabs#switch
+        (statt Full-Page-Navigation) — kein neuer Stack, kein Breiten-Flimmern.
+        href bleibt Fallback (kein JS). %>
+    <% assignee_params = base_params.merge(assignee_id: assignee_cfg[:nextp]).compact_blank %>
+    <%= link_to topic_path(topic, assignee_params),
+          title: t("tasks.assignee_toggle_title", label: assignee_cfg[:label]),
+          data: { action: "click->topic-tabs#switch",
+                  "topic-tabs-url-param": list_card_topic_path(topic, assignee_params) },
+          class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
+      <%= icon assignee_cfg[:icon], size: "w-3.5 h-3.5" %><%= assignee_cfg[:label] %>
+    <% end %>
+    <% status_params = base_params.merge(task_status: status_cfg[:nextp]).compact_blank %>
+    <%= link_to topic_path(topic, status_params),
+          title: t("tasks.status_toggle_title", label: status_cfg[:label]),
+          data: { action: "click->topic-tabs#switch",
+                  "topic-tabs-url-param": list_card_topic_path(topic, status_params) },
+          class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
+      <%= status_cfg[:label] %>
+    <% end %>
+    <%= render "shared/list_toolbar",
+          path:          list_card_topic_path(topic, tab: "tasks"),
+          frame_reload:  true,
+          sort_options:  [["Manuell", :manual], ["Geändert", :updated_at],
+                          ["Titel", :title], ["Priorität", :priority], ["Fällig am", :due_date]],
+          filter_fields: [
+            { name: :priority, type: :select, label: t("tasks.filter_priority"), options: priority_options },
+            { name: :tag,      type: :select, label: t("tasks.filter_tag"),       options: tag_options }
+          ],
+          current_sort:  @sort,
+          current_dir:   @dir,
+          filter_values: { priority: @filter_priority, tag: @filter_tag }.compact_blank,
+          storage_key:   "topic-#{topic.id}-tasks" %>
+<% end %>
+<%= render layout: "topics/tab_shell",
+      locals: {
+        title:        t("topics.tabs.tasks"),
+        count:        (@open_tasks.size + @done_tasks.size + (@next_step_task ? 1 : 0)),
+        row_selector: "li[id^='task_row_']",
+        controllers:  "active-row bulk-select",
+        quick_add:    render("tasks/quickadd_form", topic: topic),
+        controls:     tasks_toolbar,
+        empty:        (@open_tasks.any? || @done_tasks.any?)
+      } do %>
+  <%# Process-Edge (nur Aufgaben): Next-Step-Slot nur im Offen-/Alle-Modus. %>
+  <% if @task_status != "done" %>
+    <%= render "topics/next_step_slot", topic: topic, task: @next_step_task %>
+    <%= render "topics/open_tasks_list", topic: topic, tasks: @open_tasks %>
+  <% end %>
+  <%= render "topics/done_tasks_list", topic: topic, tasks: @done_tasks, show_done: @show_done %>
+  <%# #484 (Hans, 2026-06-03): Apply-Leiste auf Section-Ebene (immer da, auch
+      im Erledigt-Modus), da der bulk-select-Controller jetzt hier sitzt. %>
+  <%= render "shared/bulk_select_bar", key: "topic-#{topic.id}", topic: topic, position: :bottom %>
+<% end %>

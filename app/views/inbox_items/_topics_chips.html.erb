@@ -1,0 +1,16 @@
+<%# #171: Chips für die vorgepflegten Themen eines InboxItems. Stream-
+    replaced bei add/remove. %>
+<div id="inbox_item_topics_chips_<%= item.id %>" class="flex flex-wrap gap-1.5">
+  <% item.topics.order(:name).each do |topic| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= topic_dot topic %>
+      <%= topic.name %>
+      <%= button_to inbox_item_topic_path(item, topic), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("inbox_items.unlink_topic"), "aria-label": t("inbox_items.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

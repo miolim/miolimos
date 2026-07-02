@@ -1,0 +1,17 @@
+<%# Unteraufgaben — Liste + Picker.
+    Picker schickt entweder child_id (existierende Task umhängen) oder
+    create_with (neue Task mit Titel als Subtask anlegen).
+    #142: leading Entity-Icon, Border via Disclosure-Wrapper. %>
+<% excluded = ([task.id] + task.ancestor_ids).join(",") %>
+<%= render "shared/entity_picker",
+      icon:           "tasks",
+      chips_id:       "task_subtasks_chips_#{task.id}",
+      chips_partial:  "tasks/subtasks_chips",
+      chips_locals:   { task: task },
+      suggest_url:    suggest_tasks_path(exclude_ids: excluded),
+      add_url:        task_subtasks_path(task),
+      param_name:     "child_id",
+      chips_below:    task.subtasks.size > 1,   # #603 R5: linksbündig untereinander
+      label:          "Unteraufgabe",
+      placeholder:    "Unteraufgabe",
+      create_label:   "Aufgabe anlegen" %>

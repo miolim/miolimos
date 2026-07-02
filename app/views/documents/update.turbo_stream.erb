@@ -1,0 +1,19 @@
+<%# #532/#556: nach dem Auto-Save aktualisieren. Beim Sperrzustand-Wechsel
+    (final↔entwurf) den ganzen Editor-Bereich umschalten, damit die Felder
+    sofort (ent)sperrt sind — ohne Browser-Refresh. Sonst nur den Felder-Block
+    ersetzen (aufgelöste Verknüpfungen + Status sofort sichtbar). %>
+<% if @lock_changed %>
+  <%= turbo_stream.replace "document_editor_#{@document.id}" do %>
+    <%= render "documents/editor", document: @document %>
+  <% end %>
+  <%# #624 (Hans): der „Aktuellen Stand festschreiben"-Button lebt in der
+      Artefakt-Sektion AUSSERHALB des Editors — beim final↔entwurf-Wechsel
+      mit ersetzen, sonst erscheint/verschwindet er erst nach Refresh. %>
+  <%= turbo_stream.replace "document_artifacts_#{@document.id}" do %>
+    <%= render "documents/artifacts", document: @document %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.replace "document_fields_#{@document.id}" do %>
+    <%= render "documents/fields", document: @document %>
+  <% end %>
+<% end %>

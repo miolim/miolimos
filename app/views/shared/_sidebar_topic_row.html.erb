@@ -1,0 +1,80 @@
+<%# Sidebar-Zeile für ein Topic. Rekursiv — wenn das Topic Sub-Topics
+    hat, kommt am ZEILENENDE ein Chevron (#170: Hans wollte das Chevron
+    am Ende, nicht vorne, weil vorne schon der next-step-Marker steht).
+    Klick aufs Chevron klappt die Sub-Topics-Liste darunter aus.
+
+    #163 Phase 4: Plus-Icon zwischen Topic-Link und Chevron — appendet
+    das Topic als Blade-Card an den aktuellen Blade-Stack (nur sichtbar,
+    wenn diese Seite einen Blade-Stack hat — body.has-blade-stack).
+
+    Locals:
+      topic       — das Topic-Objekt
+      depth       — Einrückungs-Level (0 = root) %>
+<%
+  depth    = local_assigns.fetch(:depth, 0)
+  has_next = topic_has_next_step?(topic)
+  subs     = topic.sub_topics.order(:name).to_a
+  has_subs = subs.any?
+  is_active = params[:slug] == topic.slug
+%>
+<%# Plus-Icon: shared zwischen has_subs- und no-subs-Zweig.
+    #247: Sidebar-Plus → Listen-Blade des Topics (Aufgaben-Liste),
+    nicht Topic-Detail-Card. %>
+<% plus_button = render("shared/sidebar_blade_plus",
+                       kind: "topic_list", id: topic.slug, title: topic.name) %>
+<% if has_subs %>
+  <div data-controller="disclosure"
+       data-disclosure-storage-key-value="sidebar.topic.<%= topic.id %>">
+    <%# #266: bei eingeklappter Sidebar Einrueckung killen, damit
+        Sub-Topic-Icons nicht aus der w-14-Spalte fallen. Inline-Style
+        haelt die hierarchische Einrueckung im aufgeklappten Modus;
+        `group-data-[collapsed=true]/sidebar:!pl-0` ueberschreibt mit
+        !important, sobald die Sidebar collapsed ist. %>
+    <div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0"
+         style="padding-left: <%= depth * 0.75 %>rem">
+      <%= link_to topic_path(topic),
+            title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+            data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
+            class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
+        <span class="w-5 flex items-center justify-center shrink-0">
+          <%= topic_marker topic, next_step: has_next, size: :md %>
+        </span>
+        <span class="truncate group-data-[collapsed=true]/sidebar:hidden"><%= topic.name %></span>
+      <% end %>
+      <%= plus_button %>
+      <%# Chevron am Zeilenende — klappt Sub-Topics auf/zu. Im
+          collapsed-Sidebar-Modus ausgeblendet, dort gibt's eh keinen
+          horizontalen Platz. %>
+      <button type="button"
+              data-action="click->disclosure#toggle"
+              data-disclosure-target="icon"
+              class="shrink-0 p-1 text-slate-500 hover:text-white cursor-pointer group-data-[collapsed=true]/sidebar:hidden inline-block transition-transform"
+              title="Sub-Themen ein-/ausklappen"
+              aria-label="Sub-Themen ein-/ausklappen">
+        <%= icon "chevron_right" %>
+      </button>
+    </div>
+    <ul data-disclosure-target="content" class="hidden">
+      <% subs.each do |sub| %>
+        <%= render "shared/sidebar_topic_row", topic: sub, depth: depth + 1 %>
+      <% end %>
+    </ul>
+  </div>
+<% else %>
+  <%# #266: identische Override-Klasse wie im has_subs-Branch, damit
+      auch Topics ohne Sub-Topics ihre Einrueckung beim Collapsen
+      verlieren — sonst fallen ihre Icons aus der w-14-Spalte. %>
+  <div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0"
+       style="padding-left: <%= depth * 0.75 %>rem">
+    <%= link_to topic_path(topic),
+          title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+          data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
+          class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
+      <span class="w-5 flex items-center justify-center shrink-0">
+        <%= topic_marker topic, next_step: has_next, size: :md %>
+      </span>
+      <span class="truncate group-data-[collapsed=true]/sidebar:hidden"><%= topic.name %></span>
+    <% end %>
+    <%= plus_button %>
+  </div>
+<% end %>

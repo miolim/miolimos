@@ -1,0 +1,15 @@
+<%# Chips für die Themen eines Awaitings. Stream-replaced bei add/remove. %>
+<div id="awaiting_topics_chips_<%= awaiting.id %>" class="flex flex-wrap gap-1.5">
+  <% awaiting.topics.order(:name).each do |topic| %>
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%= topic_dot topic %>
+      <%= topic.name %>
+      <%= button_to awaiting_topic_path(awaiting, topic), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            title: t("awaitings.unlink_topic"), "aria-label": t("awaitings.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
+        ×
+      <% end %>
+    </span>
+  <% end %>
+</div>

@@ -1,0 +1,24 @@
+<%# #603 R8 (Hans): Kompakt-Summary im Details-Header — Icons statt Text
+    für Wann (nur wenn gesetzt) und Priorität (nur wenn ≠ normal), Datum
+    ohne „fällig", Tooltips am Icon. Server-gerendert + von tasks#update
+    gestreamt (der alte Client-Refresh las Selects, die es seit R5 nicht
+    mehr gibt). Locals: task. %>
+<span id="task_fields_summary_<%= task.id %>"
+      class="text-slate-400 truncate inline-flex items-center gap-1.5">
+  <% if task.commitment.present? %>
+    <% meta = commitment_meta(task.commitment) %>
+    <span class="inline-flex <%= meta[:color] %> [&_svg]:w-3.5 [&_svg]:h-3.5"
+          title="<%= t("tasks.sections.#{task.commitment}") %>">· <%= icon meta[:icon] %></span>
+  <% end %>
+  <% if task.priority != "normal" %>
+    <% prio_color = { "low" => "text-slate-500", "high" => "text-orange-500", "urgent" => "text-red-600" }[task.priority] %>
+    <span class="inline-flex <%= prio_color %> [&_svg]:w-3.5 [&_svg]:h-3.5"
+          title="<%= t("tasks.priority_title", label: t("tasks.priority.#{task.priority}")) %>">· <%= icon "triangle_alert" %></span>
+  <% end %>
+  <% if task.due_date %>
+    <span title="<%= t("tasks.field_due") %>">· <%= l(task.due_date, format: "%d.%m.%Y") %></span>
+  <% end %>
+  <% if task.assignee %>
+    <span title="<%= t("tasks.field_assigned_to") %>">· <%= task.assignee.name %></span>
+  <% end %>
+</span>

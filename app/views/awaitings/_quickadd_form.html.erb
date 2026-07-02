@@ -1,0 +1,20 @@
+<%# Quick-Add für Wartepunkte — wie tasks/_quickadd_form. Nur ein
+    Titel ist required; follow_up_at wird serverseitig auf +7 Tage
+    default gesetzt, wenn leer.
+
+    `model: Awaiting.new` setzt den Param-Scope automatisch auf
+    `awaiting[…]`. Vorher hatten wir `form_with url:` plus
+    `f.fields_for :awaiting, Awaiting.new` — Rails baute daraus den
+    Top-Level-Key `[awaiting]` (literal!), und awaiting_params warf
+    ParameterMissing. %>
+<%= form_with model: Awaiting.new, url: awaitings_path, method: :post,
+              id: "awaiting_quickadd_form", class: "flex gap-2" do |f| %>
+  <% if local_assigns[:topic] %>
+    <%= hidden_field_tag :topic_id, topic.id %>
+  <% end %>
+  <%= f.text_field :title,
+        placeholder: t("awaitings.quickadd_placeholder"),
+        autofocus: local_assigns[:autofocus],
+        class: "flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" %>
+  <%= f.submit t("awaitings.add"), class: "text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+<% end %>

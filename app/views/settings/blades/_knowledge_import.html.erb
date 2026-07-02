@@ -1,0 +1,174 @@
+<%# #613: aus app/views/settings/knowledge_import/index.html.erb in den Einstellungs-Stack gezogen (Blade-Inhalt).
+    Daten lädt Settings::BladesController#load_knowledge_import. %>
+<div class="space-y-4">
+  
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-3">
+    <h1 class="text-lg font-semibold"><%= t("settings.import.workflow_title") %></h1>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.workflow_intro_html") %>
+    </p>
+
+    <h2 class="font-medium text-sm pt-2"><%= t("settings.import.step1_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.step1_intro") %>
+    </p>
+    <div class="flex items-center gap-2 flex-wrap">
+      <button type="button"
+              data-controller="copy-clipboard"
+              data-action="click->copy-clipboard#copy"
+              data-copy-clipboard-content-value="<%= @prompt %>"
+              data-copy-clipboard-toast-value="<%= t("settings.import.copy_prompt_toast") %>"
+              class="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+        📋 <%= t("settings.import.copy_prompt_button") %>
+      </button>
+      <span class="text-xs text-slate-500"><%= t("settings.import.copy_prompt_also_appears") %>
+        <%= link_to "/knowledge_items", knowledge_items_path, class: "underline hover:text-slate-900" %>.
+        <% if @prompt_is_default %>
+          <%= t("settings.import.prompt_default_hint") %>
+        <% else %>
+          (<%= t("settings.import.prompt_custom_prefix") %> <%= button_to t("settings.import.reset_to_default"),
+            settings_knowledge_import_prompt_reset_path,
+            method: :post,
+            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.import.prompt_reset_confirm") } },
+            class: "underline hover:text-slate-900 bg-transparent border-0 p-0 cursor-pointer text-xs" %>)
+        <% end %>
+      </span>
+    </div>
+
+    <details class="text-sm">
+      <summary class="cursor-pointer text-slate-600 hover:text-slate-900 select-none">
+        <%= t("settings.import.adjust_prompt") %>
+      </summary>
+      <%= form_with url: settings_knowledge_import_prompt_path, method: :patch, local: true, class: "mt-2 space-y-2" do |f| %>
+        <%= f.text_area :prompt, value: @prompt,
+              rows: 18,
+              class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:border-slate-400" %>
+        <div class="flex items-center gap-2">
+          <%= f.submit t("actions.save"),
+                class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+          <span class="text-xs text-slate-500">
+            <%= t("settings.import.empty_input_resets") %>
+          </span>
+        </div>
+      <% end %>
+    </details>
+
+    <h2 class="font-medium text-sm pt-2"><%= t("settings.import.step2_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.step2_intro") %>
+    </p>
+    <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-3 font-mono"><%= @inbox_path %></pre>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.step2_path_hint_html") %>
+    </p>
+
+    <h2 class="font-medium text-sm pt-2"><%= t("settings.import.step3_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.step3_intro") %>
+    </p>
+    <%= button_to settings_knowledge_import_run_path,
+          method: :post,
+          form: { class: "inline" },
+          class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" do %>
+      ▶ <%= t("settings.import.process_inbox_now") %>
+    <% end %>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.process_inbox_hint_html", path: @inbox_path) %>
+    </p>
+    <p class="text-sm text-slate-700 pt-2">
+      <%= t("settings.import.or_via_cron") %>
+    </p>
+    <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-3 font-mono">RAILS_ENV=production bundle exec rake inbox:import</pre>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.cron_hint") %>
+    </p>
+  </section>
+
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-3">
+    <h2 class="font-semibold"><%= t("settings.import.match_hierarchy_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.match_hierarchy_intro") %>
+    </p>
+    <ol class="list-decimal pl-5 text-sm space-y-1 text-slate-700">
+      <li><%= t("settings.import.match_rule_append_to_html") %></li>
+      <li><%= t("settings.import.match_rule_source_url_html") %></li>
+      <li><%= t("settings.import.match_rule_chat_title_html") %></li>
+      <li><%= t("settings.import.match_rule_title_html") %></li>
+      <li><%= t("settings.import.match_rule_no_match") %></li>
+    </ol>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.chat_title_vs_title_html") %>
+    </p>
+  </section>
+
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-3">
+    <h2 class="font-semibold"><%= t("settings.import.light_header_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.light_header_intro") %>
+    </p>
+    <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-3 font-mono">Chat-Titel: Webrecherche zu API
+Titel: Webrecherche zu API
+Datum: 27.04.2026
+Quelle: https://claude.ai/chat/abc-123
+Themen: api-design, integration
+
+# Webrecherche zu API
+
+…Inhalt…</pre>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.recognized_keys_html") %>
+    </p>
+  </section>
+
+  <section class="bg-white rounded border border-slate-200 p-4 space-y-3">
+    <h2 class="font-semibold"><%= t("settings.import.http_api_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.http_api_intro") %>
+    </p>
+    <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-3 font-mono">POST /api/v1/knowledge_items/append
+Authorization: Bearer &lt;agent-api-token&gt;
+Content-Type: application/json
+
+{ "content": "&lt;<%= t("settings.import.api_content_placeholder") %>&gt;" }</pre>
+    <p class="text-xs text-slate-500">
+      <%= t("settings.import.http_api_token_hint_html") %>
+      <%= link_to t("settings.import.settings_agents_link"), settings_agents_path, class: "underline hover:text-slate-900" %>
+      <%= t("settings.import.http_api_token_hint_suffix") %>
+    </p>
+  </section>
+
+  <%# #672 (Hans): Auftrags-Vorlage der Wikilink-Recherche editierbar. %>
+  <section class="space-y-3 border-t border-slate-200 pt-4">
+    <h2 class="font-semibold"><%= t("settings.import.research_template_title") %></h2>
+    <p class="text-sm text-slate-700">
+      <%= t("settings.import.research_template_intro_html") %>
+      <% if @research_prompt_is_default %>
+        <%= t("settings.import.research_default_hint") %>
+      <% else %>
+        (<%= t("settings.import.prompt_custom_prefix") %> <%= button_to t("settings.import.reset_to_default"),
+          settings_research_prompt_reset_path,
+          method: :post,
+          form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.import.research_reset_confirm") } },
+          class: "underline hover:text-slate-900 bg-transparent border-0 p-0 cursor-pointer text-xs" %>)
+      <% end %>
+    </p>
+    <details class="text-sm">
+      <summary class="cursor-pointer text-slate-600 hover:text-slate-900 select-none">
+        <%= t("settings.import.adjust_template") %>
+      </summary>
+      <%= form_with url: settings_research_prompt_path, method: :patch, local: true, class: "mt-2 space-y-2" do |f| %>
+        <%= f.text_area :prompt, value: @research_prompt,
+              rows: 10,
+              class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:border-slate-400" %>
+        <div class="flex items-center gap-2">
+          <%= f.submit t("actions.save"),
+                class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+          <span class="text-xs text-slate-500">
+            <%= t("settings.import.research_field_defaults_hint") %>
+          </span>
+        </div>
+      <% end %>
+    </details>
+  </section>
+</div>
+

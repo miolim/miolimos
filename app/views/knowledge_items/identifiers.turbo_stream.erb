@@ -1,0 +1,4 @@
+<%# #544: nach dem Speichern die IDs-Section neu rendern. %>
+<%= turbo_stream.replace "identifiers_section_#{@item.uuid}" do %>
+  <%= render "knowledge_items/identifiers_editor", item: @item, in_stack: params[:in_stack].present? %>
+<% end %>

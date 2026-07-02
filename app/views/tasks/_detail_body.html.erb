@@ -1,0 +1,28 @@
+<%# Task-Detail Body — die inneren Sektionen, ohne den umschliessenden
+    Turbo-Frame. Damit kann das Blade-Card (#163 Phase 5b) denselben
+    voll editierbaren Inhalt zeigen, ohne mit der frame-id `task_detail`
+    zu kollidieren, falls mehrere Tasks im Stack offen sind.
+
+    #160: view-tracker stempelt einen actor_view-Datensatz, sobald
+    das Detail mindestens 3s angezeigt wurde. %>
+<div id="task_<%= task.id %>" class="space-y-4"
+     data-controller="view-tracker"
+     data-view-tracker-viewable-type-value="Task"
+     data-view-tracker-viewable-id-value="<%= task.id %>">
+  <%# #232 Phase 1 (B): Live-Updates. Abonniert den Task-Stream — eine neue
+      veroeffentlichte Reply (oder spaeter Status/Felder) broadcastet ein
+      Turbo-Refresh hierher, die offene Card morpht neu. %>
+  <%= turbo_stream_from task %>
+  <%= render "tasks/detail_header",       task: task, expanded: local_assigns[:expanded] %>
+  <%# #389 Phase B (Hans, 2026-05-28): „Details" + „Verknuepfungen"
+      in einer einzigen Section konsolidiert, 3 interne Bereiche
+      (Stempel · Felder · Picker). Tag-Picker wandert mit in den
+      Picker-Bereich. %>
+  <%= render "tasks/detail_section",      task: task %>
+  <%# #384 Phase 3c (Hans, 2026-05-27): Reply-KIs sind der universelle
+      Beitragsmechanismus. task_comments-Thread entfernt; alte
+      Comments wurden zu Reply-KIs migriert (Migration
+      MigrateTaskCommentsToReplies). %>
+  <%= render "tasks/replies_section",     task: task %>
+  <%= render "tasks/detail_activity",     task: task, expanded: local_assigns[:expanded] %>
+</div>

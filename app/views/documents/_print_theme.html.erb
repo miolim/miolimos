@@ -1,0 +1,195 @@
+<%# #532 Phase 2 (Hans): das isolierte Print-Theme. EINE Datei = die
+    Iterations-Einheit. In Browser-Vorschau UND PDF-HTML (Chrome headless)
+    eingebettet.
+
+    #532 (2026-06-08): alle Muster (Rechnung/NDA/Brief) liegen jetzt auf der
+    DIN-5008-Seitengeometrie (Form B) — fenstertauglich. @page margin 0, die
+    Lagen werden absolut in mm gesetzt; ein in-flow .din-spacer schiebt den
+    Fließtext unters Anschriftfeld, sodass mehrseitige Dokumente normal
+    umbrechen (Kopf/Anschrift/Marken bleiben auf Seite 1). %>
+<style>
+  /* ── Seitengeometrie: DIN-5008 Form B, A4 randlos ────────────────── */
+  @page { size: A4; margin: 0; }
+
+  .din-page {
+    position: relative; box-sizing: border-box;
+    width: 210mm; background: #fff;
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 11pt; line-height: 1.45; color: #000;   /* #532: alles schwarz */
+  }
+  @media screen {
+    .din-page { min-height: 297mm; margin: 8mm auto; box-shadow: 0 1px 8px rgba(0,0,0,0.15); }
+  }
+  @media print { .din-page { margin: 0; box-shadow: none; } }
+
+  /* ── Briefkopf (Aussteller) — absolut über dem Anschriftfeld ──────── */
+  .doc-letterhead {
+    position: absolute; left: 25mm; right: 20mm; top: 15mm;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .doc-logo {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 16pt; font-weight: 800; letter-spacing: 0.5pt; color: #111827;
+  }
+  .doc-sender {
+    text-align: right; font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 8pt; line-height: 1.45; color: #000;
+  }
+
+  /* ── Anschriftfeld (Form B): 85 × 45 mm, links 25 mm, oben 50 mm ──── */
+  .din-address {
+    position: absolute; left: 25mm; top: 50mm;
+    width: 85mm; height: 45mm; overflow: hidden;
+  }
+  .din-return {
+    font-size: 7pt; line-height: 1; color: #000;
+    /* #532: Linie kürzer als bis zur Blattmitte (Start 25 mm + 75 mm = 100 mm < 105 mm). */
+    width: 75mm; border-bottom: 0.2pt solid #000; padding-bottom: 0.8mm; margin-bottom: 1.2mm;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .din-zvz { font-size: 8pt; color: #000; min-height: 8mm; } /* Zusatz-/Vermerkzone */
+  .din-recipient { font-size: 11pt; line-height: 1.35; }
+  .din-recipient strong { font-weight: 700; }
+
+  /* ── Vertikale Trennlinie zwischen Anschriftfeld und Infoblock ────── */
+  .din-divider {
+    position: absolute; left: 112mm; top: 50mm; height: 45mm;
+    border-left: 0.2pt solid #000;
+  }
+
+  /* ── Informationsblock rechts, auf Höhe des Anschriftfelds ────────── */
+  .din-info {
+    position: absolute; right: 20mm; top: 50mm; width: 70mm;
+    font-size: 9pt; line-height: 1.5; color: #000;
+  }
+  .din-info .row { display: flex; justify-content: space-between; gap: 4mm; }
+  .din-info .row .k { color: #000; }
+
+  /* ── Fließtext beginnt ~98,46 mm unter Oberkante (Fluchtlinie 25 mm) ─ */
+  .din-spacer { height: 98.46mm; }
+  .din-body { margin: 0 20mm 20mm 25mm; }
+  .din-subject { font-weight: 700; margin: 0 0 4mm; }
+  .din-body > p { margin: 0 0 3mm; }
+  .din-greeting { margin-top: 6mm; }
+  .din-signature { margin-top: 14mm; }
+  /* #547: bei der signierten Ausgabe füllt das Unterschriftsbild den Raum
+     über der Linie schon aus — daher deutlich kleinerer Abstand zur Grußformel. */
+  .din-signature.din-signed { margin-top: 2mm; }
+  /* #532: Unterschriftslinie dünner + länger; Name näher an die Linie. */
+  .din-signature .line { border-top: 0.2pt solid #000; width: 70mm; }
+  .din-signature .name { margin-top: 0.3mm; }
+
+  /* ── Inhalts-Typografie (serif) für Rechnung/NDA im .din-body ─────── */
+  .doc { font-family: "Georgia", "Times New Roman", serif; font-size: 10.5pt; line-height: 1.5; color: #000; }
+  .doc h1 { font-size: 17pt; margin: 0 0 2mm; font-weight: 700; }
+  .doc h2 { font-size: 12pt; margin: 6mm 0 2mm; font-weight: 700; }
+  .doc p  { margin: 0 0 3mm; }
+  .doc strong { font-weight: 700; }
+  .doc ol, .doc ul { margin: 0 0 3mm 6mm; padding: 0; }
+  .doc li { margin: 0 0 1.5mm; }
+
+  /* #562: einseitige Vertraulichkeitserklärung (NDA) — eigenes, mehrseitiges
+     Layout OHNE DIN-Fenster (kein Anschriftfeld/Infoblock). Seitenränder +
+     Fußzeile setzt der PDF-Render (Ferrum/CDP); die Bildschirm-Vorschau bildet
+     die Ränder über Padding nach. */
+  .nda-doc { color: #000; }
+  @media screen {
+    .nda-doc {
+      width: 210mm; min-height: 297mm; box-sizing: border-box;
+      margin: 8mm auto; background: #fff; padding: 22mm 20mm 18mm 25mm;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.15);
+    }
+  }
+  @media print { body { margin: 0; } }
+  .nda-letterhead {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin: 0 0 10mm; padding-bottom: 3mm; border-bottom: 0.4pt solid #9ca3af;
+    font-family: "Helvetica", "Arial", sans-serif;
+  }
+  .nda-letterhead .nda-logo { font-size: 14pt; font-weight: 800; letter-spacing: 0.3pt; color: #111827; }
+  .nda-letterhead .nda-sender { text-align: right; font-size: 8pt; line-height: 1.45; color: #000; }
+  .doc.nda h1 { text-align: center; margin: 0 0 6mm; }
+  .nda-parties { margin: 0 0 6mm; }
+  .nda-parties p { margin: 0 0 2mm; }
+  .nda-parties .nda-versus { margin: 3mm 0; }
+  .nda-signature { margin-top: 12mm; }
+  .nda-signature.din-signed { margin-top: 4mm; }
+  .nda-signature .nda-place-date { margin: 0 0 10mm; }
+  .nda-signature .line { border-top: 0.2pt solid #000; width: 70mm; }
+  .nda-signature .name { margin-top: 0.3mm; }
+
+  /* #786: SEPA-Lastschriftmandat — Formular (zweispaltige Parteien, ohne
+     Trennlinie unter dem Titel). */
+  /* #786 (Hans): EIN Font fürs ganze Mandat — der Body-Default ist Georgia
+     (serif), die DIN-Chrome (Anschriftfeld/Briefkopf/Infoblock) Helvetica.
+     Mandat-Body daher auf Helvetica, damit alles in derselben Schrift steht. */
+  .doc.lastschrift { font-family: "Helvetica", "Arial", sans-serif; color: #000; }
+  .doc.lastschrift h1 { text-align: center; margin: 0 0 6mm; font-size: 14pt; }
+  .doc.lastschrift .ls-party { display: grid; grid-template-columns: 42mm 1fr; gap: 4mm; margin: 0 0 4mm; }
+  .doc.lastschrift .ls-party-label { font-weight: 700; }
+  /* #786 (Hans): alles schwarz, alles in derselben Schrift (nur Größe variiert)
+     — keine Grautöne, kein Monospace. */
+  .doc.lastschrift .ls-party-label .sub { display: block; font-weight: 400; font-size: 9pt; }
+  .doc.lastschrift .ls-fields { width: 100%; border-collapse: collapse; margin-top: 1.5mm; }
+  .doc.lastschrift .ls-fields td { padding: 0.6mm 0; vertical-align: top; }
+  .doc.lastschrift .ls-fields td.k { width: 50mm; }
+  .doc.lastschrift .ls-auth { margin: 4mm 0; }
+  .doc.lastschrift .ls-hint { margin: 0 0 4mm; font-size: 8.5pt; }
+  .doc.lastschrift .ls-payment { margin: 0 0 4mm; }
+  .doc.lastschrift .ls-sign { margin-top: 8mm; }
+  .doc.lastschrift .ls-sign .ls-place { margin: 0 0 10mm; }
+  .doc.lastschrift .ls-sign .line { border-top: 0.2pt solid #000; width: 75mm; }
+  .doc.lastschrift .ls-sign .name { margin-top: 0.3mm; font-size: 8.5pt; }
+  .doc.lastschrift .ls-fill { display: inline-block; min-width: 55mm; border-bottom: 0.2pt solid #000; }
+
+  /* #561: juristische Gliederungs-Aufzählungen — (1)/(2)… und a)/b)… im PDF. */
+  @counter-style legal-paren-decimal { system: numeric; symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"; prefix: "("; suffix: ") "; }
+  @counter-style legal-paren-alpha { system: alphabetic; symbols: "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"; suffix: ") "; }
+  .din-body .markdown-body ol { margin: 0 0 3mm 7mm; padding: 0; }
+  .din-body .markdown-body ul { margin: 0 0 3mm 7mm; padding: 0; list-style: disc; }
+  .din-body .markdown-body li { margin: 0 0 1.5mm; }
+  .markdown-body ol.legal-paren-decimal { list-style: legal-paren-decimal; }
+  .markdown-body ol.legal-paren-alpha   { list-style: legal-paren-alpha; }
+
+  /* ── Rechnungstabelle ────────────────────────────────────────────── */
+  .doc-table { width: 100%; border-collapse: collapse; margin: 4mm 0; font-size: 9.5pt; }
+  .doc-table th {
+    font-family: "Helvetica", "Arial", sans-serif;
+    text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.4pt;
+    color: #6b7280; border-bottom: 1pt solid #9ca3af; padding: 1.5mm 2mm;
+  }
+  .doc-table td { padding: 1.8mm 2mm; border-bottom: 0.5pt solid #e5e7eb; vertical-align: top; }
+  .doc-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .doc-totals { width: 60mm; margin-left: auto; margin-top: 3mm; font-size: 9.5pt; }
+  .doc-totals .row { display: flex; justify-content: space-between; padding: 1mm 0; }
+  .doc-totals .grand { border-top: 1pt solid #111827; font-weight: 700; margin-top: 1mm; padding-top: 1.5mm; }
+
+  /* ── Unterschriften (NDA) ────────────────────────────────────────── */
+  .doc-signatures { display: flex; gap: 16mm; margin-top: 16mm; }
+  .doc-sign { flex: 1; }
+  .doc-sign .line { border-top: 0.75pt solid #111827; margin-bottom: 1.5mm; }
+  .doc-sign .label { font-family: "Helvetica", "Arial", sans-serif; font-size: 8pt; color: #6b7280; }
+
+  /* ── Falzmarken (105/210 mm) + Lochmarke (148,5 mm), linker Rand ──── */
+  .din-mark { position: absolute; left: 0; width: 5mm; border-top: 0.3pt solid #94a3b8; }
+  .din-fold-1 { top: 105mm; }
+  .din-fold-2 { top: 210mm; }
+  .din-hole   { top: 148.5mm; width: 7mm; }
+  @media print { .din-mark { border-color: #cbd5e1; } }
+
+  /* ── Werkbank-Toolbar (nur Bildschirm) ───────────────────────────── */
+  .doc-toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; gap: 8px; align-items: center;
+    background: #f1f5f9; border-bottom: 1px solid #cbd5e1;
+    padding: 8px 16px; font-family: "Helvetica", Arial, sans-serif; font-size: 13px;
+  }
+  .doc-toolbar a, .doc-toolbar button {
+    padding: 3px 10px; border-radius: 4px; text-decoration: none;
+    border: 1px solid #cbd5e1; background: #fff; color: #1f2937; cursor: pointer; font-size: 13px;
+  }
+  .doc-toolbar a.active { background: #10b981; color: #fff; border-color: #10b981; }
+  .doc-toolbar a.pdf    { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+  .doc-canvas { background: #e2e8f0; padding: 1px 0; min-height: 100vh; }
+  @media print { .doc-toolbar { display: none; } .doc-canvas { background: #fff; padding: 0; } }
+</style>

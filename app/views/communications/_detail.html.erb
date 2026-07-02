@@ -1,0 +1,8 @@
+<%# Detail-Frame für Kommunikation. Body/Subject/Sender sind read-only
+    (externe Gmail-Daten). Editierbar: Topic-Zuordnung.
+    Body steckt in _detail_body, damit das gleiche Markup auch im
+    Blade-Card (#163 Phase 5b + #217) ohne Frame-Wrapper eingebettet
+    werden kann. %>
+<%= turbo_frame_tag "communication_detail" do %>
+  <%= render "communications/detail_body", comm: comm, expanded: local_assigns[:expanded] %>
+<% end %>

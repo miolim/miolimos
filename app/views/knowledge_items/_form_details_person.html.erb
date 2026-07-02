@@ -1,0 +1,24 @@
+<%# Person-Sekundär-Felder: Vorname/Nachname (Heuristik aus Title, falls
+    leer), Aliases (komma-getrennt). Body bleibt optional und prominent.
+    Locals: f %>
+<div class="grid grid-cols-2 gap-2 text-xs">
+  <label class="block">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.first_name") %></span>
+    <%= f.text_field :first_name,
+          placeholder: t("knowledge.form.auto_from_title"),
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  </label>
+  <label class="block">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.last_name") %></span>
+    <%= f.text_field :last_name,
+          placeholder: t("knowledge.form.auto_from_title"),
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  </label>
+</div>
+
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.aliases_comma") %></span>
+  <%= f.text_field :aliases,
+        placeholder: t("knowledge.form.aliases_placeholder_person"),
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+</label>

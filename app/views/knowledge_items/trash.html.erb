@@ -1,0 +1,33 @@
+<% content_for :title, t("knowledge.list.trash.title") %>
+
+<div class="space-y-3">
+  <div class="bg-white rounded border border-slate-200 px-3 py-2 flex items-center gap-3 text-sm">
+    <span class="font-semibold"><%= t("knowledge.list.trash.title") %></span>
+    <span class="text-xs text-slate-500"><%= @discarded.size %></span>
+    <span class="ml-auto text-xs text-slate-500">
+      <%= t("knowledge.list.trash.auto_delete_note") %>
+      <%= link_to t("knowledge.list.trash.back_to_knowledge"), knowledge_items_path, class: "ml-2 hover:text-slate-900" %>
+    </span>
+  </div>
+
+  <% if @discarded.empty? %>
+    <div class="bg-white rounded border border-slate-200 px-4 py-6 text-center text-slate-500">
+      <%= t("knowledge.list.trash.empty") %>
+    </div>
+  <% else %>
+    <ul class="bg-white rounded border border-slate-200 divide-y divide-slate-100">
+      <% @discarded.each do |k| %>
+        <li class="flex items-center gap-2 px-3 py-2 text-sm">
+          <span class="flex-1 min-w-0 truncate text-slate-700"><%= k.title %></span>
+          <span class="text-xs text-slate-400 shrink-0">
+            <%= t("knowledge.list.trash.deleted_ago", ago: time_ago_in_words(k.deleted_at)) %>
+          </span>
+          <%= button_to t("knowledge.list.trash.restore"), restore_knowledge_item_path(uuid: k.uuid),
+                method: :post,
+                form: { class: "inline m-0 p-0" },
+                class: "text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer bg-transparent border-0" %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

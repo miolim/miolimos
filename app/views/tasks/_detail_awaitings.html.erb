@@ -1,0 +1,48 @@
+<%# Wartepunkte zu diesem Task (Awaitings als eigene Entität).
+    #142: Picker-Look (leading Icon + ein-zeiliger Trigger ohne
+    Vorschlagstext). Klick auf den Trigger öffnet die Dialog-Form mit
+    Beschreibung + Nachfass-Datum. Bestehende Wartepunkte erscheinen
+    als kompakte Liste darunter (analog zu chips_position: :below). %>
+<% awaitings = task.awaitings.open.by_urgency %>
+<details class="space-y-2 group">
+  <%# #603 (Hans): Trigger-Look wie die übrigen Picker — kein dauerhaft
+      sichtbarer Eingabeschlitz; Klick klappt die Dialog-Form auf. %>
+  <summary class="cursor-pointer list-none" title="<%= t("tasks.create_awaiting") %>">
+    <%# #603 R4: Hover hebt die Zeile hervor + zeigt den Text; min-h-7
+        gegen Höhen-Springen. %>
+    <div class="group/erow min-h-7 flex items-center gap-3 text-xs rounded px-1.5 -mx-1.5 hover:bg-slate-50">
+      <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 group-hover/erow:text-slate-700">
+        <%= icon "waiting" %>
+      </span>
+      <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 select-none"><%= t("tasks.create_awaiting") %></span>
+    </div>
+  </summary>
+  <%= form_with url: create_awaiting_task_path(task), method: :post, local: true,
+        class: "pl-6 space-y-2" do |f| %>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("awaitings.title_label") %></label>
+      <%= f.text_area :description, rows: 2, required: true,
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+    </div>
+    <div>
+      <label class="block text-xs text-slate-600 mb-1"><%= t("awaitings.follow_up_at") %></label>
+      <%= f.date_field :follow_up_at, value: (Date.today + 7),
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
+    </div>
+    <%= f.submit t("tasks.new_awaiting"),
+          class: "text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+  <% end %>
+</details>
+
+<% if awaitings.any? %>
+  <ul class="pl-6 text-[13px]">
+    <% awaitings.each do |a| %>
+      <li class="task-awaitings-list-item flex items-center gap-2 py-0.5">
+        <span class="<%= a.overdue? ? 'text-rose-500' : 'text-amber-500' %>">⏳</span>
+        <%= link_to a.title.truncate(50), awaiting_path(a),
+              class: "hover:underline flex-1 min-w-0 truncate" %>
+        <span class="text-xs text-slate-500"><%= l(a.follow_up_at, format: :short) if a.follow_up_at %></span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

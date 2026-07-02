@@ -1,0 +1,48 @@
+<%# #533 #5 (Hans, 2026-06-07): Zeiten-Listen-Blade im Stack — drei Reiter
+    (Alle / Nach Aufgabe / Nach Topic), clientseitig umschaltbar. Drill-downs
+    (Buchung/Aufgabe/Topic) hängen via blade-stack-Opener neue Blades an. %>
+<%
+  stack_id = "list:time_entries"
+  entries  = TimeEntry.for_actor(current_actor).includes(:topic, :time_segments).to_a
+  all_list = entries.sort_by { |e| e.started_at || Time.zone.at(0) }.reverse
+  task_groups  = TimeEntry.consolidate(entries.select { |e| e.subject_type == "Task" }) { |t| t.subject_id_int }
+  topic_groups = TimeEntry.consolidate(entries.select { |e| e.topic_id }) { |t| t.topic_id }
+  task_lookup  = Task.where(id: task_groups.map { |g| g[:key] }).index_by(&:id)
+  topic_lookup = Topic.where(id: topic_groups.map { |g| g[:key] }).index_by(&:id)
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
+                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
+         title="<%= t("time_entries.title") %>"
+         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+         data-target-uuid="<%= stack_id %>">
+    <span class="shrink-0 text-slate-500"><%= icon "timer" %></span>
+    <span class="text-xs text-slate-700 font-medium [writing-mode:vertical-rl] min-h-0 flex-1 overflow-hidden text-ellipsis"><%= t("time_entries.title") %></span>
+    <%= render "shared/blade_close_button" %>
+  </aside>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto" data-controller="simple-tabs">
+    <nav class="flex gap-1 border-b border-slate-200 px-3 pt-3 text-sm sticky top-0 bg-white z-10">
+      <% [["all", t("time_entries.tab_all")], ["task", t("time_entries.tab_task")], ["topic", t("time_entries.tab_topic")]].each do |name, label| %>
+        <button type="button" data-simple-tabs-target="tab" data-name="<%= name %>"
+                data-action="click->simple-tabs#show"
+                class="px-3 py-1.5 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer">
+          <%= label %>
+        </button>
+      <% end %>
+    </nav>
+
+    <div data-simple-tabs-target="panel" data-name="all" class="p-3">
+      <%= render "shared/time_entries_list", entries: all_list, show_subject: true %>
+    </div>
+    <div data-simple-tabs-target="panel" data-name="task" class="hidden p-3">
+      <%= render "time_entries/consolidated", groups: task_groups, kind: "task", lookup: task_lookup %>
+    </div>
+    <div data-simple-tabs-target="panel" data-name="topic" class="hidden p-3">
+      <%= render "time_entries/consolidated", groups: topic_groups, kind: "topic", lookup: topic_lookup %>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,9 @@
+<% content_for :title, "#{t("portal.login.title")} — #{t("portal.login.portal_suffix")}" %>
+<h1><%= t("portal.login.title") %></h1>
+<p class="muted"><%= t("portal.login.intro") %></p>
+<div class="card">
+  <%= form_with url: portal_login_path, method: :post, local: true, class: "stack" do %>
+    <input type="email" name="email" placeholder="<%= t("portal.login.email_placeholder") %>" required autofocus>
+    <button class="primary" type="submit"><%= t("portal.login.request_link") %></button>
+  <% end %>
+</div>

@@ -1,0 +1,14 @@
+<div class="grid grid-cols-[1fr_1fr_auto] gap-2 items-center" data-row>
+  <%= text_field_tag "tags[]", local_assigns[:tag],
+        placeholder: t("settings.tag_icons.ph_tag"),
+        class: "px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-slate-400" %>
+  <%= text_field_tag "icons[]", local_assigns[:icon],
+        placeholder: "lightbulb",
+        class: "px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-slate-400" %>
+  <button type="button"
+          data-action="click->rows-editor#remove"
+          title="<%= t("settings.tag_icons.row_remove") %>"
+          class="text-slate-400 hover:text-rose-600 text-lg leading-none px-2 cursor-pointer">
+    ×
+  </button>
+</div>

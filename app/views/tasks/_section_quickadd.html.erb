@@ -1,0 +1,61 @@
+<%# Quick-Add-Eingabe inline im Sektions-Header auf /tasks. Bricht auf
+    Mobile in eine zweite Zeile (flex-wrap des Header-Containers).
+
+    Locals:
+      - section_key (Symbol/String): :inbox / :today / :soon / :later
+      - topic_id    (optional, Int): in Topic-View wird der Task direkt
+                    diesem Topic zugeordnet
+      - placeholder (optional, String): überschreibt Default-Text
+      - autofocus   (Bool, optional): nach Submit setzen, damit man in
+                    Reihe weiter eintippen kann
+
+    Nach Submit ersetzt der Controller dieses Form per turbo_stream
+    durch ein frisches mit autofocus, sodass man Aufgaben in Reihe
+    eintippen kann (Asana-Stil).
+
+    #299: Title-Feld ist gleichzeitig Vorlagen-Picker (siehe
+    dashboard/_agent_quickadd). %>
+<%
+  key      = section_key.to_s
+  topic_id = local_assigns[:topic_id]
+  form_id  = "section_quickadd_#{key}_#{topic_id || 'none'}"
+  title_id = "#{form_id}_title"
+  desc_id  = "#{form_id}_description"
+  default_label = case key
+                  when "today" then "Aufgabe für heute …"
+                  when "soon"  then "Aufgabe für demnächst …"
+                  when "later" then "Aufgabe für später …"
+                  else              "Aufgabe hinzufügen …"
+                  end
+  label = local_assigns[:placeholder].presence || default_label
+%>
+<div data-controller="task-template-picker"
+     data-task-template-picker-title-target-id-value="<%= title_id %>"
+     data-task-template-picker-description-target-id-value="<%= desc_id %>"
+     class="ml-auto relative w-full md:w-auto">
+  <%= form_with url: tasks_path, method: :post,
+        id: form_id,
+        class: "flex items-center gap-1 w-full md:w-auto" do |f| %>
+    <%= f.hidden_field :section_target, value: key %>
+    <% if key != "inbox" %>
+      <%= f.hidden_field :commitment, value: key %>
+    <% end %>
+    <% if topic_id.present? %>
+      <%= hidden_field_tag "task[topic_ids][]", topic_id %>
+      <%= hidden_field_tag :quickadd_topic_id, topic_id %>
+    <% end %>
+    <%= f.hidden_field :description, id: desc_id %>
+    <%= f.text_field :title,
+          id: title_id,
+          placeholder: label,
+          autofocus: local_assigns[:autofocus],
+          autocomplete: "off",
+          data: {
+            "task-template-picker-target": "input",
+            action: "input->task-template-picker#fetch focus->task-template-picker#fetch keydown->task-template-picker#keydown blur->task-template-picker#blur"
+          },
+          class: "flex-1 md:w-56 rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+  <% end %>
+  <ul data-task-template-picker-target="list"
+      class="hidden absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+</div>

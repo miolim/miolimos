@@ -15,6 +15,14 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Changed
+
+- Dependency refresh (first Dependabot batch, #805): puma 8.0.2,
+  tailwindcss-rails 4.6, rubyzip 3.4.1, signet 0.22, google-apis gems,
+  jbuilder 2.15.1, brakeman 8.0.5, thruster 0.1.22; GitHub Actions bumped
+  (checkout v7, setup-node v6, docker actions). image_processing 2.0 no
+  longer bundles a backend — `ruby-vips` is now declared explicitly.
+
 ## [0.1.0] - 2026-07-03
 
 First versioned, public baseline of miolimOS — the repository went public with

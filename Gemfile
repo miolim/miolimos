@@ -57,7 +57,10 @@ gem "bootsnap", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.0"
+# image_processing 2.0 bringt kein Backend mehr mit — vips explizit
+# (ActiveStorage-Variants; libvips ist eh System-Requirement, s. README).
+gem "ruby-vips"
 
 # Phase 3: Gmail-Integration & verschlüsselte OAuth-Token-Speicherung
 gem "google-apis-gmail_v1"

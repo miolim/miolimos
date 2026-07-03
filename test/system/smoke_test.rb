@@ -3,6 +3,9 @@ require "application_system_test_case"
 # Smallest possible smoke test — proves Cuprite + Capybara wired up.
 class SmokeTest < ApplicationSystemTestCase
   test "login page renders and rejects unknown user" do
+    # #806: auf jungfräulicher Instanz leitet /login zum First-Run-Setup —
+    # für den Login-Smoke braucht es also einen existierenden Nutzer.
+    create_human
     visit "/login"
     assert page.has_field?("email")
     assert page.has_field?("password")

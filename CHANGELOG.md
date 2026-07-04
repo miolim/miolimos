@@ -21,6 +21,12 @@ release is cut, this section is renamed to the new version and a fresh
   account in the browser instead of requiring `db:seed` + environment
   variables; `db:seed` now only loads optional example data.
 
+### Fixed
+
+- Status messages from redirect flows ("topic created", ...) now appear as
+  auto-dismissing toasts instead of static banners that never disappeared -
+  especially noticeable on mobile (#809).
+
 ### Changed
 
 - Generalization for self-hosters (#806): the research agent is

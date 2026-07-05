@@ -28,7 +28,7 @@ class PersonBacklinksEmailTest < ActionDispatch::IntegrationTest
       get "/knowledge_items/#{person.uuid}"
       assert_response :ok
       assert_includes @response.body, "Angebots-Mail"
-      assert_includes @response.body, 'blade-stack#openCommunication'
+      assert_includes @response.body, "blade-stack#openCommunication"
       assert_includes @response.body, %(data-communication-id="#{comm.id}")
     end
   end

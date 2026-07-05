@@ -20,17 +20,17 @@ class TopicTest < ActiveSupport::TestCase
   # #472 (Hans, 2026-06-02): research_question/research_kind entfernt —
   # zugehoeriger Test geloescht.
 
-  test "status enum exposes active/paused/completed/archived" do
-    creator = create_human
-    active    = create_topic(creator: creator)
-    paused    = Topic.create!(name: "p", slug: "p-#{SecureRandom.hex(2)}", creator: creator, status: :paused)
-    completed = Topic.create!(name: "c", slug: "c-#{SecureRandom.hex(2)}", creator: creator, status: :completed)
-    archived  = Topic.create!(name: "a", slug: "a-#{SecureRandom.hex(2)}", creator: creator, status: :archived)
+  # #817: von vier Status (active/paused/completed/archived) auf zwei
+  # reduziert — die drei Nicht-aktiv-Status verhielten sich identisch.
+  test "status enum exposes active/inactive" do
+    creator  = create_human
+    active   = create_topic(creator: creator)
+    inactive = Topic.create!(name: "i", slug: "i-#{SecureRandom.hex(2)}", creator: creator, status: :inactive)
 
+    assert_equal %w[active inactive], Topic.statuses.keys
     assert_includes Topic.active, active
-    refute_includes Topic.active, paused
-    refute_includes Topic.active, completed
-    refute_includes Topic.active, archived
+    refute_includes Topic.active, inactive
+    assert_includes Topic.inactive, inactive
   end
 
   test "templates scope" do

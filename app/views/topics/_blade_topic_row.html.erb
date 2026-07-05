@@ -25,7 +25,7 @@
           <span class="w-5 flex items-center justify-center shrink-0">
             <%= topic_marker topic, next_step: has_next, size: :md %>
           </span>
-          <span class="text-sm flex-1 truncate"><%= topic.name %></span>
+          <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
         </button>
         <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
         <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
@@ -55,7 +55,7 @@
         <span class="w-5 flex items-center justify-center shrink-0">
           <%= topic_marker topic, next_step: has_next, size: :md %>
         </span>
-        <span class="text-sm flex-1 truncate"><%= topic.name %></span>
+        <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
       </button>
       <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
       <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>

@@ -28,7 +28,7 @@
   <div class="grid grid-cols-2 gap-3">
     <div>
       <%= f.label :status, class: "block text-xs text-slate-600 mb-1" %>
-      <%= f.select :status, Topic.statuses.keys.map { |k| [k, k] },
+      <%= f.select :status, Topic.statuses.keys.map { |k| [t("topics.status.#{k}"), k] },
             {}, class: "w-full rounded border border-slate-200 px-2 py-1" %>
     </div>
     <div>

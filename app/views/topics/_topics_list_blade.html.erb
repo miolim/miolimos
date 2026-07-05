@@ -4,7 +4,8 @@
     Plus). Self-contained Fallback fuer den BladeStackLoader-Pfad.
     Locals: topics (Array<Topic>, optional). %>
 <%
-  topics = local_assigns[:topics]
+  topics        = local_assigns[:topics]
+  show_inactive = local_assigns[:show_inactive]
   topics = Topic.non_templates.active.top_level.order(:name).to_a if topics.nil?
   total  = topics.size
 %>
@@ -33,6 +34,9 @@
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search"
        data-list-search-selector-value="li[data-topic]">
+    <%# #817/#558: Frame um den Listeninhalt — der Status-Filter lädt nur
+        dieses Fragment neu, der Stack bleibt stehen. %>
+    <turbo-frame id="topics_list_frame" class="contents">
     <%# #455 (Hans, 2026-06-02): popover-fixed-value=true — sonst wird das
         Popover (Neues-Thema-Form) vom overflow-y-auto der Blade-Card
         abgeschnitten und der Plus-Klick schien wirkungslos. position:fixed
@@ -63,9 +67,17 @@
         </div>
       </div>
     <% end %>
+    <% status_toggle = capture do %>
+      <%# #817: inaktive ein-/ausblenden (Standard: nur aktive). %>
+      <%= link_to (show_inactive ? t("topics.hide_inactive") : t("topics.show_inactive")),
+            all_list_card_topics_path(show_inactive: show_inactive ? nil : 1),
+            data: { turbo_frame: "topics_list_frame" },
+            class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded cursor-pointer
+                    #{show_inactive ? 'bg-slate-200 text-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}" %>
+    <% end %>
     <%= render "shared/list_header",
           lead_icon: "folder", title: t("nav.topics"), count: total,
-          add: add_topic,
+          add: safe_join([status_toggle, add_topic]),
           search: (total > 0 ? render("shared/list_search", placeholder: t("topics.list_search_placeholder")) : nil) %>
 
     <% if total.zero? %>
@@ -81,5 +93,6 @@
         <%= render "topics/blade_topic_row", topic: topic %>
       <% end %>
     </ul>
+    </turbo-frame>
   </div>
 </article>

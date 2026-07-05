@@ -129,7 +129,11 @@ class Topic < ApplicationRecord
 
   def project? = customer_uuid.present?
 
-  enum :status, { active: 0, paused: 1, completed: 2, archived: 3 }, default: :active
+  # #817: reduziert von active/paused/completed/archived — die drei
+  # Nicht-aktiv-Status verhielten sich überall identisch (nur der
+  # active-Filter wirkt); inaktive Themen verschwinden aus Listen,
+  # Dropdowns und Klassifikator-Vorschlägen, bleiben aber verlinkbar.
+  enum :status, { active: 0, inactive: 1 }, default: :active
 
   # #472 (Hans, 2026-06-02): research_question/research_kind entfernt —
   # Recherche-Topics laufen jetzt ueber Vorlagen/Tags (#471), Synthesen

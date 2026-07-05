@@ -135,6 +135,11 @@ de:
     list_search_placeholder: "Themen durchsuchen …"
     name_placeholder: "Themenname …"
     new_topic:        "Neues Thema anlegen"
+    show_inactive:    "inaktive zeigen"
+    hide_inactive:    "nur aktive"
+    status:
+      active:   "aktiv"
+      inactive: "inaktiv"
     shown_total:      "angezeigt / gesamt"
     toggle_subtopics: "Sub-Themen ein-/ausklappen"
     unlink_customer:  "Kunden-Zuordnung lösen"

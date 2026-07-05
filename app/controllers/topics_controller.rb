@@ -27,8 +27,12 @@ class TopicsController < ApplicationController
     q = params[:q].to_s.strip.downcase
     scope = Topic.visible_to(current_actor).order(:name)
     scope = scope.where("LOWER(slug) LIKE :q OR LOWER(name) LIKE :q", q: "%#{q}%") if q.present?
-    results = scope.limit(10).pluck(:slug, :name)
-    render json: { items: results.map { |slug, name| { slug: slug, label: name } } }
+    # #817: inaktive weiterhin findbar (Wiederfinde-Kanal), aber markiert.
+    results = scope.limit(10).pluck(:slug, :name, :status)
+    render json: { items: results.map { |slug, name, status|
+      inactive = status == "inactive" || status == 1
+      { slug: slug, label: inactive ? "#{name} · #{t('topics.status.inactive')}" : name, inactive: inactive }
+    } }
   end
 
   # #196: Detail-Pane für die History-Page. Rendert nur das Topic-
@@ -66,8 +70,13 @@ class TopicsController < ApplicationController
   # Topic haengt dessen Listen-Blade an den Stack. Collection-Action (kein
   # @topic, set_topic laeuft hier nicht).
   def topics_list_card
-    @topics = Topic.visible_to(current_actor).non_templates.active.top_level.order(:name).to_a
-    render partial: "topics/topics_list_blade", locals: { topics: @topics }, layout: false
+    # #817: optional inaktive mitzeigen (Status-Filter im Listen-Blade).
+    show_inactive = params[:show_inactive].present?
+    scope = Topic.visible_to(current_actor).non_templates.top_level
+    scope = scope.active unless show_inactive
+    @topics = scope.order(:name).to_a
+    render partial: "topics/topics_list_blade",
+           locals: { topics: @topics, show_inactive: show_inactive }, layout: false
   end
 
   # #472 (Hans, 2026-06-02): create_synthesis entfernt. Synthese-Notizen

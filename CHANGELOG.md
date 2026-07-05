@@ -36,6 +36,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- Topic statuses reduced from four to two - active/inactive - since the
+  three non-active statuses behaved identically; the topics list gains a
+  "show inactive" filter and the topic type-ahead marks inactive topics
+  while keeping them findable (#817). Migration maps old statuses to
+  inactive.
 - Generalization for self-hosters (#806): the research agent is
   configurable via `MIOLIMOS_RESEARCHER_EMAIL`, maintenance rake tasks use
   the instance's first human actor, Crossref/OpenLibrary user agents

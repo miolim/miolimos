@@ -135,6 +135,11 @@ en:
     list_search_placeholder: "Search topics …"
     name_placeholder: "Topic name …"
     new_topic:        "New topic"
+    show_inactive:    "show inactive"
+    hide_inactive:    "active only"
+    status:
+      active:   "active"
+      inactive: "inactive"
     shown_total:      "shown / total"
     toggle_subtopics: "Expand/collapse subtopics"
     unlink_customer:  "Unlink customer"

@@ -5622,6 +5622,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260705204851'),
 ('20260702170000'),
 ('20260629230000'),
 ('20260629220000'),

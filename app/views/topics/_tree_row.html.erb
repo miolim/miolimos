@@ -20,7 +20,7 @@
   <% if topic.template? %>
     <span class="text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded"><%= t("topics.template") %></span>
   <% else %>
-    <%= status_badge topic.status, labels: { "active" => "aktiv", "paused" => "pausiert", "completed" => "abgeschlossen", "archived" => "archiviert" } %>
+    <%= status_badge topic.status, labels: { "active" => t("topics.status.active"), "inactive" => t("topics.status.inactive") } %>
   <% end %>
   <span class="text-xs text-slate-400 font-mono w-32 text-right truncate"><%= topic.slug %></span>
 </li>

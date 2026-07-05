@@ -10,13 +10,13 @@ class Api::V1::TopicsControllerTest < ActionDispatch::IntegrationTest
 
   test "index filters by status and template" do
     active_reg  = Topic.create!(name: "Reg", slug: "reg-#{SecureRandom.hex(3)}", creator: @creator, status: :active, template: false)
-    paused      = Topic.create!(name: "Pau", slug: "pau-#{SecureRandom.hex(3)}", creator: @creator, status: :paused, template: false)
+    inactive    = Topic.create!(name: "Ina", slug: "ina-#{SecureRandom.hex(3)}", creator: @creator, status: :inactive, template: false)
     template    = Topic.create!(name: "Tmpl", slug: "tmpl-#{SecureRandom.hex(3)}", creator: @creator, status: :active, template: true)
 
     get "/api/v1/topics", params: { status: "active", template: false }, headers: @headers
     ids = JSON.parse(response.body)["data"].map { |t| t["id"] }
     assert_includes ids, active_reg.id
-    refute_includes ids, paused.id
+    refute_includes ids, inactive.id
     refute_includes ids, template.id
   end
 
@@ -68,10 +68,10 @@ class Api::V1::TopicsControllerTest < ActionDispatch::IntegrationTest
 
   test "update PATCH changes fields" do
     t = Topic.create!(name: "Before", slug: "upd-#{SecureRandom.hex(3)}", creator: @creator)
-    patch "/api/v1/topics/#{t.id}", params: { name: "After", status: "paused" }, headers: @headers
+    patch "/api/v1/topics/#{t.id}", params: { name: "After", status: "inactive" }, headers: @headers
     assert_response :success
     assert_equal "After", t.reload.name
-    assert t.paused?
+    assert t.inactive?
   end
 
   test "update requires update capability (not create)" do

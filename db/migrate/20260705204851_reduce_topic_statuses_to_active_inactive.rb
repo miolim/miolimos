@@ -4,6 +4,9 @@
 class ReduceTopicStatusesToActiveInactive < ActiveRecord::Migration[8.1]
   def up
     execute "UPDATE topics SET status = 1 WHERE status IN (2, 3)"
+    # Alt-Datensätze ohne Status (vor Einführung des Defaults angelegt)
+    # gelten als aktiv — NULL fiel bisher aus JEDEM Scope heraus.
+    execute "UPDATE topics SET status = 0 WHERE status IS NULL"
   end
 
   def down

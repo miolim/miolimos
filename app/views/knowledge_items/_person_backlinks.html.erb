@@ -111,8 +111,12 @@
               <% c = cm.communication; next unless c %>
               <div class="text-[13px] flex items-center gap-2">
                 <span class="w-7 text-center text-xs text-slate-500 shrink-0"><%= role_label.call(cm.role) %></span>
+                <%# #810: E-Mail als Blade an den AKTUELLEN Stack appenden
+                    (openCommunication) statt zur Kommunikations-Seite zu
+                    navigieren; href bleibt Fallback ohne blade-stack. %>
                 <%= link_to (c.subject.presence || t("knowledge.list.backlinks.no_subject")), communication_path(c),
-                      data: { turbo_frame: "_top" },
+                      data: { action: "click->blade-stack#openCommunication",
+                              communication_id: c.id, turbo_frame: "_top" },
                       class: "hover:underline truncate flex-1" %>
                 <span class="text-xs text-slate-400 shrink-0">
                   <%= l(c.sent_at, format: :short) if c.sent_at %>

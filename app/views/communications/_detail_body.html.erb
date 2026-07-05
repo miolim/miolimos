@@ -238,7 +238,11 @@
       <ul>
         <% tasks.each do |t| %>
           <li>
-            <%= link_to t.title, task_path(t), data: { turbo_frame: "_top" }, class: "hover:underline" %>
+            <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
+            <%= link_to t.title, task_path(t),
+                  data: { action: "click->blade-stack#openTask",
+                          task_id: t.id, turbo_frame: "_top" },
+                  class: "hover:underline" %>
           </li>
         <% end %>
       </ul>

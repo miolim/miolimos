@@ -26,8 +26,11 @@ release is cut, this section is renamed to the new version and a fresh
 - Status messages from redirect flows ("topic created", ...) now appear as
   auto-dismissing toasts instead of static banners that never disappeared -
   especially noticeable on mobile (#809).
-- Email links on a person card now open the communication as a card in the
-  current stack instead of navigating to the communications area (#810).
+- Entity links inside stack cards now consistently open in the current
+  stack instead of navigating away (#810): person-card backlinks (emails,
+  awaitings), task chips (sources, knowledge, contacts), awaiting detail
+  links (contact, task, triggering email), tasks-from-email links, and the
+  topic marker on task rows.
 
 ### Changed
 

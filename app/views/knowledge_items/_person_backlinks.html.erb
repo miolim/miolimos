@@ -137,8 +137,10 @@
             <% awaitings_open.each do |a| %>
               <div class="text-[13px] flex items-center gap-2">
                 <span class="w-5 text-center text-amber-500">⏳</span>
+                <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
                 <%= link_to a.title, awaiting_path(a),
-                      data: { turbo_frame: "_top" },
+                      data: { action: "click->blade-stack#openAwaiting",
+                              awaiting_id: a.id, turbo_frame: "_top" },
                       class: "hover:underline truncate flex-1" %>
                 <% if a.follow_up_at %>
                   <span class="text-xs <%= a.overdue? ? 'text-rose-600' : 'text-slate-400' %> shrink-0">

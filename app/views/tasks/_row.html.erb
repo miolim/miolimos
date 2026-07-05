@@ -84,10 +84,12 @@
           <% is_next = task_next_step_for?(task, row_topic) %>
           <%# Marker ist Klick-Target zum Topic — bewusst eigener Link
               außerhalb des Titel-Anchors (HTML erlaubt keine nested
-              <a>). turbo_frame: _top für Vollnavigation, sonst landet
-              das Topic im task_detail-Frame. %>
+              <a>). #810: openTopic appendet im aktuellen Stack;
+              turbo_frame: _top bleibt Fallback ohne blade-stack (und
+              verhindert weiterhin die task_detail-Frame-Falle). %>
           <%= link_to topic_path(row_topic),
-                data: { turbo_frame: "_top" },
+                data: { action: "click->blade-stack#openTopic",
+                        topic_slug: row_topic.slug, turbo_frame: "_top" },
                 title: is_next ? t("tasks.next_step_for", topic: row_topic.name) : row_topic.name,
                 class: "flex items-center justify-center hover:opacity-70" do %>
             <%= topic_marker row_topic, next_step: is_next, milestone: task.client_milestone %>

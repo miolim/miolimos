@@ -5,8 +5,10 @@
   <% task.mentioned_kis.where.not(item_type: %w[person organization]).order(:title).each do |ki| %>
     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
       <span aria-hidden="true" class="text-slate-500"><%= knowledge_type_icon(ki.item_type, size: "w-3.5 h-3.5") %></span>
+      <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
       <%= link_to ki.title, knowledge_items_path(stack: ki.uuid),
-            data: { turbo_frame: "_top" },
+            data: { action: "click->blade-stack#openInStack",
+                    target_uuid: ki.uuid, turbo_frame: "_top" },
             class: "hover:underline" %>
       <%= button_to task_mention_path(task, ki.uuid, kind: :knowledge),
             method: :delete,

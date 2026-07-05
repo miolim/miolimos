@@ -72,8 +72,11 @@
     <% if awaiting.contact_ki %>
       <div>
         <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.contact") %></dt>
+        <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
         <dd><%= link_to awaiting.contact_ki.display_name, knowledge_item_path(awaiting.contact_ki.uuid),
-                  data: { turbo_frame: "_top" }, class: "hover:underline" %></dd>
+                  data: { action: "click->blade-stack#openInStack",
+                          target_uuid: awaiting.contact_ki.uuid, turbo_frame: "_top" },
+                  class: "hover:underline" %></dd>
       </div>
     <% end %>
 
@@ -81,9 +84,12 @@
       <div class="col-span-2">
         <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.triggered_by_communication") %></dt>
         <dd>
+          <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
           <%= link_to (awaiting.communication.subject.presence || t("communications.no_subject")),
                 communication_path(awaiting.communication),
-                data: { turbo_frame: "_top" }, class: "hover:underline" %>
+                data: { action: "click->blade-stack#openCommunication",
+                        communication_id: awaiting.communication.id, turbo_frame: "_top" },
+                class: "hover:underline" %>
         </dd>
       </div>
     <% end %>
@@ -91,8 +97,11 @@
     <% if awaiting.task %>
       <div class="col-span-2">
         <dt class="text-xs text-slate-500 mb-1"><%= t("awaitings.triggered_by_task") %></dt>
+        <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
         <dd><%= link_to awaiting.task.title, task_path(awaiting.task),
-                  data: { turbo_frame: "_top" }, class: "hover:underline" %></dd>
+                  data: { action: "click->blade-stack#openTask",
+                          task_id: awaiting.task.id, turbo_frame: "_top" },
+                  class: "hover:underline" %></dd>
       </div>
     <% end %>
 

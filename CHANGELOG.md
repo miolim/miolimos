@@ -23,6 +23,8 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Agent pokes now send a safety Enter so prompts do not sit unsubmitted in
+  the agent terminal when the first Enter lands mid-render (#815).
 - Status messages from redirect flows ("topic created", ...) now appear as
   auto-dismissing toasts instead of static banners that never disappeared -
   especially noticeable on mobile (#809).

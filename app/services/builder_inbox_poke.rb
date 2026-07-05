@@ -105,6 +105,13 @@ class BuilderInboxPoke
         system("tmux", "send-keys", "-t", session, "-l", full)
         sleep 1
         system("tmux", "send-keys", "-t", session, "Enter")
+        # #815: Sicherheits-Enter. Fällt das erste Enter in einen Busy-/
+        # Render-Moment der Claude-Session, bleibt der Prompt unsubmittet
+        # im Eingabefeld liegen (beim immoos_builder zweimal beobachtet).
+        # Ein zweites Enter nach Wartezeit submittet dann; war das erste
+        # erfolgreich, ist es ein No-Op auf leerem Eingabefeld.
+        sleep 2
+        system("tmux", "send-keys", "-t", session, "Enter")
       rescue StandardError => e
         Rails.logger.warn "BuilderInboxPoke tmux (id=#{@actor.id}): #{e.class}: #{e.message}"
       end

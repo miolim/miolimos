@@ -36,10 +36,22 @@ export default class extends Controller {
 
     this.sessionToken = this.ensureSessionToken()
     this.accumulatedMs = 0
-    this.segmentStart = (document.visibilityState === "hidden") ? null : performance.now()
     this.wasEdited = false
     this.lastViewId = null
     this.tracking = true
+
+    // #816: Im Blade-Stack zählt NUR die aktive (fokussierte) Card —
+    // vorher akkumulierten ALLE offenen Cards gleichzeitig Sichtzeit,
+    // und schon das Aufräumen eines Stacks erzeugte Verlaufs-Einträge.
+    // Der Active-State lebt als data-active auf der .stack-card
+    // (setActiveCard); wir beobachten ihn per MutationObserver.
+    // Außerhalb eines Stacks (Vollansicht) gilt wie bisher: sichtbar = zählt.
+    this.card = this.element.closest(".stack-card")
+    if (this.card) {
+      this.activeObserver = new MutationObserver(() => this.onGateChange())
+      this.activeObserver.observe(this.card, { attributes: true, attributeFilter: ["data-active"] })
+    }
+    this.segmentStart = this.isCounting() ? performance.now() : null
 
     // Boundary-Listener für Tab-Wechsel und Page-Unload. Diese werden
     // im disconnect() wieder entfernt, damit alte Detail-Partials nach
@@ -55,15 +67,18 @@ export default class extends Controller {
     // Handler den Scope macht.
     document.addEventListener("turbo:submit-end", this.onSubmitEnd)
 
-    // Erstmaliger POST nach `threshold` ms — falls die Entity da noch
-    // sichtbar ist.
-    this.thresholdTimer = setTimeout(() => this.firstPing(), this.thresholdValue)
+    // Erstmaliger POST, sobald `threshold` ms Fokus-Sichtzeit erreicht
+    // sind. Re-armt sich bei Fokus-/Tab-Wechseln (#816 — vorher stand
+    // „später nochmal versuchen" nur im Kommentar).
+    this.pinged = false
+    this.armPingTimer()
   }
 
   disconnect() {
     if (!this.tracking) return
     this.tracking = false
     if (this.thresholdTimer) clearTimeout(this.thresholdTimer)
+    if (this.activeObserver) this.activeObserver.disconnect()
     document.removeEventListener("visibilitychange", this.onVisibility)
     window.removeEventListener("beforeunload", this.onBeforeUnload)
     document.removeEventListener("turbo:submit-end", this.onSubmitEnd)
@@ -92,17 +107,38 @@ export default class extends Controller {
 
   // ─── interne Methoden ────────────────────────────────────────────
 
-  onVisibility() {
-    if (document.visibilityState === "hidden") {
-      // Tab wird verlassen — laufendes Segment einfrieren.
+  onVisibility() { this.onGateChange() }
+
+  // Zählt gerade? Tab sichtbar UND (keine Stack-Card ODER diese ist aktiv).
+  isCounting() {
+    if (document.visibilityState === "hidden") return false
+    if (this.card && this.card.dataset.active !== "true") return false
+    return true
+  }
+
+  // Gemeinsame Reaktion auf Tab-Sichtbarkeit UND Fokus-Wechsel (#816):
+  // Segment einfrieren bzw. neu starten, Ping-Timer nachziehen.
+  onGateChange() {
+    if (this.isCounting()) {
+      if (this.segmentStart === null) this.segmentStart = performance.now()
+      this.armPingTimer()
+    } else {
       if (this.segmentStart !== null) {
         this.accumulatedMs += performance.now() - this.segmentStart
         this.segmentStart = null
       }
-    } else {
-      // Tab kommt zurück — neues Segment beginnt.
-      if (this.segmentStart === null) this.segmentStart = performance.now()
+      if (this.thresholdTimer) { clearTimeout(this.thresholdTimer); this.thresholdTimer = null }
     }
+  }
+
+  // Timer bis zum Erreichen der Threshold-Restzeit — nur wenn gerade
+  // gezählt wird und noch kein Erst-Ping raus ist.
+  armPingTimer() {
+    if (!this.tracking || this.pinged) return
+    if (this.thresholdTimer) clearTimeout(this.thresholdTimer)
+    if (!this.isCounting()) { this.thresholdTimer = null; return }
+    const remaining = Math.max(0, this.thresholdValue - this.totalMs())
+    this.thresholdTimer = setTimeout(() => this.firstPing(), remaining)
   }
 
   onBeforeUnload() {
@@ -117,9 +153,10 @@ export default class extends Controller {
   }
 
   async firstPing() {
-    if (!this.tracking) return
+    if (!this.tracking || this.pinged) return
     const total = this.totalMs()
-    if (total < this.thresholdValue) return  // Tab war versteckt → später nochmal versuchen
+    if (total < this.thresholdValue) { this.armPingTimer(); return }
+    this.pinged = true
     try {
       const res = await fetch("/actor_views", {
         method: "POST",

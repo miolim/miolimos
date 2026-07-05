@@ -23,6 +23,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- History view tracking now counts only the focused (active) stack card -
+  previously every open card accumulated view time simultaneously, and even
+  cleaning up a stack created history entries (#816). The first-ping retry
+  after tab switches now actually happens.
 - Agent pokes now send a safety Enter so prompts do not sit unsubmitted in
   the agent terminal when the first Enter lands mid-render (#815).
 - Status messages from redirect flows ("topic created", ...) now appear as

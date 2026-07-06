@@ -41,8 +41,10 @@
   <%# #301: Quick-Create-Icon-Leiste — neue Entitaet direkt in den Stack. %>
   <%= render "shared/quick_create_bar" %>
 
-  <%# #533 Phase 1b: Zeit-Timer (laufende Uhr + Start/Nachtragen-Popup). %>
-  <%= render "shared/time_timer" %>
+  <%# #533 Phase 1b: Zeit-Timer (laufende Uhr + Start/Nachtragen-Popup).
+      #857 (Hans, 2026-07-06): auf Mobil ausgeblendet — Toolbar war zu voll;
+      md:contents lässt das Desktop-Flex-Layout unverändert. %>
+  <div class="hidden md:contents"><%= render "shared/time_timer" %></div>
 
   <div class="ml-auto flex items-center gap-3 text-slate-600">
     <%# #772 (Hans, 2026-06-27): Dark-Mode-Umschalter. Mond im Hell-Modus
@@ -55,7 +57,7 @@
             title="<%= t("shared.topbar.theme_title") %>"
             aria-label="<%= t("shared.topbar.theme_label") %>"
             aria-pressed="<%= cookies[:theme] == "dark" %>"
-            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
       <span class="theme-icon-moon flex [&_svg]:w-4 [&_svg]:h-4"><%= icon "moon" %></span>
       <span class="theme-icon-sun hidden [&_svg]:w-4 [&_svg]:h-4"><%= icon "sun" %></span>
     </button>
@@ -69,7 +71,7 @@
             data-ui-label="Tastatur-Shortcuts (Hilfe)"
             title="<%= t("shared.topbar.shortcuts_title") %>"
             aria-label="<%= t("shared.topbar.shortcuts_label") %>"
-            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
       <%= icon "keyboard", size: "w-4 h-4" %>
     </button>
     <%# #704 (Hans): Beschriftungs-Modus — Labels per Hover anzeigen, per
@@ -82,7 +84,7 @@
             title="<%= t("shared.topbar.inspector_title") %>"
             aria-label="<%= t("shared.topbar.inspector_label") %>"
             aria-pressed="false"
-            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
       <%= icon "locate", size: "w-4 h-4" %>
     </button>
     <%# #339 (Hans): Diagnose-Knopf — schreibt einen JSON-Snapshot des
@@ -93,7 +95,7 @@
             data-action="click->diagnostic-snapshot#snapshot"
             title="<%= t("shared.topbar.diagnostic_title") %>"
             aria-label="<%= t("shared.topbar.diagnostic_label") %>"
-            class="p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
       <%= icon "info", size: "w-4 h-4" %>
     </button>
     <span class="hidden sm:inline text-[13px]"><%= current_actor&.name %></span>

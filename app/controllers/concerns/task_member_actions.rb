@@ -181,7 +181,7 @@ module TaskMemberActions
           # Stream trifft also beide Page-Typen.
           turbo_stream.replace_all("#task_#{@task.id}",
             partial: "tasks/detail_body", locals: { task: @task }),
-          # #756: Status-Icon in der Card-Toolbar live austauschen (globe →
+          # #756: Status-Icon in der Card-Toolbar live austauschen (send →
           # pause) — es liegt außerhalb von #task_<id>.
           turbo_stream.replace_all("#task_status_control_#{@task.id}",
             partial: "tasks/status_control", locals: { task: @task }),
@@ -209,7 +209,7 @@ module TaskMemberActions
           turbo_stream.replace_all("#task_#{@task.id}",
             partial: "tasks/detail_body", locals: { task: @task }),
           # #756: Status-Icon in der Card-Toolbar live austauschen (pause →
-          # globe) — es liegt außerhalb von #task_<id>.
+          # send) — es liegt außerhalb von #task_<id>.
           turbo_stream.replace_all("#task_status_control_#{@task.id}",
             partial: "tasks/status_control", locals: { task: @task }),
           turbo_stream.replace_all("#task_row_#{@task.id}",

@@ -1,0 +1,12 @@
+<%# #435: Zuletzt geoeffnete Topics (Anzahl via pref_sidebar_recent_topics_count,
+    0 = aus). #846: als eigener, per Layout-Vorlieben platzierbarer Sidebar-
+    Eintrag ausgelagert. Rendert nichts, wenn keine Topics vorliegen. %>
+<% recent_topics = current_actor ? Topic.recently_opened_for(current_actor, limit: current_actor.pref_sidebar_recent_topics_count) : [] %>
+<% if recent_topics.any? %>
+  <div class="mt-0.5 pt-0.5 border-t border-slate-800/60">
+    <div class="px-2 pt-1 pb-0.5 text-[11px] uppercase tracking-wider text-slate-500 group-data-[collapsed=true]/sidebar:invisible"><%= t("shared.sidebar.recently_opened") %></div>
+    <% recent_topics.each do |topic| %>
+      <%= render "shared/sidebar_recent_topic_row", topic: topic %>
+    <% end %>
+  </div>
+<% end %>

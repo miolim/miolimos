@@ -90,6 +90,76 @@ module ActorPreferences
     raw.to_i.clamp(0, SIDEBAR_RECENT_TOPICS_MAX)
   end
 
+  # #846 (Hans, 2026-07-06): Konfigurierbares Sidebar-Layout pro Actor.
+  # Jeder Sidebar-Eintrag hat eine feste ID; das Layout ordnet die IDs den
+  # drei Bereichen zu und legt die Reihenfolge INNERHALB pinned/scroll fest:
+  #   - "pinned" = fest oben (sticky), sichtbar auch beim Scrollen
+  #   - "scroll" = mitscrollender Hauptbereich
+  #   - "hidden" = gar nicht angezeigt
+  SIDEBAR_SECTIONS = %w[pinned scroll hidden].freeze
+
+  # Alle bekannten Sidebar-Eintraege mit Default-Bereich, in Default-
+  # Reihenfolge (entspricht der bisher hartcodierten Sidebar). Neue Eintraege
+  # HIER ergaenzen — Default-Bereich nie "hidden", damit ein neuer Eintrag
+  # bei bereits angepassten Nutzern sichtbar hinten im Scrollbereich auftaucht
+  # (niemand verpasst ein neues Feature; ausblenden kann man selbst).
+  SIDEBAR_ITEM_DEFAULTS = [
+    ["dashboard",      "pinned"],
+    ["pinned",         "pinned"],
+    ["history",        "pinned"],
+    ["recent_topics",  "pinned"],
+    ["topics",         "scroll"],
+    ["inbox",          "scroll"],
+    ["tasks",          "scroll"],
+    ["trash",          "scroll"],
+    ["awaitings",      "scroll"],
+    ["communications", "scroll"],
+    ["knowledge",      "scroll"],
+    ["persons",        "scroll"],
+    ["times",          "scroll"],
+    ["calendar",       "scroll"],
+    ["documents",      "scroll"],
+    ["sources",        "scroll"],
+    ["docs",           "scroll"],
+    ["tags",           "scroll"]
+  ].freeze
+
+  SIDEBAR_ITEM_IDS = SIDEBAR_ITEM_DEFAULTS.map(&:first).freeze
+
+  # Default-Layout ohne konkreten Actor (Fallback, wenn current_actor fehlt).
+  def self.default_sidebar_layout
+    layout = { "pinned" => [], "scroll" => [], "hidden" => [] }
+    SIDEBAR_ITEM_DEFAULTS.each { |id, sec| layout[sec] << id }
+    layout
+  end
+
+  # Effektives Layout: startet vom gespeicherten Wert, ergaenzt fehlende
+  # (= neu hinzugekommene) IDs an ihrem Default-Platz und wirft unbekannte
+  # IDs weg. So bleibt die Sidebar nach einem Update vollstaendig, ohne dass
+  # ein altes gespeichertes Layout neue Eintraege verschluckt.
+  def pref_sidebar_layout
+    saved  = preferences["sidebar_layout"]
+    placed = {}
+    result = { "pinned" => [], "scroll" => [], "hidden" => [] }
+    if saved.is_a?(Hash)
+      SIDEBAR_SECTIONS.each do |sec|
+        Array(saved[sec]).each do |raw_id|
+          id = raw_id.to_s
+          next unless SIDEBAR_ITEM_IDS.include?(id)
+          next if placed[id]
+          result[sec] << id
+          placed[id] = true
+        end
+      end
+    end
+    SIDEBAR_ITEM_DEFAULTS.each do |id, default_sec|
+      next if placed[id]
+      result[SIDEBAR_SECTIONS.include?(default_sec) ? default_sec : "scroll"] << id
+      placed[id] = true
+    end
+    result
+  end
+
   def update_preferences(updates)
     new_prefs = preferences.deep_dup
     updates.each do |key, value|
@@ -106,10 +176,37 @@ module ActorPreferences
         new_prefs["cm6_editor"] = ActiveModel::Type::Boolean.new.cast(value)
       when "sidebar_recent_topics_count"
         new_prefs["sidebar_recent_topics_count"] = value.to_i.clamp(0, SIDEBAR_RECENT_TOPICS_MAX)
+      when "sidebar_layout"
+        new_prefs["sidebar_layout"] = sanitize_sidebar_layout(value)
       when "locale"
         new_prefs["locale"] = value.to_s if LOCALES.include?(value.to_s)
       end
     end
     update!(preferences: new_prefs)
+  end
+
+  private
+
+  # #846: Sidebar-Layout aus dem Form-Input saeubern. Akzeptiert je Bereich
+  # ein Array oder einen komma-separierten String (Hidden-Field), behaelt nur
+  # bekannte IDs, dedupliziert ueber alle Bereiche (eine ID kann nur an einem
+  # Ort liegen). Reihenfolge = Eingabe-Reihenfolge. Fehlende IDs werden beim
+  # Auslesen (pref_sidebar_layout) automatisch ergaenzt, hier NICHT.
+  def sanitize_sidebar_layout(value)
+    src    = value.respond_to?(:to_h) ? value.to_h : {}
+    seen   = {}
+    layout = { "pinned" => [], "scroll" => [], "hidden" => [] }
+    SIDEBAR_SECTIONS.each do |sec|
+      raw = src[sec] || src[sec.to_sym]
+      ids = raw.is_a?(String) ? raw.split(",") : Array(raw)
+      ids.each do |raw_id|
+        id = raw_id.to_s.strip
+        next unless SIDEBAR_ITEM_IDS.include?(id)
+        next if seen[id]
+        layout[sec] << id
+        seen[id] = true
+      end
+    end
+    layout
   end
 end

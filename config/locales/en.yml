@@ -1223,6 +1223,12 @@ en:
     self_ki_help: "Link yourself to your person KI. The mail sync derives your own addresses from it (they don't count as an external matter)."
     self_ki_placeholder: "Search person …"
     self_ki_addresses: "%{n} email address(es) from this KI are treated as \"own\"."
+    sidebar_layout_title:  "Sidebar"
+    sidebar_layout_help:   "Which entries appear in which area of the sidebar and in what order. Drag between the columns to move, and reorder within a column. “Pinned top” stays visible while scrolling; “Hidden” is not shown at all."
+    sidebar_layout_pinned: "Pinned top"
+    sidebar_layout_scroll: "Scroll area"
+    sidebar_layout_hidden: "Hidden"
+    sidebar_layout_reset:  "Reset to default"
     save:              "Save"
 
   languages:

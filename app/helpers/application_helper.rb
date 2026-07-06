@@ -101,6 +101,86 @@ module ApplicationHelper
     content_tag(:div, safe_join([link, plus]), class: "flex items-center")
   end
 
+  # #846: Anzeige-Label je Sidebar-Eintrag-ID. Einzige Label-Quelle —
+  # sowohl der Sidebar-Render (sidebar_item) als auch der Vorlieben-Editor
+  # nutzen sie, damit die Bezeichnungen konsistent bleiben.
+  SIDEBAR_ITEM_LABEL_KEYS = {
+    "dashboard"      => "nav.dashboard",
+    "pinned"         => "shared.sidebar.pinned",
+    "history"        => "shared.sidebar.history",
+    "recent_topics"  => "shared.sidebar.recently_opened",
+    "topics"         => "nav.topics",
+    "inbox"          => "shared.sidebar.inbox",
+    "tasks"          => "nav.tasks",
+    "trash"          => "shared.sidebar.trash",
+    "awaitings"      => "nav.waiting",
+    "communications" => "nav.communications",
+    "knowledge"      => "nav.knowledge",
+    "persons"        => "nav.contacts",
+    "times"          => "shared.sidebar.times",
+    "calendar"       => "shared.sidebar.calendar",
+    "documents"      => "shared.sidebar.documents",
+    "sources"        => "shared.sidebar.sources",
+    "docs"           => "shared.sidebar.docs",
+    "tags"           => "shared.sidebar.tags"
+  }.freeze
+
+  def sidebar_item_label(id)
+    key = SIDEBAR_ITEM_LABEL_KEYS[id.to_s]
+    key ? t(key) : id.to_s
+  end
+
+  # id => Label-Map fuer den JS-Editor (Reset-Button baut die Listen neu auf).
+  def sidebar_item_labels
+    SIDEBAR_ITEM_LABEL_KEYS.keys.index_with { |id| sidebar_item_label(id) }
+  end
+
+  # #846: Einen Sidebar-Eintrag nach seiner ID rendern. Zentrale Registry,
+  # damit Bereichszuordnung + Reihenfolge aus den Vorlieben (pref_sidebar_layout)
+  # getrieben werden koennen. Unbekannte IDs => "" (robust gegen alte Layouts).
+  def sidebar_item(id)
+    case id.to_s
+    when "dashboard"
+      sidebar_link sidebar_item_label(id), dashboard_path, "gauge", reset_stack_id: "list:dashboard"
+    when "pinned"
+      sidebar_link sidebar_item_label(id), pinned_path, "pin", blade_kind: "list", blade_id: "pinned"
+    when "history"
+      sidebar_link sidebar_item_label(id), history_path, "history", blade_kind: "list", blade_id: "history"
+    when "recent_topics"
+      render "shared/sidebar_recent_topics"
+    when "topics"
+      sidebar_link sidebar_item_label(id), topics_path, "folder", blade_kind: "list", blade_id: "topics"
+    when "inbox"
+      sidebar_link sidebar_item_label(id), inbox_items_path, "inbox", blade_kind: "list", blade_id: "inbox_items"
+    when "tasks"
+      sidebar_link sidebar_item_label(id), tasks_path, "tasks", blade_kind: "list", blade_id: "tasks"
+    when "trash"
+      sidebar_link sidebar_item_label(id), trash_tasks_path, "trash"
+    when "awaitings"
+      render "shared/sidebar_awaitings"
+    when "communications"
+      sidebar_link sidebar_item_label(id), communications_path, "communications", blade_kind: "list", blade_id: "communications"
+    when "knowledge"
+      sidebar_link sidebar_item_label(id), knowledge_items_path, "knowledge", blade_kind: "list", blade_id: "knowledge_items"
+    when "persons"
+      sidebar_link sidebar_item_label(id), knowledge_items_path(stack: "list:persons"), "users", blade_kind: "list", blade_id: "persons"
+    when "times"
+      sidebar_link sidebar_item_label(id), time_entries_path, "timer", blade_kind: "list", blade_id: "time_entries"
+    when "calendar"
+      sidebar_link sidebar_item_label(id), calendar_path, "calendar", blade_kind: "list", blade_id: "calendar"
+    when "documents"
+      sidebar_link sidebar_item_label(id), documents_path, "file_text", blade_kind: "list", blade_id: "documents"
+    when "sources"
+      sidebar_link sidebar_item_label(id), sources_path, "quote", blade_kind: "list", blade_id: "sources"
+    when "docs"
+      sidebar_link sidebar_item_label(id), knowledge_items_path(item_type: "doc"), "manual"
+    when "tags"
+      sidebar_link sidebar_item_label(id), tags_path, "tag", blade_kind: "list", blade_id: "tags"
+    else
+      "".html_safe
+    end
+  end
+
   # Rendert ein Lucide-Icon. Die Partials in app/views/shared/icons/
   # enthalten NUR den inneren SVG-Inhalt (Pfade); der Helper baut die
   # einheitliche `<svg>`-Hülle drumherum — so steckt stroke-width und

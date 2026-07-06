@@ -1224,6 +1224,12 @@ de:
     self_ki_help: "Verknüpfe Dich mit Deiner Personen-KI. Daraus zieht der Mail-Sync Deine eigenen Adressen (die zählen dann nicht als externer Vorgang)."
     self_ki_placeholder: "Person suchen …"
     self_ki_addresses: "%{n} E-Mail-Adresse(n) aus dieser KI werden als „eigene\" behandelt."
+    sidebar_layout_title:  "Sidebar"
+    sidebar_layout_help:   "Welche Einträge in welchem Bereich der Sidebar erscheinen und in welcher Reihenfolge. Per Ziehen zwischen den Spalten verschieben und innerhalb sortieren. „Fest oben“ bleibt beim Scrollen sichtbar, „Ausgeblendet“ erscheint gar nicht."
+    sidebar_layout_pinned: "Fest oben"
+    sidebar_layout_scroll: "Scrollbereich"
+    sidebar_layout_hidden: "Ausgeblendet"
+    sidebar_layout_reset:  "Auf Standard zurücksetzen"
     save:              "Speichern"
 
   languages:

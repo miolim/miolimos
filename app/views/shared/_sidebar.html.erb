@@ -69,113 +69,32 @@
       Links selbst (px-2). So bleibt die Icon-X-Position zwischen
       Collapsed und Expanded absolut identisch. Headings haben ihr
       eigenes px-2 für den "Themen"-/"Gesamt"-Text. %>
+  <%# #846 (Hans, 2026-07-06): Reihenfolge + Bereich der Sidebar-Eintraege
+      sind pro Actor konfigurierbar (Vorlieben → „Sidebar"). Das Layout
+      (pref_sidebar_layout) liefert drei geordnete ID-Listen; jeder Eintrag
+      wird ueber den sidebar_item-Helper nach ID gerendert.
+      - pinned = Sticky-Top-Sektion (bleibt beim Scrollen sichtbar, top-10 =
+        Header-Hoehe; keine border-b, wirkt wie durchgaengige Top-Section).
+      - scroll = mitscrollender Hauptbereich unter der „Gesamt"-Ueberschrift.
+      - hidden = wird nicht gerendert. %>
+  <% sidebar_layout = current_actor ? current_actor.pref_sidebar_layout : ActorPreferences.default_sidebar_layout %>
   <nav class="px-0 py-2 flex flex-col gap-0.5 text-[13px]">
-    <%# #194: Sticky-Top-Sektion — Dashboard/Gepinnt/Verlauf bleiben
-        immer sichtbar, auch wenn die Themen-Liste lang ist und man
-        scrollt. top-10 = Header-Höhe. Keine border-b, kein zusätzliches
-        Padding — wirkt so optisch wie eine durchgängige Top-Section. %>
-    <div class="sticky top-10 z-20 bg-slate-900">
-      <%= sidebar_link t("nav.dashboard"), dashboard_path, "gauge", reset_stack_id: "list:dashboard" %>
-      <%# #191: persönliche Pin-Liste — WIP-Notizen schnell wiederfinden. %>
-      <%= sidebar_link t("shared.sidebar.pinned"), pinned_path,    "pin",
-                       blade_kind: "list", blade_id: "pinned" %>
-      <%# #160: User-History — zuletzt angeschaute Entitäten. %>
-      <%= sidebar_link t("shared.sidebar.history"), history_path,   "history",
-                       blade_kind: "list", blade_id: "history" %>
-
-      <%# #435 (Hans, 2026-06-01): Zuletzt geoeffnete Topics erweitern den
-          Sticky-Bereich (nach Oeffnungs-Reihenfolge). Anzahl ueber
-          pref_sidebar_recent_topics_count (Default 5, 0 = aus) in den
-          Einstellungen. "Geoeffnet" = Topic oder ein Element daraus als
-          Detail-/Stack-Card angeschaut (via ActorView). %>
-      <% recent_topics = current_actor ? Topic.recently_opened_for(current_actor, limit: current_actor.pref_sidebar_recent_topics_count) : [] %>
-      <% if recent_topics.any? %>
-        <div class="mt-0.5 pt-0.5 border-t border-slate-800/60">
-          <div class="px-2 pt-1 pb-0.5 text-[11px] uppercase tracking-wider text-slate-500 group-data-[collapsed=true]/sidebar:invisible"><%= t("shared.sidebar.recently_opened") %></div>
-          <% recent_topics.each do |topic| %>
-            <%= render "shared/sidebar_recent_topic_row", topic: topic %>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-
-    <%# #435 (Hans, 2026-06-01): Die volle Themen-Liste ist aus der Sidebar
-        in eine eigene "Themen"-Listen-Blade gewandert (Nav-Eintrag unten,
-        wie die anderen Listen). In der Sidebar erscheinen Topics nur noch
-        unter "Zuletzt geoeffnet" (oben im Sticky-Bereich). %>
-    <div class="mt-3 mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 group-data-[collapsed=true]/sidebar:invisible">
-      <%= t("shared.sidebar.overview") %>
-    </div>
-    <%# #435: Themen-Liste als eigener Nav-Eintrag (Folder-Icon). Klick
-        oeffnet die Liste aller Themen als Blade; Klick auf ein Thema darin
-        haengt dessen Listen-Blade an den Stack. %>
-    <%# #456 (Hans, 2026-06-02): eigener Pfad /topics statt /dashboard?stack=. %>
-    <%= sidebar_link t("nav.topics"), topics_path, "folder",
-                     blade_kind: "list", blade_id: "topics" %>
-    <%# #194: Reihenfolge laut Hans' Spec.
-        Wartend bleibt zwischen Aufgaben und Kommunikation (mit Badges
-        für offen / überfällig). %>
-    <% awaiting_count   = Awaiting.open.count %>
-    <% awaiting_overdue = Awaiting.overdue.count %>
-    <%= sidebar_link t("shared.sidebar.inbox"), inbox_items_path,     "inbox",
-                     blade_kind: "list", blade_id: "inbox_items" %>
-    <%= sidebar_link t("nav.tasks"),          tasks_path,           "tasks",
-                     blade_kind: "list", blade_id: "tasks" %>
-    <%# #703 (Hans): Papierkorb als eigener Sidebar-Eintrag (gelöschte
-        Aufgaben; Soft-Delete). Künftig für alle soft-deletebaren Items. %>
-    <%= sidebar_link t("shared.sidebar.trash"), trash_tasks_path, "trash" %>
-    <%# Wartend hat Badges + eigenes Markup, also keinen sidebar_link-Helper.
-        #163 Phase 5a-2: Plus-Icon via shared/_sidebar_blade_plus daneben. %>
-    <div class="flex items-center">
-      <%= link_to awaitings_path,
-            title: t("nav.waiting"),
-            data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close", "stack-reset-id": "list:awaitings" },
-            class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if request.path.start_with?('/awaitings')}" do %>
-        <span class="w-5 flex items-center justify-center shrink-0">
-          <%= icon "waiting" %>
-        </span>
-        <span class="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.waiting") %></span>
-        <% if awaiting_count > 0 %>
-          <span class="text-xs text-slate-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_count %></span>
+    <% if sidebar_layout["pinned"].any? %>
+      <div class="sticky top-10 z-20 bg-slate-900">
+        <% sidebar_layout["pinned"].each do |item_id| %>
+          <%= sidebar_item(item_id) %>
         <% end %>
-        <% if awaiting_overdue > 0 %>
-          <span class="text-xs text-rose-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_overdue %></span>
-        <% end %>
-      <% end %>
-      <%= render "shared/sidebar_blade_plus", kind: "list", id: "awaitings", title: t("nav.waiting") %>
-    </div>
-    <%= sidebar_link t("nav.communications"), communications_path,  "communications",
-                     blade_kind: "list", blade_id: "communications" %>
-    <%= sidebar_link t("nav.knowledge"),      knowledge_items_path, "knowledge",
-                     blade_kind: "list", blade_id: "knowledge_items" %>
-<%# #542 (Hans, 2026-06-07): Personen-Eintrag öffnet den dedizierten
-        list:persons-Blade (Personen-Chrome + hartcodierter Person/Org-Filter)
-        statt des gefilterten Wissens-Blades. Gilt für Voll-Navigation; der
-        In-Stack-Append nutzt ohnehin blade_id "persons". %>
-    <%= sidebar_link t("nav.contacts"),       knowledge_items_path(stack: "list:persons"), "users",
-                     blade_kind: "list", blade_id: "persons" %>
-    <%# #533 #5: globale Zeiten-Liste als Stack-Blade. %>
-    <%= sidebar_link t("shared.sidebar.times"), time_entries_path, "timer",
-                     blade_kind: "list", blade_id: "time_entries" %>
-    <%# #573: Kalender — Misch-Ansicht aller Zeitobjekte. %>
-    <%= sidebar_link t("shared.sidebar.calendar"), calendar_path, "calendar",
-                     blade_kind: "list", blade_id: "calendar" %>
-    <%# #532: Dokumente-Liste als Stack-Blade. %>
-    <%= sidebar_link t("shared.sidebar.documents"), documents_path, "file_text",
-                     blade_kind: "list", blade_id: "documents" %>
-    <%= sidebar_link t("shared.sidebar.sources"), sources_path,         "quote",
-                     blade_kind: "list", blade_id: "sources" %>
-    <%= sidebar_link t("shared.sidebar.docs"), knowledge_items_path(item_type: "doc"),    "manual" %>
-    <%# #170 Phase 2: „Themen verwalten" raus aus der Hauptnav — der
-        Quick-Add sitzt jetzt im Themen-Heading („+"), Edit/Delete am
-        Themen-Detail. /topics bleibt per Direktlink erreichbar. %>
+      </div>
+    <% end %>
 
-    <%# #418 (Hans, 2026-05-30): Ein Eintrag "Tags" — Klick oeffnet die
-        Tags-Liste als Blade (Tag-Icon-haben-zuoberst, alphabetisch).
-        Klick auf einen Tag in dem Blade oeffnet das Items-Blade. %>
-    <%# #456 (Hans, 2026-06-02): eigener Pfad /tags statt /dashboard?stack=. %>
-    <%= sidebar_link t("shared.sidebar.tags"), tags_path, "tag",
-                     blade_kind: "list", blade_id: "tags" %>
+    <% if sidebar_layout["scroll"].any? %>
+      <div class="mt-3 mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 group-data-[collapsed=true]/sidebar:invisible">
+        <%= t("shared.sidebar.overview") %>
+      </div>
+      <% sidebar_layout["scroll"].each do |item_id| %>
+        <%= sidebar_item(item_id) %>
+      <% end %>
+    <% end %>
   </nav>
 
   <%# Gear-Menü scrollt mit, bleibt aber bei kurzer Themenliste am

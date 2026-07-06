@@ -74,6 +74,47 @@
              class="w-20 text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
     </section>
 
+    <%# #846 (Hans, 2026-07-06): Sidebar-Layout — welche Eintraege in welchem
+        Bereich (Fest oben / Scrollbereich / Ausgeblendet) und in welcher
+        Reihenfolge. Drag & Drop zwischen den drei Spalten; die Hidden-Inputs
+        werden vom sidebar-layout-editor-Controller synchron gehalten. %>
+    <section class="px-4 py-3"
+             data-controller="sidebar-layout-editor"
+             data-sidebar-layout-editor-default-value="<%= ActorPreferences.default_sidebar_layout.to_json %>"
+             data-sidebar-layout-editor-labels-value="<%= sidebar_item_labels.to_json %>">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-sm font-semibold text-slate-900"><%= t("preferences.sidebar_layout_title") %></h2>
+        <button type="button" data-action="sidebar-layout-editor#reset"
+                class="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer">
+          <%= t("preferences.sidebar_layout_reset") %>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.sidebar_layout_help") %></p>
+      <% layout = current_actor.pref_sidebar_layout %>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <% [["pinned", t("preferences.sidebar_layout_pinned")],
+            ["scroll", t("preferences.sidebar_layout_scroll")],
+            ["hidden", t("preferences.sidebar_layout_hidden")]].each do |section, title| %>
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1"><%= title %></div>
+            <ul data-sidebar-layout-editor-target="list" data-section="<%= section %>"
+                class="min-h-16 rounded border border-slate-200 bg-slate-50 p-1 flex flex-col gap-1">
+              <% layout[section].each do |item_id| %>
+                <li data-item-id="<%= item_id %>"
+                    class="flex items-center gap-2 px-2 py-1 rounded border border-slate-200 bg-white text-sm cursor-grab select-none">
+                  <span class="text-slate-400 shrink-0">⋮⋮</span>
+                  <span class="truncate"><%= sidebar_item_label(item_id) %></span>
+                </li>
+              <% end %>
+            </ul>
+            <input type="hidden" data-sidebar-layout-editor-target="input" data-section="<%= section %>"
+                   name="preferences[sidebar_layout][<%= section %>]"
+                   value="<%= layout[section].join(",") %>">
+          </div>
+        <% end %>
+      </div>
+    </section>
+
     <%# #709 (Hans): CM6 ist jetzt der Standard-Editor (kein Umschalter mehr;
         die alte Plain-Textarea-Ansicht ist abgeschafft). Per-Request-
         Override für Tests bleibt via ?cm6=0 möglich. %>

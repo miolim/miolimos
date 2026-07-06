@@ -1,0 +1,24 @@
+<%# Wartend hat Badges (offen / überfällig) + eigenes Markup, also keinen
+    sidebar_link-Helper. #163 Phase 5a-2: Plus-Icon via shared/_sidebar_blade_plus
+    daneben. #846: als eigener, per Layout-Vorlieben platzierbarer Eintrag
+    ausgelagert. %>
+<% awaiting_count   = Awaiting.open.count %>
+<% awaiting_overdue = Awaiting.overdue.count %>
+<div class="flex items-center">
+  <%= link_to awaitings_path,
+        title: t("nav.waiting"),
+        data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close", "stack-reset-id": "list:awaitings" },
+        class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if request.path.start_with?('/awaitings')}" do %>
+    <span class="w-5 flex items-center justify-center shrink-0">
+      <%= icon "waiting" %>
+    </span>
+    <span class="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.waiting") %></span>
+    <% if awaiting_count > 0 %>
+      <span class="text-xs text-slate-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_count %></span>
+    <% end %>
+    <% if awaiting_overdue > 0 %>
+      <span class="text-xs text-rose-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_overdue %></span>
+    <% end %>
+  <% end %>
+  <%= render "shared/sidebar_blade_plus", kind: "list", id: "awaitings", title: t("nav.waiting") %>
+</div>

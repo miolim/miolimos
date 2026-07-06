@@ -88,6 +88,28 @@ test("latest returns null when nothing usable is stored", () => {
   assert.equal(history().latest(), null)
 })
 
+// #816: snapshot gibt den geschriebenen Eintrag zurück (Server-Spiegelung)
+test("snapshot returns the written entry and null for empty trails", () => {
+  const h = history()
+  const entry = h.snapshot({ trail: [["u1"]], current: 0 })
+  assert.deepEqual(entry.trail, [["u1"]])
+  assert.equal(entry.pinned, false)
+  assert.ok(entry.savedAt)
+  assert.equal(h.snapshot({ trail: [], current: 0 }), null)
+})
+
+// #816: replaceAll ersetzt den Bucket (Server ist die Wahrheit)
+test("replaceAll overwrites the bucket wholesale", () => {
+  const h = history()
+  h.snapshot({ trail: [["alt"]], current: 0 })
+  h.replaceAll([{ trail: [["neu"]], current: 0, pinned: true, serverId: 7 }])
+  const entries = h.load()
+  assert.equal(entries.length, 1)
+  assert.equal(entries[0].serverId, 7)
+  h.replaceAll(null)
+  assert.deepEqual(h.load(), [])
+})
+
 test("latest clamps a stale current index into the trail range", () => {
   store.set("test-key", JSON.stringify([{ trail: [["u1"], ["u1", "u2"]], current: 99 }]))
   assert.equal(history().latest().current, 1)

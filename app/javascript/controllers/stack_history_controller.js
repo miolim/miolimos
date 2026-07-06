@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { StackSnapshotSync } from "lib/stack_snapshot_sync"
 
 // Drawer für den Stack-Verlauf:
 // - Liest localStorage (Schlüssel via storageKeyValue, Default
@@ -72,6 +73,10 @@ export default class extends Controller {
     if (key) this.storageKeyValue = key
     this.drawerTarget.classList.remove("hidden")
     this.maybeCollapseList()
+    // #816: Server ist die Wahrheit — beim Öffnen die Konto-Liste ziehen
+    // und den lokalen Cache ersetzen; bei Fehler (offline) lokal rendern.
+    const serverEntries = await StackSnapshotSync.fetchBucket(this.storageKeyValue)
+    if (serverEntries) this.writeHistory(serverEntries)
     await this.render()
   }
 
@@ -261,19 +266,23 @@ export default class extends Controller {
     if (!entries[index]) return
     entries[index].pinned = !entries[index].pinned
     this.writeHistory(entries)
+    StackSnapshotSync.setPinned(entries[index].serverId, entries[index].pinned)  // #816
     this.render()
   }
 
   removeEntry(index) {
     const entries = this.readHistory()
-    entries.splice(index, 1)
+    const [removed] = entries.splice(index, 1)
     this.writeHistory(entries)
+    if (removed) StackSnapshotSync.remove(removed.serverId)  // #816
     this.render()
   }
 
   clear() {
     if (!confirm(window.t("stack_history.clear_confirm"))) return
-    const kept = this.readHistory().filter(e => e.pinned)
+    const entries = this.readHistory()
+    const kept    = entries.filter(e => e.pinned)
+    entries.filter(e => !e.pinned).forEach(e => StackSnapshotSync.remove(e.serverId))  // #816
     this.writeHistory(kept)
     this.render()
   }

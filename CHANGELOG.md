@@ -40,6 +40,12 @@ release is cut, this section is renamed to the new version and a fresh
   links (contact, task, triggering email), tasks-from-email links, and the
   topic marker on task rows.
 
+### Added
+
+- The stack history drawer (incl. pinned stacks) now syncs across devices:
+  compositions live on the server per user, merged by final composition;
+  localStorage remains a fast cache and offline fallback (#816).
+
 ### Changed
 
 - Topic statuses reduced from four to two - active/inactive - since the

@@ -43,31 +43,43 @@ export class BladeStackHistory {
   // Snapshot des aktuellen Trails. Dedupliziert per Final-Komposition;
   // pinned-Eintraege werden NIE durch das HISTORY_MAX-Limit verdraengt
   // und auch nicht durch dedupe-Logik geloescht (sondern aktualisiert).
+  // #816: gibt den geschriebenen Eintrag zurück, damit der Aufrufer ihn
+  // zum Server spiegeln kann (Write-Through). null wenn nichts geschrieben.
   snapshot({ trail, current }) {
-    if (!trail || trail.length === 0) return
+    if (!trail || trail.length === 0) return null
     const finalState = trail[trail.length - 1]
-    if (!finalState || finalState.length === 0) return
+    if (!finalState || finalState.length === 0) return null
 
     let history = this.load()
     const dedupKey = finalState.join(",")
+    let written
 
     const existingPinned = history.find(h => h.pinned && this._finalOf(h) === dedupKey)
     if (existingPinned) {
       existingPinned.trail   = trail.map(s => Array.from(s))
       existingPinned.current = current
       existingPinned.savedAt = new Date().toISOString()
+      written = existingPinned
     } else {
       history = history.filter(h => h.pinned || this._finalOf(h) !== dedupKey)
-      history.unshift({
+      written = {
         trail:   trail.map(s => Array.from(s)),
         current: current,
         pinned:  false,
         savedAt: new Date().toISOString()
-      })
+      }
+      history.unshift(written)
     }
 
     history = this._trim(history)
     localStorage.setItem(this.storageKey, JSON.stringify(history))
+    return written
+  }
+
+  // #816: Bucket komplett ersetzen (Server ist die Wahrheit; wird beim
+  // Drawer-Öffnen mit der Server-Liste aufgerufen).
+  replaceAll(entries) {
+    localStorage.setItem(this.storageKey, JSON.stringify(Array.isArray(entries) ? entries : []))
   }
 
   // Final-Komposition als String — Dedup-Key zwischen Eintraegen.

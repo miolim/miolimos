@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   # ─── Auth ──────────────────────────────────────────────────────────────
   get    "/login",  to: "sessions#new",     as: :login
   post   "/login",  to: "sessions#create"
+  # #816: geräteübergreifender Stack-Verlauf (Drawer-Sync).
+  resources :stack_snapshots, only: [:index, :create, :update, :destroy]
+
   # #806: First-Run-Onboarding — nur erreichbar solange kein HumanActor existiert.
   get    "/setup",  to: "setup#new",        as: :setup
   post   "/setup",  to: "setup#create"

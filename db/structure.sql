@@ -1668,6 +1668,43 @@ ALTER SEQUENCE public.sources_id_seq OWNED BY public.sources.id;
 
 
 --
+-- Name: stack_snapshots; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stack_snapshots (
+    id bigint NOT NULL,
+    actor_id bigint NOT NULL,
+    history_key character varying NOT NULL,
+    dedup_key character varying NOT NULL,
+    trail jsonb DEFAULT '[]'::jsonb NOT NULL,
+    current integer DEFAULT 0 NOT NULL,
+    pinned boolean DEFAULT false NOT NULL,
+    saved_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: stack_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stack_snapshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stack_snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stack_snapshots_id_seq OWNED BY public.stack_snapshots.id;
+
+
+--
 -- Name: taggings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2667,6 +2704,13 @@ ALTER TABLE ONLY public.sources ALTER COLUMN id SET DEFAULT nextval('public.sour
 
 
 --
+-- Name: stack_snapshots id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stack_snapshots ALTER COLUMN id SET DEFAULT nextval('public.stack_snapshots_id_seq'::regclass);
+
+
+--
 -- Name: taggings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3164,6 +3208,14 @@ ALTER TABLE ONLY public.source_topics
 
 ALTER TABLE ONLY public.sources
     ADD CONSTRAINT sources_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stack_snapshots stack_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stack_snapshots
+    ADD CONSTRAINT stack_snapshots_pkey PRIMARY KEY (id);
 
 
 --
@@ -4433,6 +4485,27 @@ CREATE UNIQUE INDEX index_sources_on_slug ON public.sources USING btree (slug);
 
 
 --
+-- Name: index_stack_snapshots_on_actor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stack_snapshots_on_actor_id ON public.stack_snapshots USING btree (actor_id);
+
+
+--
+-- Name: index_stack_snapshots_on_actor_id_and_history_key_and_saved_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stack_snapshots_on_actor_id_and_history_key_and_saved_at ON public.stack_snapshots USING btree (actor_id, history_key, saved_at);
+
+
+--
+-- Name: index_stack_snapshots_uniqueness; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_stack_snapshots_uniqueness ON public.stack_snapshots USING btree (actor_id, history_key, dedup_key);
+
+
+--
 -- Name: index_taggings_on_tag_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5544,6 +5617,14 @@ ALTER TABLE ONLY public.comment_reads
 
 
 --
+-- Name: stack_snapshots fk_rails_e4fb9cd81e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stack_snapshots
+    ADD CONSTRAINT fk_rails_e4fb9cd81e FOREIGN KEY (actor_id) REFERENCES public.actors(id);
+
+
+--
 -- Name: inbox_items fk_rails_e5accd4cd6; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5622,6 +5703,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260706063810'),
 ('20260705204851'),
 ('20260702170000'),
 ('20260629230000'),

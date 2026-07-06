@@ -21,6 +21,8 @@
 //   _persistSession                  — sessionStorage-Write
 //   _restoreSessionStackIfNeeded     — beim Connect ohne ?stack=
 
+import { StackSnapshotSync } from "lib/stack_snapshot_sync"
+
 export const BladeStackTrailMixin = {
   // ─── Action-Handler ───────────────────────────────────────────────
   trailBack(event)    { event?.preventDefault(); this.stepTrail(-1) },
@@ -130,7 +132,10 @@ export const BladeStackTrailMixin = {
   // trim) lebt im BladeStackHistory-Helper — dieser Controller weiss
   // nur, dass es einen Snapshot-Aufruf gibt.
   snapshotToHistory() {
-    this.history?.snapshot({ trail: this.trail, current: this.currentIndex })
+    const entry = this.history?.snapshot({ trail: this.trail, current: this.currentIndex })
+    // #816: Snapshot zum Server spiegeln (fire-and-forget; offline egal —
+    // beim nächsten Drawer-Öffnen gewinnt ohnehin die Server-Liste).
+    if (entry) StackSnapshotSync.pushSnapshot(this._effectiveHistoryKey(), entry)
   },
 
   // popstate (Browser-Back/Forward zwischen großen Stack-Wechseln):

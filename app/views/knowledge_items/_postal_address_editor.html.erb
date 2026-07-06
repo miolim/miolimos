@@ -15,9 +15,9 @@
       <span data-disclosure-target="icon" class="inline-block transition-transform <%= 'rotate-90' unless collapsed %> text-slate-400 [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "chevron_right" %></span>
       <span><%= t("knowledge.editors.address.title") %> · <%= addrs.size %></span>
     </button>
-    <button type="button" data-action="click->section-edit#edit" title="<%= t("actions.edit") %>"
+    <button type="button" data-action="click->disclosure#expand click->section-edit#edit" title="<%= t("actions.edit") %>"
             class="p-0.5 text-slate-400 hover:text-slate-700 [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "pencil" %></button>
-    <button type="button" data-action="click->section-edit#edit click->rows-editor#add"
+    <button type="button" data-action="click->disclosure#expand click->section-edit#edit click->rows-editor#add"
             title="<%= t("knowledge.editors.address.add") %>" class="p-0.5 text-emerald-600 hover:text-emerald-800 [&_svg]:w-4 [&_svg]:h-4"><%= icon "plus_circle" %></button>
   </header>
 

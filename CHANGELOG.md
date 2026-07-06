@@ -23,6 +23,8 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- A double-submit on the first-run setup no longer shows a 422 error page -
+  the stale-token request now redirects to the login (#818).
 - History view tracking now counts only the focused (active) stack card -
   previously every open card accumulated view time simultaneously, and even
   cleaning up a stack created history entries (#816). The first-ping retry

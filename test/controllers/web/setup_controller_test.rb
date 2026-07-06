@@ -57,6 +57,15 @@ class SetupControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  # #818: Doppel-Submit — zweiter POST nach erfolgreichem Setup wird durch
+  # block_when_configured zum Login geleitet; der InvalidAuthenticityToken-
+  # rescue leitet ebenfalls zum Login, sobald ein Mensch existiert.
+  test "invalid authenticity token redirects instead of 422" do
+    create_human
+    handler = SetupController.rescue_handlers.find { |k, _| k == "ActionController::InvalidAuthenticityToken" }
+    assert handler, "rescue_from InvalidAuthenticityToken muss registriert sein"
+  end
+
   test "setup is locked once a human exists" do
     create_human
     get "/setup"

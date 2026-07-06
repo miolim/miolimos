@@ -7,6 +7,15 @@
 class SetupController < ActionController::Base
   layout "auth"
 
+  # #818: Doppel-Submit-Race beim Onboarding. Das Auth-Layout lädt kein JS
+  # (kein Turbo-Klickschutz); zwei schnelle Submits → der erste legt den
+  # Admin an und rotiert via reset_session die Session → der CSRF-Token des
+  # zweiten ist ungültig → 422 als sichtbare Antwort, obwohl alles klappte.
+  # Statt 422: freundlich dorthin leiten, wo es weitergeht.
+  rescue_from ActionController::InvalidAuthenticityToken do
+    redirect_to HumanActor.exists? ? login_path : setup_path
+  end
+
   before_action :block_when_configured
 
   def new

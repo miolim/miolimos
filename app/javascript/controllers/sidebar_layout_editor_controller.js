@@ -9,7 +9,7 @@ import Sortable from "sortablejs"
 // schickt sie beim Speichern mit.
 export default class extends Controller {
   static targets = ["list", "input"]
-  static values  = { default: Object, labels: Object }
+  static values  = { default: Object, labels: Object, icons: Object }
 
   connect() {
     // Sortable.js (Touch + Maus), gleiche Optionen wie commitment_sortable:
@@ -53,25 +53,29 @@ export default class extends Controller {
     e.preventDefault()
     const def    = this.defaultValue   // { pinned: [...], scroll: [...], hidden: [...] }
     const labels = this.labelsValue    // { id: "Label", ... }
+    const icons  = this.iconsValue     // { id: "<svg…>", ... }
     this.listTargets.forEach((list) => {
       const section = list.dataset.section
       list.innerHTML = ""
-      ;(def[section] || []).forEach((id) => list.appendChild(this.buildItem(id, labels[id] || id)))
+      ;(def[section] || []).forEach((id) => list.appendChild(this.buildItem(id, labels[id] || id, icons[id])))
     })
     this.sync()
   }
 
-  buildItem(id, label) {
+  buildItem(id, label, iconSvg) {
     const li = document.createElement("li")
     li.dataset.itemId = id
     li.className = "flex items-center gap-2 px-2 py-1 rounded border border-slate-200 bg-white text-sm cursor-grab select-none"
     const grip = document.createElement("span")
     grip.className = "text-slate-400 shrink-0"
     grip.textContent = "⋮⋮"
+    const iconSlot = document.createElement("span")
+    iconSlot.className = "w-4 flex items-center justify-center shrink-0 text-slate-500"
+    if (iconSvg) iconSlot.innerHTML = iconSvg
     const span = document.createElement("span")
     span.className = "truncate"
     span.textContent = label
-    li.append(grip, span)
+    li.append(grip, iconSlot, span)
     return li
   }
 }

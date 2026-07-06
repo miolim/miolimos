@@ -81,7 +81,8 @@
     <section class="px-4 py-3"
              data-controller="sidebar-layout-editor"
              data-sidebar-layout-editor-default-value="<%= ActorPreferences.default_sidebar_layout.to_json %>"
-             data-sidebar-layout-editor-labels-value="<%= sidebar_item_labels.to_json %>">
+             data-sidebar-layout-editor-labels-value="<%= sidebar_item_labels.to_json %>"
+             data-sidebar-layout-editor-icons-value="<%= sidebar_item_icons_svg.to_json %>">
       <div class="flex items-center justify-between mb-1">
         <h2 class="text-sm font-semibold text-slate-900"><%= t("preferences.sidebar_layout_title") %></h2>
         <button type="button" data-action="sidebar-layout-editor#reset"
@@ -103,6 +104,7 @@
                 <li data-item-id="<%= item_id %>"
                     class="flex items-center gap-2 px-2 py-1 rounded border border-slate-200 bg-white text-sm cursor-grab select-none">
                   <span class="text-slate-400 shrink-0">⋮⋮</span>
+                  <span class="w-4 flex items-center justify-center shrink-0 text-slate-500"><%= icon(sidebar_item_icon(item_id), size: "w-4 h-4") %></span>
                   <span class="truncate"><%= sidebar_item_label(item_id) %></span>
                 </li>
               <% end %>

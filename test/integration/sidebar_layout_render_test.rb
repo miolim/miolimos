@@ -31,6 +31,11 @@ class SidebarLayoutRenderTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "sidebar-layout-editor"
     assert_includes @response.body, I18n.t("preferences.sidebar_layout_title")
     assert_includes @response.body, "preferences[sidebar_layout][pinned]"
+    # #846-Follow-up (Hans): Editor-Items zeigen die Sidebar-Icons.
+    assert_includes @response.body, "data-sidebar-layout-editor-icons-value"
+    editor = @response.body[/data-controller="sidebar-layout-editor".*?<\/section>/m]
+    assert editor, "Editor-Section gefunden"
+    assert_includes editor, "<svg", "Editor-Item enthaelt ein Icon-SVG"
   end
 
   test "a custom saved layout drives the sidebar (hidden item disappears, order changes)" do

@@ -27,6 +27,11 @@
     <% if @credentials.empty? %>
       <p class="px-4 py-3 text-slate-500"><%= t("settings.accounts.none") %></p>
     <% else %>
+      <%# #802 (Hans): Die Konten-Tabelle (u.a. das breite GCal-Ziel-Feld)
+          sprengte auf schmalen Blades den Card-Rand. In einen eigenen
+          horizontal scrollbaren Container legen, damit sie INNERHALB der
+          Card bleibt (Projekt-Konvention für breite Tabellen). %>
+      <div class="overflow-x-auto">
       <table class="w-full text-[13px]">
         <thead class="text-[11px] uppercase tracking-wider text-slate-500">
           <tr class="border-b border-slate-200">
@@ -78,6 +83,7 @@
           <% end %>
         </tbody>
       </table>
+      </div>
     <% end %>
   </div>
 

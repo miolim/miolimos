@@ -15,11 +15,42 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.2.0] - 2026-07-06
+
 ### Added
 
 - First-run setup screen (#806): a fresh instance asks for the admin
   account in the browser instead of requiring `db:seed` + environment
   variables; `db:seed` now only loads optional example data.
+- The stack history drawer (incl. pinned stacks) now syncs across devices:
+  compositions live on the server per user, merged by final composition;
+  localStorage remains a fast cache and offline fallback (#816).
+- Configurable sidebar layout in the preferences (#846): the sidebar
+  sections can be reordered and toggled per user, and the layout editor
+  shows each section's icon.
+- Person status is now shown on the main person icon (via its shape and
+  colour) with a click menu to change it directly (#840).
+
+### Changed
+
+- Topic statuses reduced from four to two - active/inactive - since the
+  three non-active statuses behaved identically; the topics list gains a
+  "show inactive" filter and the topic type-ahead marks inactive topics
+  while keeping them findable (#817). Migration maps old statuses to
+  inactive.
+- Generalization for self-hosters (#806): the research agent is
+  configurable via `MIOLIMOS_RESEARCHER_EMAIL`, maintenance rake tasks use
+  the instance's first human actor, Crossref/OpenLibrary user agents
+  reference the project URL, and the default capability matrix lives in
+  one place (`CapabilityDefaults`).
+- Dependency refresh (first Dependabot batch, #805): puma 8.0.2,
+  tailwindcss-rails 4.6, rubyzip 3.4.1, signet 0.22, google-apis gems,
+  jbuilder 2.15.1, brakeman 8.0.5, thruster 0.1.22; GitHub Actions bumped
+  (checkout v7, setup-node v6, docker actions). image_processing 2.0 no
+  longer bundles a backend — `ruby-vips` is now declared explicitly.
+- Popover menus can now be left-aligned and are clamped to the viewport so
+  they no longer overflow the screen edge (#840).
+- The dashboard icon changed from a house to a gauge (#843).
 
 ### Fixed
 
@@ -39,30 +70,12 @@ release is cut, this section is renamed to the new version and a fresh
   awaitings), task chips (sources, knowledge, contacts), awaiting detail
   links (contact, task, triggering email), tasks-from-email links, and the
   topic marker on task rows.
-
-### Added
-
-- The stack history drawer (incl. pinned stacks) now syncs across devices:
-  compositions live on the server per user, merged by final composition;
-  localStorage remains a fast cache and offline fallback (#816).
-
-### Changed
-
-- Topic statuses reduced from four to two - active/inactive - since the
-  three non-active statuses behaved identically; the topics list gains a
-  "show inactive" filter and the topic type-ahead marks inactive topics
-  while keeping them findable (#817). Migration maps old statuses to
-  inactive.
-- Generalization for self-hosters (#806): the research agent is
-  configurable via `MIOLIMOS_RESEARCHER_EMAIL`, maintenance rake tasks use
-  the instance's first human actor, Crossref/OpenLibrary user agents
-  reference the project URL, and the default capability matrix lives in
-  one place (`CapabilityDefaults`).
-- Dependency refresh (first Dependabot batch, #805): puma 8.0.2,
-  tailwindcss-rails 4.6, rubyzip 3.4.1, signet 0.22, google-apis gems,
-  jbuilder 2.15.1, brakeman 8.0.5, thruster 0.1.22; GitHub Actions bumped
-  (checkout v7, setup-node v6, docker actions). image_processing 2.0 no
-  longer bundles a backend — `ruby-vips` is now declared explicitly.
+- The accounts table now stays inside its card - the Google-Calendar target
+  field no longer overflows it (#802).
+- Adding or editing a person now expands a collapsed person section instead
+  of appearing to do nothing (#845).
+- Creating a person no longer flickers the form fields, and title/name
+  handling is automatic (#827).
 
 ## [0.1.0] - 2026-07-03
 
@@ -105,5 +118,6 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/miolim/miolimos/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/miolim/miolimos/releases/tag/v0.1.0

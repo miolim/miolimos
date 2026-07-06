@@ -75,7 +75,7 @@
         scrollt. top-10 = Header-Höhe. Keine border-b, kein zusätzliches
         Padding — wirkt so optisch wie eine durchgängige Top-Section. %>
     <div class="sticky top-10 z-20 bg-slate-900">
-      <%= sidebar_link t("nav.dashboard"), dashboard_path, "home", reset_stack_id: "list:dashboard" %>
+      <%= sidebar_link t("nav.dashboard"), dashboard_path, "gauge", reset_stack_id: "list:dashboard" %>
       <%# #191: persönliche Pin-Liste — WIP-Notizen schnell wiederfinden. %>
       <%= sidebar_link t("shared.sidebar.pinned"), pinned_path,    "pin",
                        blade_kind: "list", blade_id: "pinned" %>

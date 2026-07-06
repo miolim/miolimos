@@ -78,7 +78,7 @@
         <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
         <div class="text-[13px] flex items-center gap-2">
           <span class="w-5 flex justify-center text-slate-500">
-            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src.item_type) %>
+            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src) %>
           </span>
           <%= link_to d[:label], knowledge_item_path(src.uuid),
                 data: link_data,
@@ -106,7 +106,7 @@
     <div data-disclosure-target="content" class="hidden px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
       <% outgoing_targets.each do |tgt| %>
         <div class="text-[13px] flex items-center gap-2">
-          <span class="w-5 flex justify-center text-slate-500"><%= knowledge_type_icon(tgt.item_type) %></span>
+          <span class="w-5 flex justify-center text-slate-500"><%= knowledge_type_icon(tgt) %></span>
           <%= link_to tgt.title, knowledge_item_path(tgt.uuid),
                 data: { action: "click->blade-stack#openInStack", target_uuid: tgt.uuid },
                 class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
@@ -146,7 +146,7 @@
         <div class="text-[13px] space-y-0.5">
           <div class="flex items-center gap-2">
             <span class="w-5 flex justify-center text-slate-500">
-              <%= src ? knowledge_type_icon(src.item_type) : "" %>
+              <%= src ? knowledge_type_icon(src) : "" %>
             </span>
             <% if src %>
               <%= link_to src.title, knowledge_item_path(src.uuid),

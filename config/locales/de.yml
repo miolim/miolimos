@@ -462,6 +462,15 @@ de:
       resolved: "Aufgelöst"
 
   knowledge:
+    # #840: Status-Look + Menü am Personen-Haupticon.
+    person_status:
+      menu_title:  "Status ändern"
+      known_title: "Persönlich bekannt"
+      comm_title:  "Kommunikation vorhanden"
+      mark:        "Als persönlich bekannt markieren"
+      unmark:      "Persönlich bekannt — zurücknehmen"
+      comm_yes:    "Kommunikation vorhanden (automatisch)"
+      comm_no:     "Keine Kommunikation erfasst"
     detail:
       original_chat_title: "Original-Chat-Titel: %{title}"
       duplicate_card: "Card duplizieren"

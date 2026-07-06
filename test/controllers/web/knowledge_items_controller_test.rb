@@ -751,8 +751,10 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_includes body, %(<option value="organization">)
     refute_includes body, %(value="note">)
     refute_includes body, %(value="source">)
-    # #3: Known-Toggle ist im Blade vorhanden
-    assert_includes body, "als persönlich bekannt markieren"
+    # #3: Known-Umschalter ist im Blade vorhanden — seit #840 im Klick-Menü
+    # am Personen-Haupticon (Header) statt als separater Button.
+    assert_includes body, "person_icon_menu_#{person.uuid}"
+    assert_includes body, I18n.t("knowledge.person_status.mark")
     # #1: leere Adress-Sektion ist eingeklappt (content hat hidden)
     assert_match(/postal_addresses_section_#{person.uuid}.*?data-disclosure-target="content" class="[^"]*hidden/m, body)
   end

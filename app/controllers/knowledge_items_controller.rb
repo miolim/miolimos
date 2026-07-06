@@ -200,13 +200,15 @@ class KnowledgeItemsController < ApplicationController
     render json: { title: item.title, uuid: item.uuid }
   end
 
-  # #608: Bekanntheit manuell togglen — grünes Icon übersteuert das
+  # #608/#840: Bekanntheit manuell togglen — grünes Icon übersteuert das
   # automatische Blau (Kommunikation vorhanden). Pure-DB-Feld (#544),
-  # kein Frontmatter-Roundtrip nötig.
+  # kein Frontmatter-Roundtrip nötig. Seit #840 lebt der Umschalter im
+  # Klick-Menü am Personen-Haupticon; ersetzt wird dessen Wrapper, sodass
+  # sich Icon-Form/-Farbe und der Menü-Text sofort aktualisieren.
   def toggle_personally_known
     @item.update!(personally_known: !@item.personally_known)
-    render turbo_stream: turbo_stream.replace("person_known_toggle_#{@item.uuid}",
-      partial: "knowledge_items/person_known_toggle", locals: { item: @item })
+    render turbo_stream: turbo_stream.replace("person_icon_menu_#{@item.uuid}",
+      partial: "knowledge_items/person_icon_menu", locals: { item: @item })
   end
 
   # #705 (Hans): Body-Darstellung zwischen Markdown und HTML umschalten.

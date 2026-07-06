@@ -65,7 +65,7 @@
               <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
               <div class="text-[13px] flex items-center gap-2">
                 <span class="w-5 flex justify-center text-slate-500">
-                  <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src.item_type) %>
+                  <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src) %>
                 </span>
                 <%= link_to d[:label], knowledge_item_path(src.uuid),
                       data: link_data,

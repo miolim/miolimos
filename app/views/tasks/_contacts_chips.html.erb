@@ -4,6 +4,9 @@
 <div id="task_contacts_chips_<%= task.id %>" class="flex flex-wrap gap-1.5">
   <% task.mentioned_kis.where(item_type: %w[person organization]).order(:title).each do |ki| %>
     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
+      <%# #840: Status-Icon (persönlich bekannt / Kommunikation) auch am
+          Kontakt-Chip — Form+Farbe statt eines separaten Badges. %>
+      <span aria-hidden="true" class="text-slate-500"><%= knowledge_type_icon(ki, size: "w-3.5 h-3.5") %></span>
       <%# #810: im aktuellen Stack öffnen; href bleibt Fallback. %>
       <%= link_to ki.display_name, knowledge_items_path(stack: ki.uuid),
             data: { action: "click->blade-stack#openInStack",

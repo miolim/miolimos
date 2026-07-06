@@ -43,7 +43,7 @@
     <% end %>
   <% end %>
   <%= render "shared/blade_spine", stack_id: item.uuid, title: item.title,
-        icon_html: knowledge_type_icon(item.item_type, size: "w-5 h-5"), label: item.title,
+        icon_html: knowledge_type_icon(item, size: "w-5 h-5"), label: item.title,
         topics: item.topics, extra_actions: (is_pdf ? spine_extra : nil) %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">

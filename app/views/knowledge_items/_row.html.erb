@@ -1,7 +1,7 @@
 <% selected = local_assigns.fetch(:selected, false) %>
 <li id="knowledge_row_<%= item.uuid %>"
     class="px-4 py-2 flex items-center gap-3 text-[13px] <%= selected ? 'bg-emerald-50 hover:bg-emerald-100' : 'hover:bg-slate-50' %>">
-  <span class="w-5 flex justify-center text-slate-500 shrink-0"><%= knowledge_type_icon(item.item_type) %></span>
+  <span class="w-5 flex justify-center text-slate-500 shrink-0"><%= knowledge_type_icon(item) %></span>
   <%# #756 (Hans, 2026-06-23): Blade-Append statt knowledge_detail-Frame. %>
   <%= link_to item.title, knowledge_item_path(item.uuid),
         data: { controller: "blade-link", "blade-link-kind-value": "ki",

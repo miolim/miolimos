@@ -171,7 +171,12 @@
     Haft-Kante des Beschreibungs-Headers. %>
 <div data-sticky-offset-target="bar"
      class="sticky -top-4 -mx-4 px-4 py-2 bg-white/95 backdrop-blur z-20 border-b border-slate-100 flex items-start gap-2">
-  <span class="shrink-0 text-slate-500 mt-1"><%= knowledge_type_icon(item.item_type, size: "w-6 h-6") %></span>
+  <%# #840: Person → Haupticon ist Status-Anzeige + Klick-Menü. %>
+  <% if item.person? %>
+    <%= render "knowledge_items/person_icon_menu", item: item %>
+  <% else %>
+    <span class="shrink-0 text-slate-500 mt-1"><%= knowledge_type_icon(item.item_type, size: "w-6 h-6") %></span>
+  <% end %>
   <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "flex-1 min-w-0" do |f| %>
     <%# textarea statt text_field, damit lange KI-Titel umbrechen
         koennen statt zu truncaten. field-sizing:content laesst das

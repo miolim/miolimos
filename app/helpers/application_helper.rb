@@ -1,20 +1,4 @@
 module ApplicationHelper
-  # #608: Bekanntheits-Icon einer Person. Grün = manuell „persönlich
-  # bekannt" (übersteuert), Blau = automatisch (Kommunikation mit der
-  # Person vorhanden), sonst nichts. known_via_comm wird vom Aufrufer
-  # gebatcht geliefert (kein N+1 in Listen).
-  def person_known_badge(ki, known_via_comm: false)
-    if ki.personally_known?
-      tag.span icon("user-check", size: "w-3.5 h-3.5"),
-        title: "Persönlich bekannt (manuell gesetzt)",
-        class: "inline-flex shrink-0 text-emerald-600"
-    elsif known_via_comm
-      tag.span icon("user-check", size: "w-3.5 h-3.5"),
-        title: "Kommunikation mit dieser Person vorhanden",
-        class: "inline-flex shrink-0 text-sky-600"
-    end
-  end
-
   # #602 S3: Sichtbarkeits-Badge — wer sieht dieses Objekt? Leitet sich
   # aus den Topic-Zuordnungen ab: ohne Topic = privat (Ersteller+Admins),
   # ein intern-öffentliches Topic dominiert (alle Nutzer), sonst die

@@ -1,0 +1,39 @@
+<%# #840: Personen-Haupticon im Card-Header = Status-Anzeige (Form+Farbe)
+    UND Klick-Menü. Klick öffnet ein Popover: „persönlich bekannt" wird
+    hier umgeschaltet (der eine manuelle Status), der Kommunikations-
+    Status wird nur informativ angezeigt (entsteht automatisch). Der
+    stabile Wrapper-id trägt den turbo_stream.replace nach dem Toggle.
+    Locals: item %>
+<% comm = item.known_via_communication? %>
+<div id="person_icon_menu_<%= item.uuid %>"
+     data-controller="popover" data-popover-fixed-value="true"
+     class="relative inline-block shrink-0 mt-1">
+  <button type="button"
+          data-action="click->popover#toggle"
+          title="<%= t('knowledge.person_status.menu_title') %>"
+          aria-label="<%= t('knowledge.person_status.menu_title') %>"
+          class="flex text-slate-500 rounded p-0.5 -m-0.5 hover:bg-slate-100 cursor-pointer">
+    <%= knowledge_type_icon(item, size: "w-6 h-6", known_via_comm: comm) %>
+  </button>
+  <div data-popover-target="content"
+       class="hidden absolute left-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-64">
+    <%# Umschalter: persönlich bekannt an/aus (postet an toggle_personally_known,
+        das den ganzen Wrapper per Turbo-Stream ersetzt → Icon aktualisiert sich). %>
+    <%= button_to toggle_personally_known_knowledge_item_path(item.uuid), method: :post,
+          form: { class: "block m-0", data: { turbo_stream: true } },
+          data: { action: "click->popover#close" },
+          class: "w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700 text-left cursor-pointer" do %>
+      <span class="w-5 flex justify-center <%= item.personally_known? ? 'text-emerald-600' : 'text-slate-400' %>">
+        <%= icon "user-check", size: "w-4 h-4" %>
+      </span>
+      <span><%= item.personally_known? ? t("knowledge.person_status.unmark") : t("knowledge.person_status.mark") %></span>
+    <% end %>
+    <%# Info: Kommunikations-Status — automatisch, nicht umschaltbar. %>
+    <div class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-400 border-t border-slate-100 mt-1 pt-1.5">
+      <span class="w-5 flex justify-center <%= comm ? 'text-sky-600' : 'text-slate-300' %>">
+        <%= icon "user", size: "w-4 h-4" %>
+      </span>
+      <span><%= comm ? t("knowledge.person_status.comm_yes") : t("knowledge.person_status.comm_no") %></span>
+    </div>
+  </div>
+</div>

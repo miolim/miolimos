@@ -1,9 +1,0 @@
-<%# #608: Bekanntheits-Chip + Toggle einer Person. Grün = manuell
-    „persönlich bekannt" (übersteuert), Blau = Kommunikation vorhanden. %>
-<div id="person_known_toggle_<%= item.uuid %>" class="flex items-center gap-2 text-xs">
-  <%= person_known_badge(item, known_via_comm: CommunicationMention.where(mentioned_uuid: item.uuid).exists?) %>
-  <%= button_to item.personally_known? ? t("knowledge.list.known.reset") : t("knowledge.list.known.mark"),
-        toggle_personally_known_knowledge_item_path(item.uuid), method: :post,
-        form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-        class: "px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer text-[11px]" %>
-</div>

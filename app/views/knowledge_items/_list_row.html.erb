@@ -33,7 +33,7 @@
       <span class="w-4 shrink-0 text-right tabular-nums text-[11px] text-slate-300">&nbsp;</span>
     <% end %>
   <% end %>
-  <span class="w-5 flex justify-center shrink-0 text-slate-500"><%= knowledge_type_icon(item.item_type) %></span>
+  <span class="w-5 flex justify-center shrink-0 text-slate-500"><%= knowledge_type_icon(item) %></span>
   <%= link_to item.title,
         knowledge_item_path(item.uuid),
         data: {

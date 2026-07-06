@@ -74,12 +74,9 @@
 
     <%# === Bereich 2: Felder — Typ-Inline + Person/Org-Felder === %>
     <div class="space-y-2 text-xs">
-      <%# #681 (Hans): Bekanntheits-Toggle einer Person oben in die Details-
-          Section, direkt über der Typ-Auswahl (war vorher unter den
-          Editoren). %>
-      <% if item.item_type == "person" %>
-        <%= render "knowledge_items/person_known_toggle", item: item %>
-      <% end %>
+      <%# #840 (Hans): Der Bekanntheits-Status wird jetzt über das Klick-
+          Menü am Personen-Haupticon im Card-Header gesetzt (statt des
+          früheren separaten Buttons hier). %>
       <%# #389 (Hans, 2026-05-28): Typ-Label + Select in einer Zeile,
           Select etwas groesser. %>
       <div class="flex items-center gap-2">

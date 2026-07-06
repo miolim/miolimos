@@ -41,7 +41,7 @@
       <ul class="divide-y divide-slate-100 text-[13px]">
         <% items.each do |ki| %>
           <li class="group py-1.5 px-1 hover:bg-slate-50 flex items-center gap-2">
-            <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki.item_type, size: "w-4 h-4") %></span>
+            <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki, size: "w-4 h-4") %></span>
             <%= link_to ki.title,
                   knowledge_item_path(ki.uuid),
                   data: {

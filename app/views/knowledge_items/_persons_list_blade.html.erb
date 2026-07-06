@@ -66,8 +66,9 @@
         <% comm_known = CommunicationMention.where(mentioned_uuid: items.map(&:uuid)).distinct.pluck(:mentioned_uuid).to_set %>
         <% items.each do |ki| %>
           <li class="group py-1.5 px-1 hover:bg-slate-50 flex items-center gap-2">
-            <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki.item_type, size: "w-4 h-4") %></span>
-            <%= person_known_badge(ki, known_via_comm: comm_known.include?(ki.uuid)) %>
+            <%# #840: Status (persönlich bekannt / Kommunikation) steckt im
+                Haupticon (Form+Farbe) — kein separates Badge mehr. %>
+            <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki, size: "w-4 h-4", known_via_comm: comm_known.include?(ki.uuid)) %></span>
             <%= link_to ki.title,
                   knowledge_item_path(ki.uuid),
                   data: { action: "click->blade-stack#openFromList", target_uuid: ki.uuid },

@@ -391,6 +391,14 @@ class KnowledgeItem < ApplicationRecord
   # Resolver, Importer). Vorher 6x als inline `where("lower(title) = ?", …)`.
   scope :by_title_ci, ->(title) { where("lower(title) = ?", title.to_s.strip.downcase) }
 
+  # #840: Gibt es Kommunikation mit dieser Person? Steuert den blauen
+  # Zustand des Haupt-Icons. Einzel-Query (indexierter EXISTS); in Listen
+  # den gebatchten Set bauen und `known_via_comm:` explizit übergeben,
+  # statt diese Methode pro Zeile aufzurufen (N+1).
+  def known_via_communication?
+    CommunicationMention.where(mentioned_uuid: uuid).exists?
+  end
+
   # Anzeigename: Person → "Vorname Nachname", sonst Titel.
   def display_name
     if person?

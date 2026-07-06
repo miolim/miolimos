@@ -439,7 +439,11 @@ class KnowledgeItemsController < ApplicationController
     end
     record_edit_view(@item)
     respond_to do |format|
-      format.turbo_stream { render_update_detail_stream }
+      # #827 (Hans): inline=1 = Blur-Autosave eines einzelnen Detail-Felds
+      # (Vor-/Nachname). Kein Detail-Replace als Antwort — der ersetzte
+      # Frame überschrieb sonst das Nachbarfeld mitten im Tippen. Das
+      # Input zeigt den Wert bereits, wie bei vat_exempt reicht 204.
+      format.turbo_stream { params[:inline].present? ? head(:no_content) : render_update_detail_stream }
       format.html         { redirect_to knowledge_item_path(@item.uuid), notice: "Gespeichert." }
     end
   end
@@ -709,12 +713,32 @@ class KnowledgeItemsController < ApplicationController
   # bzw. parent_org). FileProxy.update kümmert sich um Frontmatter,
   # PersonOrgSync hängt sich an, sodass parent_org per Title oder UUID
   # aufgelöst wird. Wenn keines der Felder gefüllt ist: no-op.
+  #
+  # #827 (Hans): der Formular-Placeholder verspricht seit jeher "auto aus
+  # Title, falls leer" — eingelöst hat das bisher nur der Import-Pfad
+  # (PersonKiResolver), nicht der manuelle Create. Jetzt gilt beim
+  # Person-Create in beide Richtungen (gleiche Heuristik wie
+  # PersonKiResolver: letztes Wort = Nachname, Rest = Vorname):
+  #   - Titel getippt, Namensfelder leer  → Vor-/Nachname aus Titel
+  #   - Namensfelder getippt, Titel leer  → Titel "Vorname Nachname"
+  #     (ersetzt den "Neue Person"-Platzhalter aus dem Quick-Create)
   def apply_person_org!(item)
     fields = {
       first_name: params[:first_name].presence,
       last_name:  params[:last_name].presence,
       parent_org: params[:parent_org].presence
     }.compact
+    if item.person?
+      if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
+        parts = item.title.split(/\s+/)
+        fields[:first_name] = parts[0..-2].join(" ").presence
+        fields[:last_name]  = parts.last if parts.size > 1
+        fields.compact!
+      elsif @blank_title && (fields.key?(:first_name) || fields.key?(:last_name))
+        fields[:title] = [fields[:first_name], fields[:last_name]].compact.join(" ")
+        @blank_title = false
+      end
+    end
     return unless fields.any?
     FileProxy.update(actor: current_actor, knowledge_item: item, **fields)
   end

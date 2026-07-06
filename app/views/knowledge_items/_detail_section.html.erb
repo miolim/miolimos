@@ -99,13 +99,19 @@
       </div>
 
       <% if item.item_type == "person" %>
+        <%# #827 (Hans): inline=1 → der Server antwortet mit 204 statt das
+            Detail-Frame zu ersetzen. Das Full-Replace nach dem Blur von
+            Feld A überschrieb sonst Feld B mitten im Tippen (Zeichen
+            "verschwanden"). defaultValue/data-empty zieht das JS selbst
+            nach, weil kein Re-Render mehr kommt. %>
         <div class="grid grid-cols-2 gap-2">
           <label class="flex flex-col gap-0.5" data-empty="<%= item.first_name.blank? %>">
             <span class="text-slate-500"><%= t("knowledge.detail.first_name") %></span>
             <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
               <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+              <%= f.hidden_field :inline, value: "1" %>
               <%= f.text_field :first_name, value: item.first_name,
-                    onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                    onblur: "if (this.value !== this.defaultValue) { this.defaultValue = this.value; this.closest('label').dataset.empty = (this.value === ''); this.form.requestSubmit() }",
                     class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
             <% end %>
           </label>
@@ -113,8 +119,9 @@
             <span class="text-slate-500"><%= t("knowledge.detail.last_name") %></span>
             <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
               <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+              <%= f.hidden_field :inline, value: "1" %>
               <%= f.text_field :last_name, value: item.last_name,
-                    onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()",
+                    onblur: "if (this.value !== this.defaultValue) { this.defaultValue = this.value; this.closest('label').dataset.empty = (this.value === ''); this.form.requestSubmit() }",
                     class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
             <% end %>
           </label>

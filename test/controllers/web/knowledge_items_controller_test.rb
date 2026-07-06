@@ -289,6 +289,60 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # #827 (Hans): Blur-Autosave eines einzelnen Namensfelds (inline=1) darf
+  # NICHT mit einem Detail-Frame-Replace antworten — der Replace überschrieb
+  # das Nachbarfeld mitten im Tippen (Zeichen "verschwanden" abwechselnd).
+  test "#827 PATCH mit inline=1 speichert, antwortet aber 204 ohne Detail-Replace" do
+    with_isolated_miolimos_base do
+      item = FileProxy.create(actor: @hans, title: "Mia Muster",
+                              item_type: :person, content: "",
+                              topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{item.uuid}",
+            params: { first_name: "Mia", inline: "1", in_stack: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :no_content
+      assert_empty @response.body
+      assert_equal "Mia", item.reload.first_name
+    end
+  end
+
+  test "#827 Person-Create ohne Namensfelder leitet Vor-/Nachname aus dem Titel ab" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items", params: {
+        title: "Max von Mustermann", item_type: "person", source: "manual",
+        content: "", topics: "", contacts: "", tags: "", first_name: "", last_name: ""
+      }
+      ki = KnowledgeItem.persons.order(:created_at).last
+      assert_equal "Max von",    ki.first_name
+      assert_equal "Mustermann", ki.last_name
+    end
+  end
+
+  test "#827 Person-Create mit Ein-Wort-Titel splittet nicht" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items", params: {
+        title: "Madonna", item_type: "person", source: "manual",
+        content: "", topics: "", contacts: "", tags: ""
+      }
+      ki = KnowledgeItem.persons.order(:created_at).last
+      assert_nil ki.first_name
+      assert_nil ki.last_name
+    end
+  end
+
+  test "#827 Person-Create mit Namensfeldern ohne Titel setzt den Titel zusammen" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { quick_create: "1", item_type: "person", title: "",
+                     first_name: "Erika", last_name: "Musterfrau" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      ki = KnowledgeItem.persons.order(:created_at).last
+      assert_equal "Erika Musterfrau", ki.title
+      assert_equal "Erika", ki.first_name
+      assert_equal "Musterfrau", ki.last_name
+    end
+  end
+
   test "POST /knowledge_items/:uuid/restore reverses soft-delete" do
     item = FileProxy.create(actor: @hans, title: "Restore-Test",
                             item_type: :note, content: "x",

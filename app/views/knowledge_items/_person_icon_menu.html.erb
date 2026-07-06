@@ -6,7 +6,7 @@
     Locals: item %>
 <% comm = item.known_via_communication? %>
 <div id="person_icon_menu_<%= item.uuid %>"
-     data-controller="popover" data-popover-fixed-value="true"
+     data-controller="popover" data-popover-fixed-value="true" data-popover-align-value="left"
      class="relative inline-block shrink-0 mt-1">
   <button type="button"
           data-action="click->popover#toggle"

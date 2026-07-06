@@ -15,7 +15,11 @@ export default class extends Controller {
   // #260: fixed=true positioniert den Popover-Inhalt per position:fixed
   // an den Trigger — so wird er NICHT von einem overflow-Container
   // (z.B. der scrollbaren Blade-Card) abgeschnitten.
-  static values  = { fixed: Boolean }
+  // #840: align steuert die horizontale Ausrichtung im fixed-Modus:
+  // "right" (Default, rechtsbündig zum Trigger) oder "left" (linksbündig)
+  // — nötig für Trigger am linken Rand, sonst rutscht ein breites Menü
+  // off-screen. Zusätzlich clampt _positionFixed immer in den Viewport.
+  static values  = { fixed: Boolean, align: String }
 
   connect() {
     this._onOutsideClick = (event) => {
@@ -76,7 +80,11 @@ export default class extends Controller {
     // Gewuenschte Viewport-Koordinaten (rechtsbuendig zum Trigger).
     const below = window.innerHeight - r.bottom
     let top  = (below < ch + 8 && r.top > ch + 8) ? r.top - ch - 4 : r.bottom + 4
-    let left = r.right - cw
+    // Rechtsbündig (Default) oder linksbündig zum Trigger (#840).
+    let left = this.alignValue === "left" ? r.left : r.right - cw
+    // In den Viewport clampen, damit ein breites Menü an einem Trigger
+    // nahe der Kante nicht off-screen rutscht (#840).
+    left = Math.max(8, Math.min(left, window.innerWidth - cw - 8))
     // #549 (Hans): Ein Vorfahre mit transform/filter/backdrop-filter/
     // perspective/contain bildet den Containing-Block fuer position:fixed —
     // dann beziehen sich top/left NICHT auf den Viewport, sondern auf dessen

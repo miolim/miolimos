@@ -328,6 +328,14 @@ class BladeStackController extends Controller {
     }
     document.addEventListener("turbo:before-render", this._onBeforeRender)
     document.addEventListener("turbo:render", this._onAfterRender)
+    // #892 (Hans): Nach einem Turbo-Stream (u.a. dem Spine-Broadcast bei WIP-/
+    // Status-Wechsel) das Hover-X-Overlay am Spine neu aufsetzen. Der ersetzte
+    // Spine kommt un-upgraded vom Server; der MutationObserver feuert dafür
+    // nicht (childList-only, kein subtree). _upgradeSpineTopIcons ist idempotent
+    // (data-top-upgraded-Guard) — sonst wäre nach einer Live-Änderung das obere
+    // Schließen-Kreuz weg.
+    this._onSpineStreamRender = () => requestAnimationFrame(() => this._upgradeSpineTopIcons())
+    document.addEventListener("turbo:before-stream-render", this._onSpineStreamRender)
 
     // #163 Phase 4: Sidebar-Plus-Icons (Append-to-Stack) sollen NUR
     // sichtbar sein, wenn diese Seite einen Blade-Stack hat. Body-Klasse
@@ -432,6 +440,7 @@ class BladeStackController extends Controller {
     // #232 Phase 1 (B): Morph-Listener abmelden.
     if (this._onBeforeRender) document.removeEventListener("turbo:before-render", this._onBeforeRender)
     if (this._onAfterRender)  document.removeEventListener("turbo:render", this._onAfterRender)
+    if (this._onSpineStreamRender) document.removeEventListener("turbo:before-stream-render", this._onSpineStreamRender)
     if (this.snapshotOnLeave) {
       document.removeEventListener("turbo:before-visit", this.snapshotOnLeave)
       window.removeEventListener("beforeunload", this.snapshotOnLeave)

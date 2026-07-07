@@ -19,7 +19,8 @@
         <button type="submit" data-task-publish
                 title="<%= t("tasks.publish") %>" aria-label="<%= t("tasks.publish") %>"
                 class="p-1 rounded text-emerald-600 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer shrink-0">
-          <%= icon "send" %>
+          <%# #893 (Hans): gefüllt (fill) statt outline, damit „Veröffentlichen" präsenter ist — grün bleibt. %>
+          <%= icon "send", fill: "currentColor" %>
         </button>
       <% end %>
     <% else %>

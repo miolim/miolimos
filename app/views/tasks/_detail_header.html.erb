@@ -40,7 +40,7 @@
                     hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none
                     #{'text-slate-400 line-through' if task.done?}",
             onblur: "this.form.requestSubmit()",
-            onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); } else if (event.key === 'Tab' && !event.shiftKey) { var s=document.getElementById('task_description_#{task.id}'); if (s) { event.preventDefault(); var b=s.querySelector('[data-description-toggle-target=editBtn]'); if (b && !b.classList.contains('hidden')) b.click(); var t=s.querySelector('textarea'); if (t) requestAnimationFrame(function(){ t.focus(); }); } }" %>
+            onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
     <% end %>
 
     <%# #410 (Hans, 2026-05-30): Topics unter dem Titel entfernt —

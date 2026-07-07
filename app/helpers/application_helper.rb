@@ -90,10 +90,15 @@ module ApplicationHelper
       link_data[:"blade-link-id-value"]   = blade_id
       link_data[:action] = "click->blade-link#append #{link_data[:action]}"
     end
+    # #856 (immoOS): Label nur auf Desktop (md+) ausblenden, wenn collapsed —
+    # die Icon-Rail gibt es nur ab md (die w-14-Breite ist md:-guarded). Auf
+    # Mobile ist die Sidebar immer ein w-60-Overlay, dort sollen die
+    # Bezeichnungen IMMER sichtbar sein (sonst leere Icon-Spalte trotz voller
+    # Breite). Gleiche md:-Logik wie an den Breiten-Klassen der Aside.
     link = link_to(path, class: klass, title: label, data: link_data) do
       safe_join([
         icon_slot,
-        content_tag(:span, label, class: "truncate group-data-[collapsed=true]/sidebar:hidden")
+        content_tag(:span, label, class: "truncate group-data-[collapsed=true]/sidebar:md:hidden")
       ])
     end
     return link unless blade_kind

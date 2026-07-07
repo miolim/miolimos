@@ -12,12 +12,12 @@
     <span class="w-5 flex items-center justify-center shrink-0">
       <%= icon "waiting" %>
     </span>
-    <span class="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.waiting") %></span>
+    <span class="flex-1 truncate group-data-[collapsed=true]/sidebar:md:hidden"><%= t("nav.waiting") %></span>
     <% if awaiting_count > 0 %>
-      <span class="text-xs text-slate-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_count %></span>
+      <span class="text-xs text-slate-400 group-data-[collapsed=true]/sidebar:md:hidden"><%= awaiting_count %></span>
     <% end %>
     <% if awaiting_overdue > 0 %>
-      <span class="text-xs text-rose-400 group-data-[collapsed=true]/sidebar:hidden"><%= awaiting_overdue %></span>
+      <span class="text-xs text-rose-400 group-data-[collapsed=true]/sidebar:md:hidden"><%= awaiting_overdue %></span>
     <% end %>
   <% end %>
   <%= render "shared/sidebar_blade_plus", kind: "list", id: "awaitings", title: t("nav.waiting") %>

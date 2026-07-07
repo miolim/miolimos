@@ -101,7 +101,7 @@
               [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
               [scrollbar-gutter:stable]">
     <% if sidebar_layout["scroll"].any? %>
-      <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:invisible">
+      <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:md:invisible">
         <%= t("shared.sidebar.overview") %>
       </div>
       <% sidebar_layout["scroll"].each do |item_id| %>
@@ -119,7 +119,7 @@
       <span class="w-5 flex items-center justify-center shrink-0">
         <%= icon "gear" %>
       </span>
-      <span class="group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.settings") %></span>
+      <span class="group-data-[collapsed=true]/sidebar:md:hidden"><%= t("nav.settings") %></span>
     <% end %>
   </div>
 

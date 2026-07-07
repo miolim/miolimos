@@ -11,7 +11,7 @@
     <span class="w-5 flex items-center justify-center shrink-0">
       <%= topic_marker topic, next_step: has_next, size: :md %>
     </span>
-    <span class="truncate group-data-[collapsed=true]/sidebar:hidden"><%= topic.name %></span>
+    <span class="truncate group-data-[collapsed=true]/sidebar:md:hidden"><%= topic.name %></span>
   <% end %>
   <%= render "shared/sidebar_blade_plus", kind: "topic_list", id: topic.slug, title: topic.name %>
 </div>

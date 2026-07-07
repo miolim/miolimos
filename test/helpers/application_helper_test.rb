@@ -49,4 +49,17 @@ class ApplicationHelperTest < ActionView::TestCase
   ensure
     Setting.where(key: "chat_import_prompt").destroy_all
   end
+
+  # ─── sidebar_link (#856) ─────────────────────────────────────────────
+  # Das Label wird im Collapse NUR auf Desktop (md+) ausgeblendet — auf
+  # Mobile ist die Sidebar ein Voll-Overlay und die Bezeichnungen sollen
+  # immer sichtbar bleiben. Regressionsschutz gegen die nackte (all-
+  # breakpoint) hidden-Variante, die mobil die Labels verschluckt hat.
+  test "sidebar_link blendet das Label nur auf Desktop (md) aus (#856)" do
+    html = sidebar_link("Grundstücke", "/properties", "folder").to_s
+    assert_includes html, "group-data-[collapsed=true]/sidebar:md:hidden"
+    assert_includes html, "Grundstücke"
+    # keine ungeschützte all-breakpoint Variante mehr am Label
+    assert_no_match(/sidebar:hidden(?!:)/, html.gsub("sidebar:md:hidden", ""))
+  end
 end

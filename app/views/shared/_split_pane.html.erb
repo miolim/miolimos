@@ -11,12 +11,12 @@
 
     Komplexere rechte Spalten (z.B. gestapelte Frames) verwenden
     content_for :split_right statt right_frame_id. %>
-<%# Beide Panes scrollen unabhängig. md:sticky + md:max-h-[calc(100dvh-5rem)] +
+<%# Beide Panes scrollen unabhängig. md:sticky + md:max-h-[calc(100dvh-4rem)] +
     md:overflow-y-auto: jeder Pane hat eine eigene Höhe = Viewport minus
     Topbar (3rem) + main-padding (1rem) + top-4-Offset (1rem). Wird die
     Liste oder das Detail länger, kriegen sie ihren eigenen Scrollbar.
     Auf Mobile (<md) bleibt alles single-column und page-scrollt. %>
-<% pane_scroll = "md:sticky md:top-4 md:max-h-[calc(100dvh-5rem)] md:overflow-y-auto" %>
+<% pane_scroll = "md:sticky md:top-2 md:max-h-[calc(100dvh-4rem)] md:overflow-y-auto" %>
 <%# mobile_show_aside: wenn true, ist das rechte Pane auch im Mobile
     sichtbar und das linke Pane hidden. Wird von Tasks#show genutzt,
     damit der Mobile-User nach Klick auf eine Aufgabe das Detail sieht. %>

@@ -124,11 +124,18 @@ class TaskTest < ActiveSupport::TestCase
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }
     assert header, "WIP-Setzen muss den Card-Header neu broadcasten"
     assert_includes header, "border-amber-500"
+    # #892: auch der Spine (Status-Icon) wird live ersetzt — orange bei WIP.
+    spine = payloads.find { |p| p.include?("task_spine_#{task.id}") }
+    assert spine, "WIP-Setzen muss auch den Card-Spine neu broadcasten"
+    assert_includes spine, "text-amber-500"
 
     payloads = capture_all_broadcasts { task.update!(wip_actor_id: nil) }
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }
     assert header, "WIP-Freigeben muss den Card-Header neu broadcasten"
     assert_includes header, "border-slate-400"
+    spine = payloads.find { |p| p.include?("task_spine_#{task.id}") }
+    assert spine, "WIP-Freigeben muss auch den Card-Spine neu broadcasten"
+    assert_includes spine, "text-slate-500"
   end
 
   # Fängt ALLE ActionCable-Broadcasts (Payloads als String) während des Blocks.

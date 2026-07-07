@@ -94,6 +94,11 @@ class Task < ApplicationRecord
       if saved_change_to_status? || saved_change_to_title? || saved_change_to_wip_actor_id?
         broadcast_replace_to self, targets: "#task_header_#{id}",
           partial: "tasks/detail_header", locals: { task: self }
+        # #892 (Hans): Das Spine-Status-Icon (WIP orange / erledigt grünes
+        # square-check) sitzt AUSSERHALB des Headers und wurde bisher nur beim
+        # Reload aktualisiert. Hier gezielt mit-ersetzen, damit es live umspringt.
+        broadcast_replace_to self, targets: "#task_spine_#{id}",
+          partial: "tasks/spine", locals: { task: self }
       end
       # #232 (2026-06-01): Reopen/Publish/Undiscard -> Row war versteckt,
       # jetzt sichtbar: in die Assignee-Liste (re)inserten. Remove+Prepend

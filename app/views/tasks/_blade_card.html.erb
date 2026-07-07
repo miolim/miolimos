@@ -19,16 +19,9 @@
                 bg-white border-l border-slate-200 first:border-l-0
                 flex">
 
-  <%# #326: Aufgabennummer hinter dem Titel — auch im collapsten Zustand sichtbar.
-      #892 (Hans): Task-Status auch am Spine erkennbar (für eingeklappte Cards):
-      erledigt → grünes square-check; WIP (wip_actor gesetzt, nicht erledigt) →
-      Task-Icon orange; sonst neutrales Task-Icon. %>
-  <% wip = task.wip_actor_id.present? && !task.done? %>
-  <%= render "shared/blade_spine", stack_id: task_id, title: task.title,
-        icon_html: icon(task.done? ? "square-check" : "tasks"),
-        icon_class: (task.done? ? "text-emerald-600" : (wip ? "text-amber-500" : "text-slate-500")),
-        topics: task.topics,
-        label: capture { %><%= task.title %><span class="text-slate-400 tabular-nums"> · #<%= task.id %></span><% } %>
+  <%# #326/#892: Task-Spine (Aufgabennummer + Status-Icon) als eigenes Partial
+      mit stabiler id, damit der Status-Broadcast das Spine-Icon live mitersetzt. %>
+  <%= render "tasks/spine", task: task %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">
     <%# #223: konsolidierte Titelzeile — Aufgabennummer, In-Thema-um-

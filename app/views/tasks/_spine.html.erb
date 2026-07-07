@@ -1,0 +1,12 @@
+<%# #892 (Hans): Task-Spine als eigenes Partial mit stabiler id
+    `task_spine_<id>`, damit der Status-Broadcast (LiveBroadcasts) das
+    Spine-Icon (WIP orange / erledigt grünes square-check) live mitersetzt —
+    nicht erst beim Reload. Icon-Logik wie zuvor inline in _blade_card. %>
+<% task_id = "task:#{task.id}" %>
+<% wip = task.wip_actor_id.present? && !task.done? %>
+<%= render "shared/blade_spine", stack_id: task_id, spine_id: "task_spine_#{task.id}",
+      title: task.title,
+      icon_html: icon(task.done? ? "square-check" : "tasks"),
+      icon_class: (task.done? ? "text-emerald-600" : (wip ? "text-amber-500" : "text-slate-500")),
+      topics: task.topics,
+      label: capture { %><%= task.title %><span class="text-slate-400 tabular-nums"> · #<%= task.id %></span><% } %>

@@ -17,7 +17,8 @@
   icon_class   = local_assigns.fetch(:icon_class, "text-slate-500")
   spine_topics = Array(local_assigns[:topics]).compact.first(3)
 %>
-<aside class="stack-spine self-stretch w-7 shrink-0
+<aside <% if local_assigns[:spine_id] %>id="<%= spine_id %>"<% end %>
+       class="stack-spine self-stretch w-7 shrink-0
               bg-slate-50 border-r border-slate-200
               flex flex-col items-center pt-2 gap-2
               cursor-pointer hover:bg-slate-100"

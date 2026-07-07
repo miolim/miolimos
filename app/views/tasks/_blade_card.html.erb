@@ -33,11 +33,10 @@
     <%# #263 follow-up: diese Zeile (#-Nummer, Promote, Delete) ist NICHT
         mehr sticky — sie scrollt mit; statt dessen wird die Detail-Header-
         Zeile (Checkbox + Titel) sticky (siehe tasks/_detail_header). %>
-    <div data-ui-label="Card-Werkzeugleiste"
-         class="-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white
-                border-b border-slate-100 flex items-center gap-2 justify-end text-slate-500">
-      <%# #863 (Hans): Entitäts-Icons links, Card-Icons (duplicate/reload/
-          focus/close) rechts hinter dem mr-auto-Spacer. %>
+    <%# #868 (Hans): Card-Werkzeugleiste über das gemeinsame Partial. Links
+        (entity_actions) die Task-spezifischen Icons, rechts liefert das
+        Partial Duplizieren/Reload/Fokus/Schließen. %>
+    <%= render "shared/blade_toolbar", uuid: task_id, entity_actions: capture { %>
       <span class="text-xs text-slate-400 tabular-nums" title="<%= t("tasks.task_number") %>">#<%= task.id %></span>
       <%# #572: Meilenstein-Toggle (Portal-Roadmap) — rot = aktiv. %>
       <%= render "tasks/milestone_button", task: task %>
@@ -75,35 +74,7 @@
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
         <%= icon "trash" %>
       <% end %>
-      <div class="mr-auto"></div>
-      <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz dieser
-          Card an den Stack (Vergleichs-Use-Case). %>
-      <button type="button"
-              data-action="click->blade-stack#duplicateCard"
-              data-target-uuid="<%= task_id %>"
-              title="<%= t("tasks.duplicate_card") %>"
-              aria-label="<%= t("tasks.duplicate_card") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-        <%= icon "copy" %>
-      </button>
-      <%# #360 (Hans, 2026-05-25): Per-Blade-Reload-Icon. %>
-      <button type="button"
-              data-action="click->blade-stack#reloadCard"
-              title="<%= t("tasks.reload_card") %>"
-              aria-label="<%= t("tasks.reload_card") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0">
-        <%= icon "refresh" %>
-      </button>
-      <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
-      <button type="button"
-              data-focus-trigger="blade"
-              title="<%= t("tasks.focus_card") %>"
-              aria-label="<%= t("tasks.focus_card_aria") %>"
-              class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
-      <%# #861: Card-Schließen-X ganz rechts (bisher nur am Spine). Seit
-          #861-Follow-up als gemeinsames Partial, das jede Card-Toolbar teilt. %>
-      <%= render "shared/blade_toolbar_close" %>
-    </div>
+    <% } %>
 
     <div class="mt-3">
       <%= render "tasks/detail_body", task: task %>

@@ -1,11 +1,13 @@
-<%# #348 Phase 2 (Hans, 2026-05-24): Topic-Blade-Toolbar — eigene Zeile
-    fuer die Action-Icons und den Slug, oberhalb des Topic-Titels.
-    Analog tasks/_blade_card. Layout-Klassen entsprechen der
-    Task-Card-Toolbar (`-mx-3 -mt-3 px-3 pt-2 pb-2 ...`).
-    #863 (Hans): Entitäts-Icons (Inbox-Import/Portal/Edit/Löschen) links,
-    Card-Icons (Duplizieren/Reload) rechts hinter dem ml-auto-Spacer. %>
-<div class="-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white
-            border-b border-slate-100 flex items-center gap-2 text-slate-500">
+<%# #348 Phase 2 (Hans, 2026-05-24): Topic-Blade-Toolbar oberhalb des Titels.
+    #863: Entitäts-Icons (Inbox-Import/Portal/Edit/Löschen) links.
+    #868: über das gemeinsame shared/_blade_toolbar; Duplizieren/Reload
+    liefert das Partial. Kein Fokus/Schließen hier (Themen-Blade schließt
+    über den Spine). %>
+<%= render "shared/blade_toolbar",
+      uuid: "list:topic:#{topic.slug}",
+      toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white",
+      focus: false, close: false,
+      entity_actions: capture { %>
   <%# #627 (Hans): Inbox-Import direkt aus dem Topic — gleiches Formular
       wie der Topbar-Quick-Add, aber der Vorgang (und via ProcessorBase
       auch seine Ergebnisse) hängt automatisch an DIESEM Topic. Native
@@ -67,25 +69,4 @@
         form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("topics.delete_confirm") } } do %>
     <%= icon "trash" %>
   <% end %>
-
-  <div class="ml-auto flex items-center gap-1 shrink-0">
-    <%# #321/#863: Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
-    <button type="button"
-            data-action="click->blade-stack#duplicateCard"
-            data-target-uuid="list:topic:<%= topic.slug %>"
-            title="<%= t("tasks.duplicate_card") %>"
-            aria-label="<%= t("tasks.duplicate_card") %>"
-            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-      <%= icon "copy" %>
-    </button>
-    <%# #360 (Hans, 2026-05-25): Per-Blade-Reload als Default-Icon im
-        Toolbar. Holt den Card-Inhalt frisch vom Server. %>
-    <button type="button"
-            data-action="click->blade-stack#reloadCard"
-            title="<%= t("tasks.reload_card") %>"
-            aria-label="<%= t("tasks.reload_card") %>"
-            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-      <%= icon "refresh" %>
-    </button>
-  </div>
-</div>
+<% } %>

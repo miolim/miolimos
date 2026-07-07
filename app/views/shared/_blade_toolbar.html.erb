@@ -1,0 +1,59 @@
+<%# #868 (Hans): Einheitliche Card-Werkzeugleiste — verbindendes Design-
+    element wie der Spine (_blade_spine). Links der entity_actions-Slot
+    (card-spezifische Icons, als capture-Block übergeben), rechts hinter dem
+    mr-auto-Spacer die generischen Card-Icons (Duplizieren/Reload/Fokus/
+    Schließen), je per Flag abwählbar. duplicate/reload/closeCard finden die
+    Card via closest([data-uuid]); Fokus über data-focus-trigger. Damit ist
+    der nächste „Card-Icons umsortieren/umbenennen"-Wunsch EIN Edit statt N.
+
+    Locals:
+      - uuid           — data-target-uuid fürs Duplizieren (Pflicht, wenn duplicate)
+      - entity_actions — optionaler HTML-Block links (Default: leer)
+      - duplicate/reload/focus/close — Bool-Flags (Default: true), um pro Card
+                         das aktuelle Card-Icon-Set abzubilden
+      - toolbar_class  — Container-Positions/-Abstands/-Hintergrund-Klassen
+                         (Default `-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white`; z. B.
+                         Topic-Toolbar nutzt px-3, Kommunikation eine sticky-
+                         Variante mit bg-white/95 backdrop-blur) %>
+<%
+  entity_actions = local_assigns.fetch(:entity_actions, "".html_safe)
+  show_duplicate = local_assigns.fetch(:duplicate, true)
+  show_reload    = local_assigns.fetch(:reload, true)
+  show_focus     = local_assigns.fetch(:focus, true)
+  show_close     = local_assigns.fetch(:close, true)
+  outer_class    = local_assigns.fetch(:toolbar_class, "-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white")
+%>
+<div data-ui-label="Card-Werkzeugleiste"
+     class="<%= outer_class %> border-b border-slate-100 flex items-center gap-2 text-slate-500">
+  <%= entity_actions %>
+  <div class="mr-auto"></div>
+  <% if show_duplicate %>
+    <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
+    <button type="button"
+            data-action="click->blade-stack#duplicateCard"
+            data-target-uuid="<%= local_assigns[:uuid] %>"
+            title="<%= t("tasks.duplicate_card") %>" aria-label="<%= t("tasks.duplicate_card") %>"
+            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+      <%= icon "copy" %>
+    </button>
+  <% end %>
+  <% if show_reload %>
+    <%# #360 (Hans, 2026-05-25): Per-Blade-Reload — holt den Card-Inhalt frisch. %>
+    <button type="button"
+            data-action="click->blade-stack#reloadCard"
+            title="<%= t("tasks.reload_card") %>" aria-label="<%= t("tasks.reload_card") %>"
+            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0">
+      <%= icon "refresh" %>
+    </button>
+  <% end %>
+  <% if show_focus %>
+    <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
+    <button type="button"
+            data-focus-trigger="blade"
+            title="<%= t("tasks.focus_card") %>" aria-label="<%= t("tasks.focus_card_aria") %>"
+            class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+  <% end %>
+  <% if show_close %>
+    <%= render "shared/blade_toolbar_close" %>
+  <% end %>
+</div>

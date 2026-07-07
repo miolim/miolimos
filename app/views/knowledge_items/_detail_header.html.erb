@@ -7,16 +7,17 @@
     Zeile 2 = Type-Icon + Title-Input, sticky am oberen Card-Rand;
     Title bekommt whitespace-normal damit lange Titel umbrechen
     statt zu truncaten. „In Vollansicht oeffnen\" entfernt. %>
-<div class="-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white border-b border-slate-100 flex items-center gap-1 text-slate-500">
+<%# #868 (Hans): Card-Werkzeugleiste über das gemeinsame shared/_blade_toolbar.
+    #863: Entitäts-Icons links (entity_actions-Slot), Card-Icons rechts.
+    Card-Aktionen (Duplizieren/Reload/Fokus) nur im Stack; Schließen nur im
+    Preview (im Edit-Modus dient das Cancel-X unten). %>
+<%= render "shared/blade_toolbar",
+      uuid: item.uuid,
+      toolbar_class: "-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white",
+      duplicate: in_stack, reload: in_stack, focus: in_stack,
+      close: (in_stack && mode == :preview),
+      entity_actions: capture { %>
   <% if in_stack %>
-    <button type="button"
-            data-action="click->blade-stack#duplicateCard"
-            data-target-uuid="<%= item.uuid %>"
-            title="<%= t("knowledge.detail.duplicate_card") %>"
-            aria-label="<%= t("knowledge.detail.duplicate_card") %>"
-            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-      <%= icon "copy" %>
-    </button>
     <%# #533 1c: Zeit für diese KI erfassen (Header-Timer übernimmt). %>
     <button type="button"
             data-controller="card-timer"
@@ -31,26 +32,6 @@
       <%= icon "timer" %>
     </button>
   <% end %>
-
-  <div class="ml-auto flex items-center gap-1 shrink-0">
-    <%# #360 (Hans, 2026-05-25): Per-Blade-Reload-Icon im Toolbar.
-        Funktioniert nur im Stack-Mode (in_stack), wo eine
-        blade-stack#reloadCard-Action sinnvoll ist. %>
-    <% if in_stack %>
-      <button type="button"
-              data-action="click->blade-stack#reloadCard"
-              title="<%= t("knowledge.detail.reload_card") %>"
-              aria-label="<%= t("knowledge.detail.reload_card") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-        <%= icon "refresh" %>
-      </button>
-      <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
-      <button type="button"
-              data-focus-trigger="blade"
-              title="<%= t("knowledge.detail.focus_card") %>"
-              aria-label="<%= t("knowledge.detail.focus_card_aria") %>"
-              class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
-    <% end %>
     <%# #625 (Hans, 2026-06-15): Überweisung an diese Person/Org — öffnet
         das GiroCode-Formular mit dieser als Empfänger vorgewählt; die
         IBAN lässt sich dort gleich hinterlegen. %>
@@ -151,11 +132,6 @@
             class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
         <%= icon "trash" %>
       <% end %>
-      <%# #861: Card-Schließen-X ganz rechts (nur im Stack, nicht in der
-          Frame-Detailansicht; im Edit-Modus unten dient das Cancel-X). %>
-      <% if in_stack %>
-        <%= render "shared/blade_toolbar_close" %>
-      <% end %>
     <% else %>
       <button type="submit" form="<%= edit_form %>"
               title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
@@ -168,8 +144,7 @@
         <%= icon "x" %>
       <% end %>
     <% end %>
-  </div>
-</div>
+<% } %>
 
 <%# Zeile 2: Title-Input, sticky, mit Umbruch. Type-Icon links.
     #652: sticky-offset misst die Höhe (auch zweizeilig) für die

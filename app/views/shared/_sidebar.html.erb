@@ -23,7 +23,7 @@
        data-hover-active="false"
        class="focus-chrome-hide group/sidebar shrink-0 bg-slate-900 text-slate-200
               w-60
-              fixed md:static top-0 bottom-8 left-0 z-40
+              fixed md:static inset-y-0 left-0 z-40
               data-[persistent-collapsed=true]:md:fixed
               data-[persistent-collapsed=true]:md:w-14
               data-[persistent-collapsed=true]:md:z-50
@@ -31,7 +31,15 @@
               data-[persistent-collapsed=true]:data-[hover-active=true]:md:shadow-2xl
               transform -translate-x-full md:translate-x-0
               transition-all duration-200 ease-out
-              flex flex-col h-[calc(100vh-2rem)] self-start overflow-y-auto
+              flex flex-col h-screen overflow-hidden">
+
+  <%# #860 (Hans): Der SCROLL-Bereich lebt in diesem inneren Container und
+      endet 2rem über dem Aside-Boden (h-8-Spacer unten). Der Aside selbst
+      bleibt volle Höhe (reicht bis zum Bildschirmrand, hebt also weder sich
+      noch den Hauptbereich daneben), aber im untersten Streifen rendert kein
+      Icon mehr — die native URL-Vorschau des Browsers kann dort keins
+      überdecken. Scroll + Scrollbar-Styling sind hierher gewandert. %>
+  <div class="flex-1 min-h-0 flex flex-col overflow-y-auto
               [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
               [scrollbar-gutter:stable_both-edges]">
 
@@ -110,6 +118,12 @@
       <span class="group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.settings") %></span>
     <% end %>
   </div>
+  </div><%# Ende innerer Scroll-Container %>
+
+  <%# #860 (Hans): solider 2rem-Streifen am Sidebar-Boden — hier scrollt
+      nichts, daher wird hier nie ein Icon gerendert; die native URL-Vorschau
+      (unten links) überdeckt damit keinen Eintrag mehr. %>
+  <div aria-hidden="true" class="h-8 shrink-0"></div>
 </aside>
 
 <%# #250: Spacer haelt den Flex-Slot der Sidebar besetzt, waehrend

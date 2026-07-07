@@ -1,10 +1,13 @@
-<%# Sidebar als flex-col Scroll-Container:
-    - Header ist `sticky top-0` und scrollt nicht weg (Toggle bleibt erreichbar).
-    - Nav scrollt vertikal mit, wenn die Themen-Liste lang wird.
-    - Gear-Eintrag wird über `mt-auto` ans Ende gepusht (scrollt also mit).
+<%# Sidebar als flex-col mit EINEM inneren Scrollbereich (#875, Hans):
+    - Aside = volle Höhe, overflow-hidden. Header, Pinned und Gear sind FIXE
+      shrink-0-Regionen (kein Scroll).
+    - Nur das mittlere <nav> (flex-1, overflow-y-auto) scrollt — der
+      Scrollbalken sitzt damit genau auf dem scrollbaren Bereich statt über
+      die ganze Sidebar-Höhe.
     - `scrollbar-gutter: stable` reserviert die Scrollbar-Breite IMMER,
-      damit die Icons im collapsed-Modus nicht verschoben werden, wenn
-      die Scrollbar erscheint/verschwindet. %>
+      damit die Icons im collapsed-Modus nicht verschoben werden.
+    - #860: h-8-Bodenstreifen unter dem Scroll hält den untersten Streifen
+      icon-frei (native URL-Vorschau überdeckt nichts). %>
 <%# #154: mouseenter/mouseleave triggern hover-expand. Auf Mobile feuern
     diese Events nicht, weil Touch-Geräte mouseenter nicht senden — die
     Mobile-Logik bleibt unangetastet.
@@ -33,21 +36,10 @@
               transition-all duration-200 ease-out
               flex flex-col h-screen overflow-hidden">
 
-  <%# #860 (Hans): Der SCROLL-Bereich lebt in diesem inneren Container und
-      endet 2rem über dem Aside-Boden (h-8-Spacer unten). Der Aside selbst
-      bleibt volle Höhe (reicht bis zum Bildschirmrand, hebt also weder sich
-      noch den Hauptbereich daneben), aber im untersten Streifen rendert kein
-      Icon mehr — die native URL-Vorschau des Browsers kann dort keins
-      überdecken. Scroll + Scrollbar-Styling sind hierher gewandert. %>
-  <div class="flex-1 min-h-0 flex flex-col overflow-y-auto
-              [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
-              [scrollbar-gutter:stable_both-edges]">
-
-  <%# Header sticky-top, damit Chevron beim Scrollen sichtbar bleibt.
-      #194-Feedback: keine Trennlinie unter dem Header — Chevron wirkt
-      damit wie ein normaler Sticky-Top-Eintrag (Dashboard/Pin/Verlauf
-      schließen optisch direkt an). %>
-  <div class="px-0 h-10 shrink-0 flex items-center sticky top-0 z-30 bg-slate-900">
+  <%# Header — FIXE Top-Region (außerhalb des Scrolls, Toggle immer erreichbar).
+      #194: keine Trennlinie unter dem Header — Chevron schließt optisch direkt
+      an die ersten Einträge an. %>
+  <div class="px-0 h-10 shrink-0 flex items-center bg-slate-900">
     <%# #267: Mobile zeigt links oben ein X zum Schliessen der Slide-in-
         Sidebar; auf Desktop bleibt der Chevron-Toggle (schmal/breit).
         Beide stehen im selben Slot, je nach Breakpoint sichtbar. %>
@@ -76,27 +68,36 @@
   <%# Outer-Padding bleibt 0 in BEIDEN Modi — das Padding tragen die
       Links selbst (px-2). So bleibt die Icon-X-Position zwischen
       Collapsed und Expanded absolut identisch. Headings haben ihr
-      eigenes px-2 für den "Themen"-/"Gesamt"-Text. %>
+      eigenes px-2 für den "Gesamt"-Text. %>
   <%# #846 (Hans, 2026-07-06): Reihenfolge + Bereich der Sidebar-Eintraege
       sind pro Actor konfigurierbar (Vorlieben → „Sidebar"). Das Layout
       (pref_sidebar_layout) liefert drei geordnete ID-Listen; jeder Eintrag
       wird ueber den sidebar_item-Helper nach ID gerendert.
-      - pinned = Sticky-Top-Sektion (bleibt beim Scrollen sichtbar, top-10 =
-        Header-Hoehe; keine border-b, wirkt wie durchgaengige Top-Section).
-      - scroll = mitscrollender Hauptbereich unter der „Gesamt"-Ueberschrift.
+      - pinned = FIXE Top-Sektion (bleibt immer sichtbar).
+      - scroll = der scrollende Hauptbereich unter der „Gesamt"-Ueberschrift.
       - hidden = wird nicht gerendert. %>
   <% sidebar_layout = current_actor ? current_actor.pref_sidebar_layout : ActorPreferences.default_sidebar_layout %>
-  <nav class="px-0 py-2 flex flex-col gap-0.5 text-[13px]">
-    <% if sidebar_layout["pinned"].any? %>
-      <div class="sticky top-10 z-20 bg-slate-900">
-        <% sidebar_layout["pinned"].each do |item_id| %>
-          <%= sidebar_item(item_id) %>
-        <% end %>
-      </div>
-    <% end %>
 
+  <%# #875 (Hans): Pinned als FIXE Region außerhalb des Scrolls — immer sichtbar,
+      und der Scrollbalken läuft nicht über sie hinweg. %>
+  <% if sidebar_layout["pinned"].any? %>
+    <div class="shrink-0 px-0 pt-1 flex flex-col gap-0.5 text-[13px] bg-slate-900">
+      <% sidebar_layout["pinned"].each do |item_id| %>
+        <%= sidebar_item(item_id) %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# #875 (Hans): NUR dieser Bereich scrollt → der Scrollbalken sitzt genau
+      hier, nicht über die ganze Sidebar-Höhe. #860: der scrollbare Inhalt
+      endet dank flex-1 + h-8-Bodenstreifen (unten) rund 2rem über dem Rand,
+      damit die native URL-Vorschau kein Icon überdeckt. scrollbar-gutter
+      reserviert die Breite (Icon-X-Position bleibt im collapsed-Modus stabil). %>
+  <nav class="flex-1 min-h-0 overflow-y-auto px-0 py-2 flex flex-col gap-0.5 text-[13px]
+              [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
+              [scrollbar-gutter:stable_both-edges]">
     <% if sidebar_layout["scroll"].any? %>
-      <div class="mt-3 mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:invisible">
+      <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:invisible">
         <%= t("shared.sidebar.overview") %>
       </div>
       <% sidebar_layout["scroll"].each do |item_id| %>
@@ -105,9 +106,8 @@
     <% end %>
   </nav>
 
-  <%# Gear-Menü scrollt mit, bleibt aber bei kurzer Themenliste am
-      Boden (mt-auto im flex-col-Container). %>
-  <div class="border-t border-slate-700 px-0 py-2 mt-auto shrink-0">
+  <%# Gear-Menü — FIXE Boden-Region (außerhalb des Scrolls). %>
+  <div class="border-t border-slate-700 px-0 py-2 shrink-0">
     <%= link_to settings_path,
           title: t("nav.settings"),
           data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
@@ -118,7 +118,6 @@
       <span class="group-data-[collapsed=true]/sidebar:hidden"><%= t("nav.settings") %></span>
     <% end %>
   </div>
-  </div><%# Ende innerer Scroll-Container %>
 
   <%# #860 (Hans): solider 2rem-Streifen am Sidebar-Boden — hier scrollt
       nichts, daher wird hier nie ein Icon gerendert; die native URL-Vorschau

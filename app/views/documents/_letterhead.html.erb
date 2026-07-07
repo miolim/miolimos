@@ -1,9 +1,11 @@
-<%# #532 Phase 2: Briefkopf aus dem gewählten Aussteller (issuer-KI). Ohne
-    markierten Aussteller bleibt ein Platzhalter stehen, damit die Werkbank
-    auch ohne Stammdaten rendert. Genutzt von _sample_invoice/_sample_nda. %>
+<%# #532 Phase 2: Briefkopf aus dem gewählten Aussteller (issuer-KI).
+    #874 (Hans): Ohne markierten Aussteller bleibt der Logo-/Kopf-Bereich LEER
+    (vorher stand dort „miolim" — das las sich wie ein echter Aussteller auf
+    einer Rechnung ohne gewählten). Der graue „Kein Aussteller markiert"-Hinweis
+    unten bleibt als Editor-Erinnerung. Genutzt von _sample_invoice/_sample_nda. %>
 <% issuer = local_assigns.fetch(:issuer, @issuer) %>
 <header class="doc-letterhead">
-  <div class="doc-logo"><%= issuer&.title.presence || "miolim" %></div>
+  <div class="doc-logo"><%= issuer&.title.presence %></div>
   <div class="doc-sender">
     <% if issuer %>
       <%= document_sender_html(issuer) %>

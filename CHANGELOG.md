@@ -15,6 +15,50 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.2.1] - 2026-07-07
+
+### Added
+
+- A shared card toolbar gives every entity card the same connecting bar: the
+  generic card actions (duplicate, reload, focus, close) live in one partial,
+  and each card supplies its own entity-specific actions through a slot
+  (#861, #868).
+- Document cards carry their output actions (preview, PDF, ZUGFeRD, XRechnung,
+  signed PDF, delete) as icons in the card toolbar instead of a text footer,
+  with new Lucide-style icons for PDF, ZUGFeRD and the signed PDF plus an "XML"
+  badge for XRechnung (#868).
+- Pressing Tab in a task title now jumps straight into the description editor
+  instead of stepping through the intervening controls (#867).
+- A "close card" action is available at the right end of the card toolbar, in
+  addition to the one on the spine (#861).
+
+### Changed
+
+- The publish/send action uses a paper-plane (send) icon instead of a globe
+  across tasks, replies and knowledge items; the globe stays only for genuine
+  web actions, and "complete contact data from a URL" now uses a user-search
+  icon (#857, #858).
+- Card toolbar icons are grouped consistently: entity actions on the left, card
+  actions (duplicate/reload/focus/close) on the right (#863).
+- The "revert to draft" icon is a neutral outline instead of a filled amber
+  accent (#862).
+- Sidebar: the scrollable area ends just above the bottom edge so the browser's
+  native link preview can no longer cover an entry, the scrollbar is confined to
+  the scrollable section, and the header, pinned items and settings entry stay
+  fixed (#860, #875).
+- The frame around the blade stack is half as wide (#877).
+- The mobile top bar is decluttered — the timer and secondary icons are hidden
+  on small screens (#857).
+
+### Fixed
+
+- Sidebar entries no longer shift vertically when the collapsed sidebar is
+  expanded on hover, and all icons stay aligned on one vertical line (#859).
+- Clicking into a text field of a partially visible stack card now scrolls the
+  card fully into view, matching a click elsewhere in the card (#864).
+- An invoice with no issuer selected no longer prints "miolim" in the
+  letterhead; the header stays empty (#874).
+
 ## [0.2.0] - 2026-07-06
 
 ### Added
@@ -118,6 +162,7 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/miolim/miolimos/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/miolim/miolimos/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/miolim/miolimos/releases/tag/v0.1.0

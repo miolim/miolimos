@@ -99,16 +99,9 @@
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
         <%= icon "trash" %>
       <% end %>
-      <%# #861 (Hans): Card schließen zusätzlich ganz rechts außen in der
-          Werkzeugleiste (bisher nur am Spine). Gleiche closeCard-Action —
-          blade-stack findet die Card via closest([data-uuid]). %>
-      <button type="button"
-              data-action="click->blade-stack#closeCard"
-              title="<%= t("shared.close_button.close_card") %>"
-              aria-label="<%= t("shared.close_button.close") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-        <%= icon "x" %>
-      </button>
+      <%# #861: Card-Schließen-X ganz rechts (bisher nur am Spine). Seit
+          #861-Follow-up als gemeinsames Partial, das jede Card-Toolbar teilt. %>
+      <%= render "shared/blade_toolbar_close" %>
     </div>
 
     <div class="mt-3">

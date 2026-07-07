@@ -1,0 +1,12 @@
+<%# #861 (Hans): Card-Schließen-X für die Card-Werkzeugleiste — zusätzlich
+    zum Spine-Close (shared/_blade_close_button). Entity-agnostisch:
+    blade-stack#closeCard findet die Card via closest([data-uuid]), also
+    ohne Parameter in jeder Card-Toolbar einsetzbar. Gehört ans rechte
+    Ende der jeweiligen Toolbar ("ganz rechts außen"). %>
+<button type="button"
+        data-action="click->blade-stack#closeCard"
+        title="<%= t("shared.close_button.close_card") %>"
+        aria-label="<%= t("shared.close_button.close") %>"
+        class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+  <%= icon "x" %>
+</button>

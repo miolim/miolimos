@@ -16,7 +16,9 @@
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">
     <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-2 pb-2 bg-white/95 backdrop-blur z-20
-                border-b border-slate-100 flex items-center gap-2 justify-end">
+                border-b border-slate-100 flex items-center gap-2 justify-end text-slate-500">
+      <%# #861: Card-Schließen-X in der Werkzeugleiste (gemeinsames Partial). %>
+      <%= render "shared/blade_toolbar_close" %>
     </div>
 
     <div class="mt-3">

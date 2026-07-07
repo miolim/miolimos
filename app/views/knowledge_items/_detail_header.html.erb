@@ -127,7 +127,7 @@
         <details class="relative inline-block">
           <summary class="list-none cursor-pointer p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 [&::-webkit-details-marker]:hidden [&_svg]:w-4 [&_svg]:h-4"
                    title="<%= t("knowledge.detail.complete_from_url") %>"
-                   aria-label="<%= t("knowledge.detail.complete_from_url") %>"><%= icon "globe" %></summary>
+                   aria-label="<%= t("knowledge.detail.complete_from_url") %>"><%= icon "user-search" %></summary>
           <div class="absolute right-0 mt-1 z-20 w-80 bg-white border border-slate-200 rounded shadow-lg p-2">
             <%= form_with url: complete_from_url_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
                   method: :post, data: { turbo: true }, class: "flex items-center gap-1" do %>

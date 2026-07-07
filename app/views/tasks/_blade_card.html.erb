@@ -19,9 +19,13 @@
                 bg-white border-l border-slate-200 first:border-l-0
                 flex">
 
-  <%# #326: Aufgabennummer hinter dem Titel — auch im collapsten Zustand sichtbar. %>
+  <%# #326: Aufgabennummer hinter dem Titel — auch im collapsten Zustand sichtbar.
+      #892 (Hans): WIP (wip_actor gesetzt, nicht erledigt) auch am Spine zeigen —
+      Task-Icon orange, damit man „dran" bei eingeklappter Card erkennt. %>
+  <% wip = task.wip_actor_id.present? && !task.done? %>
   <%= render "shared/blade_spine", stack_id: task_id, title: task.title,
-        icon_html: icon("tasks"), topics: task.topics,
+        icon_html: icon("tasks"), icon_class: (wip ? "text-amber-500" : "text-slate-500"),
+        topics: task.topics,
         label: capture { %><%= task.title %><span class="text-slate-400 tabular-nums"> · #<%= task.id %></span><% } %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4">

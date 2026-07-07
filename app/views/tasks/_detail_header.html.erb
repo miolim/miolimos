@@ -23,7 +23,7 @@
         data: { task_done_toggle: true },
         form: { class: "inline shrink-0 m-0 p-0 leading-none mt-2" },
         class: "w-5 h-5 rounded flex items-center justify-center p-0 cursor-pointer
-                #{task.done? ? 'border bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600' : (wip_active ? 'border-2 bg-white border-emerald-500 hover:border-emerald-700' : 'border bg-white border-slate-400 hover:border-slate-700')}" do %>
+                #{task.done? ? 'border bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600' : (wip_active ? 'border-2 bg-white border-amber-500 hover:border-amber-700' : 'border bg-white border-slate-400 hover:border-slate-700')}" do %>
     <%= icon "check", size: "w-3.5 h-3.5", stroke: 2.5 if task.done? %>
   <% end %>
 

@@ -36,20 +36,11 @@
     <div data-ui-label="Card-Werkzeugleiste"
          class="-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white
                 border-b border-slate-100 flex items-center gap-2 justify-end text-slate-500">
+      <%# #863 (Hans): Entitäts-Icons links, Card-Icons (duplicate/reload/
+          focus/close) rechts hinter dem mr-auto-Spacer. %>
       <span class="text-xs text-slate-400 tabular-nums" title="<%= t("tasks.task_number") %>">#<%= task.id %></span>
       <%# #572: Meilenstein-Toggle (Portal-Roadmap) — rot = aktiv. %>
       <%= render "tasks/milestone_button", task: task %>
-      <%# #321 (Hans): Card-Duplizieren direkt rechts neben der
-          Aufgabennummer. Stimulus-Action appendet eine zweite Instanz
-          dieser Card an den Stack — fuer Vergleichs-Use-Case. %>
-      <button type="button"
-              data-action="click->blade-stack#duplicateCard"
-              data-target-uuid="<%= task_id %>"
-              title="<%= t("tasks.duplicate_card") %>"
-              aria-label="<%= t("tasks.duplicate_card") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-        <%= icon "copy" %>
-      </button>
       <%# #533 1c: Zeit für diese Aufgabe erfassen (Header-Timer übernimmt). %>
       <button type="button"
               data-controller="card-timer"
@@ -63,7 +54,38 @@
               class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
         <%= icon "timer" %>
       </button>
+      <% unless task.done? %>
+        <%= button_to promote_to_topic_task_path(task), method: :post,
+              class: "p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 bg-transparent border-0 cursor-pointer shrink-0",
+              title: t("tasks.to_topic"), "aria-label": t("tasks.to_topic"),
+              form: { class: "inline m-0 p-0",
+                      data: { turbo_frame: "_top",
+                              turbo_confirm: t("tasks.to_topic_confirm") } } do %>
+          <%= icon "group" %>
+        <% end %>
+        <%# #747 (Hans, 2026-06-21): EIN Status-Control (farbiges Icon) —
+            Entwurf → grüner send (Veröffentlichen), veröffentlicht → pause
+            (Auf Entwurf). Hier in der Card-Toolbar; auf der
+            Frame-Detailansicht (keine Toolbar) rendert es der Header. %>
+        <%= render "tasks/status_control", task: task %>
+      <% end %>
+      <%= button_to task_path(task), method: :delete,
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0",
+            title: t("actions.delete"), "aria-label": t("actions.delete"),
+            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
+        <%= icon "trash" %>
+      <% end %>
       <div class="mr-auto"></div>
+      <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz dieser
+          Card an den Stack (Vergleichs-Use-Case). %>
+      <button type="button"
+              data-action="click->blade-stack#duplicateCard"
+              data-target-uuid="<%= task_id %>"
+              title="<%= t("tasks.duplicate_card") %>"
+              aria-label="<%= t("tasks.duplicate_card") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+        <%= icon "copy" %>
+      </button>
       <%# #360 (Hans, 2026-05-25): Per-Blade-Reload-Icon. %>
       <button type="button"
               data-action="click->blade-stack#reloadCard"
@@ -78,27 +100,6 @@
               title="<%= t("tasks.focus_card") %>"
               aria-label="<%= t("tasks.focus_card_aria") %>"
               class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
-      <% unless task.done? %>
-        <%= button_to promote_to_topic_task_path(task), method: :post,
-              class: "p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 bg-transparent border-0 cursor-pointer shrink-0",
-              title: t("tasks.to_topic"), "aria-label": t("tasks.to_topic"),
-              form: { class: "inline m-0 p-0",
-                      data: { turbo_frame: "_top",
-                              turbo_confirm: t("tasks.to_topic_confirm") } } do %>
-          <%= icon "group" %>
-        <% end %>
-        <%# #747 (Hans, 2026-06-21): EIN Status-Control (farbiges Icon) —
-            Entwurf → grüner globe (Veröffentlichen), veröffentlicht → amber
-            pause (Auf Entwurf). Hier in der Card-Toolbar; auf der
-            Frame-Detailansicht (keine Toolbar) rendert es der Header. %>
-        <%= render "tasks/status_control", task: task %>
-      <% end %>
-      <%= button_to task_path(task), method: :delete,
-            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0",
-            title: t("actions.delete"), "aria-label": t("actions.delete"),
-            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
-        <%= icon "trash" %>
-      <% end %>
       <%# #861: Card-Schließen-X ganz rechts (bisher nur am Spine). Seit
           #861-Follow-up als gemeinsames Partial, das jede Card-Toolbar teilt. %>
       <%= render "shared/blade_toolbar_close" %>

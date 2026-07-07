@@ -157,7 +157,11 @@ class BladeStackController extends Controller {
       this.setActiveCard(card)
       if (e.type !== "pointerdown") return
       const onInteractive = e.target.closest(
-        "a, button, input, textarea, select, label, summary, [contenteditable=true]"
+        // #864 (Hans): Textfelder (input/textarea/contenteditable) ausgenommen,
+        // damit ein Klick hinein die teilweise sichtbare Card wie sonst auch
+        // vollständig ins Bild scrollt. Nur echte Navigations-/Aktions-Controls
+        // (Link/Button/Select/Label/Summary) unterdrücken das Scrollen weiter.
+        "a, button, select, label, summary"
       )
       if (!onInteractive) this.scrollCardIntoView(card)
     }

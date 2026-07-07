@@ -91,11 +91,15 @@
   <%# #875 (Hans): NUR dieser Bereich scrollt → der Scrollbalken sitzt genau
       hier, nicht über die ganze Sidebar-Höhe. #860: der scrollbare Inhalt
       endet dank flex-1 + h-8-Bodenstreifen (unten) rund 2rem über dem Rand,
-      damit die native URL-Vorschau kein Icon überdeckt. scrollbar-gutter
-      reserviert die Breite (Icon-X-Position bleibt im collapsed-Modus stabil). %>
+      damit die native URL-Vorschau kein Icon überdeckt. scrollbar-gutter:stable
+      reserviert die Scrollbar-Breite (Icon-X-Position bleibt im collapsed-Modus
+      stabil). #859: NUR `stable`, NICHT `both-edges` — both-edges reservierte
+      auch LINKS und schob die Scroll-Icons ggü. Header/Pinned/Zahnrad (die nach
+      #875 außerhalb des Scrolls liegen) ~10px nach rechts. Mit `stable` (nur
+      rechts) sind alle Icons wieder linksbündig auf einer Linie. %>
   <nav class="flex-1 min-h-0 overflow-y-auto px-0 py-2 flex flex-col gap-0.5 text-[13px]
               [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
-              [scrollbar-gutter:stable_both-edges]">
+              [scrollbar-gutter:stable]">
     <% if sidebar_layout["scroll"].any? %>
       <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:invisible">
         <%= t("shared.sidebar.overview") %>

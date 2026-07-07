@@ -114,7 +114,7 @@ class TaskTest < ActiveSupport::TestCase
   # #743 (Hans): der grüne WIP-Rahmen der Checkbox sitzt im Card-Header. Wird
   # eine offene Card live aktualisiert, wenn ein Lauf die Aufgabe als WIP
   # markiert/freigibt? Der Header-Replace muss bei wip_actor_id-Wechsel feuern.
-  test "wip_actor_id-Wechsel broadcastet den Card-Header (grüner Rahmen)" do
+  test "wip_actor_id-Wechsel broadcastet den Card-Header (orangener Rahmen)" do
     creator = create_human
     agent   = AgentActor.create!(name: "Bauer", description: "x",
                                  email: "bauer-#{SecureRandom.hex(3)}@miolim.de")
@@ -123,7 +123,7 @@ class TaskTest < ActiveSupport::TestCase
     payloads = capture_all_broadcasts { task.update!(wip_actor_id: agent.id) }
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }
     assert header, "WIP-Setzen muss den Card-Header neu broadcasten"
-    assert_includes header, "border-emerald-500"
+    assert_includes header, "border-amber-500"
 
     payloads = capture_all_broadcasts { task.update!(wip_actor_id: nil) }
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }

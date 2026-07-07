@@ -40,7 +40,13 @@
                     hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none
                     #{'text-slate-400 line-through' if task.done?}",
             onblur: "this.form.requestSubmit()",
-            onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); }" %>
+            <%# #867 (Hans): Tab (ohne Shift) springt aus dem Titel direkt in die
+                Beschreibung — nicht selbst fokussieren (das Feld hat versteckte
+                Zustände: Preview-Form + CodeMirror), sondern die vorhandene
+                Bearbeiten-Aktion auslösen (editBtn → description-toggle#edit
+                klappt auf, schaltet in Edit, mountet den Editor) und dann den
+                CodeMirror (.cm-content) bzw. als Fallback die Textarea fokussieren. %>
+            onkeydown: "if (event.key === 'Enter') { event.preventDefault(); this.blur(); } else if (event.key === 'Tab' && !event.shiftKey) { var s=document.getElementById('task_description_#{task.id}'); if (s) { event.preventDefault(); var e=s.querySelector('[data-description-toggle-target=editBtn]'); if (e) e.click(); requestAnimationFrame(function(){ var c=s.querySelector('.cm-content'); if (c) c.focus(); else { var t=s.querySelector('textarea'); if (t) t.focus(); } }); } }" %>
     <% end %>
 
     <%# #410 (Hans, 2026-05-30): Topics unter dem Titel entfernt —

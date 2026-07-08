@@ -59,17 +59,19 @@
   }
 
   /* #331 (Hans): dauerhaft (doppel-klick) kollabierte Cards bekommen
-     einen farbigen Balken oben am Spine, damit man sofort erkennt:
-     hier sitzt eine eingeklappte Card. Emerald (= Detail-Blade),
-     Blue (= Listen-Blade, data-uuid faengt mit `list:` an).
+     einen Balken oben am Spine, damit man sofort erkennt: hier sitzt
+     eine eingeklappte Card.
      #902 (Hans, 2026-07-08): der duenne 4px-Strich war zu unauffaellig
      — jetzt ein Balken in ca. Card-Toolbar-Hoehe (2.25rem) mit dem
-     Lucide-Icon `arrow-right-from-line` (weiss, zentriert), das die
-     Aktion „nach rechts wieder ausklappen" signalisiert. Reine CSS-
-     Loesung (::before + SVG-Data-URI), damit sie ALLE Spines abdeckt —
-     nicht nur die des shared _blade_spine-Partials. Der Spine-Content
-     (Item-Icon + Vertikal-Label) rutscht per padding-top unter den
-     Balken. */
+     Lucide-Icon `arrow-right-from-line` (zentriert), das die Aktion
+     „nach rechts wieder ausklappen" signalisiert. Ein Klick auf den
+     eingeklappten Spine klappt aus (siehe focusCard/toggleCollapse).
+     Farbe bewusst HELLGRAU (slate-200) statt kraeftigem Emerald/Blau
+     (Hans): die Card ist ja gerade ausgeblendet, der Marker soll ruhig
+     sein und nicht ins Auge stechen. Reine CSS-Loesung (::before +
+     SVG-Data-URI), damit sie ALLE Spines abdeckt — nicht nur die des
+     shared _blade_spine-Partials. Der Spine-Content (Item-Icon +
+     Vertikal-Label) rutscht per padding-top unter den Balken. */
   .stack-card[data-collapsed="true"] .stack-spine {
     position: relative;
     /* !important: der Spine traegt die Tailwind-Utility `pt-2`, die in
@@ -86,14 +88,16 @@
     left: 0;
     right: 0;
     height: 2.25rem;                       /* ~ Card-Toolbar-Hoehe */
-    background-color: rgb(5 150 105);      /* emerald-600 */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5v14'/%3E%3Cpath d='M21 12H7'/%3E%3Cpath d='m15 18 6-6-6-6'/%3E%3C/svg%3E");
+    background-color: rgb(226 232 240);    /* slate-200 (hellgrau) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5v14'/%3E%3Cpath d='M21 12H7'/%3E%3Cpath d='m15 18 6-6-6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
     background-size: 1.1rem 1.1rem;
   }
-  .stack-card[data-collapsed="true"][data-uuid^="list:"] .stack-spine::before {
-    background-color: rgb(37 99 235);      /* blue-600 */
+  /* Klick-Affordanz: auf dem eingeklappten Spine signalisiert der
+     Pointer, dass der Balken ausklappt. */
+  .stack-card[data-collapsed="true"] .stack-spine:hover::before {
+    background-color: rgb(203 213 225);    /* slate-300 beim Hover */
   }
 
   /* #314 (Hans): Highlights ueber `==text==` (Default gelb) und

@@ -721,6 +721,19 @@ class BladeStackController extends Controller {
     event.preventDefault()
     const card = event.currentTarget.closest("[data-uuid]")
     if (!card) return
+    // #902 (Hans, 2026-07-08): Ein einfacher Klick auf einen EINGEKLAPPTEN
+    // Spine klappt die Card wieder aus — der Collapse-Balken (mit dem
+    // arrow-right-from-line-Icon) IST damit der Ausklapp-Button, gleiche
+    // Aktion wie der Doppelklick. Wir merken uns den Zeitpunkt, damit das
+    // vom Doppelklick nachfolgende `dblclick` die Card nicht sofort wieder
+    // einklappt (siehe Guard in toggleCollapse).
+    if (card.dataset.collapsed === "true") {
+      this.toggleCollapse(event)   // klappt aus
+      // Flag ERST nach dem Expand setzen — sonst wuerde der Guard in
+      // toggleCollapse diesen eigenen Expand-Aufruf verschlucken.
+      this._expandViaClick = { uuid: card.dataset.uuid, t: event.timeStamp }
+      return
+    }
     // #288 follow-up (Hans, 2026-05-24): Linksklick auf den BEREITS
     // aktiven Spine ist ein No-Op — sonst wuerde der erneute Klick
     // den Prev-Slot mit dem aktuellen Wert ueberschreiben, und der

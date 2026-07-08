@@ -27,6 +27,17 @@ export const BladeStackCollapseMixin = {
     window.getSelection?.()?.removeAllRanges?.()
     const card = event.currentTarget.closest(".stack-card")
     if (!card) return
+    // #902 (Hans, 2026-07-08): Hat der erste Klick eines Doppelklicks die
+    // Card gerade AUSgeklappt (focusCard-Klick auf den eingeklappten
+    // Spine), darf das nachfolgende `dblclick` sie nicht sofort wieder
+    // einklappen. Guard: kam der Expand-per-Klick auf dieselbe Card binnen
+    // 500ms, diesen Toggle verschlucken.
+    if (this._expandViaClick &&
+        this._expandViaClick.uuid === card.dataset.uuid &&
+        (event.timeStamp - this._expandViaClick.t) < 500) {
+      this._expandViaClick = null
+      return
+    }
     const collapsed = card.dataset.collapsed === "true"
     // #224 (2026-05-19, Hans): beim Collapsen den Spine an seiner
     // visuellen Position halten — sonst rutscht er weg, wenn rechts

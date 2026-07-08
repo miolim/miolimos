@@ -106,8 +106,15 @@ export default class extends Controller {
     const entries = this.readHistory()
     this.countTarget.textContent = entries.length ? `${entries.length}` : ""
 
+    // #901: aktuelle (Live-)Stack-Komposition — wird als abgesetzte
+    // „aktuell"-Zeile zuoberst in der Verlauf-Spalte gezeigt.
+    const currentUuids = this.currentStackUuids()
+
     // Alle UUIDs einsammeln, deduplizieren, in einem Schwung resolven.
-    const allUuids = Array.from(new Set(entries.flatMap(e => this.allUuidsOf(e))))
+    const allUuids = Array.from(new Set([
+      ...entries.flatMap(e => this.allUuidsOf(e)),
+      ...currentUuids
+    ]))
     const titles   = await this.resolveTitles(allUuids)
 
     // Original-Indizes mitschleppen, damit data-history-index global
@@ -122,9 +129,20 @@ export default class extends Controller {
         : `<p class="text-xs text-slate-400 italic px-2 py-2">${this.escapeHtml(window.t("stack_history.nothing_pinned"))}</p>`
     }
 
-    this.listTarget.innerHTML = recent.length
+    // #901: aktuelle Konfiguration zuoberst in der Verlauf-Spalte, optisch
+    // abgesetzt und als „aktuell" gekennzeichnet. Ihr Pin-Button legt einen
+    // Snapshot in „Gepinnt" an. Ist der aktuelle Stack bereits als gepinnter
+    // Eintrag vorhanden, zeigen wir den Zustand (pin-off) an.
+    const currentPinned = currentUuids.length > 0 && pinned.some(
+      ({ entry }) => this.finalStateKey(entry) === currentUuids.join(",")
+    )
+    const currentHtml = currentUuids.length
+      ? this.renderCurrentEntry(currentUuids, titles, currentPinned)
+      : ""
+
+    this.listTarget.innerHTML = currentHtml + (recent.length
       ? recent.map(({ entry, idx }) => this.renderEntry(entry, titles, idx)).join("")
-      : `<p class="text-xs text-slate-400 italic px-2 py-2">${this.escapeHtml(window.t("stack_history.history_empty"))}</p>`
+      : (currentHtml ? "" : `<p class="text-xs text-slate-400 italic px-2 py-2">${this.escapeHtml(window.t("stack_history.history_empty"))}</p>`))
 
     // Klick-Handler in beiden Listen delegieren.
     const lists = [this.listTarget, this.hasPinnedListTarget ? this.pinnedListTarget : null].filter(Boolean)
@@ -141,7 +159,34 @@ export default class extends Controller {
       parent.querySelectorAll("[data-history-action='remove']").forEach(el => {
         el.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); this.removeEntry(parseInt(el.dataset.historyIndex)) })
       })
+      // #901: „Aktuellen Stack anheften" — Snapshot der Live-Komposition.
+      parent.querySelectorAll("[data-history-action='pin-current']").forEach(el => {
+        el.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); this.pinCurrent() })
+      })
     })
+  }
+
+  // #901: synthetische „aktuell"-Zeile — die Live-Stack-Komposition, oben
+  // in der Verlauf-Spalte. Kein open/append/remove; nur ein Pin-Button, der
+  // den aktuellen Stand als gepinnten Snapshot sichert.
+  renderCurrentEntry(uuids, titles, alreadyPinned) {
+    const cards    = uuids.map(uuid => this.renderCardChip(uuid, titles)).join(`<span class="text-slate-300 mx-1">›</span>`)
+    const pinTitle = alreadyPinned ? window.t("stack_history.already_pinned") : window.t("stack_history.pin_current")
+    const pinIcon  = this.lucide(alreadyPinned ? "pin-off" : "pin")
+    return `
+      <div class="border-2 border-emerald-400 bg-emerald-50/40 rounded p-2">
+        <div class="flex items-center gap-2 mb-1.5 text-[11px]">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-600 text-white font-medium">${this.escapeHtml(window.t("stack_history.current"))}</span>
+          <span class="text-slate-500">${this.escapeHtml(window.t("stack_history.note_count", { count: uuids.length }))}</span>
+          <button type="button" data-history-action="pin-current"
+                  title="${this.escapeHtml(pinTitle)}"
+                  class="ml-auto p-0.5 rounded hover:bg-emerald-100 text-emerald-700 ${alreadyPinned ? "opacity-60" : ""}">${pinIcon}</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-y-1">
+          ${cards}
+        </div>
+      </div>
+    `
   }
 
   renderEntry(entry, titles, index) {
@@ -150,26 +195,13 @@ export default class extends Controller {
     const finalState = trail[current] || []
     const ago = this.timeAgo(new Date(entry.savedAt))
     const zebra = index % 2 === 0 ? "bg-white" : "bg-slate-50"
-    const pinIcon = entry.pinned ? "📌" : "📍"
+    // #901: Emoji-Buttons → Lucide-Icons (pin/pin-off/plus/x).
+    const pinIcon = this.lucide(entry.pinned ? "pin-off" : "pin")
     const pinTitle = entry.pinned ? window.t("stack_history.unpin") : window.t("stack_history.pin")
 
-    const cards = finalState.map(uuid => {
-      const t = titles[uuid]
-      // Fehlend ODER vom Resolver als unzugaenglich/geloescht markiert
-      // (item_type "missing" bzw. title null) -> Platzhalter statt "null".
-      if (!t || t.title == null || t.item_type === "missing") {
-        return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-200 text-xs text-slate-500 italic">🗑️ ${this.escapeHtml(window.t("stack_history.deleted"))}</span>`
-      }
-      // #434 (Hans, 2026-06-01): Lucide-SVG vom Server (icon_svg) bevorzugen;
-      // Emoji nur noch als Fallback (z.B. KI-Drawer mit eigenem Resolver).
-      const glyph = t.icon_svg
-        ? `<span class="shrink-0 text-slate-500 [&>svg]:w-4 [&>svg]:h-4">${t.icon_svg}</span>`
-        : this.emojiFor(t.item_type)
-      return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-white border border-slate-200 text-xs">
-                ${glyph} <span class="truncate max-w-[12rem]">${this.escapeHtml(t.title)}</span>
-              </span>`
-    })
-    const cardsHtml = cards.join(`<span class="text-slate-300 mx-1">›</span>`)
+    const cardsHtml = finalState
+      .map(uuid => this.renderCardChip(uuid, titles))
+      .join(`<span class="text-slate-300 mx-1">›</span>`)
 
     return `
       <div class="${zebra} border border-slate-200 rounded p-2 cursor-pointer hover:border-emerald-400 group"
@@ -180,19 +212,69 @@ export default class extends Controller {
           <span>${trail.length > 1 ? window.t("stack_history.trail_position", { current: current + 1, total: trail.length }) : window.t("stack_history.note_count", { count: finalState.length })}</span>
           <button type="button" data-history-action="append" data-history-index="${index}"
                   title="${this.escapeHtml(window.t("stack_history.append_title"))}"
-                  class="ml-auto p-0.5 rounded text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 text-base font-bold leading-none opacity-30 group-hover:opacity-100">+</button>
+                  class="ml-auto p-0.5 rounded text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 leading-none opacity-30 group-hover:opacity-100">${this.lucide("plus")}</button>
           <button type="button" data-history-action="pin" data-history-index="${index}"
                   title="${pinTitle}"
-                  class="p-0.5 rounded hover:bg-slate-100 ${entry.pinned ? "" : "opacity-30 group-hover:opacity-100"}">${pinIcon}</button>
+                  class="p-0.5 rounded hover:bg-slate-100 ${entry.pinned ? "text-emerald-700" : "opacity-30 group-hover:opacity-100"}">${pinIcon}</button>
           <button type="button" data-history-action="remove" data-history-index="${index}"
                   title="${this.escapeHtml(window.t("stack_history.remove_title"))}"
-                  class="p-0.5 rounded hover:bg-rose-50 hover:text-rose-700 opacity-30 group-hover:opacity-100">×</button>
+                  class="p-0.5 rounded hover:bg-rose-50 hover:text-rose-700 opacity-30 group-hover:opacity-100">${this.lucide("x")}</button>
         </div>
         <div class="flex flex-wrap items-center gap-y-1">
           ${cardsHtml}
         </div>
       </div>
     `
+  }
+
+  // #901: eine einzelne Card-Chip (Icon + Titel) — geteilt zwischen
+  // Verlaufs-Eintrag und „aktuell"-Zeile.
+  renderCardChip(uuid, titles) {
+    const t = titles[uuid]
+    // Fehlend ODER vom Resolver als unzugaenglich/geloescht markiert
+    // (item_type "missing" bzw. title null) -> Platzhalter statt "null".
+    if (!t || t.title == null || t.item_type === "missing") {
+      return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-200 text-xs text-slate-500 italic">🗑️ ${this.escapeHtml(window.t("stack_history.deleted"))}</span>`
+    }
+    // #434 (Hans, 2026-06-01): Lucide-SVG vom Server (icon_svg) bevorzugen;
+    // Emoji nur noch als Fallback (z.B. KI-Drawer mit eigenem Resolver).
+    const glyph = t.icon_svg
+      ? `<span class="shrink-0 text-slate-500 [&>svg]:w-4 [&>svg]:h-4">${t.icon_svg}</span>`
+      : this.emojiFor(t.item_type)
+    return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-white border border-slate-200 text-xs">
+              ${glyph} <span class="truncate max-w-[12rem]">${this.escapeHtml(t.title)}</span>
+            </span>`
+  }
+
+  // #901: Dedup-Schluessel eines Eintrags = finale Card-Folge (join),
+  // identisch zur Server-Semantik (StackSnapshot.dedup_key_for).
+  finalStateKey(entry) {
+    const trail   = entry.trail || [(entry.uuids || "").split(",").filter(Boolean)]
+    const current = entry.current ?? trail.length - 1
+    return (trail[current] || []).join(",")
+  }
+
+  // #901: Inline-Lucide-Icons fuer die Verlaufs-Buttons (Pin/Plus/X).
+  // Die ERB-`icon`-Helper stehen im JS nicht zur Verfuegung, daher hier
+  // die Pfade als Konstanten. w-3.5/h-3.5 passt zu den kleinen p-0.5-Buttons.
+  lucide(name) {
+    // Pfade wie in app/views/shared/icons/_pin.html.erb (aeltere Lucide-
+    // Variante), damit der Header-Pin und die Button-Pins gleich aussehen.
+    const paths = {
+      pin: `<line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>`,
+      "pin-off": `<line x1="2" x2="22" y1="2" y2="22"/><line x1="12" x2="12" y1="17" y2="22"/><path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h11"/><path d="M15 9.34V6h1a2 2 0 0 0 0-4H7.89"/>`,
+      plus: `<path d="M5 12h14"/><path d="M12 5v14"/>`,
+      x: `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline-block align-middle" aria-hidden="true">${paths[name] || ""}</svg>`
+  }
+
+  // #901: Die aktuell offene Stack-Komposition (Live-Cards im Container),
+  // ueber den blade-stack-Controller. Leeres Array, wenn kein Stack offen.
+  currentStackUuids() {
+    const stackCtl = this.findBladeStackController()
+    if (!stackCtl || typeof stackCtl.openUuids !== "function") return []
+    return stackCtl.openUuids().filter(Boolean)
   }
 
   emojiFor(itemType) {
@@ -268,6 +350,31 @@ export default class extends Controller {
     this.writeHistory(entries)
     StackSnapshotSync.setPinned(entries[index].serverId, entries[index].pinned)  // #816
     this.render()
+  }
+
+  // #901: „Aktuellen Stack anheften" — legt die Live-Komposition als
+  // gepinnten Snapshot an. Server dedupt ueber die End-Komposition und
+  // promotet einen vorhandenen Recent-Eintrag zu pinned. Danach die
+  // Server-Liste (Wahrheit) neu ziehen und rendern.
+  async pinCurrent() {
+    const uuids = this.currentStackUuids()
+    if (!uuids.length) return
+    const key = this.storageKeyValue
+    const entry = { trail: [uuids], current: 0, pinned: true }
+    const serverId = await StackSnapshotSync.pushSnapshot(key, entry)
+    const serverEntries = serverId ? await StackSnapshotSync.fetchBucket(key) : null
+    if (serverEntries) {
+      this.writeHistory(serverEntries)
+    } else {
+      // Offline / Fehler: lokal optimistisch nachziehen (Dedup ueber die
+      // End-Komposition — vorhandenen Eintrag zu pinned promoten).
+      const local = this.readHistory()
+      const dupIdx = local.findIndex(e => this.finalStateKey(e) === uuids.join(","))
+      if (dupIdx >= 0) local[dupIdx].pinned = true
+      else local.push({ ...entry, savedAt: new Date().toISOString(), serverId })
+      this.writeHistory(local)
+    }
+    await this.render()
   }
 
   removeEntry(index) {

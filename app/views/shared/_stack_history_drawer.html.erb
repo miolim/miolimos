@@ -26,8 +26,9 @@
     </header>
     <div class="flex flex-col @[32rem]:flex-row flex-1 min-h-0 overflow-y-auto @[32rem]:overflow-y-hidden">
       <div class="@[32rem]:flex-1 @[32rem]:border-r border-b @[32rem]:border-b-0 border-slate-200 bg-slate-50 flex flex-col min-h-0">
-        <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200 bg-white/50">
-          📌 Gepinnt
+        <div class="px-3 py-1.5 text-[11px] font-medium text-slate-600 border-b border-slate-200 bg-white/50 flex items-center gap-1">
+          <%# #901: 📌 → Lucide-Pin, konsistent mit den Verlaufs-Buttons. %>
+          <%= icon "pin", size: "w-3.5 h-3.5", class: "shrink-0" %> Gepinnt
         </div>
         <div data-stack-history-target="pinnedList"
              class="flex-1 @[32rem]:overflow-y-auto px-2 py-2 space-y-1.5"></div>

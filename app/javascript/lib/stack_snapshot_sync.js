@@ -24,11 +24,17 @@ export const StackSnapshotSync = {
   },
 
   // Write-Through eines Snapshots (fire-and-forget-tauglich).
+  // #901: entry.pinned wird mitgesendet, wenn gesetzt — so kann der
+  // Drawer den aktuellen Stack direkt als gepinnten Snapshot anlegen
+  // (Server dedupt ueber die End-Komposition und promotet vorhandene
+  // Recent-Eintraege zu pinned).
   async pushSnapshot(key, entry) {
     try {
+      const body = { key, trail: entry.trail, current: entry.current }
+      if (entry.pinned != null) body.pinned = entry.pinned
       const res = await fetch("/stack_snapshots", {
         method: "POST", headers: HEADERS, credentials: "same-origin",
-        body: JSON.stringify({ key, trail: entry.trail, current: entry.current })
+        body: JSON.stringify(body)
       })
       if (!res.ok) return null
       const json = await res.json()

@@ -21,16 +21,11 @@
          class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
                 bg-white border-l border-slate-200 first:border-l-0 flex">
 
-  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
-                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
-         title="<%= t("documents.list.title") %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
-         data-target-uuid="<%= stack_id %>">
-    <span class="shrink-0 text-slate-500"><%= icon "file_text" %></span>
-    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
-                 [writing-mode:vertical-rl] min-h-0 flex-1"><%= t("documents.list.title") %></span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        title: t("documents.list.title"),
+        icon_html: icon("file_text"),
+        stack_id: stack_id,
+        label: t("documents.list.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2" data-controller="list-search">
     <%# #558: Filter (GET) rendert die Liste IN-PLACE in diesem Frame neu, statt

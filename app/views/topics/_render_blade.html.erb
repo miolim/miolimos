@@ -40,22 +40,13 @@
   %>
   <%# #740 (Hans): Spine-Hintergrund rot (wie der Werk-Render-Button),
       Icon + Label weiß. %>
-  <aside class="stack-spine self-stretch w-7 shrink-0
-                bg-red-700 border-r border-red-800
-                flex flex-col items-center pt-2 gap-2
-                cursor-pointer hover:bg-red-800"
-         title="<%= spine_label %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
-    <span class="inline-block w-3 h-3 rounded-full shrink-0 mt-1"
-          style="background: <%= topic.color.presence || '#94a3b8' %>"></span>
-    <span class="shrink-0 text-white [&_svg]:w-5 [&_svg]:h-5"
-          title="<%= t("topics.render") %>"><%= icon "list_tree" %></span>
-    <span class="text-xs text-white font-medium whitespace-nowrap overflow-hidden text-ellipsis
-                 [writing-mode:vertical-rl] min-h-0 flex-1">
-      <%= spine_label %>
-    </span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        variant: "tree",
+        title: spine_label,
+        pre_icon: tag.span(class: "inline-block w-3 h-3 rounded-full shrink-0 mt-1", style: "background: #{topic.color.presence || '#94a3b8'}"),
+        icon_html: icon("list_tree"),
+        icon_class: "text-white [&_svg]:w-5 [&_svg]:h-5",
+        label: spine_label %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto"
        data-controller="render-blade-toggles">

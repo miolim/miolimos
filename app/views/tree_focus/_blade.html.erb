@@ -13,19 +13,12 @@
                 flex">
   <%# #740 (Hans): Spine-Hintergrund rot (wie der Werk-Render-Button),
       network-Icon + Label weiß. %>
-  <aside class="stack-spine self-stretch w-7 shrink-0
-                bg-red-700 border-r border-red-800
-                flex flex-col items-center pt-2 gap-2
-                cursor-pointer hover:bg-red-800"
-         title="<%= t("tree_focus.spine_title", name: topic.name) %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
-    <span class="text-white mt-1"><%= icon "network", size: "w-4 h-4" %></span>
-    <span class="text-xs text-white font-medium whitespace-nowrap overflow-hidden text-ellipsis
-                 [writing-mode:vertical-rl] min-h-0 flex-1">
-<%= t("tree_focus.spine_label", name: topic.name) %>
-    </span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        variant: "tree",
+        title: t("tree_focus.spine_title", name: topic.name),
+        icon_html: icon("network", size: "w-4 h-4"),
+        icon_class: "text-white mt-1",
+        label: t("tree_focus.spine_label", name: topic.name) %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3">
     <%= turbo_frame_tag "tree_focus_frame_#{entry.id}" do %>

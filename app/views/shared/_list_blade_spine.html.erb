@@ -1,0 +1,47 @@
+<%# #906 (Hans, 2026-07-08): gemeinsamer Spine aller LISTEN-/einfachen Blades.
+    Vorher ~22× als `<aside class="stack-spine …">` kopiert (dashboard, tasks,
+    communications, sources, documents, history, topics, tags, awaitings,
+    time_entries, knowledge, persons, refs, tree_focus/render …) — jede
+    Spine-Änderung musste überall nachgezogen werden. Analog zum Detail-Spine
+    `shared/_blade_spine` (#564), aber für den klickbaren Listen-Spine
+    (focusCard / dblclick->toggleCollapse), mit optionalem Farbschema.
+
+    Locals:
+      - title      — title-Attribut (Tooltip); Pflicht
+      - label      — vertikaler Text; HTML via capture-Block erlaubt; Pflicht
+      - icon_html  — Inhalt des Icon-Slots (z.B. icon "tasks"); optional
+                     (manche Spines zeigen nur einen Farbpunkt, kein Icon)
+      - icon_class — Zusatzklassen für den Icon-Slot (Default = Schema-Farbe;
+                     z.B. "text-amber-500" oder "[&_svg]:w-5 [&_svg]:h-5")
+      - pre_icon   — HTML vor dem Icon (z.B. Themenfarb-Punkt); optional
+      - stack_id   — wenn gesetzt: data-target-uuid der Card; optional
+      - copy       — Bool: blade_copy_button rendern (Default false)
+      - copy_id    — Referenz für den Copy-Button (Default: stack_id)
+      - variant    — Farbschema: "default" (slate) | "tree" (rot) |
+                     "source" (blau); Default "default" %>
+<%
+  variant = local_assigns.fetch(:variant, "default")
+  scheme  = {
+    "default" => { aside: "bg-slate-50 border-slate-200 hover:bg-slate-100", label: "text-slate-700", icon: "text-slate-500" },
+    "tree"    => { aside: "bg-red-700 border-red-800 hover:bg-red-800",      label: "text-white",      icon: "text-white"     },
+    "source"  => { aside: "bg-blue-50 border-blue-200 hover:bg-blue-100",    label: "text-blue-900",   icon: "text-blue-700"  }
+  }.fetch(variant)
+  icon_class = local_assigns.fetch(:icon_class, scheme[:icon])
+  copy_id    = local_assigns.fetch(:copy_id, local_assigns[:stack_id])
+%>
+<aside class="stack-spine self-stretch w-7 shrink-0 border-r <%= scheme[:aside] %>
+              flex flex-col items-center pt-2 gap-2 cursor-pointer"
+       title="<%= title %>"
+       data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
+       <% if local_assigns[:stack_id] %>data-target-uuid="<%= stack_id %>"<% end %>>
+  <%= local_assigns[:pre_icon] %>
+  <% if local_assigns[:icon_html] %>
+    <span class="shrink-0 <%= icon_class %>"><%= icon_html %></span>
+  <% end %>
+  <% if local_assigns[:copy] && copy_id %>
+    <%= blade_copy_button(copy_id) %>
+  <% end %>
+  <span class="text-xs <%= scheme[:label] %> font-medium whitespace-nowrap overflow-hidden text-ellipsis
+               [writing-mode:vertical-rl] min-h-0 flex-1"><%= label %></span>
+  <%= render "shared/blade_close_button" %>
+</aside>

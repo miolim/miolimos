@@ -84,19 +84,10 @@
                 bg-white border-l border-slate-200 first:border-l-0
                 flex">
 
-  <aside class="stack-spine self-stretch w-7 shrink-0
-                bg-slate-50 border-r border-slate-200
-                flex flex-col items-center pt-2 gap-2
-                cursor-pointer hover:bg-slate-100"
-         title="<%= t("nav.tasks") %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
-    <span class="shrink-0 text-slate-500"><%= icon "tasks" %></span>
-    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
-                 [writing-mode:vertical-rl] min-h-0 flex-1">
-      <%= t("nav.tasks") %>
-    </span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        title: t("nav.tasks"),
+        icon_html: icon("tasks"),
+        label: t("nav.tasks") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search"

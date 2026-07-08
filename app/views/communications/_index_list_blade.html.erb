@@ -12,19 +12,10 @@
                 bg-white border-l border-slate-200 first:border-l-0
                 flex">
 
-  <aside class="stack-spine self-stretch w-7 shrink-0
-                bg-slate-50 border-r border-slate-200
-                flex flex-col items-center pt-2 gap-2
-                cursor-pointer hover:bg-slate-100"
-         title="<%= t('communications.index_title') %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse">
-    <span class="shrink-0 text-slate-500"><%= icon "communications" %></span>
-    <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
-                 [writing-mode:vertical-rl] min-h-0 flex-1">
-      <%= t("communications.index_title") %>
-    </span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        title: t("communications.index_title"),
+        icon_html: icon("communications"),
+        label: t("communications.index_title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
     <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>

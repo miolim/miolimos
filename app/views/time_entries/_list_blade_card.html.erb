@@ -14,15 +14,11 @@
          data-uuid="<%= stack_id %>"
          class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
                 bg-white border-l border-slate-200 first:border-l-0 flex">
-  <aside class="stack-spine self-stretch w-7 shrink-0 bg-slate-50 border-r border-slate-200
-                flex flex-col items-center pt-2 gap-2 cursor-pointer hover:bg-slate-100"
-         title="<%= t("time_entries.title") %>"
-         data-action="click->blade-stack#focusCard dblclick->blade-stack#toggleCollapse"
-         data-target-uuid="<%= stack_id %>">
-    <span class="shrink-0 text-slate-500"><%= icon "timer" %></span>
-    <span class="text-xs text-slate-700 font-medium [writing-mode:vertical-rl] min-h-0 flex-1 overflow-hidden text-ellipsis"><%= t("time_entries.title") %></span>
-    <%= render "shared/blade_close_button" %>
-  </aside>
+  <%= render "shared/list_blade_spine",
+        title: t("time_entries.title"),
+        icon_html: icon("timer"),
+        stack_id: stack_id,
+        label: t("time_entries.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto" data-controller="simple-tabs">
     <nav class="flex gap-1 border-b border-slate-200 px-3 pt-3 text-sm sticky top-0 bg-white z-10">

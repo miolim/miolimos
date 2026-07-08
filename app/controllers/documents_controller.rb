@@ -49,7 +49,17 @@ class DocumentsController < ApplicationController
     # Ausstellers vergeben (siehe #link), nicht schon beim Anlegen.
     doc = Document.create!(kind: kind, status: :entwurf,
                            creator: current_actor, document_date: Date.current)
-    redirect_to documents_path(stack: "list:documents,document:#{doc.id}"), status: :see_other
+    # #871 (Hans): Neues Dokument an den AKTUELLEN Stack anhängen (wie
+    # Aufgabe/Wartepunkt/KI) statt per Redirect einen neuen Stack aufzubauen.
+    # `blade_stack_container` existiert nur auf Stack-Seiten; sonst ist der
+    # Stream ein No-Op und der HTML-Fallback (Redirect) greift.
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.append("blade_stack_container",
+          partial: "documents/blade_card", locals: { document: doc })
+      end
+      format.html { redirect_to documents_path(stack: "list:documents,document:#{doc.id}"), status: :see_other }
+    end
   end
 
   # Skalare Meta-Felder (Betreff/Datum/Status/Anrede/Nummer) speichern.

@@ -105,10 +105,12 @@
           <div class="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-400"><%= t("documents.list.new_document") %></div>
           <% labels.each do |k, lbl| %>
             <% if DocumentsController::CREATABLE_KINDS.include?(k) %>
-              <%# Natives Form-POST (turbo:false): zuverlässige Voll-Navigation
-                  zum neuen Entwurf, statt unsichtbarem Turbo-Frame-Target. %>
+              <%# #871 (Hans): Turbo aktiv lassen, damit die create-Antwort als
+                  turbo_stream das neue Dokument-Blade an den AKTUELLEN Stack
+                  anhängt (wie Aufgabe/Wartepunkt/KI), statt per Voll-Navigation
+                  einen neuen Stack aufzubauen. %>
               <%= button_to documents_path(kind: k), method: :post,
-                    form: { data: { turbo: false }, class: "block" },
+                    form: { class: "block" },
                     class: "w-full text-left flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
                 <span class="w-5 flex justify-center text-slate-500"><%= icon "file_text" %></span><%= lbl %>
               <% end %>

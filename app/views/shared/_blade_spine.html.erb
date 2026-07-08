@@ -45,5 +45,8 @@
       rotate-180 (würde bottom-up umdrehen) — Start grenzt ans Icon an. %>
   <span class="text-xs text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis
                [writing-mode:vertical-rl] min-h-0 flex-1"><%= label %></span>
+  <%# #919: optionale Indikatoren am Spine-Fuss, direkt UEBER dem
+      Schliessen-Kreuz (z.B. Task-Entwurfs-Stift). Nicht-interaktiv. %>
+  <%= local_assigns[:footer_actions] %>
   <%= render "shared/blade_close_button" %>
 </aside>

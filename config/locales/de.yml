@@ -313,6 +313,7 @@ de:
     publish:          "Veröffentlichen"
     to_draft:         "Auf Entwurf zurücksetzen"
     draft_badge:      "Entwurf — Assignee sieht noch nichts"
+    spine_draft:      "Entwurf – noch nicht veröffentlicht"
     edit_task:        "Aufgabe bearbeiten"
     new_awaiting:     "Wartepunkt anlegen"
     picker:

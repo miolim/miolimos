@@ -313,6 +313,7 @@ en:
     publish:          "Publish"
     to_draft:         "Back to draft"
     draft_badge:      "Draft — assignee can't see it yet"
+    spine_draft:      "Draft – not published yet"
     edit_task:        "Edit task"
     new_awaiting:     "Add waiting point"
     picker:

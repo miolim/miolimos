@@ -460,6 +460,24 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
   background: #f87171;          /* red-400 */
 }
 
+/* #913 (Hans, 2026-07-08): Bei Fokus (data-active) faerbt sich der Spine
+   kraeftig (emerald/sky/red-400) — die hellgrauen Icons, die Aufgabennummer
+   (#id) und das Label kontrastieren dann zu schwach. Deshalb im aktiven
+   Spine ALLE Inhalte auf Schwarz. Topic-Farbpunkte setzen `background`
+   (nicht `color`), bleiben also farbig. Dark-Mode: dort sind aktive Spines
+   dunkel (700er) -> Inhalte weiss, siehe .dark-Block weiter unten. */
+.stack-card[data-active="true"] .stack-spine,
+.stack-card[data-active="true"] .stack-spine * {
+  color: #000;
+}
+
+/* #914 (Hans, 2026-07-08): Stack-Verlauf-Icon nur auf dem ERSTEN Card-Spine
+   im Stack — vorher auf jedem Spine (Duplikat). Jede Card mit vorausgehender
+   Card-Geschwister (also alle ausser der ersten) blendet den Button aus. */
+#blade_stack_container > .stack-card ~ .stack-card .stack-history-toggle {
+  display: none;
+}
+
 /* #224 6f-4 v2 (first principles, 2026-05-18): Mobile-Stack ist
    jetzt nativer scroll-snap statt manual transforms. Der Browser
    uebernimmt Swipe-Mechanik komplett — kein touch-JS, kein
@@ -736,6 +754,13 @@ html.dark .theme-icon-sun  { display: flex; }
 .dark .stack-card[data-uuid^="render:topic:"][data-active="true"] .stack-spine,
 .dark .stack-card[data-uuid^="refs:ki:"][data-active="true"] .stack-spine,
 .dark .stack-card[data-uuid^="refs:topic:"][data-active="true"] .stack-spine { background: #b91c1c; }  /* red-700 */
+
+/* #913 Dark-Gegenstueck: aktive Spines sind hier dunkel (700er) — Inhalte
+   weiss statt schwarz. Hoehere Spezifitaet (.dark …) schlaegt die Light-Regel. */
+.dark .stack-card[data-active="true"] .stack-spine,
+.dark .stack-card[data-active="true"] .stack-spine * {
+  color: #fff;
+}
 
 /* Markdown-Code/Pre nutzen bg-slate-100 (jetzt #1e293b) — leicht abheben. */
 .dark .markdown-body code,

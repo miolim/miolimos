@@ -10,9 +10,12 @@
     Spine-Fuss, direkt UEBER dem Schliessen-Kreuz (mobil daneben). Feuert ein
     globales Event; der stack-history-Drawer der Seite faengt es ab und
     oeffnet/schliesst. So ist der Verlauf auf JEDEM Stack erreichbar. %>
+<%# #914 (Hans, 2026-07-08): `stack-history-toggle`-Marker — CSS blendet den
+    Verlauf-Button auf allen Cards außer der ersten im Stack aus (einer pro
+    Stack genügt, feuert ein globales Event). %>
 <button type="button" title="<%= t("shared.close_button.stack_history") %>" aria-label="<%= t("shared.close_button.stack_history") %>"
         onclick="window.dispatchEvent(new CustomEvent('stack-history:toggle'))"
-        class="shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
+        class="stack-history-toggle shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
   <%= icon "history", size: "w-4 h-4" %>
 </button>
 <button type="button" title="<%= t("shared.close_button.close_card") %>" aria-label="<%= t("shared.close_button.close") %>"

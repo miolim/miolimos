@@ -51,6 +51,15 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_nil Invoice.next_number(nil)
   end
 
+  # #941: eingehende Rechnungen zählen NICHT in den Nummernkreis — deren
+  # Nummer stammt vom fremden Aussteller.
+  test "next_number ignoriert eingehende Rechnungen" do
+    uuid = SecureRandom.uuid
+    year = Date.current.year
+    Invoice.create!(kind: :rechnung, direction: :eingehend, issuer_uuid: uuid, number: "#{year}-950")
+    assert_equal "#{year}-001", Invoice.next_number(uuid)
+  end
+
   test "display_name = Aussteller · Nummer · Datum" do
     ki = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Firma GmbH", item_type: :organization,
                                file_path: "kb/#{SecureRandom.hex(4)}.md", content_hash: SecureRandom.hex(8))

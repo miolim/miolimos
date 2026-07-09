@@ -318,7 +318,9 @@ module Inbox
       def match_by_identifier(label_pattern, value)
         v = value.to_s.gsub(/\s+/, "")
         return nil if v.blank?
-        ident = Identifier.where("value ILIKE ?", v)
+        # #941: DB-seitig ebenfalls Leerzeichen strippen — IBANs werden oft
+        # gruppiert gepflegt ("DE89 3704 …") und matchten sonst nie.
+        ident = Identifier.where("REPLACE(value, ' ', '') ILIKE ?", v)
                           .detect { |i| i.knowledge_item&.item_type.in?(%w[person organization]) }
         ident&.knowledge_item
       end

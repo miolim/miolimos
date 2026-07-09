@@ -49,7 +49,7 @@ class Invoice < ApplicationRecord
   def self.next_number(issuer_uuid, date = Date.current)
     return nil if issuer_uuid.blank?
     prefix = "#{date.year}-"
-    last = where(kind: :rechnung, issuer_uuid: issuer_uuid).where("number LIKE ?", "#{prefix}%")
+    last = where(kind: :rechnung, direction: :ausgehend, issuer_uuid: issuer_uuid).where("number LIKE ?", "#{prefix}%")
              .pluck(:number).map { |n| n.to_s.split("-").last.to_i }.max.to_i
     format("%s%03d", prefix, last + 1)
   end

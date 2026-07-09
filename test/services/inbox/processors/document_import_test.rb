@@ -141,6 +141,26 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     refute KnowledgeItem.exists?(title: "Stadtwerke Beispielstadt")
   end
 
+  test "Entitäten-Matching: IBAN mit Leerzeichen in den Stammdaten matcht trotzdem (#941)" do
+    existing = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Stadtwerke Konto-Match",
+                                     item_type: :organization, file_path: "x/swk-#{SecureRandom.hex(3)}.md",
+                                     content_hash: "h", body: "")
+    existing.identifiers.create!(label: "IBAN", value: "DE02 1203 0000 0000 2020 51", position: 0)
+
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+    extraction["sender"]["vat_id"] = nil   # nur die IBAN kann matchen
+    item = make_item
+    stub_chat_client(extraction.to_json) do
+      without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    end
+    item.reload
+    item.update!(payload: item.payload.merge("confirm_import" => true))
+    without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+
+    invoice = Invoice.find(item.reload.result.dig("invoice", "id"))
+    assert_equal existing.uuid, invoice.issuer_uuid, "gruppiert gepflegte IBAN muss matchen"
+  end
+
   test "Nicht-Rechnung: nur Beleg-KI, keine Invoice" do
     extraction = LLM_EXTRACTION.merge("doc_type" => "anschreiben", "invoice" => nil,
                                       "title" => "Behörde — Bescheid")

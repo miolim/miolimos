@@ -5,15 +5,27 @@ import { Controller } from "@hotwired/stimulus"
 // Tab hervor. Keine Server-Last (alle Reiter sind schon gerendert).
 export default class extends Controller {
   static targets = ["tab", "panel"]
+  // #915 (Hans): optionaler storage-key — merkt den aktiven Reiter (sessionStorage)
+  // und stellt ihn nach Re-Render/Reload wieder her, statt auf den ersten Reiter
+  // zu springen. Ohne Key: bisheriges Verhalten (erster Reiter).
+  static values = { storageKey: String }
 
   connect() {
-    const first = this.tabTargets[0]?.dataset.name
-    if (first) this._activate(first)
+    const names  = this.tabTargets.map((t) => t.dataset.name)
+    const stored = this.hasStorageKeyValue ? sessionStorage.getItem(this._key()) : null
+    const target = stored && names.includes(stored) ? stored : names[0]
+    if (target) this._activate(target)
   }
 
   show(event) {
     const name = event.currentTarget?.dataset.name
-    if (name) this._activate(name)
+    if (!name) return
+    this._activate(name)
+    if (this.hasStorageKeyValue) sessionStorage.setItem(this._key(), name)
+  }
+
+  _key() {
+    return `simple-tabs:${this.storageKeyValue}`
   }
 
   _activate(name) {

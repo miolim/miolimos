@@ -15,6 +15,84 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.3.0] - 2026-07-09
+
+### Added
+
+- Invoices are a first-class entity with their own sidebar list, detail card
+  and direction (outgoing/incoming). Outgoing invoices keep the number
+  sequence and all rendering/e-invoice outputs; incoming invoices carry a due
+  date, a payment status and the original PDF as a frozen artifact (#926,
+  #934).
+- Incoming-documents workflow: a new inbox processor analyses uploaded or
+  mail-attached PDFs — ZUGFeRD/Factur-X e-invoices are read deterministically
+  from the embedded EN 16931 XML (including payment terms), everything else is
+  extracted by an LLM directly from the PDF with a schema-enforced JSON
+  answer. A review step in the inbox card shows the extracted fields and
+  selectable follow-up tasks before anything is persisted; deterministic
+  e-invoices skip the review. Senders are matched via strong identifiers
+  (VAT id, IBAN) before name matching and are created as organisation items
+  with those identifiers when unknown (#934).
+- Documents support `{{key}}` placeholders: values from the entity and its
+  free info-block fields are merged into the body text before rendering;
+  unresolved placeholders stay visible instead of silently disappearing, and
+  the editor warns about them (#926).
+- Scanned PDFs without a text layer get a searchable OCR copy on filing
+  (requires the optional `ocrmypdf`/`tesseract-ocr-deu` packages; the step is
+  skipped silently when they are missing) (#934).
+- Documents without a mail context are matched against topics with the same
+  embedding classifier used for e-mails; safe matches attach the topic
+  automatically (#934).
+- The dashboard shows a "task inbox" section for published tasks without a
+  commitment (#930).
+- Task spines show live status: WIP marker, done check, draft pencil and a
+  focus highlight; list spines are unified and the collapse bar is easier to
+  hit (#892, #893, #901, #902, #906, #913, #914, #919).
+- Creating a document appends its card to the current stack instead of
+  rebuilding a new one (#871).
+- `simple_tabs` panels can persist the active tab across re-renders via an
+  optional storage key (#915, adopted from the immoos fork).
+
+### Changed
+
+- The document model was split along "creation is a procedure, not an
+  entity": `Document` now covers correspondence only (letter, NDA, SEPA
+  mandate) while invoices/quotes live in the new `Invoice` entity. The shared
+  machinery (parties, info-block fields, artifacts, lock, render/sign/archive)
+  moved into a reusable printable layer that further entities can adopt
+  (#926).
+- Frozen PDF artifacts and free info-block fields are polymorphic and shared
+  by all printable entities; the client portal lists artifacts of letters and
+  invoices alike (#926).
+- Persons and organisations no longer appear in a topic's knowledge list
+  (#932).
+
+### Fixed
+
+- NDA PDFs lost their page margins because Chrome now prefers the theme's
+  `@page { margin: 0 }` rule over print-call margins; the NDA layout sets its
+  own `@page` override (#926).
+- The sidebar collapse hid labels on mobile although the rail is
+  desktop-only; collapse hiding is now guarded by the `md:` breakpoint
+  (#856, adopted from the immoos fork).
+- Newly created users received no default capabilities and hit
+  "not allowed to read Task" on first login (#927, adopted from the immoos
+  fork).
+- Sender matching tolerates grouped IBANs ("DE89 3704 …") in master data, and
+  the invoice number sequence ignores incoming invoices (#941).
+
+### ⚠️ Upgrade notes
+
+- The migration **deletes legacy invoice/quote documents** (`Document` rows of
+  kind `rechnung`/`angebot` and their positions) instead of migrating them —
+  they predate the new `Invoice` entity. Letters, NDAs and SEPA mandates are
+  untouched.
+- LLM extraction of incoming documents requires an Anthropic API key
+  (`ANTHROPIC_API_KEY` or credentials); without it, only ZUGFeRD e-invoices
+  are processed automatically.
+- For OCR text layers install the optional packages:
+  `apt install ocrmypdf tesseract-ocr-deu`.
+
 ## [0.2.1] - 2026-07-07
 
 ### Added
@@ -162,7 +240,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/miolim/miolimos/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/miolim/miolimos/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/miolim/miolimos/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/miolim/miolimos/releases/tag/v0.1.0

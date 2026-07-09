@@ -19,11 +19,15 @@
 <% draft_pencil = capture do %><span class="shrink-0 mb-1 p-0.5 text-amber-500"
         title="<%= t('tasks.spine_draft') %>" aria-label="<%= t('tasks.spine_draft') %>"><%= icon "pencil", size: "w-4 h-4", fill: "currentColor" %></span><% end if draft %>
 <%# #919 (Hans, 2026-07-09): Status-Icons vereinheitlicht auf square-Familie:
-    offen/WIP = `square` (grau bzw. orange), erledigt = `square-check-big` (gruen). %>
+    offen/WIP = `square` (grau bzw. orange), erledigt = `square-check-big` (gruen).
+    Marker-Klasse `spine-status-icon` (2026-07-09, #919 Follow-up): damit die
+    Fokus-Schwarz-Regel (#913, .stack-spine * → color:#000) das ORANGE/GRÜN des
+    Status-Icons NICHT übermalt — CSS-Ausnahme in application.css behält die
+    Statusfarbe auf der aktiven Card. `offen` (grau) bleibt bewusst schwarz. %>
 <%= render "shared/blade_spine", stack_id: task_id, spine_id: "task_spine_#{task.id}",
       title: task.title,
       icon_html: icon(task.done? ? "square-check-big" : "square"),
-      icon_class: (task.done? ? "text-emerald-600" : (wip ? "text-orange-500" : "text-slate-500")),
+      icon_class: ("spine-status-icon " + (task.done? ? "text-emerald-600" : (wip ? "text-orange-500" : "text-slate-500"))),
       topics: task.topics,
       footer_actions: draft_pencil,
       label: capture { %><%= task.title %><span class="text-slate-400 tabular-nums"> · #<%= task.id %></span><% } %>

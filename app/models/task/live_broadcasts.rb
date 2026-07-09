@@ -91,7 +91,14 @@ class Task < ApplicationRecord
       # Checkbox sitzt im Header und wurde in der Liste schon live aktualisiert,
       # in einer offenen Card aber nicht. Mit dabei spiegelt sich der Rahmen
       # auch dort sofort, wenn ein Lauf die Aufgabe als WIP markiert/freigibt.
-      if saved_change_to_status? || saved_change_to_title? || saved_change_to_wip_actor_id?
+      # #919 (Hans, 2026-07-09): auch published_at — der Entwurf-Stift am
+      # Spine-Fuss (und das Entwurf-Badge im Header) sollen live umspringen,
+      # wenn eine Task publiziert/pausiert wird. Der `task.draft?`-Teil des
+      # Stifts ist betrachter-unabhängig, daher im globalen Broadcast korrekt.
+      # (Der betrachter-private Reply-Entwurf-Stift wird stattdessen same-session
+      # im TaskRepliesController gerendert — im Broadcast ist current_actor nil.)
+      if saved_change_to_status? || saved_change_to_title? || saved_change_to_wip_actor_id? ||
+         saved_change_to_published_at?
         broadcast_replace_to self, targets: "#task_header_#{id}",
           partial: "tasks/detail_header", locals: { task: self }
         # #892 (Hans): Das Spine-Status-Icon (WIP orange / erledigt grünes

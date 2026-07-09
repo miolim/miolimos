@@ -471,6 +471,17 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
   color: #000;
 }
 
+/* #919 Follow-up (Hans, 2026-07-09): Auf der aktiven Card soll das Task-
+   Status-Icon seine BEDEUTUNGSFARBE behalten — WIP orange, erledigt grün —
+   statt von der #913-Schwarz-Regel übermalt zu werden. `offen` (grau) bleibt
+   bewusst schwarz (keine Statusbedeutung). Höhere Spezifität (…icon.text-…)
+   schlägt die Schwarz-Regel; die Farbe muss auch aufs innere <svg> (`*`),
+   dessen stroke `currentColor` ist. Nur Light-Mode — Dark-Reset s. unten. */
+.stack-card[data-active="true"] .stack-spine .spine-status-icon.text-orange-500,
+.stack-card[data-active="true"] .stack-spine .spine-status-icon.text-orange-500 * { color: #f97316; }  /* orange-500 */
+.stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600,
+.stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600 * { color: #059669; }  /* emerald-600 */
+
 /* #914 (Hans, 2026-07-08): Stack-Verlauf-Icon nur auf dem ERSTEN Card-Spine
    im Stack — vorher auf jedem Spine (Duplikat). Jede Card mit vorausgehender
    Card-Geschwister (also alle ausser der ersten) blendet den Button aus. */
@@ -759,6 +770,16 @@ html.dark .theme-icon-sun  { display: flex; }
    weiss statt schwarz. Hoehere Spezifitaet (.dark …) schlaegt die Light-Regel. */
 .dark .stack-card[data-active="true"] .stack-spine,
 .dark .stack-card[data-active="true"] .stack-spine * {
+  color: #fff;
+}
+
+/* #919 Follow-up (Hans, 2026-07-09): Im Dark-Mode bleibt es beim weissen
+   Kontrast — der aktive Task-Spine ist hier selbst kraeftig (emerald-700),
+   ein grünes/oranges Status-Icon darauf hätte zu wenig Kontrast. Diese Regel
+   (gleiche Spezifitaet wie die Light-Ausnahme, aber spaeter + `.dark`) stellt
+   die Status-Icons im Dark-Mode wieder auf weiss. */
+.dark .stack-card[data-active="true"] .stack-spine .spine-status-icon,
+.dark .stack-card[data-active="true"] .stack-spine .spine-status-icon * {
   color: #fff;
 }
 

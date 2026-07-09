@@ -47,14 +47,17 @@ class TaskRepliesController < ApplicationController
     end
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "task_replies_#{@parent_task.id}",
-          partial: "tasks/replies_section",
-          # #451 (Hans, 2026-06-01): nach Entwurf-Save den Compose
-          # refokussieren, damit ein direkt folgendes Strg+Umschalt+Enter
-          # (Entwurf veroeffentlichen) einen Tastatur-Fokus hat.
-          locals:  { task: @parent_task, focus_compose: draft }
-        )
+        render turbo_stream: [
+          turbo_stream.replace(
+            "task_replies_#{@parent_task.id}",
+            partial: "tasks/replies_section",
+            # #451 (Hans, 2026-06-01): nach Entwurf-Save den Compose
+            # refokussieren, damit ein direkt folgendes Strg+Umschalt+Enter
+            # (Entwurf veroeffentlichen) einen Tastatur-Fokus hat.
+            locals:  { task: @parent_task, focus_compose: draft }
+          ),
+          spine_replace_stream
+        ]
       end
       format.html { redirect_to task_path(@parent_task) }
     end
@@ -80,11 +83,14 @@ class TaskRepliesController < ApplicationController
     end
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "task_replies_#{@parent_task.id}",
-          partial: "tasks/replies_section",
-          locals:  { task: @parent_task }
-        )
+        render turbo_stream: [
+          turbo_stream.replace(
+            "task_replies_#{@parent_task.id}",
+            partial: "tasks/replies_section",
+            locals:  { task: @parent_task }
+          ),
+          spine_replace_stream
+        ]
       end
       format.html { redirect_to task_path(@parent_task) }
     end
@@ -105,17 +111,33 @@ class TaskRepliesController < ApplicationController
     reply.destroy!
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "task_replies_#{@parent_task.id}",
-          partial: "tasks/replies_section",
-          locals:  { task: @parent_task }
-        )
+        render turbo_stream: [
+          turbo_stream.replace(
+            "task_replies_#{@parent_task.id}",
+            partial: "tasks/replies_section",
+            locals:  { task: @parent_task }
+          ),
+          spine_replace_stream
+        ]
       end
       format.html { redirect_to task_path(@parent_task) }
     end
   end
 
   private
+
+  # #919 (Hans, 2026-07-09): Der Entwurf-Stift am Task-Spine hängt u.a. an
+  # betrachter-privaten Reply-Entwürfen (`creator_id: current_actor`). Der
+  # globale Live-Broadcast rendert ohne current_actor und kann diesen privaten
+  # Stift nicht liefern — deshalb den Spine hier, in der Antwort auf die eigene
+  # Aktion (Entwurf anlegen/veröffentlichen/verwerfen), same-session mit-ersetzen.
+  def spine_replace_stream
+    turbo_stream.replace(
+      "task_spine_#{@parent_task.id}",
+      partial: "tasks/spine",
+      locals:  { task: @parent_task }
+    )
+  end
 
   def set_parent_task
     @parent_task = Task.find(params[:task_id])

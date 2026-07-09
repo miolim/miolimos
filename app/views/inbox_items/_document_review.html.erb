@@ -30,6 +30,9 @@
         <% end %>
         <%= " · #{t('inbox_items.document_review.due', date: invoice['due_date'])}" if invoice["due_date"].present? %>
       </div>
+      <% if invoice["payment_terms"].present? %>
+        <div><span class="text-amber-700"><%= t("inbox_items.document_review.payment_terms") %>:</span> <%= invoice["payment_terms"] %></div>
+      <% end %>
       <% lines = Array(invoice["lines"]) %>
       <% if lines.any? %>
         <ul class="text-xs text-amber-900 pl-4 list-disc">

@@ -29,7 +29,12 @@ module Classifiers
     # Hauptmethode. Liefert Hash mit :top, :alternatives, :decision.
     # Bei Ollama-Ausfall → { top: nil, alternatives: [], decision: :skip, error: ... }
     def suggest(communication)
-      text = email_text(communication)
+      suggest_text(email_text(communication))
+    end
+
+    # #934 Stufe 2: dieselbe Klassifikation für beliebigen Text (z.B. die
+    # Extraktion eines Eingangs-Dokuments) — Mail-unabhängig nutzbar.
+    def suggest_text(text)
       return skip_result("empty text") if text.blank?
 
       mail_vec = @embedder.embed(text)

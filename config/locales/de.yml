@@ -1817,6 +1817,7 @@ de:
       confirm_plain: "Übernehmen: Beleg ablegen"
       reanalyze: "Neu analysieren"
       discard: "Verwerfen (archivieren)"
+      payment_terms: "Zahlungsbedingungen"
       created_invoice: "Eingangsrechnung"
     archive: "Archivieren"
     delete_permanently: "Endgültig löschen"

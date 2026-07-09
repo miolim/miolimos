@@ -47,7 +47,7 @@ module Inbox
               { "type" => "null" },
               {
                 "type" => "object", "additionalProperties" => false,
-                "required" => %w[number issue_date due_date service_start service_end net_total gross_total lines],
+                "required" => %w[number issue_date due_date service_start service_end net_total gross_total payment_terms lines],
                 "properties" => {
                   "number" => { "type" => %w[string null] },
                   "issue_date" => { "type" => %w[string null], "description" => "YYYY-MM-DD" },
@@ -56,6 +56,7 @@ module Inbox
                   "service_end" => { "type" => %w[string null], "description" => "YYYY-MM-DD" },
                   "net_total" => { "type" => %w[number null] },
                   "gross_total" => { "type" => %w[number null] },
+                  "payment_terms" => { "type" => %w[string null], "description" => "Zahlungsbedingungen im Wortlaut, inkl. Skonto (z.B. '2% Skonto bei Zahlung binnen 10 Tagen, sonst 30 Tage netto')" },
                   "lines" => {
                     "type" => "array",
                     "items" => {
@@ -89,10 +90,22 @@ module Inbox
           create_records!(item, actor: actor)
         else
           extraction = analyze(item, path, actor: actor)
-          raise NeedsConfirmation.new(
-            reason:     "document_review",
-            extraction: extraction
-          )
+          suggest_topic(item, extraction)
+          if extraction["source"] == "zugferd"
+            # #934 Stufe 2: deterministisch gelesene E-Rechnungen laufen ohne
+            # Review durch — kein LLM-Risiko, die Invoice bleibt editierbar.
+            # Standard-Prüf-/Zahl-Aufgabe kommt automatisch mit.
+            item.update!(
+              payload: item.payload.merge("confirmed_task_titles" => [default_invoice_task_title(extraction)]),
+              result:  item.result.merge("confirmation" => { "reason" => "document_review", "extraction" => extraction, "auto" => true })
+            )
+            create_records!(item, actor: actor)
+          else
+            raise NeedsConfirmation.new(
+              reason:     "document_review",
+              extraction: extraction
+            )
+          end
         end
       end
 
@@ -134,6 +147,7 @@ module Inbox
             "service_end"   => data["service_end"],
             "net_total"     => data["net_total"],
             "gross_total"   => data["gross_total"],
+            "payment_terms" => data["payment_terms"],
             "lines" => Array(data["lines"]).map do |l|
               { "description" => l["description"].to_s, "quantity" => l["quantity"],
                 "unit" => l["unit"], "unit_price" => l["unit_price"], "tax_rate" => l["tax_rate"] }
@@ -173,7 +187,8 @@ module Inbox
           Analysiere das angehängte Dokument (eingegangener Scan/Brief/Beleg).
           Erfasse: Dokumententyp, Absender (mit USt-IdNr und IBAN, falls angegeben),
           Empfänger und — falls es eine Rechnung ist — alle Rechnungsfelder inklusive
-          der einzelnen Positionen. Beträge als Dezimalzahlen (Punkt als Dezimaltrenner),
+          der einzelnen Positionen und die Zahlungsbedingungen im Wortlaut (Skonto,
+          Zahlungsziel). Beträge als Dezimalzahlen (Punkt als Dezimaltrenner),
           Daten als YYYY-MM-DD. Werte, die im Dokument nicht vorkommen, sind null —
           nichts raten. Schlage maximal 3 konkrete Folge-Aufgaben vor (deutsch, kurz).
         PROMPT
@@ -201,10 +216,41 @@ module Inbox
 
       def create_document_ki(item, extraction, actor:)
         title = extraction["title"].presence || item.display_title
-        File.open(item.external_path, "rb") do |io|
-          FileProxy.create_with_file(actor: actor, title: title,
-                                     uploaded_io: io, item_type: :transcript)
+        # #934 Stufe 2: gescannten PDFs ohne Textlayer für die Ablage-Kopie
+        # einen unsichtbaren OCR-Textlayer verpassen (Strg+F im Viewer);
+        # ohne ocrmypdf-Setup läuft der Schritt still als No-Op.
+        Dir.mktmpdir("docimport") do |dir|
+          source = (pdf?(item.external_path) && PdfOcr.add_text_layer(item.external_path, dir: dir)) ||
+                   item.external_path
+          File.open(source, "rb") do |io|
+            FileProxy.create_with_file(actor: actor, title: title,
+                                       uploaded_io: io, item_type: :transcript)
+          end
         end
+      end
+
+      # #934 Stufe 2: Themen-Vorschlag für Dokumente ohne Mail-Kontext —
+      # dieselbe Embedding-Klassifikation wie bei E-Mails, gegen Titel/
+      # Absender/Typ der Extraktion. Nur der sichere AUTO-Fall wird
+      # übernommen; ohne Ollama (oder bei vorgepflegten Themen) No-Op.
+      def suggest_topic(item, extraction)
+        return if item.topics.any?
+        text = [extraction["title"], extraction.dig("sender", "name"),
+                extraction["doc_type"]].compact_blank.join("\n")
+        result = Classifiers::EmailTopicSuggester.new.suggest_text(text)
+        return unless result[:decision] == :auto_assign && result[:top]
+        InboxItemTopic.find_or_create_by!(inbox_item: item, topic: result[:top][:topic])
+      rescue => e
+        Rails.logger.warn("DocumentImport: Topic-Vorschlag fehlgeschlagen: #{e.class} #{e.message}")
+      end
+
+      # Titel der Standard-Aufgabe (identisch zum Review-UI, s. Locale-Key).
+      def default_invoice_task_title(extraction)
+        inv    = extraction["invoice"] || {}
+        sender = extraction["sender"] || {}
+        I18n.t("inbox_items.document_review.default_invoice_task",
+               name: [sender["name"].presence, inv["number"].presence].compact.join(" "),
+               due:  inv["due_date"].presence || "—")
       end
 
       def create_incoming_invoice(item, extraction, actor:)
@@ -237,6 +283,12 @@ module Inbox
             tax_rate:    decimal(l["tax_rate"], default: 19),
             position:    i
           )
+        end
+        # #934 Stufe 2: Zahlungsbedingungen/Skonto als freies Infoblock-Feld —
+        # strukturiert genug für Anzeige + {{merge}}, ohne verfrühtes Schema.
+        if inv["payment_terms"].to_s.strip.present?
+          invoice.document_fields.create!(label: "Zahlungsbedingungen",
+                                          value: inv["payment_terms"].to_s.strip, position: 0)
         end
         # Original-PDF als Artefakt — der Beleg ist die Urkunde (#926-Schicht).
         invoice.document_artifacts.create!(pdf: File.binread(item.external_path),

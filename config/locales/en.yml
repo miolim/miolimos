@@ -1816,6 +1816,7 @@ en:
       confirm_plain: "Accept: file document"
       reanalyze: "Re-analyze"
       discard: "Discard (archive)"
+      payment_terms: "Payment terms"
       created_invoice: "Incoming invoice"
     archive: "Archive"
     delete_permanently: "Delete permanently"

@@ -46,6 +46,20 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     ZugferdReader.define_singleton_method(:available?, original) if original
   end
 
+  # ZUGFeRD-Extraktion mit festen Daten stubben (Auto-Durchlauf-Pfad).
+  def with_zugferd(data, &block)
+    orig_avail  = ZugferdReader.method(:available?)
+    orig_extract = ZugferdReader.method(:extract)
+    ZugferdReader.define_singleton_method(:available?) { true }
+    ZugferdReader.define_singleton_method(:extract) { |_path| data }
+    yield
+  ensure
+    [[:available?, orig_avail], [:extract, orig_extract]].each do |name, orig|
+      ZugferdReader.singleton_class.send(:remove_method, name) rescue nil
+      ZugferdReader.define_singleton_method(name, orig) if orig
+    end
+  end
+
   test "applies? für pdf_upload und upload" do
     assert Inbox::Processors::DocumentImport.applies?(make_item)
     refute Inbox::Processors::DocumentImport.applies?(
@@ -141,6 +155,54 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     end
     assert_equal "processed", item.reload.status
     assert KnowledgeItem.exists?(title: "Behörde — Bescheid")
+  end
+
+  # ── #934 Stufe 2 ──────────────────────────────────────────────────────
+
+  ZUGFERD_DATA = {
+    "number" => "ZF-100", "issue_date" => "2026-07-01", "due_date" => "2026-07-15",
+    "seller" => { "name" => "Determi GmbH", "vat_id" => "DE111222333", "city" => "Kiel" },
+    "buyer" => { "name" => "Hans" }, "iban" => "DE89370400440532013000",
+    "service_start" => nil, "service_end" => nil,
+    "net_total" => 50.0, "tax_total" => 9.5, "gross_total" => 59.5,
+    "payment_terms" => "2% Skonto bei Zahlung binnen 10 Tagen",
+    "lines" => [{ "description" => "Wartung", "quantity" => 1, "unit" => nil,
+                  "unit_price" => 50.0, "tax_rate" => 19.0 }]
+  }.freeze
+
+  test "ZUGFeRD: läuft ohne Review durch — Invoice, Skonto-Feld und Standard-Aufgabe direkt" do
+    item = make_item
+    with_zugferd(ZUGFERD_DATA) do
+      Inbox::Processors::DocumentImport.run(item, actor: @hans)
+    end
+    item.reload
+    assert_equal "processed", item.status, "deterministische E-Rechnung braucht kein Review"
+
+    invoice = Invoice.find(item.result.dig("invoice", "id"))
+    assert invoice.eingehend?
+    assert_equal "ZF-100", invoice.number
+    assert_equal [["Zahlungsbedingungen", "2% Skonto bei Zahlung binnen 10 Tagen"]],
+                 invoice.document_fields.map { |f| [f.label, f.value] }
+    assert_equal 1, invoice.document_artifacts.count
+
+    task = Task.find_by("title LIKE ?", "Eingangsrechnung prüfen%")
+    assert task, "Standard-Aufgabe muss beim Auto-Durchlauf angelegt werden"
+    assert_equal Date.new(2026, 7, 15), task.due_date
+  end
+
+  test "LLM-Pfad übernimmt payment_terms als Infoblock-Feld" do
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+    extraction["invoice"]["payment_terms"] = "30 Tage netto"
+    item = make_item
+    stub_chat_client(extraction.to_json) do
+      without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    end
+    item.reload
+    item.update!(payload: item.payload.merge("confirm_import" => true))
+    without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    invoice = Invoice.find(item.reload.result.dig("invoice", "id"))
+    assert_equal [["Zahlungsbedingungen", "30 Tage netto"]],
+                 invoice.document_fields.map { |f| [f.label, f.value] }
   end
 
   test "suggested_processor_kind: Mail-Anhang → document_import, direkter Upload → pdf_bib_import" do

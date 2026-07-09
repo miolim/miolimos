@@ -218,6 +218,7 @@ def extract_from_pdf(pdf_path):
         "service_start": _date(settlement, "ram:BillingSpecifiedPeriod/ram:StartDateTime"),
         "service_end": _date(settlement, "ram:BillingSpecifiedPeriod/ram:EndDateTime"),
         "due_date": _date(settlement, "ram:SpecifiedTradePaymentTerms/ram:DueDateDateTime"),
+        "payment_terms": _t(settlement, "ram:SpecifiedTradePaymentTerms/ram:Description"),
         "net_total": _num(settlement, "ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:LineTotalAmount"),
         "tax_total": _num(settlement, "ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:TaxTotalAmount"),
         "gross_total": _num(settlement, "ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:GrandTotalAmount"),

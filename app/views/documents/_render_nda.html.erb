@@ -5,6 +5,15 @@
     Inhalt als eine durchlaufende Seite. Parteien: Erklärender (= Aussteller/
     Unterzeichner) und der Kunde (= Adressat). Signierbar (#547). %>
 <% document = local_assigns.fetch(:document) %>
+<%# #926-Fix (Hans, 2026-07-09): Chrome bevorzugt die @page-Regel des Themes
+    (margin: 0, für die absolut vermaßte DIN-Seite) inzwischen auch dann,
+    wenn der CDP-Print-Aufruf eigene Ränder setzt (prefer_css_page_size ist
+    dabei wirkungslos) — die NDA klebte dadurch randlos am Papier. Die NDA
+    ist das einzige in-flow-Layout: ihre Ränder hier per @page-Override
+    setzen; sie gewinnen als spätere Regel gegen das Theme und Chrome
+    zeichnet die Fußzeile in den unteren Rand. Werte = die bisherigen
+    render_paged-Defaults (22/20/18/25 mm). %>
+<style>@page { size: A4; margin: 22mm 20mm 18mm 25mm; }</style>
 <div class="nda-doc">
   <%# Briefkopf (Seite 1) — Name links, Absenderzeilen rechts. %>
   <header class="nda-letterhead">

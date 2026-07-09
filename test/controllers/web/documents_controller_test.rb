@@ -431,6 +431,15 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "", bk.body.to_s.strip
   end
 
+  # #926-Fix: Chrome bevorzugt die Theme-@page-Regel (margin 0) gegenüber den
+  # CDP-Print-Rändern — die NDA (einziges in-flow-Layout) muss ihre Ränder
+  # deshalb selbst per @page-Override setzen, sonst klebt der Text am Papierrand.
+  test "NDA-Render enthält den @page-Rand-Override" do
+    doc = Document.create!(kind: :nda, document_date: Date.new(2026, 7, 9))
+    html = ApplicationController.render(partial: "documents/render", locals: { document: doc })
+    assert_includes html, "@page { size: A4; margin: 22mm 20mm 18mm 25mm; }"
+  end
+
   # ── #787: Dokumente/finale PDFs löschen ─────────────────────────────────
   test "destroy legt ein Dokument in den Papierkorb (Soft-Delete)" do
     doc = Document.create!(kind: :brief, subject: "Weg damit")

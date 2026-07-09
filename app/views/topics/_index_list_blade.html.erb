@@ -37,7 +37,7 @@
   tasks_count          = topic.tasks.open.count
   waiting_count        = topic.awaitings.open.count
   communications_count = topic.communications.unread.count
-  knowledge_count      = topic.knowledge_items.non_reply.count  # #436: Replies nicht mitzaehlen
+  knowledge_count      = topic.knowledge_items.browsable.count  # #436/#932: Replies + Personen/Orgs nicht mitzaehlen
   persons_count        = topic.knowledge_items.where(item_type: "person").count
   sources_count        = topic.knowledge_items.where.not(bib_source_id: nil).distinct.count(:bib_source_id)
   subtopics_count      = topic.sub_topics.count

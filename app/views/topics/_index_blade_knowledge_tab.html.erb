@@ -16,7 +16,7 @@
                           .limit(500).to_a
   elsif tab == "knowledge" && @knowledge_items.nil?
     @knowledge_items = topic.knowledge_items
-                            .non_reply
+                            .browsable   # #436/#932: Replies + Personen/Orgs raus
                             .includes(:outgoing_references, :incoming_references) # #486
                             .order(Arel.sql("LOWER(title)"))
                             .limit(500).to_a

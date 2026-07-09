@@ -204,6 +204,12 @@ class KnowledgeItem < ApplicationRecord
   # und der Diskussions-Tab brauchen sie weiterhin; daher explizit an den
   # Browse-Queries.
   scope :non_reply,         -> { where.not(item_type: :reply) }
+  # #932 (Hans): Browse-Listen „Wissen" zeigen echte Wissens-Items. Personen
+  # und Organisationen haben eigene Reiter/Sektionen (Personen-Tab) und gehören
+  # NICHT in die Wissens-Liste; Reply-KIs ebenso raus. Gleiches Ausschluss-
+  # muster wie in der Volltextsuche (search_controller, persons/orgs = eigene
+  # Kontakt-Sektion).
+  scope :browsable,         -> { where.not(item_type: [:person, :organization, :reply]) }
   scope :published_replies, -> { replies.where.not(published_at: nil) }
   scope :draft_replies,     -> { replies.where(published_at: nil) }
 

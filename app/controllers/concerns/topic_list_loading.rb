@@ -52,7 +52,7 @@ module TopicListLoading
   # #148: Wissen im Topic-Tab — Suche + Typ-Filter, Sort.
   def load_topic_knowledge_list
     @knowledge_item_type = params[:item_type].to_s.presence
-    scope = @topic.knowledge_items.non_reply   # #436: Reply-KIs raus aus der Wissens-Liste
+    scope = @topic.knowledge_items.browsable   # #436/#932: Reply-KIs UND Personen/Orgs raus (eigene Reiter)
     scope = scope.where(item_type: @knowledge_item_type) if @knowledge_item_type
     if @q
       like = "%#{@q.downcase}%"

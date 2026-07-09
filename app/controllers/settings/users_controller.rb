@@ -15,6 +15,11 @@ class Settings::UsersController < Settings::BaseController
   def create
     @user = HumanActor.new(user_params)
     if @user.save
+      # #927: Ein neuer Benutzer bekam bisher KEINE Capabilities → beim ersten
+      # Login „… is not allowed to read Task". HumanActors kriegen laut
+      # Rechtematrix Vollrechte (CapabilityDefaults); genau das hier vergeben,
+      # damit der Nutzer die App direkt verwenden kann.
+      CapabilityDefaults.grant_full!(@user)
       redirect_to settings_users_path, notice: "Benutzer '#{@user.name}' angelegt."
     else
       render :new, status: :unprocessable_entity

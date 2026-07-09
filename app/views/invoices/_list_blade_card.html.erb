@@ -7,6 +7,7 @@
   labels   = InvoicesController::KIND_LABELS
   invoices = Invoice.visible_to(Current.actor).includes(:issuer, :recipient).recent
   invoices = invoices.where(kind: params[:kind]) if Invoice.kinds.key?(params[:kind].to_s)
+  invoices = invoices.where(direction: params[:direction]) if Invoice.directions.key?(params[:direction].to_s)  # #934
   if params[:f_issuer].present?
     invoices = invoices.where(issuer_uuid: KnowledgeItem.by_title_ci(params[:f_issuer]).first&.uuid)
   end
@@ -14,7 +15,7 @@
     invoices = invoices.where(recipient_uuid: KnowledgeItem.by_title_ci(params[:f_recipient]).first&.uuid)
   end
   invoices = invoices.limit(300).to_a
-  active_filter = params[:kind].present? || params[:f_issuer].present? || params[:f_recipient].present?
+  active_filter = params[:kind].present? || params[:direction].present? || params[:f_issuer].present? || params[:f_recipient].present?
 %>
 <article id="stack_card_<%= stack_id %>"
          data-uuid="<%= stack_id %>"
@@ -55,6 +56,15 @@
                 <option value=""><%= t("documents.list.filter_all") %></option>
                 <% labels.each do |k, lbl| %>
                   <option value="<%= k %>" <%= 'selected' if params[:kind] == k %>><%= lbl %></option>
+                <% end %>
+              </select>
+            </label>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-slate-500"><%= t("invoices.list.filter_direction") %></span>
+              <select name="direction" class="border border-slate-200 rounded px-2 py-1 bg-white">
+                <option value=""><%= t("documents.list.filter_all") %></option>
+                <% Invoice.directions.keys.each do |d| %>
+                  <option value="<%= d %>" <%= 'selected' if params[:direction] == d %>><%= t("invoices.list.directions.#{d}") %></option>
                 <% end %>
               </select>
             </label>
@@ -123,6 +133,7 @@
               data-blade-link-id-value="<%= invoice.id %>" data-action="click->blade-link#append">
             <div class="flex items-center gap-2">
               <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
+              <% if invoice.eingehend? %><span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span><% end %>
               <span class="font-medium text-slate-800 truncate"><%= invoice.display_name || t("documents.list.unnamed") %></span>
               <% if invoice.entwurf? %><span class="ml-auto shrink-0 text-[10px] text-amber-600"><%= t("documents.list.draft") %></span><% end %>
             </div>

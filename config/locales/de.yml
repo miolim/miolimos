@@ -1494,8 +1494,20 @@ de:
       error: "Fehler: %{message}"
 
   invoices:
+    fields:
+      due_date: "Fällig am"
+      payment_status: "Zahlstatus"
+      payment_statuses:
+        offen: "Offen"
+        bezahlt: "Bezahlt"
     list:
       title: "Rechnungen"
+      incoming: "Eingang"
+      overdue: "Überfällig"
+      filter_direction: "Richtung"
+      directions:
+        ausgehend: "Ausgehend"
+        eingehend: "Eingehend"
       search_placeholder: "Rechnungen durchsuchen …"
       new_invoice: "Neue Rechnung"
       empty: "Noch keine Rechnungen."
@@ -1785,6 +1797,27 @@ de:
     root: "Wurzel"
     open_ki: "KI öffnen"
   inbox_items:
+    document_review:
+      heading: "Dokument-Eingang prüfen"
+      source_zugferd: "E-Rechnung (ZUGFeRD) — deterministisch gelesen"
+      source_llm: "KI-Extraktion — Konfidenz %{confidence}"
+      doc_type: "Typ"
+      types:
+        rechnung: "Rechnung"
+        anschreiben: "Anschreiben"
+        vertrag: "Vertrag"
+        sonstiges: "Sonstiges"
+      title: "Titel"
+      sender: "Absender"
+      recipient: "Empfänger"
+      invoice: "Rechnung"
+      due: "fällig %{date}"
+      default_invoice_task: "Eingangsrechnung prüfen/zahlen: %{name} (fällig %{due})"
+      confirm_invoice: "Übernehmen: Beleg ablegen + Eingangsrechnung anlegen"
+      confirm_plain: "Übernehmen: Beleg ablegen"
+      reanalyze: "Neu analysieren"
+      discard: "Verwerfen (archivieren)"
+      created_invoice: "Eingangsrechnung"
     archive: "Archivieren"
     delete_permanently: "Endgültig löschen"
     delete_permanently_confirm: "Wirklich endgültig löschen?"

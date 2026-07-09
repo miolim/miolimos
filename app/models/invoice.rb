@@ -11,6 +11,12 @@ class Invoice < ApplicationRecord
   include Printable
 
   enum :kind, { rechnung: 0, angebot: 1 }
+  # #934: Richtung — ausgehend (wir stellen aus, Nummernkreis + Rendering)
+  # oder eingehend (fremder Beleg aus dem Dokumenten-Import; das Original-
+  # PDF hängt als Artefakt, die Nummer kommt vom Aussteller).
+  enum :direction, { ausgehend: 0, eingehend: 1 }, default: :ausgehend
+  # #934: Zahlstatus für Eingangsrechnungen (minimal, Skonto etc. später).
+  enum :payment_status, { offen: 0, bezahlt: 1 }, default: :offen
 
   has_many :invoice_lines, -> { ordered }, dependent: :destroy
 

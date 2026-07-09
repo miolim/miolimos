@@ -45,12 +45,21 @@ class InboxItem < ApplicationRecord
       else                                                                 "web_clip"
       end
     when "markdown", "text" then "markdown_to_ki"
-    when "pdf_upload"       then "pdf_bib_import"
+    when "pdf_upload"
+      # #934: E-Mail-Anhänge sind i.d.R. Belege/Anschreiben, keine Literatur —
+      # Default Dokument-Eingang. Direkte PDF-Uploads bleiben beim Citavi-
+      # Import (Literatur-Workflow, #65); der Picker kann jederzeit übersteuern.
+      item_from_email? ? "document_import" : "pdf_bib_import"
     when "upload"
       # #609 v2: Bilder → Bild-KI (vorher fraß der Markdown-Processor
       # das Binärfile und starb an invalid byte sequence).
       Inbox::Processors::ImageToKi.image?(self) ? "image_to_ki" : nil
     end
+  end
+
+  # #934: kam dieses Item als E-Mail-Anhang herein (#633)?
+  def item_from_email?
+    payload["communication_id"].present?
   end
 
   # Display-Title fallback-Kette für die Liste.

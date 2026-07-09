@@ -107,4 +107,23 @@
       <% end %>
     </div>
   </div>
+
+  <%# #934: Fälligkeit + Zahlstatus — nur bei Eingangsrechnungen. %>
+  <% if invoice.eingehend? %>
+    <div class="<%= rowcls %>">
+      <span class="text-slate-500"><%= t("invoices.fields.due_date") %></span>
+      <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do %>
+        <%= date_field_tag :due_date, invoice.due_date, onchange: "this.form.requestSubmit()", class: inputcls %>
+      <% end %>
+    </div>
+    <div class="<%= rowcls %>">
+      <span class="text-slate-500"><%= t("invoices.fields.payment_status") %></span>
+      <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
+        <%= f.select :payment_status,
+              Invoice.payment_statuses.keys.map { |s| [t("invoices.fields.payment_statuses.#{s}"), s] },
+              { selected: invoice.payment_status },
+              onchange: "this.form.requestSubmit()", class: inputcls %>
+      <% end %>
+    </div>
+  <% end %>
 </div>

@@ -1,6 +1,7 @@
 require "net/http"
 require "json"
 require "uri"
+require "base64"
 
 module Llm
   # Schmaler Chat-Completion-Client. Auto-Detection in Reihenfolge:
@@ -54,7 +55,11 @@ module Llm
     # #628 W0: optionales `activity:` (LlmActivity) — der Anthropic-Pfad
     # schreibt input/output_tokens + cost_eur daran. Ollama ist lokal
     # (Kosten 0, keine Usage-Erfassung).
-    def self.complete(prompt:, model: nil, system: nil, max_tokens: 2048, activity: nil)
+    # #934: optional `pdf_bytes:` (PDF als document-Block mitschicken) und
+    # `schema:` (JSON-Schema; erzwingt schema-valides JSON via Structured
+    # Outputs). Beides Anthropic-only — Ollama kann weder PDF noch Schema.
+    def self.complete(prompt:, model: nil, system: nil, max_tokens: 2048, activity: nil,
+                      pdf_bytes: nil, schema: nil)
       provider, model_name = parse_model(model)
       provider ||= detect_provider
       raise UnavailableError, "Kein LLM-Client verfügbar (Ollama läuft nicht, ANTHROPIC_API_KEY fehlt)" unless provider
@@ -62,8 +67,10 @@ module Llm
       case provider
       when :anthropic
         Anthropic.new.complete(prompt: prompt, model: model_name || DEFAULT_ANTHROPIC_MODEL,
-                                system: system, max_tokens: max_tokens, activity: activity)
+                                system: system, max_tokens: max_tokens, activity: activity,
+                                pdf_bytes: pdf_bytes, schema: schema)
       when :ollama
+        raise UnavailableError, "PDF-/Schema-Extraktion braucht die Anthropic-API (ANTHROPIC_API_KEY fehlt)" if pdf_bytes || schema
         Ollama.new.complete(prompt: prompt, model: model_name || DEFAULT_OLLAMA_MODEL,
                              system: system)
       end
@@ -128,14 +135,29 @@ module Llm
         raise UnavailableError, "ANTHROPIC_API_KEY nicht gesetzt (auch nicht in credentials[:anthropic][:api_key])" if @api_key.blank?
       end
 
-      def complete(prompt:, model:, system: nil, max_tokens: 2048, activity: nil)
+      def complete(prompt:, model:, system: nil, max_tokens: 2048, activity: nil,
+                   pdf_bytes: nil, schema: nil)
         uri = URI("https://api.anthropic.com/v1/messages")
+        # #934: PDF als document-Block VOR dem Text (Anthropic-Konvention);
+        # Base64 ohne Zeilenumbrüche. Claude liest Text UND Bild — auch
+        # reine Scans ohne Textlayer.
+        content =
+          if pdf_bytes
+            [{ type: "document",
+               source: { type: "base64", media_type: "application/pdf",
+                         data: Base64.strict_encode64(pdf_bytes) } },
+             { type: "text", text: prompt }]
+          else
+            prompt
+          end
         body = {
           model: model,
           max_tokens: max_tokens,
-          messages: [{ role: "user", content: prompt }]
+          messages: [{ role: "user", content: content }]
         }
         body[:system] = system if system.present?
+        # #934: Structured Outputs — erzwingt schema-valides JSON.
+        body[:output_config] = { format: { type: "json_schema", schema: schema } } if schema
 
         # #614: 120s rissen bei der Transkript-Strukturierung (40-85k chars
         # Input, bis 16k Output-Tokens) regelmäßig — Net::ReadTimeout.

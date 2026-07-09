@@ -14,6 +14,7 @@ class LlmActivity < ApplicationRecord
     inbox_youtube_diarize
     inbox_youtube_structure
     inbox_youtube_summary
+    inbox_document_extract
   ].freeze
 
   validates :status, inclusion: { in: STATUSES }

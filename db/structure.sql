@@ -898,7 +898,10 @@ CREATE TABLE public.invoices (
     theme character varying DEFAULT 'din5008_b'::character varying,
     deleted_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    direction integer DEFAULT 0 NOT NULL,
+    due_date date,
+    payment_status integer DEFAULT 0 NOT NULL
 );
 
 
@@ -4035,6 +4038,13 @@ CREATE INDEX index_invoices_on_deleted_at ON public.invoices USING btree (delete
 
 
 --
+-- Name: index_invoices_on_direction; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_invoices_on_direction ON public.invoices USING btree (direction);
+
+
+--
 -- Name: index_invoices_on_issuer_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5800,6 +5810,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709134500'),
 ('20260709100000'),
 ('20260706063810'),
 ('20260705204851'),

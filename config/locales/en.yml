@@ -1493,8 +1493,20 @@ en:
       error: "Error: %{message}"
 
   invoices:
+    fields:
+      due_date: "Due on"
+      payment_status: "Payment status"
+      payment_statuses:
+        offen: "Open"
+        bezahlt: "Paid"
     list:
       title: "Invoices"
+      incoming: "Incoming"
+      overdue: "Overdue"
+      filter_direction: "Direction"
+      directions:
+        ausgehend: "Outgoing"
+        eingehend: "Incoming"
       search_placeholder: "Search invoices …"
       new_invoice: "New invoice"
       empty: "No invoices yet."
@@ -1784,6 +1796,27 @@ en:
     root: "Root"
     open_ki: "Open KI"
   inbox_items:
+    document_review:
+      heading: "Review incoming document"
+      source_zugferd: "E-invoice (ZUGFeRD) — read deterministically"
+      source_llm: "AI extraction — confidence %{confidence}"
+      doc_type: "Type"
+      types:
+        rechnung: "Invoice"
+        anschreiben: "Letter"
+        vertrag: "Contract"
+        sonstiges: "Other"
+      title: "Title"
+      sender: "Sender"
+      recipient: "Recipient"
+      invoice: "Invoice"
+      due: "due %{date}"
+      default_invoice_task: "Review/pay incoming invoice: %{name} (due %{due})"
+      confirm_invoice: "Accept: file document + create incoming invoice"
+      confirm_plain: "Accept: file document"
+      reanalyze: "Re-analyze"
+      discard: "Discard (archive)"
+      created_invoice: "Incoming invoice"
     archive: "Archive"
     delete_permanently: "Delete permanently"
     delete_permanently_confirm: "Really delete permanently?"

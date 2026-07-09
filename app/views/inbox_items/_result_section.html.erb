@@ -49,6 +49,17 @@
           <% end %>
         </li>
       <% end %>
+      <%# #934: erzeugte Eingangsrechnung (kein KI/Task — eigener Eintrag). %>
+      <% if (inv = item.result["invoice"]) && Invoice.exists?(id: inv["id"]) %>
+        <li class="flex items-center gap-2">
+          <span class="shrink-0 text-emerald-700" aria-hidden="true"><%= icon "banknote", size: "w-4 h-4" %></span>
+          <%= link_to (inv["display_name"].presence || t("invoices.list.incoming")),
+                invoices_path(stack: "list:invoices,invoice:#{inv['id']}"),
+                data: { turbo_frame: "_top" },
+                class: "hover:underline text-emerald-900 truncate" %>
+          <span class="text-[11px] text-emerald-700"><%= t("inbox_items.document_review.created_invoice") %></span>
+        </li>
+      <% end %>
       <% if source %>
         <% reused = item.result.dig("source", "reused") %>
         <li class="flex items-center gap-2">

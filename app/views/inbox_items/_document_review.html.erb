@@ -1,0 +1,77 @@
+<%# #934: Review-Banner des Dokument-Imports — zeigt die extrahierten Felder
+    (ZUGFeRD deterministisch oder LLM) zur Bestätigung, mit abwählbaren
+    Aufgaben-Vorschlägen. Bestätigen legt Beleg-KI + ggf. Eingangsrechnung an;
+    Korrekturen an Feldern macht man danach bequem am Rechnungs-Blade. %>
+<% invoice = extraction["invoice"] || {} %>
+<% sender  = extraction["sender"] || {} %>
+<% is_invoice = extraction["doc_type"] == "rechnung" && invoice.present? %>
+<section class="rounded border border-amber-300 bg-amber-50 px-3 py-3 space-y-2">
+  <div class="flex items-center gap-2">
+    <div class="text-xs uppercase tracking-wider text-amber-800"><%= t("inbox_items.document_review.heading") %></div>
+    <span class="text-[10px] px-1.5 py-0.5 rounded bg-white border border-amber-200 text-amber-800">
+      <%= extraction["source"] == "zugferd" ? t("inbox_items.document_review.source_zugferd") : t("inbox_items.document_review.source_llm", confidence: extraction["confidence"]) %>
+    </span>
+  </div>
+
+  <div class="text-sm text-amber-950 space-y-0.5">
+    <div><span class="text-amber-700"><%= t("inbox_items.document_review.doc_type") %>:</span> <strong><%= t("inbox_items.document_review.types.#{extraction['doc_type'].presence || 'sonstiges'}", default: extraction["doc_type"]) %></strong></div>
+    <div><span class="text-amber-700"><%= t("inbox_items.document_review.title") %>:</span> <%= extraction["title"].presence || "—" %></div>
+    <div><span class="text-amber-700"><%= t("inbox_items.document_review.sender") %>:</span> <%= sender["name"].presence || "—" %><%= " · #{sender['city']}" if sender["city"].present? %><%= " · USt-IdNr #{sender['vat_id']}" if sender["vat_id"].present? %></div>
+    <% if extraction["recipient_name"].present? %>
+      <div><span class="text-amber-700"><%= t("inbox_items.document_review.recipient") %>:</span> <%= extraction["recipient_name"] %></div>
+    <% end %>
+    <% if is_invoice %>
+      <div class="pt-1">
+        <span class="text-amber-700"><%= t("inbox_items.document_review.invoice") %>:</span>
+        <%= invoice["number"].presence || "—" %>
+        <%= " · #{invoice['issue_date']}" if invoice["issue_date"].present? %>
+        <% if invoice["gross_total"].present? %>
+          · <strong><%= number_to_currency(invoice["gross_total"], unit: "€", separator: ",", delimiter: ".", format: "%n %u") %></strong>
+        <% end %>
+        <%= " · #{t('inbox_items.document_review.due', date: invoice['due_date'])}" if invoice["due_date"].present? %>
+      </div>
+      <% lines = Array(invoice["lines"]) %>
+      <% if lines.any? %>
+        <ul class="text-xs text-amber-900 pl-4 list-disc">
+          <% lines.first(6).each do |l| %>
+            <li><%= l["description"] %><%= " — #{number_to_currency(l['unit_price'], unit: '€', separator: ',', delimiter: '.', format: '%n %u')}" if l["unit_price"].present? %></li>
+          <% end %>
+          <% if lines.size > 6 %><li class="list-none text-amber-600">… <%= lines.size - 6 %> weitere</li><% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= form_with url: process_now_inbox_item_path(item, processor_kind: "document_import"), method: :post, local: true, class: "space-y-2 pt-1" do %>
+    <%= hidden_field_tag :confirm_import, "1" %>
+    <% suggestions = Array(extraction["task_suggestions"]).map(&:to_s).reject(&:blank?) %>
+    <% if is_invoice %>
+      <%# Regelbasierte Standard-Aufgabe immer anbieten (default an). %>
+      <% default_task = t("inbox_items.document_review.default_invoice_task",
+                          name: [sender["name"].presence, invoice["number"].presence].compact.join(" "),
+                          due: invoice["due_date"].presence || "—") %>
+      <label class="flex items-start gap-2 text-sm text-amber-950 cursor-pointer">
+        <%= check_box_tag "task_titles[]", default_task, true, id: nil, class: "mt-0.5 rounded border-amber-400" %>
+        <span><%= default_task %></span>
+      </label>
+    <% end %>
+    <% suggestions.each_with_index do |s, i| %>
+      <label class="flex items-start gap-2 text-sm text-amber-950 cursor-pointer">
+        <%= check_box_tag "task_titles[]", s, false, id: nil, class: "mt-0.5 rounded border-amber-400" %>
+        <span><%= s %></span>
+      </label>
+    <% end %>
+    <div class="flex flex-wrap items-center gap-2 pt-1">
+      <button type="submit" class="text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer">
+        <%= is_invoice ? t("inbox_items.document_review.confirm_invoice") : t("inbox_items.document_review.confirm_plain") %>
+      </button>
+      <%= button_to t("inbox_items.document_review.reanalyze"),
+            process_now_inbox_item_path(item, processor_kind: "document_import"), method: :post,
+            form: { class: "inline m-0 p-0" },
+            class: "text-sm px-3 py-1 rounded border border-amber-300 text-amber-800 hover:bg-amber-100 cursor-pointer bg-transparent" %>
+      <%= button_to t("inbox_items.document_review.discard"), archive_inbox_item_path(item), method: :post,
+            form: { class: "inline m-0 p-0" },
+            class: "text-sm px-3 py-1 rounded text-slate-500 hover:bg-slate-100 cursor-pointer bg-transparent border-0" %>
+    </div>
+  <% end %>
+</section>

@@ -152,6 +152,10 @@ class InvoicesController < ApplicationController
     attrs[:document_date] = params[:document_date].presence if params.key?(:document_date)
     attrs[:service_start] = params[:service_start].presence if params.key?(:service_start)  # #541 Leistungszeitraum
     attrs[:service_end]   = params[:service_end].presence   if params.key?(:service_end)
+    attrs[:due_date]      = params[:due_date].presence      if params.key?(:due_date)       # #934 Fälligkeit
+    if params.key?(:payment_status) && Invoice.payment_statuses.key?(params[:payment_status])
+      attrs[:payment_status] = params[:payment_status]      # #934 Zahlstatus
+    end
     attrs[:your_ref]      = params[:your_ref]               if params.key?(:your_ref)
     attrs[:our_ref]       = params[:our_ref]                if params.key?(:our_ref)
     # #694: gewählte Empfänger-Postadresse — nur zulassen, wenn sie zum
@@ -175,7 +179,9 @@ class InvoicesController < ApplicationController
   # Aussteller feststeht und noch keine Nummer existiert.
   def after_link(field)
     return unless field == "issuer"
-    if @invoice.rechnung? && @invoice.number.blank? && @invoice.issuer_uuid.present?
+    # #934: Nummernkreis nur für AUSGEHENDE Rechnungen — bei eingehenden
+    # kommt die Nummer vom fremden Aussteller.
+    if @invoice.ausgehend? && @invoice.rechnung? && @invoice.number.blank? && @invoice.issuer_uuid.present?
       @invoice.update!(number: Invoice.next_number(@invoice.issuer_uuid))
     end
   end

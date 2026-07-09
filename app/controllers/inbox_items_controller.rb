@@ -78,6 +78,15 @@ class InboxItemsController < ApplicationController
     payload_updates["prompt_template_slug"] = params[:prompt_template_slug] if params[:prompt_template_slug].present?
     payload_updates["confirm_whisper"]      = true if ActiveModel::Type::Boolean.new.cast(params[:confirm_whisper])
     payload_updates["confirm_diarize"]      = true if ActiveModel::Type::Boolean.new.cast(params[:confirm_diarize])  # #776
+    # #934: Dokument-Import-Review bestätigt — inkl. der angehakten Aufgaben.
+    if ActiveModel::Type::Boolean.new.cast(params[:confirm_import])
+      payload_updates["confirm_import"]        = true
+      payload_updates["confirmed_task_titles"] = Array(params[:task_titles]).map(&:to_s)
+    elsif kind == "document_import"
+      # Re-Analyse: ein früher gesetztes Bestätigungs-Flag darf nicht kleben,
+      # sonst würde der Re-Run ohne Review direkt anlegen.
+      payload_updates["confirm_import"] = false
+    end
     @item.update!(payload: @item.payload.merge(payload_updates)) if payload_updates.any?
 
     # Optimistic UI: Status sofort auf processing, damit der User Feedback

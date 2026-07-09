@@ -11,6 +11,7 @@ module Inbox
         Processors::TedTranscript,    # #778: TED-Talk → offizielles Transkript
         Processors::MarkdownUrl,      # #799: Link auf .md-Datei → formattreue KI
         Processors::WebClip,
+        Processors::DocumentImport,  # #934: Rechnung/Anschreiben-Eingang
         Processors::AiTransform
       ]
     end

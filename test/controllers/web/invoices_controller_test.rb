@@ -268,6 +268,43 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "%PDF-1.4"
   end
 
+  # ── #934: Eingangsrechnungen (direction) ────────────────────────────────
+  test "eingehende Rechnung: keine Auto-Nummer beim Aussteller-Link" do
+    iss = FileProxy.create(actor: @hans, title: "Fremdfirma GmbH", item_type: :organization, content: "")
+    FileProxy.update(actor: @hans, knowledge_item: iss, issuer: true)
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    post "/invoices/#{invoice.id}/link", params: { field: "issuer", value: iss.uuid },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_nil invoice.reload.number, "eingehende Rechnungen bekommen KEINE Nummer aus dem Nummernkreis"
+  end
+
+  test "update speichert Fälligkeit + Zahlstatus (eingehend)" do
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    patch "/invoices/#{invoice.id}", params: { due_date: "2026-08-15" }
+    patch "/invoices/#{invoice.id}", params: { payment_status: "bezahlt" }
+    invoice.reload
+    assert_equal Date.new(2026, 8, 15), invoice.due_date
+    assert invoice.bezahlt?
+  end
+
+  test "card einer Eingangsrechnung: Eingang-Badge, keine Render-Aktionen" do
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend, number: "SW-11")
+    get "/invoices/#{invoice.id}/card"
+    assert_response :success
+    assert_includes @response.body, "Eingang"
+    refute_includes @response.body, rendered_pdf_invoice_path(invoice)
+    assert_includes @response.body, "Fällig am"
+  end
+
+  test "Liste filtert nach Richtung" do
+    Invoice.create!(kind: :rechnung, direction: :eingehend, number: "EIN-1")
+    Invoice.create!(kind: :rechnung, direction: :ausgehend, number: "AUS-1")
+    get "/invoices/list_card", params: { direction: "eingehend" }
+    assert_response :success
+    assert_includes @response.body, "EIN-1"
+    refute_includes @response.body, "AUS-1"
+  end
+
   # ── #787: Papierkorb ─────────────────────────────────────────────────────
   test "destroy/restore/trash: Soft-Delete-Zyklus" do
     invoice = Invoice.create!(kind: :rechnung, number: "2026-099")

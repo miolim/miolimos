@@ -19,6 +19,9 @@
     <%= render "shared/blade_toolbar", uuid: "invoice:#{invoice.id}",
           toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white",
           duplicate: false, entity_actions: capture { %>
+      <%# #934: Bei EINGEHENDEN Rechnungen ist das Original-Artefakt der
+          Beleg — Render/Signatur/ZUGFeRD gibt es nur für ausgehende. %>
+      <% if invoice.ausgehend? %>
       <%# Vorschau (gerendertes Dokument im neuen Tab). %>
       <%= link_to invoice_path(invoice), target: "_blank", rel: "noopener",
             title: t("documents.show.preview"), "aria-label": t("documents.show.preview"),
@@ -54,6 +57,7 @@
           <span class="text-[8px] font-bold leading-none tracking-tight border border-current rounded-sm px-1 py-[3px]">XML</span>
         <% end %>
       <% end %>
+      <% end %>
       <%# #787: Rechnung löschen (Soft-Delete → Papierkorb). %>
       <%= button_to invoice_path(invoice), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("invoices.trash.confirm") } },
@@ -65,6 +69,12 @@
 
     <div class="flex items-center gap-2">
       <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
+      <% if invoice.eingehend? %>
+        <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span>
+        <% if invoice.offen? && invoice.due_date && invoice.due_date < Date.current %>
+          <span class="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200"><%= t("invoices.list.overdue") %></span>
+        <% end %>
+      <% end %>
       <span class="font-semibold text-sm truncate"><%= name || t("documents.list.unnamed") %></span>
     </div>
 

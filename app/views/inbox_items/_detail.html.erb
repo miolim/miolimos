@@ -145,7 +145,10 @@
 
     <% when "awaiting_confirmation" %>
       <% cf = item.result["confirmation"] || {} %>
-      <% if cf["reason"].to_s.start_with?("whisper_") %>
+      <% if cf["reason"] == "document_review" %>
+        <%# #934: Dokument-Import — extrahierte Felder zur Bestätigung. %>
+        <%= render "inbox_items/document_review", item: item, extraction: cf["extraction"] || {} %>
+      <% elsif cf["reason"].to_s.start_with?("whisper_") %>
         <section class="rounded border border-amber-300 bg-amber-50 px-3 py-3 space-y-2">
           <div class="text-xs uppercase tracking-wider text-amber-800"><%= t("inbox_items.confirmation_required") %></div>
           <p class="text-sm text-amber-900">

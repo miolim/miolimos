@@ -33,23 +33,32 @@
         Frontmatter wandern in den Picker-Bereich. %>
     <%# #546 (Hans): Zeiten ist jetzt eine Subsection INNERHALB der Details
         (siehe _detail_section), nicht mehr eine eigene Section daneben. %>
-    <%= render "knowledge_items/detail_section", item: item, in_stack: in_stack %>
+    <%# #849 (aus immoos übernommen, dort aus #848): Person/Org-KIs bekommen
+        eine dünne Tab-Leiste (Stammdaten · Kommunikation) statt eines langen
+        vertikalen Stapels — leichte simple_tabs-Variante (_person_tabs).
+        Alle anderen KI-Typen behalten den flachen Aufbau. %>
+    <% if item.person? || item.organization? %>
+      <%= render "knowledge_items/person_tabs",
+            item: item, mode: mode, in_stack: in_stack, edit_form: edit_form,
+            body_html: local_assigns[:body_html], body_markdown: local_assigns[:body_markdown] %>
+    <% else %>
+      <%= render "knowledge_items/detail_section", item: item, in_stack: in_stack %>
 
+      <%= render "knowledge_items/detail_link_panels", item: item, in_stack: in_stack %>
 
-    <%= render "knowledge_items/detail_link_panels", item: item, in_stack: in_stack %>
+      <%= render "knowledge_items/detail_body_section",
+            item: item, mode: mode, in_stack: in_stack, edit_form: edit_form,
+            body_html: local_assigns[:body_html], body_markdown: local_assigns[:body_markdown] %>
 
-    <%= render "knowledge_items/detail_body_section",
-          item: item, mode: mode, in_stack: in_stack, edit_form: edit_form,
-          body_html: local_assigns[:body_html], body_markdown: local_assigns[:body_markdown] %>
-
-    <%# #384 Phase 3a (Hans, 2026-05-27): Dialog-Antworten an der KI.
-        Nur fuer Nicht-Reply-KIs, weil eine Reply ihrerseits keine
-        Sub-Replies hat (Threading bewusst flach, MVP). %>
-    <% unless item.reply? %>
-      <%# #232 Phase 1 (B): Live-Updates. Abonniert den KI-Stream — eine neue
-          veroeffentlichte Antwort broadcastet ein Turbo-Refresh hierher. %>
-      <%= turbo_stream_from item %>
-      <%= render "knowledge_items/replies_section", item: item %>
+      <%# #384 Phase 3a (Hans, 2026-05-27): Dialog-Antworten an der KI.
+          Nur fuer Nicht-Reply-KIs, weil eine Reply ihrerseits keine
+          Sub-Replies hat (Threading bewusst flach, MVP). %>
+      <% unless item.reply? %>
+        <%# #232 Phase 1 (B): Live-Updates. Abonniert den KI-Stream — eine neue
+            veroeffentlichte Antwort broadcastet ein Turbo-Refresh hierher. %>
+        <%= turbo_stream_from item %>
+        <%= render "knowledge_items/replies_section", item: item %>
+      <% end %>
     <% end %>
   </div>
 <% end %>

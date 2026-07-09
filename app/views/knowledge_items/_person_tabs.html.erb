@@ -1,0 +1,69 @@
+<%# #849 (aus immoos übernommen, dort aus #848): dünne Tab-Leiste am
+    Person/Org-Detail. Leichte, rein clientseitige Variante über den
+    simple_tabs-Controller (alle Panels vorgerendert, Umschalten per `hidden`;
+    kein Server-Endpunkt) — NICHT die schwere Topic-Tab-Maschinerie.
+
+    Die Tab-Mechanik ist bewusst GENERISCH gehalten: `tabs` ist nur eine Liste
+    [name, label]; der Controller kennt keine Domäne. So kommen weitere Tabs
+    billig dazu (immoos hängt hier z.B. einen Eigentum-Tab ein).
+
+    Locals: item, mode, in_stack, edit_form, body_html, body_markdown %>
+<%
+  mode      = local_assigns.fetch(:mode, :preview)
+  in_stack  = local_assigns[:in_stack]
+  edit_form = local_assigns[:edit_form]
+
+  # Tabs nur einblenden, wenn sie Inhalt haben — ein leerer Tab wäre irreführend.
+  # #849 (Hans-Feedback): der „Kommunikation"-Tab zeigt AUSSCHLIESSLICH E-Mails;
+  # die übrigen Backlinks (KIs/Aufgaben/Wartepunkte) bleiben als Section in den
+  # Stammdaten. Der Tab erscheint deshalb nur bei tatsächlichen E-Mails.
+  comm_present = item.communication_mentions.exists?
+
+  tabs = [["master_data", t("knowledge.person_tabs.master_data")]]
+  tabs << ["communication", t("knowledge.person_tabs.communication")] if comm_present
+%>
+<%# Der Stammdaten-Tab bündelt alles, was heute schon da ist, außer E-Mails
+    (eigener Tab). Die übrigen Backlinks (person_backlinks ohne E-Mails)
+    bleiben hier als Section. Einmal gerendert und je nach Tab-Anzahl flach
+    oder als Panel eingehängt. %>
+<% master_data = capture do %>
+  <%= render "knowledge_items/detail_section", item: item, in_stack: in_stack %>
+  <%= render "knowledge_items/detail_link_panels", item: item, in_stack: in_stack, include_backlinks: false %>
+  <%# #849: übrige Backlinks (verweisende KIs, Aufgaben, Wartepunkte) OHNE
+      E-Mails — die liegen im Kommunikations-Tab. %>
+  <%= render "knowledge_items/person_backlinks", item: item, include_communications: false %>
+  <%= render "knowledge_items/detail_body_section",
+        item: item, mode: mode, in_stack: in_stack, edit_form: edit_form,
+        body_html: local_assigns[:body_html], body_markdown: local_assigns[:body_markdown] %>
+  <% unless item.reply? %>
+    <%= turbo_stream_from item %>
+    <%= render "knowledge_items/replies_section", item: item %>
+  <% end %>
+<% end %>
+
+<% if tabs.size <= 1 %>
+  <%# Keine verknüpften Daten → keine Tab-Leiste, schlichter Stapel wie bisher. %>
+  <div class="space-y-4"><%= master_data %></div>
+<% else %>
+  <div data-controller="simple-tabs" class="space-y-3">
+    <nav class="flex gap-1 border-b border-slate-200 text-sm">
+      <% tabs.each do |name, label| %>
+        <button type="button" data-simple-tabs-target="tab" data-name="<%= name %>"
+                data-action="click->simple-tabs#show"
+                class="px-3 py-1.5 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer">
+          <%= label %>
+        </button>
+      <% end %>
+    </nav>
+
+    <div data-simple-tabs-target="panel" data-name="master_data" class="space-y-4">
+      <%= master_data %>
+    </div>
+
+    <% if comm_present %>
+      <div data-simple-tabs-target="panel" data-name="communication" class="hidden">
+        <%= render "knowledge_items/person_communications", item: item %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

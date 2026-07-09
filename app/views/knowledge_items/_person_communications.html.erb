@@ -1,0 +1,45 @@
+<%# #849 (aus immoos übernommen; Hans-Feedback): Inhalt des „Kommunikation"-Tabs
+    am Person/Org-Detail — AUSSCHLIESSLICH E-Mails. Die übrigen Backlinks
+    (verweisende KIs, Aufgaben, Wartepunkte) bleiben als Section in den
+    Stammdaten (person_backlinks mit include_communications: false).
+    Local: item (Person/Org-KI). %>
+<%
+  comms = item.communication_mentions.includes(:communication).order("communications.sent_at DESC NULLS LAST")
+  role_label = ->(role) {
+    case role.to_s
+    when "sender"    then t("knowledge.list.backlinks.role_sender")
+    when "recipient" then t("knowledge.list.backlinks.role_recipient")
+    when "cc"        then "cc"
+    when "bcc"       then "bcc"
+    else                  ""
+    end
+  }
+%>
+<section class="border border-slate-200 rounded">
+  <div class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 border-b border-slate-100">
+    <span class="shrink-0 text-slate-500"><%= icon "mail", size: "w-4 h-4" %></span>
+    <span class="font-medium"><%= t("knowledge.list.backlinks.section_emails") %></span>
+    <span class="text-slate-400 tabular-nums">· <%= comms.size %></span>
+  </div>
+
+  <% if comms.empty? %>
+    <p class="px-3 py-3 text-xs text-slate-400 italic"><%= t("dashboard.no_communications") %></p>
+  <% else %>
+    <div class="px-3 py-2 space-y-0.5">
+      <% comms.each do |cm| %>
+        <% c = cm.communication; next unless c %>
+        <div class="text-[13px] flex items-center gap-2">
+          <span class="w-7 text-center text-xs text-slate-500 shrink-0"><%= role_label.call(cm.role) %></span>
+          <%# #810: E-Mail als Blade an den AKTUELLEN Stack appenden. %>
+          <%= link_to (c.subject.presence || t("knowledge.list.backlinks.no_subject")), communication_path(c),
+                data: { action: "click->blade-stack#openCommunication",
+                        communication_id: c.id, turbo_frame: "_top" },
+                class: "hover:underline truncate flex-1" %>
+          <span class="text-xs text-slate-400 shrink-0">
+            <%= l(c.sent_at, format: :short) if c.sent_at %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

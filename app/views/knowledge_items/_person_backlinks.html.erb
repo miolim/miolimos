@@ -4,14 +4,19 @@
       - Tasks
       - E-Mails (mit Rolle)
       - Wartepunkte (offene)
-    Locals: item (das Person/Org-KI). %>
+    Locals: item (das Person/Org-KI).
+      - include_communications [optional, default true] — #849: E-Mails hier
+        mitzeigen. Das getabbte Person-Detail setzt false und zeigt E-Mails
+        stattdessen im eigenen „Kommunikation"-Tab (_person_communications);
+        die übrigen Backlinks bleiben hier als Section in den Stammdaten. %>
 <%
+  include_communications = local_assigns.fetch(:include_communications, true)
   ref_uuids       = item.incoming_references.pluck(:source_uuid).compact.uniq
   mention_uuids   = item.inbound_mentions.pluck(:knowledge_item_uuid).uniq
   related_ki_uuids = (ref_uuids | mention_uuids) - [item.uuid]
   related_kis     = KnowledgeItem.where(uuid: related_ki_uuids).order(file_updated_at: :desc)
   tasks           = item.mentioning_tasks.includes(:topics).order(updated_at: :desc)
-  comms           = item.communication_mentions.includes(:communication).order("communications.sent_at DESC NULLS LAST")
+  comms           = include_communications ? item.communication_mentions.includes(:communication).order("communications.sent_at DESC NULLS LAST") : []
   awaitings_open  = item.awaitings.open.by_urgency
 
   total = related_kis.size + tasks.size + comms.size + awaitings_open.size

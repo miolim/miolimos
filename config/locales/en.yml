@@ -465,6 +465,10 @@ en:
       resolved: "Resolved"
 
   knowledge:
+    # #849 (adopted from immoos): tab bar on the person/org detail.
+    person_tabs:
+      master_data:   "Master data"
+      communication: "Communication"
     # #840: status look + menu on the person's main icon.
     person_status:
       menu_title:  "Change status"

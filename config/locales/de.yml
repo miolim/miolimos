@@ -465,6 +465,10 @@ de:
       resolved: "Aufgelöst"
 
   knowledge:
+    # #849 (aus immoos übernommen): Tab-Leiste am Person/Org-Detail.
+    person_tabs:
+      master_data:   "Stammdaten"
+      communication: "Kommunikation"
     # #840: Status-Look + Menü am Personen-Haupticon.
     person_status:
       menu_title:  "Status ändern"

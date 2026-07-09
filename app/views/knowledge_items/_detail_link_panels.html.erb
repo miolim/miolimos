@@ -1,7 +1,12 @@
 <%# #803 (aus #801 R6): Verknüpfungs-Panels aus _detail extrahiert —
     Person/Org-Editoren + Mirrors, Source-Verweis, Backlinks/Linked
     Mentions, typed Relations.
-    Locals: item, in_stack %>
+    Locals: item, in_stack
+      - include_backlinks [optional, default true] — #849: das
+        person_backlinks-Panel (KIs/Tasks/E-Mails/Wartepunkte) rendern.
+        Das getabbte Person-Detail (_person_tabs) setzt false und rendert
+        es selbst (ohne E-Mails) im Stammdaten-Tab. %>
+<% include_backlinks = local_assigns.fetch(:include_backlinks, true) %>
 <%# Affiliations + Beziehungen — inline-editbarer Tabellen-Editor.
     Render nur für Person/Organization-KIs. Submit-Pfad: pro Save
     geht der ganze Array via PATCH ans Frontmatter (DB-Sync läuft
@@ -47,7 +52,7 @@
     Person/Org-KIs bekommen zusätzlich ein erweitertes Backlinks-Panel
     mit Sektionen (KIs, Tasks, E-Mails, Wartepunkte) — die normale
     Backlinks-Liste reicht da nicht. %>
-<% if item.item_type.in?(%w[person organization]) %>
+<% if include_backlinks && item.item_type.in?(%w[person organization]) %>
   <%= render "knowledge_items/person_backlinks", item: item %>
 <% end %>
 

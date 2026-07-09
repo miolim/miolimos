@@ -15,6 +15,15 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Person and organisation detail cards get a slim tab bar (master data ·
+  communication) instead of one long vertical stack. The communication tab
+  lists only the person's emails and appears only when there are any; the
+  remaining backlinks (referencing items, tasks, awaitings) stay as a section
+  in the master-data tab. People without linked data keep the flat layout
+  (#849, adopted from immoos).
+
 ## [0.3.0] - 2026-07-09
 
 ### Added

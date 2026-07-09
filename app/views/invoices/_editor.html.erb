@@ -1,0 +1,20 @@
+<%# #556 (Hans, 2026-06-08): editierbarer bzw. gesperrter Felderbereich einer
+    Rechnung in EINEM Wrapper mit stabiler id — Status-Wechsel (final↔entwurf)
+    schaltet den Bereich per Turbo-Stream um. Bei final read-only (Positionen
+    bleiben sichtbar), sonst Felder + Infoblock + Positionen + Zeiten-Import. %>
+<% invoice = local_assigns.fetch(:invoice) %>
+<div id="invoice_editor_<%= invoice.id %>">
+  <% if invoice.locked? %>
+    <%= render "invoices/fields_readonly", invoice: invoice %>
+    <%# #541: Positionen auch im gesperrten Zustand zeigen (read-only). %>
+    <%= render "invoices/invoice_lines", invoice: invoice %>
+  <% else %>
+    <%= render "invoices/fields", invoice: invoice %>
+    <%# #559 (Hans): Reihenfolge Felder → Infoblock-Felder → Positionen. %>
+    <%= render "printables/infofields", printable: invoice %>
+    <%# #541: Rechnungspositionen (Liste; jede öffnet ihr Detail-Blade mit
+        Zeit-Zuordnung) + Summen. %>
+    <%= render "invoices/invoice_lines", invoice: invoice %>
+    <%= render "invoices/time_import", invoice: invoice %>
+  <% end %>
+</div>

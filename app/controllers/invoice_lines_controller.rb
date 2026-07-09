@@ -1,18 +1,19 @@
 # #541 (Hans, 2026-06-09): Rechnungsposition als eigenes Detail-Blade. Position
 # und Zeiten sind getrennt — hier werden die Positionsfelder bearbeitet und
 # Zeitbuchungen zugeordnet/gelöst. Sind Zeiten zugeordnet, ist die Menge die
-# Summe ihrer Stunden (sonst frei wählbar).
+# Summe ihrer Stunden (sonst frei wählbar). Seit #926 gehört die Position
+# zur Invoice-Entität.
 class InvoiceLinesController < ApplicationController
   before_action :set_line
 
   # Detail-Blade der Position.
   def card
-    render partial: "documents/invoice_line_blade_card", layout: false, locals: { line: @line }
+    render partial: "invoices/invoice_line_blade_card", layout: false, locals: { line: @line }
   end
 
   # Felder bearbeiten (Beschreibung/Preis/USt; Menge nur ohne zugeordnete Zeiten).
   def update_line
-    return reject_locked if @line.document.locked?
+    return reject_locked if @line.invoice.locked?
     attrs = {}
     attrs[:description] = params[:description]            if params.key?(:description)
     attrs[:unit_price]  = decimal(params[:unit_price])   if params.key?(:unit_price)
@@ -28,7 +29,7 @@ class InvoiceLinesController < ApplicationController
   # Abrechenbare Zeitbuchung(en) dieser Position zuordnen — einzeln oder ganze
   # Item-Gruppe (time_entry_ids[]). #541 (Hans, 2026-06-09).
   def assign_time
-    return reject_locked if @line.document.locked?
+    return reject_locked if @line.invoice.locked?
     ids = Array(params[:time_entry_ids]).presence || [params[:time_entry_id]].compact
     TimeEntry.where(id: ids, invoice_line_id: nil, billable: true, status: "finished")
              .update_all(invoice_line_id: @line.id)
@@ -38,7 +39,7 @@ class InvoiceLinesController < ApplicationController
 
   # Eine zugeordnete Zeitbuchung wieder lösen (wird wieder abrechenbar).
   def unassign_time
-    return reject_locked if @line.document.locked?
+    return reject_locked if @line.invoice.locked?
     te = @line.time_entries.find_by(id: params[:time_entry_id])
     if te
       te.update!(invoice_line: nil)
@@ -49,15 +50,15 @@ class InvoiceLinesController < ApplicationController
 
   private
 
-  # #541: weicher Gate wie DocumentsController — Positionen gehören zu
-  # Dokumenten; Zugriff über die (vorhandene) Task-Capability.
+  # #541: weicher Gate wie InvoicesController — Zugriff über die (vorhandene)
+  # Task-Capability.
   def controller_resource_type = "Task"
 
   def set_line
     @line = InvoiceLine.find(params[:id])
   end
 
-  # Position-Blade + (falls im DOM) die Positionsliste des Dokuments ersetzen,
+  # Position-Blade + (falls im DOM) die Positionsliste der Rechnung ersetzen,
   # damit die Summen sofort stimmen.
   def render_card
     @line.reload
@@ -65,18 +66,18 @@ class InvoiceLinesController < ApplicationController
       format.turbo_stream do
         render turbo_stream: [
           turbo_stream.replace("stack_card_invoiceline:#{@line.id}",
-            partial: "documents/invoice_line_blade_card", locals: { line: @line }),
-          turbo_stream.replace("document_invoice_lines_#{@line.document_id}",
-            partial: "documents/invoice_lines", locals: { document: @line.document })
+            partial: "invoices/invoice_line_blade_card", locals: { line: @line }),
+          turbo_stream.replace("invoice_invoice_lines_#{@line.invoice_id}",
+            partial: "invoices/invoice_lines", locals: { invoice: @line.invoice })
         ]
       end
-      format.html { redirect_to documents_path(stack: "list:documents,document:#{@line.document_id}"), status: :see_other }
+      format.html { redirect_to invoices_path(stack: "list:invoices,invoice:#{@line.invoice_id}"), status: :see_other }
     end
   end
 
   def reject_locked
     respond_to do |format|
-      format.html { redirect_to documents_path, alert: "Dokument ist final (gesperrt).", status: :see_other }
+      format.html { redirect_to invoices_path, alert: "Rechnung ist final (gesperrt).", status: :see_other }
       format.any  { head :forbidden }
     end
   end

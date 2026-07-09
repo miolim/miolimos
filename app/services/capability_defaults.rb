@@ -10,7 +10,7 @@
 class CapabilityDefaults
   RESOURCE_TYPES = %w[Task Awaiting Contact Topic KnowledgeItem Communication
                       Actor OauthCredential Team Source InboxItem ActorView
-                      ActivityEvent Document TimeEntry Event].freeze
+                      ActivityEvent Document Invoice TimeEntry Event].freeze
 
   HUMAN_ACTIONS = %w[read create update delete].freeze
   AGENT_ACTIONS = %w[read create update].freeze

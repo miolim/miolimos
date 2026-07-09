@@ -1,0 +1,4 @@
+<%# #532: nach dem Festschreiben die Ständeliste neu rendern. %>
+<%= turbo_stream.replace "invoice_artifacts_#{@invoice.id}" do %>
+  <%= render "printables/artifacts", printable: @invoice %>
+<% end %>

@@ -1,6 +1,6 @@
 # #541 (Hans, 2026-06-09): ZUGFeRD/XRechnung-Erzeugung. Sammelt die EN16931-
-# Daten aus einem Document und ruft das Python-Skript (drafthorse + factur-x im
-# isolierten venv) auf — analog zum Signier-Setup (#547).
+# Daten aus einer Invoice (#926; vorher Document) und ruft das Python-Skript
+# (drafthorse + factur-x im isolierten venv) auf — analog zum Signier-Setup (#547).
 #   - xml(doc)         -> EN16931-CII-XML (XRechnung)
 #   - zugferd_pdf(doc) -> ZUGFeRD-PDF/A-3 (sichtbare PDF + eingebettete XML)
 require "open3"

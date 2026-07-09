@@ -1,0 +1,37 @@
+<%# #926: das Gerüst der DIN-5008-Seite (Form B) — Briefkopf, Faltmarken,
+    Anschriftfeld, Infoblock — geteilt von allen druckbaren Entitäten.
+    locals: printable, info_rows (Array aus [label, value]; leere values
+    werden mitgerendert, nil-Zeilen vorher rausfiltern). Der Dokument-Body
+    kommt als Block (render layout: …). %>
+<div class="din-page">
+  <%= render "documents/letterhead", issuer: printable.issuer %>
+
+  <div class="din-mark din-fold-1"></div>
+  <div class="din-mark din-hole"></div>
+  <div class="din-mark din-fold-2"></div>
+
+  <div class="din-address">
+    <div class="din-return"><%= document_sender_oneline(printable.issuer) %></div>
+    <div class="din-zvz">&nbsp;</div>
+    <div class="din-recipient">
+      <% lines = document_recipient_lines(printable.recipient, override: printable.chosen_recipient_address) %>
+      <strong><%= lines.first %></strong><% lines.drop(1).each do |l| %><br><%= l %><% end %>
+    </div>
+  </div>
+
+  <%# Vertikale Trennlinie Anschriftfeld | Infoblock. %>
+  <div class="din-divider"></div>
+
+  <%# #541: alle Angaben sammeln sich im Infoblock (DIN-5008-Konvention);
+      die Reihenfolge bestimmt die Entität (info_rows). %>
+  <div class="din-info">
+    <% info_rows.each do |label, value| %>
+      <div class="row"><span class="k"><%= label %></span><span><%= value %></span></div>
+    <% end %>
+  </div>
+
+  <div class="din-spacer"></div>
+  <div class="din-body">
+    <%= yield %>
+  </div>
+</div>

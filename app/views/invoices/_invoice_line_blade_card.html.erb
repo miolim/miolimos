@@ -2,7 +2,7 @@
     bearbeiten + Zeitbuchungen zuordnen/lösen. Sind Zeiten zugeordnet, ist die
     Menge die Summe ihrer Stunden (read-only); sonst frei wählbar. %>
 <% line   = local_assigns.fetch(:line) %>
-<% doc    = line.document %>
+<% doc    = line.invoice %>
 <% locked = doc.locked? %>
 <% exempt = doc.vat_exempt? %>
 <article id="stack_card_invoiceline:<%= line.id %>"

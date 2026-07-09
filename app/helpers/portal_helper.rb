@@ -11,7 +11,7 @@ module PortalHelper
   end
 
   def portal_artifact_filename(artifact)
-    base = (artifact.document.display_name.presence || "dokument-#{artifact.document_id}")
+    base = (artifact.printable.display_name.presence || "dokument-#{artifact.printable_id}")
              .gsub(/\s+/, "-").gsub(/[^\p{Alnum}\-_.]/u, "")
     "#{base}-#{artifact.id}.pdf"
   end

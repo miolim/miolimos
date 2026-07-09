@@ -1,0 +1,4 @@
+<%# #532: nach Speichern/Auswahl die Infoblock-Felder-Section neu rendern. %>
+<%= turbo_stream.replace "invoice_infofields_#{@invoice.id}" do %>
+  <%= render "printables/infofields", printable: @invoice %>
+<% end %>

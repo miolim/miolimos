@@ -65,23 +65,23 @@ module DocumentsHelper
     document_address_lines(ki).join(" · ").presence
   end
 
-  # #625 (Hans): GiroCode-SVG für eine ausgehende Rechnung — Empfänger = der
-  # Aussteller (= wir), Betrag = Bruttosumme, Zweck = Rechnungsnummer. nil,
-  # wenn kein Rechnungs-Dokument, keine Aussteller-IBAN oder Betrag 0.
-  def document_giro_code_svg(document, module_size: 3)
-    return nil unless document.invoice? && document.issuer_iban.present?
-    return nil unless document.gross_total.to_f.positive?
-    ref = document.number.present? ? "Rechnung #{document.number}" : "Rechnung ##{document.id}"
+  # #625 (Hans): GiroCode-SVG für eine ausgehende Rechnung (#926: Invoice-
+  # Entität) — Empfänger = der Aussteller (= wir), Betrag = Bruttosumme,
+  # Zweck = Rechnungsnummer. nil ohne Aussteller-IBAN oder bei Betrag 0.
+  def document_giro_code_svg(invoice, module_size: 3)
+    return nil unless invoice.issuer_iban.present?
+    return nil unless invoice.gross_total.to_f.positive?
+    ref = invoice.number.present? ? "Rechnung #{invoice.number}" : "Rechnung ##{invoice.id}"
     GiroCode.svg(
-      name:       document.issuer&.title,
-      iban:       document.issuer_iban,
-      bic:        document.issuer_bic,
-      amount:     document.gross_total,
+      name:       invoice.issuer&.title,
+      iban:       invoice.issuer_iban,
+      bic:        invoice.issuer_bic,
+      amount:     invoice.gross_total,
       remittance: ref,
       module_size: module_size
     ).html_safe
   rescue GiroCode::Error => e
-    Rails.logger.warn("GiroCode: #{e.message} (Doc #{document.id})")
+    Rails.logger.warn("GiroCode: #{e.message} (Invoice #{invoice.id})")
     nil
   end
 

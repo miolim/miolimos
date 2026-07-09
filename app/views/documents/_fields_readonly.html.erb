@@ -1,6 +1,6 @@
 <%# #532 (Hans, 2026-06-08): read-only Darstellung der Felder, wenn das
-    Dokument final (gesperrt) ist. Nur der Status bleibt änderbar — auf Entwurf
-    setzen entsperrt wieder. %>
+    Anschreiben final (gesperrt) ist. Nur der Status bleibt änderbar — auf
+    Entwurf setzen entsperrt wieder. %>
 <% document = local_assigns.fetch(:document) %>
 <div class="space-y-1.5 text-[13px]">
   <div class="flex items-center gap-2 text-xs px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
@@ -21,19 +21,9 @@
   <div><span class="text-slate-500"><%= document.nda? ? t("documents.fields.declarant") : t("documents.fields.issuer") %>:</span> <%= document.issuer&.title || "—" %></div>
   <div><span class="text-slate-500"><%= document.nda? ? t("documents.fields.customer") : t("documents.fields.recipient") %>:</span> <%= document.recipient&.title || "—" %></div>
   <div><span class="text-slate-500"><%= t("documents.fields.date") %>:</span> <%= l(document.document_date, format: :long) if document.document_date %></div>
-  <%# #541: Rechnungsspezifische Felder bei Rechnung/Angebot. %>
-  <% if document.invoice? %>
-    <% if document.number.present? %><div><span class="text-slate-500"><%= t("documents.fields.invoice_number") %>:</span> <%= document.number %></div><% end %>
-    <% if document.service_start %>
-      <div><span class="text-slate-500"><%= t("documents.fields.service_period") %>:</span>
-        <%= l(document.service_start, format: :long) %><%= " – #{l(document.service_end, format: :long)}" if document.service_end %></div>
-    <% end %>
-  <% end %>
   <div><span class="text-slate-500"><%= t("documents.fields.subject") %>:</span> <%= document.subject.presence || "—" %></div>
-  <% unless document.invoice? %>
-    <div><span class="text-slate-500"><%= t("documents.fields.salutation") %>:</span> <%= document.salutation.presence || document.salutation_line %></div>
-    <div><span class="text-slate-500"><%= t("documents.fields.text") %>:</span> <%= document.body_ki&.title || "—" %></div>
-  <% end %>
+  <div><span class="text-slate-500"><%= t("documents.fields.salutation") %>:</span> <%= document.salutation.presence || document.salutation_line %></div>
+  <div><span class="text-slate-500"><%= t("documents.fields.text") %>:</span> <%= document.body_ki&.title || "—" %></div>
   <% if document.your_ref.present? %><div><span class="text-slate-500"><%= t("documents.fields.your_ref") %>:</span> <%= document.your_ref %></div><% end %>
   <% if document.our_ref.present? %><div><span class="text-slate-500"><%= t("documents.fields.our_ref") %>:</span> <%= document.our_ref %></div><% end %>
   <% document.document_fields.ordered.each do |fld| %>

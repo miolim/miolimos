@@ -1,0 +1,18 @@
+<%# #532/#556: nach dem Auto-Save aktualisieren. Beim Sperrzustand-Wechsel
+    (final↔entwurf) den ganzen Editor-Bereich umschalten, sonst nur den
+    Felder-Block ersetzen (granularer Auto-Save). %>
+<% if @lock_changed %>
+  <%= turbo_stream.replace "invoice_editor_#{@invoice.id}" do %>
+    <%= render "invoices/editor", invoice: @invoice %>
+  <% end %>
+  <%# #624 (Hans): der „Aktuellen Stand festschreiben"-Button lebt in der
+      Artefakt-Sektion AUSSERHALB des Editors — beim final↔entwurf-Wechsel
+      mit ersetzen, sonst erscheint/verschwindet er erst nach Refresh. %>
+  <%= turbo_stream.replace "invoice_artifacts_#{@invoice.id}" do %>
+    <%= render "printables/artifacts", printable: @invoice %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.replace "invoice_fields_#{@invoice.id}" do %>
+    <%= render "invoices/fields", invoice: @invoice %>
+  <% end %>
+<% end %>

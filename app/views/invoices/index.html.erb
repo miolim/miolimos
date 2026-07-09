@@ -1,0 +1,24 @@
+<% content_for :title, "Rechnungen" %>
+<%# #532/#926: kein Turbo-Cache (sonst veralteter Anlege-Button-Snapshot,
+    siehe documents/index). %>
+<% content_for :head do %><meta name="turbo-cache-control" content="no-cache"><% end %>
+
+<%# #926: /invoices ist ein Blade-Stack. Initiales Card ist die Rechnungs-
+    liste; ?stack= kann invoice:<id>-Detailblades anhängen. %>
+<div data-controller="blade-stack"
+     data-blade-stack-history-storage-key-value="invoices.stack.history"
+     <%= raw blade_stack_pref_attrs %>
+     class="flex flex-col h-[calc(100dvh-4rem)]">
+  <main id="blade_stack_container" data-blade-stack-target="container"
+        class="flex-1 flex overflow-x-auto scroll-smooth
+               bg-slate-50 rounded border border-slate-200 min-h-0">
+    <% @initial_stack_items.each do |stack_item| %>
+      <% if stack_item.kind == :ki %>
+        <%= render stack_item.partial, item: stack_item.record,
+              body_html: @initial_stack_bodies[stack_item.record.uuid] %>
+      <% else %>
+        <%= render stack_item.partial, **stack_item.partial_locals %>
+      <% end %>
+    <% end %>
+  </main>
+</div>

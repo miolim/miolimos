@@ -16,10 +16,11 @@ class ZugferdGeneratorTest < ActiveSupport::TestCase
     @recipient = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Kunde AG",
                                        item_type: :organization, file_path: "x/kunde.md",
                                        content_hash: "h", body: "")
-    @doc = Document.create!(kind: :rechnung, number: "2026-042", status: :entwurf,
-                            issuer_uuid: @issuer.uuid, recipient_uuid: @recipient.uuid,
-                            document_date: Date.new(2026, 6, 10),
-                            service_start: Date.new(2026, 5, 1), service_end: Date.new(2026, 5, 31))
+    # #926: die e-Rechnung hängt an der Invoice-Entität (vorher Document).
+    @doc = Invoice.create!(kind: :rechnung, number: "2026-042", status: :entwurf,
+                           issuer_uuid: @issuer.uuid, recipient_uuid: @recipient.uuid,
+                           document_date: Date.new(2026, 6, 10),
+                           service_start: Date.new(2026, 5, 1), service_end: Date.new(2026, 5, 31))
     @doc.invoice_lines.create!(description: "Beratung", quantity: 2, unit: "Std",
                                unit_price: 50, tax_rate: 19, position: 0)
   end

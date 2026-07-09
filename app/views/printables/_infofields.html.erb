@@ -1,34 +1,36 @@
-<%# #532/#548/#559 (Hans): Infoblock-Felder. #559: einheitliches 3-Spalten-
+<%# #532/#548/#559 (Hans): Infoblock-Felder — seit #926 geteilt von allen
+    druckbaren Entitäten (local: printable). #559: einheitliches 3-Spalten-
     Raster — Spalte 1 lässt überall Platz für die Personen-ID-Checkbox (auch
     wo nicht relevant), Spalte 2 sind die Keys (zuoberst Ihr/Unser Zeichen,
     dann die IDs), Spalte 3 die Values (alle linksbündig). %>
-<% document = local_assigns.fetch(:document) %>
+<% printable = local_assigns.fetch(:printable) %>
+<% key = printable.model_name.param_key %>
 <% g = "grid grid-cols-[1.25rem_7rem_1fr_auto] gap-x-2 gap-y-1 items-center" %>
 <% inp = "w-full border border-slate-200 rounded px-2 py-0.5 bg-white text-xs" %>
-<section id="document_infofields_<%= document.id %>" class="space-y-1.5 text-[13px] pt-3 mt-3 border-t border-slate-300">
+<section id="<%= key %>_infofields_<%= printable.id %>" class="space-y-1.5 text-[13px] pt-3 mt-3 border-t border-slate-300">
   <div class="text-[15px] font-semibold text-slate-600"><%= t("documents.fields.infoblock_fields") %></div>
 
   <%# — Ihr / Unser Zeichen — Spalte 1 leer (kein Checkbox), Key, Value. %>
   <div class="<%= g %>">
     <span></span>
     <span class="text-slate-500"><%= t("documents.fields.your_ref") %></span>
-    <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
-      <%= text_field_tag :your_ref, document.your_ref,
+    <%= form_with url: polymorphic_path(printable), method: :patch, local: false, class: "contents" do %>
+      <%= text_field_tag :your_ref, printable.your_ref,
             onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inp %>
     <% end %>
     <span></span>
 
     <span></span>
     <span class="text-slate-500"><%= t("documents.fields.our_ref") %></span>
-    <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
-      <%= text_field_tag :our_ref, document.our_ref,
+    <%= form_with url: polymorphic_path(printable), method: :patch, local: false, class: "contents" do %>
+      <%= text_field_tag :our_ref, printable.our_ref,
             onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inp %>
     <% end %>
     <span></span>
   </div>
 
   <%# — Freie Key-Value-Felder — gleiches Raster, Spalte 4 = Löschen. %>
-  <%= form_with url: document_fields_document_path(document), method: :patch, local: false,
+  <%= form_with url: polymorphic_path([:document_fields, printable]), method: :patch, local: false,
         data: { controller: "rows-editor" } do %>
     <template data-rows-editor-target="template">
       <div data-row class="<%= g %>">
@@ -39,7 +41,7 @@
       </div>
     </template>
     <div data-rows-editor-target="rows" class="space-y-1">
-      <% document.document_fields.ordered.each do |fld| %>
+      <% printable.document_fields.ordered.each do |fld| %>
         <div data-row class="<%= g %>">
           <input type="hidden" name="fields[][id]" value="<%= fld.id %>">
           <span></span>
@@ -56,5 +58,5 @@
   <% end %>
 
   <%# — Personen-IDs an/abwählen — Checkbox in Spalte 1, Wert linksbündig. %>
-  <%= render "documents/id_candidates", document: document %>
+  <%= render "printables/id_candidates", printable: printable %>
 </section>

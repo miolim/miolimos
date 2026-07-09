@@ -17,7 +17,7 @@
   <h2><%= t("portal.home.latest_documents") %></h2>
   <% @artifacts.each do |a| %>
     <div class="card row">
-      <a href="<%= portal_artifact_href(a) %>"><%= a.document.display_name.presence || t("portal.home.document_fallback", id: a.document_id) %></a>
+      <a href="<%= portal_artifact_href(a) %>"><%= a.printable.display_name.presence || t("portal.home.document_fallback", id: a.printable_id) %></a>
       <span class="muted"><%= l a.created_at.to_date, format: :long %></span>
     </div>
   <% end %>

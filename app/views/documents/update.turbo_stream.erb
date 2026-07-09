@@ -10,7 +10,7 @@
       Artefakt-Sektion AUSSERHALB des Editors — beim final↔entwurf-Wechsel
       mit ersetzen, sonst erscheint/verschwindet er erst nach Refresh. %>
   <%= turbo_stream.replace "document_artifacts_#{@document.id}" do %>
-    <%= render "documents/artifacts", document: @document %>
+    <%= render "printables/artifacts", printable: @document %>
   <% end %>
 <% else %>
   <%= turbo_stream.replace "document_fields_#{@document.id}" do %>

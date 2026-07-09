@@ -1,0 +1,12 @@
+<%# #532 (Hans, 2026-06-08): selbst-enthaltenes Dokument-HTML für den PDF-
+    Render einer echten Rechnung (Theme inline, Chrome headless). %>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <%= render "documents/print_theme" %>
+</head>
+<body>
+  <%= render "invoices/render", invoice: @invoice %>
+</body>
+</html>

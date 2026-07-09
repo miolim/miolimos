@@ -30,7 +30,7 @@ class PortalExporter
         z.put_next_entry(name)
         z.write(content)
       end
-      Portal::Content.shared_artifacts(@topic).includes(:document).each do |art|
+      Portal::Content.shared_artifacts(@topic).includes(:printable).each do |art|
         z.put_next_entry("dokumente/#{artifact_filename(art)}")
         z.write(art.pdf)
       end
@@ -41,7 +41,7 @@ class PortalExporter
   def render_pages
     milestones = Portal::Content.milestones(@topic).to_a
     events     = Portal::Content.events(@topic).to_a
-    artifacts  = Portal::Content.shared_artifacts(@topic).includes(document: :topic).to_a
+    artifacts  = Portal::Content.shared_artifacts(@topic).includes(:printable).to_a
     messages   = Portal::Content.messages(@topic).to_a
 
     assigns_by_page = {
@@ -74,7 +74,7 @@ class PortalExporter
   end
 
   def artifact_filename(art)
-    base = (art.document.display_name.presence || "dokument-#{art.document_id}")
+    base = (art.printable.display_name.presence || "dokument-#{art.printable_id}")
              .gsub(/\s+/, "-").gsub(/[^\p{Alnum}\-_.]/u, "")
     "#{base}-#{art.id}.pdf"
   end

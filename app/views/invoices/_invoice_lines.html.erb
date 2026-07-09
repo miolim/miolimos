@@ -1,16 +1,16 @@
-<%# #541 (Hans, 2026-06-09): Rechnungspositionen eines Dokuments als LISTE.
-    Jede Position öffnet ihr eigenes Detail-Blade (Felder + Zeit-Zuordnung).
-    "+ Position" legt eine leere Position an. Bei final read-only. Ist der
-    Aussteller USt-befreit, wird keine USt ausgewiesen.
+<%# #541 (Hans, 2026-06-09): Rechnungspositionen als LISTE. Jede Position
+    öffnet ihr eigenes Detail-Blade (Felder + Zeit-Zuordnung). "+ Position"
+    legt eine leere Position an. Bei final read-only. Ist der Aussteller
+    USt-befreit, wird keine USt ausgewiesen.
     Wrapper mit stabiler id für den Turbo-Refresh nach Änderungen. %>
-<% document = local_assigns.fetch(:document) %>
-<% exempt = document.vat_exempt? %>
-<% lines  = document.invoice_lines.ordered %>
-<section id="document_invoice_lines_<%= document.id %>" class="space-y-2 text-[13px] pt-3 mt-3 border-t border-slate-300">
+<% invoice = local_assigns.fetch(:invoice) %>
+<% exempt = invoice.vat_exempt? %>
+<% lines  = invoice.invoice_lines.ordered %>
+<section id="invoice_invoice_lines_<%= invoice.id %>" class="space-y-2 text-[13px] pt-3 mt-3 border-t border-slate-300">
   <div class="flex items-center gap-2">
     <span class="text-[15px] font-semibold text-slate-600"><%= t("documents.invoice.lines_heading") %></span>
-    <% unless document.locked? %>
-      <%= button_to add_invoice_line_document_path(document), method: :post,
+    <% unless invoice.locked? %>
+      <%= button_to add_invoice_line_invoice_path(invoice), method: :post,
             form: { class: "ml-auto inline", data: { turbo_stream: true } },
             class: "text-xs px-2 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("documents.invoice.add_position") %><% end %>
     <% end %>
@@ -27,7 +27,7 @@
     </div>
     <div class="divide-y divide-slate-50 border border-slate-100 rounded">
       <% lines.each do |line| %>
-        <% unless document.locked? %>
+        <% unless invoice.locked? %>
           <%= form_with url: invoice_line_path(line), method: :patch, local: false, class: "#{cols} px-1 py-1" do %>
             <input type="text" name="description" value="<%= line.description %>" placeholder="<%= t("documents.invoice.new_position_placeholder") %>"
                    onblur="if (this.value !== this.defaultValue) this.form.requestSubmit()"
@@ -69,11 +69,11 @@
   <%# — Summen — %>
   <% if lines.any? %>
     <div class="pt-2 mt-2 border-t border-slate-300 space-y-0.5">
-      <div class="flex justify-between"><span class="text-slate-500"><%= t("documents.invoice.net_amount") %></span><span class="tabular-nums"><%= document_euro(document.net_total) %></span></div>
-      <% document.tax_breakdown.each do |g| %>
+      <div class="flex justify-between"><span class="text-slate-500"><%= t("documents.invoice.net_amount") %></span><span class="tabular-nums"><%= document_euro(invoice.net_total) %></span></div>
+      <% invoice.tax_breakdown.each do |g| %>
         <div class="flex justify-between text-slate-500"><span><%= t("documents.invoice.plus_vat", rate: number_with_precision(g[:rate], precision: 1, separator: ",", delimiter: "", strip_insignificant_zeros: true)) %></span><span class="tabular-nums"><%= document_euro(g[:tax]) %></span></div>
       <% end %>
-      <div class="flex justify-between font-semibold"><span><%= t("documents.invoice.total_amount") %></span><span class="tabular-nums"><%= document_euro(document.gross_total) %></span></div>
+      <div class="flex justify-between font-semibold"><span><%= t("documents.invoice.total_amount") %></span><span class="tabular-nums"><%= document_euro(invoice.gross_total) %></span></div>
       <% if exempt %>
         <div class="text-slate-500 text-[12px] italic pt-1"><%= t("documents.invoice.vat_exempt_note") %></div>
       <% end %>

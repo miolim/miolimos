@@ -1492,6 +1492,21 @@ en:
       request_failed: "Request failed."
       error: "Error: %{message}"
 
+  invoices:
+    list:
+      title: "Invoices"
+      search_placeholder: "Search invoices …"
+      new_invoice: "New invoice"
+      empty: "No invoices yet."
+      empty_filtered: "No invoices (filtered)."
+    trash:
+      title: "Trash (invoices)"
+      back: "Back to invoices"
+      confirm: "Move this invoice to the trash? Restorable from the trash."
+      delete_title: "Move invoice to trash"
+      deleted: "Invoice moved to trash."
+      restored: "Invoice restored."
+      artifact_deleted: "PDF snapshot deleted."
   documents:
     lastschrift:   # #786 Inkr.2
       title: "SEPA Direct Debit Mandate"
@@ -1605,6 +1620,7 @@ en:
       label_placeholder: "Label"
       value_placeholder: "Value"
       add_field: "+ Field"
+      unresolved_placeholders: "Unresolved placeholders in the text: %{keys}"
     compliance:
       issuer_details: "Issuer details"
       no_tax_id_warning: "No tax number/VAT ID for the issuer — required for a valid invoice (add it in the IDs of the issuer contact)."
@@ -2034,6 +2050,7 @@ en:
       times: "Time"
       calendar: "Calendar"
       documents: "Documents"
+      invoices: "Invoices"
       sources: "Sources"
       docs: "Docs"
       tags: "Tags"

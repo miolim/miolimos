@@ -3,15 +3,15 @@
     Buchung (Menge = Stunden × Stundensatz); übernommene Zeiten verschwinden aus
     der Liste (sind dieser Rechnung zugeordnet → keine Doppel-Abrechnung).
     Eigener Wrapper mit stabiler id für den Turbo-Refresh. %>
-<% document = local_assigns.fetch(:document) %>
-<section id="document_time_import_<%= document.id %>" class="text-[13px]">
-  <% unless document.locked? %>
-    <% if document.topic %>
-      <% candidates = TimeEntry.for_topic(document.topic).invoiceable.recent.to_a %>
+<% invoice = local_assigns.fetch(:invoice) %>
+<section id="invoice_time_import_<%= invoice.id %>" class="text-[13px]">
+  <% unless invoice.locked? %>
+    <% if invoice.topic %>
+      <% candidates = TimeEntry.for_topic(invoice.topic).invoiceable.recent.to_a %>
       <% if candidates.any? %>
         <details class="pt-2 border-t border-slate-100">
           <summary class="cursor-pointer text-slate-500 font-medium select-none"><%= t("documents.time_import.summary") %> · <%= candidates.size %></summary>
-          <%= form_with url: import_time_entries_document_path(document), method: :post, local: false, class: "mt-2 space-y-1.5" do %>
+          <%= form_with url: import_time_entries_invoice_path(invoice), method: :post, local: false, class: "mt-2 space-y-1.5" do %>
             <div class="flex items-center gap-2">
               <label class="text-slate-500"><%= t("documents.time_import.hourly_rate") %></label>
               <input type="text" inputmode="decimal" name="rate" placeholder="0,00"

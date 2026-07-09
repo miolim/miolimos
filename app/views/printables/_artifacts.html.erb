@@ -1,30 +1,32 @@
-<%# #532 (Hans, 2026-06-08): festgeschriebene PDF-Stände — Liste mit Datum/
-    Zeit/Ersteller, anklickbar (öffnet das gespeicherte PDF). Bei Status final
-    der Button zum Festschreiben des aktuellen Stands. %>
-<% document = local_assigns.fetch(:document) %>
-<div id="document_artifacts_<%= document.id %>" class="space-y-1 text-[13px] pt-3 mt-3 border-t border-slate-300">
+<%# #532 (Hans, 2026-06-08): festgeschriebene PDF-Stände — seit #926 die
+    geteilte Artefakt-Sektion aller druckbaren Entitäten (local: printable).
+    Liste mit Datum/Zeit/Ersteller, anklickbar (öffnet das gespeicherte PDF).
+    Bei Status final der Button zum Festschreiben des aktuellen Stands. %>
+<% printable = local_assigns.fetch(:printable) %>
+<% key = printable.model_name.param_key %>
+<div id="<%= key %>_artifacts_<%= printable.id %>" class="space-y-1 text-[13px] pt-3 mt-3 border-t border-slate-300">
   <div class="text-[15px] font-semibold text-slate-600"><%= t("documents.list.artifacts_heading") %></div>
-  <% arts = document.document_artifacts.recent %>
+  <% arts = printable.document_artifacts.recent %>
   <% if arts.any? %>
     <ul class="space-y-0.5">
       <% arts.each do |art| %>
         <li class="flex items-center gap-2">
           <%= link_to art.created_at.strftime("%d.%m.%Y %H:%M:%S"),
-                artifact_document_path(document, art.id), target: "_blank", rel: "noopener",
+                polymorphic_path([:artifact, printable], artifact_id: art.id), target: "_blank", rel: "noopener",
                 class: "hover:underline text-sky-700 tabular-nums" %>
           <span class="text-slate-400 text-xs"><%= art.signed ? t("documents.list.signed") : t("documents.list.unsigned") %><%= " · #{art.creator.name}" if art.creator %></span>
           <%# #536: Portal-Freigabe je Stand — nur wenn das Dokument an einem
               Projekt (Topic mit Kunde) hängt. %>
-          <% if document.topic&.project? %>
+          <% if printable.topic&.project? %>
             <%= button_to art.shared_with_client ? t("documents.list.in_portal") : t("documents.list.share"),
-                  toggle_artifact_share_document_path(document, artifact_id: art.id), method: :post,
+                  polymorphic_path([:toggle_artifact_share, printable], artifact_id: art.id), method: :post,
                   form: { class: "inline m-0 p-0 ml-auto", data: { turbo_stream: true } },
                   title: art.shared_with_client ? t("documents.list.unshare_title") : t("documents.list.share_title"),
                   class: "text-[11px] px-1.5 py-0.5 rounded border cursor-pointer #{art.shared_with_client ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-400 hover:text-slate-600'}" %>
           <% end %>
           <%# #787 (Hans): finalen PDF-Stand löschen (hart; re-archivierbar). %>
-          <%= button_to destroy_artifact_document_path(document, artifact_id: art.id), method: :delete,
-                form: { class: "inline m-0 p-0 #{'ml-auto' unless document.topic&.project?}", data: { turbo_stream: true, turbo_confirm: t("documents.trash.artifact_confirm") } },
+          <%= button_to polymorphic_path([:destroy_artifact, printable], artifact_id: art.id), method: :delete,
+                form: { class: "inline m-0 p-0 #{'ml-auto' unless printable.topic&.project?}", data: { turbo_stream: true, turbo_confirm: t("documents.trash.artifact_confirm") } },
                 title: t("documents.trash.artifact_delete_title"), "aria-label": t("documents.trash.artifact_delete"),
                 class: "shrink-0 text-slate-300 hover:text-rose-600 cursor-pointer bg-transparent border-0 p-0.5 [&_svg]:w-3.5 [&_svg]:h-3.5" do %>
             <%= icon "trash" %>
@@ -35,8 +37,8 @@
   <% else %>
     <p class="text-slate-400 italic"><%= t("documents.list.no_artifacts") %></p>
   <% end %>
-  <% if document.final? %>
-    <%= button_to t("documents.list.archive_current"), archive_pdf_document_path(document), method: :post,
+  <% if printable.final? %>
+    <%= button_to t("documents.list.archive_current"), polymorphic_path([:archive_pdf, printable]), method: :post,
           form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
           class: "mt-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer" %>
   <% else %>

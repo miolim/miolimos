@@ -1,0 +1,23 @@
+<%# #532 (Hans, 2026-06-08): Standalone-Ansicht einer echten Rechnung
+    (kein App-Layout/Turbo-Frame), damit das Papierblatt sauber lädt. %>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= @invoice.kind.titleize %><%= " #{@invoice.number}" if @invoice.number.present? %></title>
+  <%= render "documents/print_theme" %>
+</head>
+<body>
+  <div class="doc-toolbar">
+    <strong><%= @invoice.kind.titleize %><%= " · #{@invoice.display_name}" if @invoice.display_name %></strong>
+    <span style="margin-left:auto;"></span>
+    <a href="<%= rendered_pdf_invoice_path(@invoice) %>" class="pdf"><%= t("documents.show.download_pdf") %></a>
+    <button type="button" onclick="window.print()"><%= t("documents.show.print") %></button>
+  </div>
+
+  <div class="doc-canvas">
+    <%= render "invoices/render", invoice: @invoice %>
+  </div>
+</body>
+</html>

@@ -1,8 +1,8 @@
-<%# #532/#548/#559 (Hans): Felder eines Dokuments. #559: Label-Spalte links
+<%# #532/#548/#559 (Hans): Felder eines Anschreibens. #559: Label-Spalte links
     (Desktop) / oben (Mobil), gleich breit für alle Felder, Inhalte (Pillen +
     Felder) linksbündig. Reihenfolge: Projekt, Status, Aussteller, Empfänger,
-    Datum, [Rechnungsnummer, Leistungszeitraum]. Betreff entfällt. Ihr/Unser
-    Zeichen + Infoblock-Felder stehen in _infofields. %>
+    Datum, Betreff. Ihr/Unser Zeichen + Infoblock-Felder stehen in
+    printables/_infofields. Rechnungs-Felder leben seit #926 in invoices/. %>
 <% rowcls = "grid grid-cols-1 sm:grid-cols-[8rem_1fr] sm:items-center gap-x-2 gap-y-0.5" %>
 <% inputcls = "w-full border border-slate-200 rounded px-2 py-0.5 bg-white" %>
 <%# #562 (Hans): bei der einseitigen NDA heißen die Parteien Erklärender
@@ -16,8 +16,8 @@
     <span class="text-slate-500"><%= t("documents.fields.project") %></span>
     <%= render "shared/entity_picker",
           icon: "folder", icon_only: true, placeholder: t("documents.fields.topic_placeholder"), chips_first: true, close_after_pick: true,
-          chips_id: "document_topic_chip_#{document.id}", chips_partial: "documents/link_chip",
-          chips_locals: { document: document, field: "topic", record: document.topic },
+          chips_id: "document_topic_chip_#{document.id}", chips_partial: "printables/link_chip",
+          chips_locals: { printable: document, field: "topic", record: document.topic },
           suggest_url: suggest_links_documents_path(kind: "topic"),
           add_url: link_document_path(document, field: "topic"),
           param_name: "value", create_label: "", allow_create: false %>
@@ -37,8 +37,8 @@
     <span class="text-slate-500"><%= issuer_label %></span>
     <%= render "shared/entity_picker",
           icon: "building", icon_only: true, placeholder: t("documents.fields.issuer_placeholder"), chips_first: true, close_after_pick: true,
-          chips_id: "document_issuer_chip_#{document.id}", chips_partial: "documents/link_chip",
-          chips_locals: { document: document, field: "issuer", record: document.issuer },
+          chips_id: "document_issuer_chip_#{document.id}", chips_partial: "printables/link_chip",
+          chips_locals: { printable: document, field: "issuer", record: document.issuer },
           suggest_url: suggest_links_documents_path(kind: "issuer"),
           add_url: link_document_path(document, field: "issuer"),
           param_name: "value", create_label: "", allow_create: false %>
@@ -49,8 +49,8 @@
     <span class="text-slate-500"><%= recipient_label %></span>
     <%= render "shared/entity_picker",
           icon: "users", icon_only: true, placeholder: t("documents.fields.recipient_placeholder"), chips_first: true, close_after_pick: true,
-          chips_id: "document_recipient_chip_#{document.id}", chips_partial: "documents/link_chip",
-          chips_locals: { document: document, field: "recipient", record: document.recipient },
+          chips_id: "document_recipient_chip_#{document.id}", chips_partial: "printables/link_chip",
+          chips_locals: { printable: document, field: "recipient", record: document.recipient },
           suggest_url: suggest_links_documents_path(kind: "recipient"),
           add_url: link_document_path(document, field: "recipient"),
           param_name: "value", create_label: "", allow_create: false %>
@@ -100,10 +100,9 @@
     <% end %>
   </div>
 
-  <%# — Betreff — #623 (Hans): war mit #559 für ALLE Arten rausgeflogen.
-      Nur Brief + Angebot (Rechnungen UND NDAs brauchen ihn nicht);
+  <%# — Betreff — #623 (Hans): nur Brief (NDA braucht ihn nicht);
       Position unter dem Datum (Hans-Spec v2). Rendert als din-subject. %>
-  <% if document.brief? || document.angebot? %>
+  <% if document.brief? %>
     <div class="<%= rowcls %>">
       <span class="text-slate-500"><%= t("documents.fields.subject") %></span>
       <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
@@ -115,30 +114,9 @@
     </div>
   <% end %>
 
-  <%# #541 — Rechnungsnummer + Leistungszeitraum (§14 UStG), nur Rechnung/Angebot. %>
-  <% if document.invoice? %>
-    <div class="<%= rowcls %>">
-      <span class="text-slate-500"><%= t("documents.fields.invoice_number") %></span>
-      <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do |f| %>
-        <%= text_field_tag :number, document.number, placeholder: t("documents.fields.invoice_number_placeholder"),
-              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inputcls %>
-      <% end %>
-    </div>
-    <div class="<%= rowcls %>">
-      <span class="text-slate-500"><%= t("documents.fields.service_period") %></span>
-      <div class="grid grid-cols-2 gap-2">
-        <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
-          <%= date_field_tag :service_start, document.service_start, onchange: "this.form.requestSubmit()", class: inputcls %>
-        <% end %>
-        <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
-          <%= date_field_tag :service_end, document.service_end, onchange: "this.form.requestSubmit()", class: inputcls %>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
-
-  <%# #541: Anrede + Text nur bei Prosa-Dokumenten (Brief/NDA). %>
-  <% unless document.invoice? %>
+  <%# #541: Anrede + Text (Body-KI) — beim SEPA-Mandat entfällt beides
+      (das Formular wird aus den Stammdaten generiert, #786 Inkr.2). %>
+  <% unless document.lastschrift? %>
     <div class="<%= rowcls %>">
       <span class="text-slate-500"><%= t("documents.fields.salutation") %> <span class="text-slate-400 font-normal">(<%= t("documents.fields.empty_equals", value: document.salutation_line) %>)</span></span>
       <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do |f| %>
@@ -146,23 +124,26 @@
               onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inputcls %>
       <% end %>
     </div>
-    <%# #786 Inkr.2: Das SEPA-Mandat wird aus den Stammdaten generiert (kein
-        editierbarer Body-KI nötig) → Text-Feld ausblenden. %>
-    <% unless document.lastschrift? %>
-      <div class="<%= rowcls %>">
-        <span class="text-slate-500"><%= t("documents.fields.text") %></span>
-        <div class="flex items-center gap-2 min-w-0">
-          <%= render "shared/entity_picker",
-                icon: "file_text", icon_only: true, placeholder: t("documents.fields.text_ki_placeholder"), chips_first: true, close_after_pick: true,
-                chips_id: "document_body_chip_#{document.id}", chips_partial: "documents/link_chip",
-                chips_locals: { document: document, field: "body", record: document.body_ki },
-                suggest_url: suggest_links_documents_path(kind: "body"),
-                add_url: link_document_path(document, field: "body"),
-                param_name: "value", create_label: "", allow_create: false %>
-          <%= button_to create_body_ki_document_path(document), method: :post,
-                form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-                title: t("documents.fields.new_text_ki_title"), class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("documents.fields.new_short") %><% end %>
-        </div>
+    <div class="<%= rowcls %>">
+      <span class="text-slate-500"><%= t("documents.fields.text") %></span>
+      <div class="flex items-center gap-2 min-w-0">
+        <%= render "shared/entity_picker",
+              icon: "file_text", icon_only: true, placeholder: t("documents.fields.text_ki_placeholder"), chips_first: true, close_after_pick: true,
+              chips_id: "document_body_chip_#{document.id}", chips_partial: "printables/link_chip",
+              chips_locals: { printable: document, field: "body", record: document.body_ki },
+              suggest_url: suggest_links_documents_path(kind: "body"),
+              add_url: link_document_path(document, field: "body"),
+              param_name: "value", create_label: "", allow_create: false %>
+        <%= button_to create_body_ki_document_path(document), method: :post,
+              form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+              title: t("documents.fields.new_text_ki_title"), class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("documents.fields.new_short") %><% end %>
+      </div>
+    </div>
+    <%# #926 Stufe 2: Platzhalter im Body-Text, die der Merge-Kontext (noch)
+        nicht füllt — sichtbar machen statt still im Dokument stehen lassen. %>
+    <% if document.body_ki && (unresolved = TemplateMerge.unresolved(document.body_ki.body.to_s, document.merge_context)).any? %>
+      <div class="text-xs px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
+        <%= t("documents.fields.unresolved_placeholders", keys: unresolved.map { |k| "{{#{k}}}" }.join(", ")) %>
       </div>
     <% end %>
   <% end %>

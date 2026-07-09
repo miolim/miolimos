@@ -1,0 +1,76 @@
+<%# #926: Detail-Blade einer Rechnung / eines Angebots. Meta-Felder + Picker
+    für die Verknüpfungen (Aussteller/Empfänger/Topic), inline auto-save
+    (PATCH, Turbo-Stream ersetzt den Felder-Block). Vorschau/PDF rendern den
+    Record über das DIN-5008-Theme. %>
+<% labels = InvoicesController::KIND_LABELS %>
+<%# #559 (Hans): Benennung (Aussteller · Nr · Datum) im Header und Spine. %>
+<% name  = invoice.display_name %>
+<% spine = name ? "#{labels[invoice.kind]} · #{name}" : labels[invoice.kind] %>
+<article id="stack_card_invoice:<%= invoice.id %>"
+         data-uuid="invoice:<%= invoice.id %>"
+         class="stack-card shrink-0 relative w-[26rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: "invoice:#{invoice.id}", title: spine,
+        icon_html: icon("file_text"), label: spine, topics: [invoice.topic] %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <%# #868 (Hans): Ausgabe-Aktionen oben in der Card-Werkzeugleiste. %>
+    <%= render "shared/blade_toolbar", uuid: "invoice:#{invoice.id}",
+          toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white",
+          duplicate: false, entity_actions: capture { %>
+      <%# Vorschau (gerendertes Dokument im neuen Tab). %>
+      <%= link_to invoice_path(invoice), target: "_blank", rel: "noopener",
+            title: t("documents.show.preview"), "aria-label": t("documents.show.preview"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
+        <%= icon "external_link" %>
+      <% end %>
+      <%# PDF. %>
+      <%= link_to rendered_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
+            title: t("documents.show.pdf"), "aria-label": t("documents.show.pdf"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
+        <%= icon "file_pdf" %>
+      <% end %>
+      <%# #547: AES-signiertes PDF — nur wenn das Signier-Setup vorhanden ist. %>
+      <% if DocumentSigner.available? %>
+        <%= link_to signed_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
+              title: t("documents.list.signed_pdf_title"), "aria-label": t("documents.list.signed_pdf"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
+          <%= icon "file_check" %>
+        <% end %>
+      <% end %>
+      <%# #541: ZUGFeRD (Hybrid-PDF) + XRechnung (reines XML) — nur bei
+          Rechnungen, wenn das Setup da ist. %>
+      <% if invoice.rechnung? && ZugferdGenerator.available? %>
+        <%= link_to zugferd_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
+              title: t("documents.list.zugferd_pdf_title"), "aria-label": t("documents.list.zugferd_pdf"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
+          <%= icon "file_code" %>
+        <% end %>
+        <%# xRechnung hat kein Logo/Icon → „XML" im Rahmen (Hans). %>
+        <%= link_to xrechnung_xml_invoice_path(invoice),
+              title: t("documents.list.xrechnung_xml_title"), "aria-label": t("documents.list.xrechnung_xml"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 inline-flex items-center" do %>
+          <span class="text-[8px] font-bold leading-none tracking-tight border border-current rounded-sm px-1 py-[3px]">XML</span>
+        <% end %>
+      <% end %>
+      <%# #787: Rechnung löschen (Soft-Delete → Papierkorb). %>
+      <%= button_to invoice_path(invoice), method: :delete,
+            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("invoices.trash.confirm") } },
+            title: t("invoices.trash.delete_title"), "aria-label": t("documents.trash.delete"),
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" do %>
+        <%= icon "trash" %>
+      <% end %>
+    <% } %>
+
+    <div class="flex items-center gap-2">
+      <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
+      <span class="font-semibold text-sm truncate"><%= name || t("documents.list.unnamed") %></span>
+    </div>
+
+    <%# #532/#556: bei Status final read-only (gesperrt), sonst editierbar. %>
+    <%= render "invoices/editor", invoice: invoice %>
+
+    <%= render "printables/artifacts", printable: invoice %>
+  </div>
+</article>

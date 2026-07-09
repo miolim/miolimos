@@ -1,8 +1,8 @@
 # #532 (Hans, 2026-06-08): eine Rechnungsposition. Netto/Steuer/Brutto
 # werden aus Menge × Einzelpreis × Steuersatz berechnet — die Basis fürs
-# EN16931-Mapping (#541).
+# EN16931-Mapping (#541). Seit #926 hängt sie an der Invoice-Entität.
 class InvoiceLine < ApplicationRecord
-  belongs_to :document
+  belongs_to :invoice
   # #541: Zeitbuchungen, die auf dieser Position abgerechnet sind. Wird die
   # Position gelöscht, werden sie freigegeben (invoice_line_id → nil).
   has_many :time_entries, dependent: :nullify

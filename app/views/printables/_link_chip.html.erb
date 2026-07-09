@@ -1,8 +1,10 @@
 <%# #532 (Hans, 2026-06-08): Chip einer Einzel-Verknüpfung (Aussteller/
-    Empfänger/Projekt/Text-KI). Zeigt den aktuellen Wert mit ×-Lösen; leer,
-    wenn nichts verknüpft ist. Stream-replaced via #link. %>
+    Empfänger/Projekt/Text-KI) — seit #926 geteilt (local: printable).
+    Zeigt den aktuellen Wert mit ×-Lösen; leer, wenn nichts verknüpft ist.
+    Stream-replaced via #link. %>
+<% printable = local_assigns.fetch(:printable) %>
 <% record = local_assigns[:record] %>
-<span id="document_<%= field %>_chip_<%= document.id %>" class="inline-flex items-center gap-1">
+<span id="<%= printable.model_name.param_key %>_<%= field %>_chip_<%= printable.id %>" class="inline-flex items-center gap-1">
   <% if record %>
     <% name = record.respond_to?(:title) ? record.title : record.name %>
     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
@@ -18,7 +20,7 @@
               data: { action: "click->blade-stack#openInStack", target_uuid: record.uuid },
               class: "hover:underline cursor-pointer text-slate-700" %>
       <% end %>
-      <%= button_to link_document_path(document, field: field, value: ""), method: :post,
+      <%= button_to polymorphic_path([:link, printable], field: field, value: ""), method: :post,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
             title: t("knowledge.chip.unlink"), "aria-label": t("knowledge.chip.unlink_short"),
             class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>

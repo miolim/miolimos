@@ -119,6 +119,7 @@ module ActorPreferences
     ["times",          "scroll"],
     ["calendar",       "scroll"],
     ["documents",      "scroll"],
+    ["invoices",       "scroll"],
     ["sources",        "scroll"],
     ["docs",           "scroll"],
     ["tags",           "scroll"]

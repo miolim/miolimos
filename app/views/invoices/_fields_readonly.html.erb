@@ -1,0 +1,38 @@
+<%# #532 (Hans, 2026-06-08): read-only Darstellung der Felder, wenn die
+    Rechnung final (gesperrt) ist. Nur der Status bleibt änderbar — auf
+    Entwurf setzen entsperrt wieder. %>
+<% invoice = local_assigns.fetch(:invoice) %>
+<div class="space-y-1.5 text-[13px]">
+  <div class="flex items-center gap-2 text-xs px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200">
+    🔒 <%= t("documents.fields.locked_hint_html") %>
+  </div>
+
+  <%# — Status (editierbar zum Entsperren) — %>
+  <label class="flex flex-col gap-0.5">
+    <span class="text-slate-500"><%= t("documents.fields.status") %></span>
+    <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
+      <%= f.select :status, Invoice.statuses.keys.map { |s| [s.capitalize, s] }, { selected: invoice.status },
+            onchange: "this.form.requestSubmit()",
+            class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+    <% end %>
+  </label>
+
+  <div><span class="text-slate-500"><%= t("documents.fields.project") %>:</span> <%= invoice.topic&.name || "—" %></div>
+  <div><span class="text-slate-500"><%= t("documents.fields.issuer") %>:</span> <%= invoice.issuer&.title || "—" %></div>
+  <div><span class="text-slate-500"><%= t("documents.fields.recipient") %>:</span> <%= invoice.recipient&.title || "—" %></div>
+  <div><span class="text-slate-500"><%= t("documents.fields.date") %>:</span> <%= l(invoice.document_date, format: :long) if invoice.document_date %></div>
+  <% if invoice.number.present? %><div><span class="text-slate-500"><%= t("documents.fields.invoice_number") %>:</span> <%= invoice.number %></div><% end %>
+  <% if invoice.service_start %>
+    <div><span class="text-slate-500"><%= t("documents.fields.service_period") %>:</span>
+      <%= l(invoice.service_start, format: :long) %><%= " – #{l(invoice.service_end, format: :long)}" if invoice.service_end %></div>
+  <% end %>
+  <% if invoice.subject.present? %><div><span class="text-slate-500"><%= t("documents.fields.subject") %>:</span> <%= invoice.subject %></div><% end %>
+  <% if invoice.your_ref.present? %><div><span class="text-slate-500"><%= t("documents.fields.your_ref") %>:</span> <%= invoice.your_ref %></div><% end %>
+  <% if invoice.our_ref.present? %><div><span class="text-slate-500"><%= t("documents.fields.our_ref") %>:</span> <%= invoice.our_ref %></div><% end %>
+  <% invoice.document_fields.ordered.each do |fld| %>
+    <div><span class="text-slate-500"><%= fld.label %>:</span> <%= fld.value %></div>
+  <% end %>
+  <% invoice.shown_identifiers.each do |idr| %>
+    <div><span class="text-slate-500"><%= idr.label %>:</span> <span class="font-mono"><%= idr.value %></span></div>
+  <% end %>
+</div>

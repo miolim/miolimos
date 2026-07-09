@@ -575,13 +575,14 @@ ALTER SEQUENCE public.contact_points_id_seq OWNED BY public.contact_points.id;
 
 CREATE TABLE public.document_artifacts (
     id bigint NOT NULL,
-    document_id bigint NOT NULL,
     pdf bytea NOT NULL,
     signed boolean DEFAULT false NOT NULL,
     creator_id bigint,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    shared_with_client boolean DEFAULT false NOT NULL
+    shared_with_client boolean DEFAULT false NOT NULL,
+    printable_type character varying NOT NULL,
+    printable_id bigint NOT NULL
 );
 
 
@@ -610,12 +611,13 @@ ALTER SEQUENCE public.document_artifacts_id_seq OWNED BY public.document_artifac
 
 CREATE TABLE public.document_fields (
     id bigint NOT NULL,
-    document_id bigint NOT NULL,
     label character varying NOT NULL,
     value character varying NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    fieldable_type character varying NOT NULL,
+    fieldable_id bigint NOT NULL
 );
 
 
@@ -653,7 +655,6 @@ CREATE TABLE public.documents (
     creator_id bigint,
     subject character varying,
     salutation character varying,
-    number character varying,
     document_date date,
     theme character varying DEFAULT 'din5008_b'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
@@ -661,8 +662,6 @@ CREATE TABLE public.documents (
     your_ref character varying,
     our_ref character varying,
     shown_identifier_ids integer[] DEFAULT '{}'::integer[] NOT NULL,
-    service_start date,
-    service_end date,
     recipient_address_id bigint,
     deleted_at timestamp(6) without time zone,
     debtor_bank_account_id bigint
@@ -844,7 +843,6 @@ ALTER SEQUENCE public.inbox_items_id_seq OWNED BY public.inbox_items.id;
 
 CREATE TABLE public.invoice_lines (
     id bigint NOT NULL,
-    document_id bigint NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
     description character varying,
     unit character varying,
@@ -852,7 +850,8 @@ CREATE TABLE public.invoice_lines (
     unit_price numeric(12,2) DEFAULT 0.0 NOT NULL,
     tax_rate numeric(5,2) DEFAULT 19.0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    invoice_id bigint NOT NULL
 );
 
 
@@ -873,6 +872,53 @@ CREATE SEQUENCE public.invoice_lines_id_seq
 --
 
 ALTER SEQUENCE public.invoice_lines_id_seq OWNED BY public.invoice_lines.id;
+
+
+--
+-- Name: invoices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invoices (
+    id bigint NOT NULL,
+    kind integer DEFAULT 0 NOT NULL,
+    status integer DEFAULT 0 NOT NULL,
+    issuer_uuid character varying,
+    recipient_uuid character varying,
+    recipient_address_id bigint,
+    topic_id bigint,
+    creator_id bigint,
+    subject character varying,
+    number character varying,
+    document_date date,
+    service_start date,
+    service_end date,
+    your_ref character varying,
+    our_ref character varying,
+    shown_identifier_ids integer[] DEFAULT '{}'::integer[],
+    theme character varying DEFAULT 'din5008_b'::character varying,
+    deleted_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.invoices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.invoices_id_seq OWNED BY public.invoices.id;
 
 
 --
@@ -2564,6 +2610,13 @@ ALTER TABLE ONLY public.invoice_lines ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: invoices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoices ALTER COLUMN id SET DEFAULT nextval('public.invoices_id_seq'::regclass);
+
+
+--
 -- Name: ki_templates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3032,6 +3085,14 @@ ALTER TABLE ONLY public.inbox_items
 
 ALTER TABLE ONLY public.invoice_lines
     ADD CONSTRAINT invoice_lines_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: invoices invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT invoices_pkey PRIMARY KEY (id);
 
 
 --
@@ -3813,17 +3874,17 @@ CREATE UNIQUE INDEX index_ct_on_comm_and_topic ON public.communication_topics US
 
 
 --
--- Name: index_document_artifacts_on_document_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_document_artifacts_on_printable_type_and_printable_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_document_artifacts_on_document_id ON public.document_artifacts USING btree (document_id);
+CREATE INDEX index_document_artifacts_on_printable_type_and_printable_id ON public.document_artifacts USING btree (printable_type, printable_id);
 
 
 --
--- Name: index_document_fields_on_document_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_document_fields_on_fieldable_type_and_fieldable_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_document_fields_on_document_id ON public.document_fields USING btree (document_id);
+CREATE INDEX index_document_fields_on_fieldable_type_and_fieldable_id ON public.document_fields USING btree (fieldable_type, fieldable_id);
 
 
 --
@@ -3960,10 +4021,38 @@ CREATE INDEX index_inbox_items_on_status ON public.inbox_items USING btree (stat
 
 
 --
--- Name: index_invoice_lines_on_document_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_invoice_lines_on_invoice_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_invoice_lines_on_document_id ON public.invoice_lines USING btree (document_id);
+CREATE INDEX index_invoice_lines_on_invoice_id ON public.invoice_lines USING btree (invoice_id);
+
+
+--
+-- Name: index_invoices_on_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_invoices_on_deleted_at ON public.invoices USING btree (deleted_at);
+
+
+--
+-- Name: index_invoices_on_issuer_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_invoices_on_issuer_uuid ON public.invoices USING btree (issuer_uuid);
+
+
+--
+-- Name: index_invoices_on_recipient_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_invoices_on_recipient_uuid ON public.invoices USING btree (recipient_uuid);
+
+
+--
+-- Name: index_invoices_on_topic_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_invoices_on_topic_id ON public.invoices USING btree (topic_id);
 
 
 --
@@ -5033,14 +5122,6 @@ ALTER TABLE ONLY public.tasks
 
 
 --
--- Name: document_artifacts fk_rails_0c4b35beeb; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_artifacts
-    ADD CONSTRAINT fk_rails_0c4b35beeb FOREIGN KEY (document_id) REFERENCES public.documents(id);
-
-
---
 -- Name: awaitings fk_rails_10022d3f6e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5321,14 +5402,6 @@ ALTER TABLE ONLY public.knowledge_item_topics
 
 
 --
--- Name: document_fields fk_rails_6dd107ce03; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_fields
-    ADD CONSTRAINT fk_rails_6dd107ce03 FOREIGN KEY (document_id) REFERENCES public.documents(id);
-
-
---
 -- Name: wikilink_research_jobs fk_rails_7655bf4370; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5425,6 +5498,14 @@ ALTER TABLE ONLY public.time_entries
 
 
 --
+-- Name: invoice_lines fk_rails_93b334df88; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoice_lines
+    ADD CONSTRAINT fk_rails_93b334df88 FOREIGN KEY (invoice_id) REFERENCES public.invoices(id);
+
+
+--
 -- Name: time_segments fk_rails_971b5eb1d0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5478,6 +5559,14 @@ ALTER TABLE ONLY public.comment_reads
 
 ALTER TABLE ONLY public.communication_topics
     ADD CONSTRAINT fk_rails_a6e8721029 FOREIGN KEY (topic_id) REFERENCES public.topics(id);
+
+
+--
+-- Name: invoices fk_rails_a830fd4738; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT fk_rails_a830fd4738 FOREIGN KEY (creator_id) REFERENCES public.actors(id);
 
 
 --
@@ -5545,11 +5634,11 @@ ALTER TABLE ONLY public.time_entries
 
 
 --
--- Name: invoice_lines fk_rails_ce99ddfc5f; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoices fk_rails_cd50dd9d87; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invoice_lines
-    ADD CONSTRAINT fk_rails_ce99ddfc5f FOREIGN KEY (document_id) REFERENCES public.documents(id);
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT fk_rails_cd50dd9d87 FOREIGN KEY (topic_id) REFERENCES public.topics(id);
 
 
 --
@@ -5558,6 +5647,14 @@ ALTER TABLE ONLY public.invoice_lines
 
 ALTER TABLE ONLY public.source_topics
     ADD CONSTRAINT fk_rails_cec8862d72 FOREIGN KEY (topic_id) REFERENCES public.topics(id);
+
+
+--
+-- Name: invoices fk_rails_d5aa10cd23; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT fk_rails_d5aa10cd23 FOREIGN KEY (recipient_address_id) REFERENCES public.postal_addresses(id);
 
 
 --
@@ -5703,6 +5800,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260709100000'),
 ('20260706063810'),
 ('20260705204851'),
 ('20260702170000'),

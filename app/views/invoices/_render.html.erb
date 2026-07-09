@@ -1,0 +1,82 @@
+<%# #532/#541/#926: datengetriebener Render einer Rechnung / eines Angebots
+    auf der DIN-5008-Geometrie (Form B) — über dasselbe DIN-Gerüst
+    (printables/din_page) wie das Anschreiben. Positionen + Summen +
+    Steueraufschlüsselung aus den invoice_lines. %>
+<% invoice = local_assigns.fetch(:invoice) %>
+<%# #541 (Hans, 2026-06-09): alle Rechnungsangaben sammeln sich im Infoblock
+    (keine Doppelung mehr unter der Überschrift). Reihenfolge: Rechnungs-
+    nummer zuoberst … Datum zuunterst. §14 UStG schreibt nur den INHALT vor,
+    nicht die Position; DIN-5008-Konvention ist der Infoblock. %>
+<% rows = [] %>
+<% rows << [t("documents.render.invoice_number"), invoice.number] if invoice.number.present? %>
+<% rows << [t("documents.render.your_ref"), invoice.your_ref] if invoice.your_ref.present? %>
+<% rows << [t("documents.render.our_ref"),  invoice.our_ref]  if invoice.our_ref.present? %>
+<% invoice.issuer_tax_ids.each { |label, value| rows << [label, value] } %>
+<% if invoice.service_start %>
+  <% rows << [t("documents.render.service_period"), "#{l(invoice.service_start, format: :long)}#{" – #{l(invoice.service_end, format: :long)}" if invoice.service_end}"] %>
+<% end %>
+<% rows << [t("documents.render.project"), invoice.topic.name] if invoice.topic %>
+<%# #532: freie Key-Value-Felder + ausgewählte Empfänger-IDs. %>
+<% invoice.info_fields.each { |label, value| rows << [label, value] } %>
+<%# Datum: bei Rechnungen zuunterst. %>
+<% rows << [t("documents.render.date"), (l(invoice.document_date, format: :long) if invoice.document_date)] %>
+<%= render layout: "printables/din_page", locals: { printable: invoice, info_rows: rows } do %>
+  <div class="doc">
+    <h1><%= invoice.angebot? ? t("documents.render.heading_offer") : t("documents.render.heading_invoice") %></h1>
+    <% if invoice.subject.present? %><p><strong><%= invoice.subject %></strong></p><% end %>
+
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th><%= t("documents.render.col_position") %></th>
+          <th class="num"><%= t("documents.render.col_quantity") %></th>
+          <th class="num"><%= t("documents.render.col_unit_price") %></th>
+          <th class="num"><%= t("documents.render.col_amount") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% invoice.invoice_lines.each do |line| %>
+          <tr>
+            <td><%= line.description %></td>
+            <td class="num"><%= number_with_precision(line.quantity, precision: (line.quantity.to_i == line.quantity ? 0 : 1), strip_insignificant_zeros: true) %><%= " #{line.unit}" if line.unit.present? %></td>
+            <td class="num"><%= document_euro(line.unit_price) %></td>
+            <td class="num"><%= document_euro(line.net) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="doc-totals">
+      <div class="row"><span><%= t("documents.render.net_total") %></span><span><%= document_euro(invoice.net_total) %></span></div>
+      <% invoice.tax_breakdown.each do |g| %>
+        <div class="row"><span><%= t("documents.render.plus_vat", rate: number_with_precision(g[:rate], precision: (g[:rate].to_i == g[:rate] ? 0 : 1), strip_insignificant_zeros: true)) %></span><span><%= document_euro(g[:tax]) %></span></div>
+      <% end %>
+      <div class="row grand"><span><%= t("documents.render.gross_total") %></span><span><%= document_euro(invoice.gross_total) %></span></div>
+    </div>
+
+    <% if invoice.vat_exempt? %>
+      <p style="margin-top:4mm; font-size:9pt; color:#374151;">
+        <%= t("documents.render.vat_exempt_note") %>
+      </p>
+    <% end %>
+
+    <%# #541: Zahlungsangaben — Frist + Bankverbindung (IBAN/BIC). %>
+    <p style="margin-top:10mm; font-size:9pt; color:#4b5563;">
+      <%= t("documents.render.payment_terms") %><%= t("documents.render.payment_to_account") if invoice.issuer_iban %><%= t("documents.render.payment_thanks") %>
+    </p>
+    <% if invoice.issuer_iban %>
+      <p style="margin-top:2mm; font-size:9pt; color:#374151;">
+        <%= t("documents.render.bank_details_iban", iban: invoice.issuer_iban) %><%= t("documents.render.bank_details_bic", bic: invoice.issuer_bic) if invoice.issuer_bic %>
+      </p>
+      <%# #625 (Hans): GiroCode — Kunde scannt mit der Banking-App und
+          zahlt direkt (IBAN + Betrag + Rechnungsnummer sind kodiert). %>
+      <% if (giro = document_giro_code_svg(invoice)) %>
+        <%# #625 R2 (Hans): mehr Abstand zwischen QR und Text (war gequetscht). %>
+        <div style="margin-top:4mm; display:flex; align-items:center; gap:7mm;">
+          <div style="width:26mm; height:26mm; flex:none;"><%= giro %></div>
+          <div style="font-size:8pt; color:#6b7280; line-height:1.4;"><%= t("documents.render.giro_scan_html") %></div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

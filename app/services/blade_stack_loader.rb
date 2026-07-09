@@ -37,6 +37,7 @@ class BladeStackLoader
       when :awaiting      then { awaiting: record }
       when :communication then { communication: record }
       when :document      then { document: record }
+      when :invoice       then { invoice: record }   # #926
       when :invoice_line  then { line: record }
       when :tree_focus    then { entry: record, focus: record }
       when :list          then {}  # Liste laedt ihre Daten selbst
@@ -112,7 +113,8 @@ class BladeStackLoader
     awaiting:      "awaitings/blade_card",
     communication: "communications/blade_card",
     document:      "documents/blade_card",
-    invoice_line:  "documents/invoice_line_blade_card",  # #541
+    invoice:       "invoices/blade_card",                 # #926
+    invoice_line:  "invoices/invoice_line_blade_card",    # #541/#926
     tree_focus:    "tree_focus/blade",                    # #592 Z2
     settings_page: "settings/blades/card",                # #613
     settings_sub:  "settings/blades/sub_card",            # #613 Stufe 2
@@ -131,6 +133,7 @@ class BladeStackLoader
     "history"        => "history/list_blade_card",
     "time_entries"   => "time_entries/list_blade_card",  # #533 #5
     "documents"      => "documents/list_blade_card",      # #532
+    "invoices"       => "invoices/list_blade_card",       # #926
     # Page-spezifische Listen-Blades — auf der jeweiligen Index-Seite
     # speziell behandelt (eigenes _index_list_blade-Partial inline).
     # Werden ueblicherweise nicht von Sidebar/Plus geladen, aber der
@@ -166,6 +169,7 @@ class BladeStackLoader
     "awaiting"      => :awaiting,
     "communication" => :communication,
     "document"      => :document,
+    "invoice"       => :invoice,       # #926
     "invoiceline"   => :invoice_line,
     "settings"      => :settings_page,  # #613: Einstellungs-Seiten-Blade
     "settingssub"   => :settings_sub,    # #613 Stufe 2: Unterseiten-Blade
@@ -180,7 +184,7 @@ class BladeStackLoader
     tokens = stack_param.to_s.split(",").map(&:strip).reject(&:blank?)
     return [] if tokens.empty?
 
-    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], list: [] }
+    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], list: [] }
     classified = tokens.map do |t|
       kind, id, meta =
         if t.start_with?("list:topic:")
@@ -246,7 +250,8 @@ class BladeStackLoader
       awaiting:      by_kind[:awaiting].any?      ? Awaiting.visible_to(actor).where(id: by_kind[:awaiting]).index_by { |r| r.id.to_s }       : {},
       communication: by_kind[:communication].any? ? Communication.visible_to(actor).where(id: by_kind[:communication]).index_by { |r| r.id.to_s } : {},
       document:      by_kind[:document].any?      ? Document.visible_to(actor).where(id: by_kind[:document]).index_by { |r| r.id.to_s }       : {},
-      invoice_line:  by_kind[:invoice_line].any?  ? InvoiceLine.where(id: by_kind[:invoice_line], document_id: Document.visible_to(actor).select(:id)).index_by { |r| r.id.to_s } : {},
+      invoice:       by_kind[:invoice].any?       ? Invoice.visible_to(actor).where(id: by_kind[:invoice]).index_by { |r| r.id.to_s }         : {},
+      invoice_line:  by_kind[:invoice_line].any?  ? InvoiceLine.where(id: by_kind[:invoice_line], invoice_id: Invoice.visible_to(actor).select(:id)).index_by { |r| r.id.to_s } : {},
       tree_focus:    by_kind[:tree_focus].any?    ? WorkNode.visible_to(actor).where(id: by_kind[:tree_focus]).index_by { |r| r.id.to_s }      : {},
       inbox_item:    by_kind[:inbox_item].any?    ? InboxItem.visible_to(actor).where(id: by_kind[:inbox_item]).index_by { |r| r.id.to_s }     : {}
     }

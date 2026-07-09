@@ -1,0 +1,33 @@
+<%# #532: nach Setzen/Lösen einer Verknüpfung den passenden Chip ersetzen. %>
+<% record = case @field
+             when "issuer"    then @invoice.issuer
+             when "recipient" then @invoice.recipient
+             when "topic"     then @invoice.topic
+             end %>
+<%= turbo_stream.replace "invoice_#{@field}_chip_#{@invoice.id}" do %>
+  <%= render "printables/link_chip", printable: @invoice, field: @field, record: record %>
+<% end %>
+
+<%# #552 (Hans): Aussteller/Empfänger bestimmen die wählbaren Infoblock-IDs —
+    bei deren Wechsel die Kandidatenliste frisch nachladen. %>
+<% if %w[issuer recipient].include?(@field) %>
+  <%= turbo_stream.replace "invoice_id_candidates_#{@invoice.id}" do %>
+    <%= render "printables/id_candidates", printable: @invoice %>
+  <% end %>
+<% end %>
+
+<%# #541 (Hans): die USt-Befreiung hängt am Aussteller — wechselt er, das
+    Positionen-/Summen-Feld live neu rendern (MwSt zeigen/verbergen). %>
+<% if @field == "issuer" %>
+  <%= turbo_stream.replace "invoice_invoice_lines_#{@invoice.id}" do %>
+    <%= render "invoices/invoice_lines", invoice: @invoice %>
+  <% end %>
+  <%# #541/#559: Aussteller-Wechsel kann die (Aussteller-spezifische) Rechnungs-
+      nummer + die Infoblock-Felder (Steuer-/USt-IDs) ändern → beide neu rendern. %>
+  <%= turbo_stream.replace "invoice_fields_#{@invoice.id}" do %>
+    <%= render "invoices/fields", invoice: @invoice %>
+  <% end %>
+  <%= turbo_stream.replace "invoice_infofields_#{@invoice.id}" do %>
+    <%= render "printables/infofields", printable: @invoice %>
+  <% end %>
+<% end %>

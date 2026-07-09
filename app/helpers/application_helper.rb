@@ -120,6 +120,7 @@ module ApplicationHelper
     "times"          => "shared.sidebar.times",
     "calendar"       => "shared.sidebar.calendar",
     "documents"      => "shared.sidebar.documents",
+    "invoices"       => "shared.sidebar.invoices",
     "sources"        => "shared.sidebar.sources",
     "docs"           => "shared.sidebar.docs",
     "tags"           => "shared.sidebar.tags"
@@ -153,6 +154,7 @@ module ApplicationHelper
     "times"          => "timer",
     "calendar"       => "calendar",
     "documents"      => "file_text",
+    "invoices"       => "banknote",
     "sources"        => "quote",
     "docs"           => "manual",
     "tags"           => "tag"
@@ -203,6 +205,8 @@ module ApplicationHelper
       sidebar_link sidebar_item_label(id), calendar_path, ic, blade_kind: "list", blade_id: "calendar"
     when "documents"
       sidebar_link sidebar_item_label(id), documents_path, ic, blade_kind: "list", blade_id: "documents"
+    when "invoices"
+      sidebar_link sidebar_item_label(id), invoices_path, ic, blade_kind: "list", blade_id: "invoices"
     when "sources"
       sidebar_link sidebar_item_label(id), sources_path, ic, blade_kind: "list", blade_id: "sources"
     when "docs"

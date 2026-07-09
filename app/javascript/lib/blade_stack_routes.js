@@ -83,10 +83,15 @@ const ROUTES = [
   { kind: "document", prefix: "document:",
     stackId: id => `document:${id}`,
     url: rest => `/documents/${encodeURIComponent(rest)}/card` },
-  // #541: Rechnungsposition.
+  // #541: Rechnungsposition. VOR "invoice:", damit der längere Prefix
+  // zuerst matcht.
   { kind: "invoice_line", prefix: "invoiceline:",
     stackId: id => `invoiceline:${id}`,
     url: rest => `/invoice_lines/${encodeURIComponent(rest)}/card` },
+  // #926: Rechnung/Angebot als eigene Entität.
+  { kind: "invoice", prefix: "invoice:",
+    stackId: id => `invoice:${id}`,
+    url: rest => `/invoices/${encodeURIComponent(rest)}/card` },
   // #280: KnowledgeItem — nackte UUID, KEIN Prefix. Muss letzter Eintrag
   // sein (matcht alles); URL kommt aus cardUrlTemplate (Seiten können sie
   // überschreiben) bzw. dessen #563-Default.

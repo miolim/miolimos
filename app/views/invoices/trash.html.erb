@@ -1,0 +1,36 @@
+<%# #787 (Hans): Papierkorb — gelöschte Rechnungen, wiederherstellbar.
+    Analog zu documents/trash. %>
+<% content_for :title, t("invoices.trash.title") %>
+
+<div class="space-y-3">
+  <div class="bg-white rounded border border-slate-200 px-3 py-2 flex items-center gap-3 text-sm">
+    <span class="font-semibold"><%= t("invoices.trash.title") %></span>
+    <span class="text-xs text-slate-500"><%= @discarded.size %></span>
+    <%= link_to t("invoices.trash.back"), invoices_path, class: "ml-auto text-xs text-slate-500 hover:text-slate-900" %>
+  </div>
+
+  <% if @discarded.empty? %>
+    <div class="bg-white rounded border border-slate-200 px-4 py-6 text-center text-slate-500">
+      <%= t("documents.trash.empty") %>
+    </div>
+  <% else %>
+    <ul class="bg-white rounded border border-slate-200 divide-y divide-slate-100">
+      <% @discarded.each do |invoice| %>
+        <li class="flex items-center gap-2 px-3 py-2 text-sm">
+          <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+            <%= InvoicesController::KIND_LABELS[invoice.kind] %>
+          </span>
+          <span class="flex-1 min-w-0 truncate text-slate-700">
+            <%= invoice.display_name.presence || "—" %>
+          </span>
+          <span class="text-xs text-slate-400 shrink-0">
+            <%= t("documents.trash.deleted_ago", ago: time_ago_in_words(invoice.deleted_at)) %>
+          </span>
+          <%= button_to t("documents.trash.restore"), restore_invoice_path(invoice), method: :post,
+                form: { class: "inline m-0 p-0", data: { turbo: false } },
+                class: "text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer bg-transparent border-0" %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

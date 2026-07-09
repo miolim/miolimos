@@ -1,4 +1,4 @@
 <%# #532: nach dem Festschreiben die Ständeliste neu rendern. %>
 <%= turbo_stream.replace "document_artifacts_#{@document.id}" do %>
-  <%= render "documents/artifacts", document: @document %>
+  <%= render "printables/artifacts", printable: @document %>
 <% end %>

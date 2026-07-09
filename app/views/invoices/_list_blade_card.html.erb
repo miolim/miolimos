@@ -1,0 +1,139 @@
+<%# #926: Listen-Blade aller Rechnungen/Angebote. Self-contained — lädt die
+    Liste selbst (auch bei Cross-Page-Stack-Restore). Stable-ID: list:invoices.
+    Zweizeilige Einträge: Typ + Benennung / Absender | Empfänger.
+    Filter (Typ/Absender/Empfänger) per GET-Reload; Suchschlitz instant. %>
+<%
+  stack_id = "list:invoices"
+  labels   = InvoicesController::KIND_LABELS
+  invoices = Invoice.visible_to(Current.actor).includes(:issuer, :recipient).recent
+  invoices = invoices.where(kind: params[:kind]) if Invoice.kinds.key?(params[:kind].to_s)
+  if params[:f_issuer].present?
+    invoices = invoices.where(issuer_uuid: KnowledgeItem.by_title_ci(params[:f_issuer]).first&.uuid)
+  end
+  if params[:f_recipient].present?
+    invoices = invoices.where(recipient_uuid: KnowledgeItem.by_title_ci(params[:f_recipient]).first&.uuid)
+  end
+  invoices = invoices.limit(300).to_a
+  active_filter = params[:kind].present? || params[:f_issuer].present? || params[:f_recipient].present?
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/list_blade_spine",
+        title: t("invoices.list.title"),
+        icon_html: icon("file_text"),
+        stack_id: stack_id,
+        label: t("invoices.list.title") %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2" data-controller="list-search">
+    <%# #558: Filter (GET) rendert die Liste IN-PLACE in diesem Frame neu. %>
+    <turbo-frame id="invoices_list_frame" class="contents">
+    <div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex items-center gap-2">
+      <span class="text-slate-500"><%= icon "file_text" %></span>
+      <span class="font-semibold text-sm"><%= t("invoices.list.title") %></span>
+      <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= invoices.size %></span>
+      <div class="flex-1 min-w-0">
+        <%= render "shared/list_search", placeholder: t("invoices.list.search_placeholder") %>
+      </div>
+
+      <%# Filter-Popover: Typ / Absender / Empfänger (GET-Reload). %>
+      <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
+        <button type="button" data-action="click->popover#toggle"
+                title="<%= t("documents.list.filter") %>" aria-label="<%= t("documents.list.filter") %>"
+                class="p-1 rounded shrink-0 <%= active_filter ? 'text-emerald-600' : 'text-slate-500' %> hover:bg-slate-100">
+          <%= icon "filter" %>
+        </button>
+        <div data-popover-target="content"
+             class="hidden absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg p-3 w-64">
+          <%= form_with url: list_card_invoices_path, method: :get, data: { turbo_frame: "invoices_list_frame" }, class: "space-y-2 text-xs" do %>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-slate-500"><%= t("documents.list.filter_kind") %></span>
+              <select name="kind" class="border border-slate-200 rounded px-2 py-1 bg-white">
+                <option value=""><%= t("documents.list.filter_all") %></option>
+                <% labels.each do |k, lbl| %>
+                  <option value="<%= k %>" <%= 'selected' if params[:kind] == k %>><%= lbl %></option>
+                <% end %>
+              </select>
+            </label>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-slate-500"><%= t("documents.list.filter_issuer") %></span>
+              <input type="text" name="f_issuer" value="<%= params[:f_issuer] %>" list="invoice-filter-issuers"
+                     class="border border-slate-200 rounded px-2 py-1 bg-white">
+            </label>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-slate-500"><%= t("documents.list.filter_recipient") %></span>
+              <input type="text" name="f_recipient" value="<%= params[:f_recipient] %>" list="invoice-filter-recipients"
+                     class="border border-slate-200 rounded px-2 py-1 bg-white">
+            </label>
+            <div class="flex gap-2 pt-1">
+              <button type="submit" class="px-2 py-1 rounded bg-emerald-600 text-white"><%= t("documents.list.filter") %></button>
+              <%= link_to t("documents.list.reset"), list_card_invoices_path,
+                    data: { turbo_frame: "invoices_list_frame" }, class: "px-2 py-1 rounded border border-slate-200 text-slate-600" %>
+            </div>
+          <% end %>
+          <datalist id="invoice-filter-issuers">
+            <% KnowledgeItem.issuers.order(Arel.sql("LOWER(title)")).pluck(:title).each do |t| %><option value="<%= t %>"></option><% end %>
+          </datalist>
+          <datalist id="invoice-filter-recipients">
+            <% KnowledgeItem.persons_and_orgs.order(Arel.sql("LOWER(title)")).limit(300).pluck(:title).each do |t| %><option value="<%= t %>"></option><% end %>
+          </datalist>
+        </div>
+      </div>
+
+      <%# #787: Papierkorb — gelöschte Rechnungen einsehen/wiederherstellen. %>
+      <%= link_to trash_invoices_path, data: { turbo_frame: "_top" },
+            title: t("invoices.trash.title"), "aria-label": t("invoices.trash.title"),
+            class: "p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 shrink-0 [&_svg]:w-4 [&_svg]:h-4" do %>
+        <%= icon "trash" %>
+      <% end %>
+
+      <%# Neue Rechnung / neues Angebot: Vordialog zur Typwahl. %>
+      <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
+        <button type="button" data-action="click->popover#toggle"
+                title="<%= t("invoices.list.new_invoice") %>" aria-label="<%= t("invoices.list.new_invoice") %>"
+                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 shrink-0 [&_svg]:w-4 [&_svg]:h-4">
+          <%# #703 (Hans): einheitliches circle-plus-Icon. %>
+          <%= icon "plus_circle" %></button>
+        <div data-popover-target="content"
+             class="hidden absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-52">
+          <div class="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-400"><%= t("invoices.list.new_invoice") %></div>
+          <% labels.each do |k, lbl| %>
+            <%# #871 (Hans): Turbo aktiv lassen — die create-Antwort hängt das
+                neue Blade als turbo_stream an den AKTUELLEN Stack an. %>
+            <%= button_to invoices_path(kind: k), method: :post,
+                  form: { class: "block" },
+                  class: "w-full text-left flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
+              <span class="w-5 flex justify-center text-slate-500"><%= icon "file_text" %></span><%= lbl %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <% if invoices.empty? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= active_filter ? t("invoices.list.empty_filtered") : t("invoices.list.empty") %></p>
+    <% else %>
+      <ul class="divide-y divide-slate-100 text-[13px]">
+        <% invoices.each do |invoice| %>
+          <li id="invoice_row_<%= invoice.id %>" class="group py-1.5 px-1 hover:bg-slate-50 cursor-pointer"
+              data-controller="blade-link" data-blade-link-kind-value="invoice"
+              data-blade-link-id-value="<%= invoice.id %>" data-action="click->blade-link#append">
+            <div class="flex items-center gap-2">
+              <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
+              <span class="font-medium text-slate-800 truncate"><%= invoice.display_name || t("documents.list.unnamed") %></span>
+              <% if invoice.entwurf? %><span class="ml-auto shrink-0 text-[10px] text-amber-600"><%= t("documents.list.draft") %></span><% end %>
+            </div>
+            <div class="text-xs text-slate-500 truncate mt-0.5">
+              <% if invoice.document_date %><span class="text-slate-600 tabular-nums"><%= l(invoice.document_date, format: :default) %></span> <span class="text-slate-300">·</span> <% end %><%= invoice.issuer&.title || "—" %> <span class="text-slate-300">|</span> <%= invoice.recipient&.title || "—" %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+      <p data-list-search-target="empty" class="hidden text-xs text-slate-400 italic py-2"><%= t("documents.list.no_matches") %></p>
+    <% end %>
+    </turbo-frame>
+  </div>
+</article>

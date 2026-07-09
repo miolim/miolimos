@@ -5,7 +5,7 @@ module Portal
     # Startseite: Projektname, Stand, zuletzt aktualisiert.
     def home
       @milestones = project_milestones.to_a
-      @artifacts  = shared_artifacts.includes(document: :topic).limit(5).to_a
+      @artifacts  = shared_artifacts.includes(:printable).limit(5).to_a
       @messages   = portal_messages.last(3)
       # „Zuletzt aktualisiert": jüngstes Ereignis über alle geteilten Inhalte.
       @updated_at = [
@@ -26,7 +26,7 @@ module Portal
     end
 
     def dokumente
-      @artifacts = shared_artifacts.includes(document: :topic).to_a
+      @artifacts = shared_artifacts.includes(:printable).to_a
     end
 
     # PDF eines freigegebenen Artefakts — strikt über shared_artifacts
@@ -35,7 +35,7 @@ module Portal
       artifact = shared_artifacts.find(params[:id])
       send_data artifact.pdf, type: "application/pdf",
         disposition: "inline",
-        filename: "#{artifact.document.display_name.presence || "dokument"}-#{artifact.id}.pdf"
+        filename: "#{artifact.printable.display_name.presence || "dokument"}-#{artifact.id}.pdf"
     end
 
     def nachrichten

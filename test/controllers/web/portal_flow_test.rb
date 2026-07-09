@@ -24,7 +24,7 @@ class PortalFlowTest < ActionDispatch::IntegrationTest
     # Draft-Zustand (z.B. Agent-Entwurf) explizit erzwingen.
     @ms_draft.update_column(:published_at, nil)
 
-    doc_a = Document.create!(kind: :rechnung, status: :final, topic_id: @projekt_a.id)
+    doc_a = Invoice.create!(kind: :rechnung, status: :final, topic_id: @projekt_a.id)
     @art_shared   = doc_a.document_artifacts.create!(pdf: "%PDF-shared", creator: @hans, shared_with_client: true)
     @art_unshared = doc_a.document_artifacts.create!(pdf: "%PDF-internal", creator: @hans)
 

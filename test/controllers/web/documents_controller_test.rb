@@ -1,8 +1,7 @@
 require "test_helper"
 
-# #532 Phase 2 (Hans, 2026-06-07): Theme-Werkbank — der Briefkopf wird aus
-# dem gewählten Aussteller-KI (issuer) gespeist; ohne Aussteller steht ein
-# Platzhalter. Deckt das Stammdaten→Dokument-Mapping ab.
+# #532 Phase 2 (Hans, 2026-06-07) / #926: das Anschreiben (Brief/NDA/SEPA-
+# Mandat). Rechnungs-Strecken leben seit #926 in invoices_controller_test.
 class DocumentsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @hans = HumanActor.create!(
@@ -141,25 +140,19 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_includes b, "Firma GmbH"                  # Aussteller im Briefkopf
   end
 
-  test "show rendert eine Rechnung mit Positionen + Steueraufschlüsselung" do
-    iss = FileProxy.create(actor: @hans, title: "Firma GmbH", item_type: :organization, content: "")
-    FileProxy.update(actor: @hans, knowledge_item: iss, issuer: true)
-    iss.identifiers.create!(label: "USt-IdNr", value: "DE123", position: 0)
-    rec = FileProxy.create(actor: @hans, title: "Kunde AG", item_type: :organization, content: "")
-    doc = Document.create!(kind: :rechnung, issuer_uuid: iss.uuid, recipient_uuid: rec.uuid,
-                           number: "2026-0001", document_date: Date.new(2026, 6, 8))
-    doc.invoice_lines.create!(description: "Beratung", quantity: 10, unit: "h", unit_price: 100, tax_rate: 19)
-    doc.invoice_lines.create!(description: "Buch", quantity: 1, unit_price: 50, tax_rate: 7)
+  # #926 Stufe 2: {{key}}-Merge — Platzhalter im Body-KI werden aus dem
+  # Merge-Kontext (feste Felder + Infoblock-Felder) gefüllt; unaufgelöste
+  # bleiben sichtbar stehen.
+  test "show füllt {{key}}-Platzhalter aus Feldern; unaufgelöste bleiben sichtbar" do
+    body = FileProxy.create(actor: @hans, title: "Vertragstext",
+                            item_type: :note, content: "Die Kaltmiete beträgt {{Kaltmiete}}. Kaution: {{kaution}}.")
+    doc  = Document.create!(kind: :brief, body_ki_uuid: body.uuid, subject: "Mietvertrag")
+    doc.document_fields.create!(label: "Kaltmiete", value: "850,00 €", position: 0)
 
     get "/documents/#{doc.id}"
     assert_response :success
-    b = @response.body
-    assert_includes b, "Rechnung"
-    assert_includes b, "Beratung"
-    assert_includes b, "2026-0001"
-    assert_includes b, "Nettobetrag"
-    assert_includes b, "Gesamtbetrag"
-    assert_includes b, "Kunde AG"
+    assert_includes @response.body, "Die Kaltmiete beträgt 850,00 €."
+    assert_includes @response.body, "{{kaution}}"   # unaufgelöst → sichtbar, nicht verschluckt
   end
 
   # #532 (2026-06-08): Liste/Detail/Anlegen — die Editor-Oberfläche.
@@ -195,22 +188,16 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to documents_path(stack: "list:documents,document:#{doc.id}")
   end
 
-  test "create lehnt noch nicht anlegbare Typen ab" do
+  # #926: Rechnung/Angebot sind KEINE Document-Kinds mehr → abgelehnt.
+  test "create lehnt Rechnungs-Kinds ab (leben in /invoices)" do
     assert_no_difference -> { Document.count } do
+      post "/documents", params: { kind: "rechnung" }
       post "/documents", params: { kind: "angebot" }
     end
     assert_redirected_to documents_path
   end
 
-  # #541: Rechnung ist jetzt anlegbar.
-  test "create legt eine Rechnung an" do
-    assert_difference -> { Document.count }, 1 do
-      post "/documents", params: { kind: "rechnung" }
-    end
-    assert_equal "rechnung", Document.order(:id).last.kind
-  end
-
-  # #562: NDA ist jetzt anlegbar.
+  # #562: NDA ist anlegbar.
   test "create legt eine NDA an" do
     assert_difference -> { Document.count }, 1 do
       post "/documents", params: { kind: "nda" }
@@ -218,15 +205,12 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "nda", Document.order(:id).last.kind
   end
 
-  # #786: SEPA-Lastschriftmandat ist anlegbar und ist ein Prosa-Dokument.
-  test "create legt ein SEPA-Lastschriftmandat an (Prosa)" do
+  # #786: SEPA-Lastschriftmandat ist anlegbar.
+  test "create legt ein SEPA-Lastschriftmandat an" do
     assert_difference -> { Document.count }, 1 do
       post "/documents", params: { kind: "lastschrift" }
     end
-    doc = Document.order(:id).last
-    assert_equal "lastschrift", doc.kind
-    assert doc.prose?, "Lastschriftmandat muss ein Prosa-Body-Dokument sein"
-    refute doc.invoice?
+    assert_equal "lastschrift", Document.order(:id).last.kind
   end
 
   # #786: create_body_ki zieht den Vorlagentext aus der Daten-Vorlage
@@ -339,64 +323,6 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "A-99",  doc.document_fields.first.value
   end
 
-  # #541: Rechnungspositionen upserten — Komma-Dezimal, Summen, Replace, Lock.
-  test "invoice_lines: Positionen mit Komma-Dezimal, Summen, Upsert, Sperre" do
-    doc = Document.create!(kind: :rechnung, status: :entwurf)
-    patch "/documents/#{doc.id}/invoice_lines", params: {
-      lines: [
-        { description: "Beratung", quantity: "2,5", unit: "Std", unit_price: "80,00", tax_rate: "19" },
-        { description: "Pauschale", quantity: "1", unit: "", unit_price: "100", tax_rate: "7" },
-        { description: "", quantity: "", unit: "", unit_price: "", tax_rate: "19" } # leer -> ignoriert
-      ]
-    }, headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_response :ok
-    doc.reload
-    assert_equal 2, doc.invoice_lines.count
-    l = doc.invoice_lines.ordered.first
-    assert_equal BigDecimal("2.5"), l.quantity
-    assert_equal BigDecimal("80"),  l.unit_price
-    assert_equal BigDecimal("200"), l.net          # 2,5 × 80
-    assert_equal BigDecimal("300"), doc.net_total  # 200 + 100
-
-    keep = doc.invoice_lines.ordered.first.id
-    patch "/documents/#{doc.id}/invoice_lines", params: {
-      lines: [{ id: keep, description: "Beratung", quantity: "3", unit: "Std", unit_price: "80", tax_rate: "19" }]
-    }
-    doc.reload
-    assert_equal 1, doc.invoice_lines.count
-    assert_equal keep, doc.invoice_lines.first.id  # id stabil
-    assert_equal BigDecimal("240"), doc.invoice_lines.first.net
-
-    # final sperrt das Editieren der Positionen
-    doc.update!(status: :final)
-    patch "/documents/#{doc.id}/invoice_lines", params: { lines: [] },
-          headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_response :forbidden
-    assert_equal 1, doc.reload.invoice_lines.count
-  end
-
-  # #541: USt-Befreiung am Aussteller -> keine Umsatzsteuer in den Summen.
-  test "vat_exempt Aussteller: keine USt, Brutto = Netto" do
-    iss = FileProxy.create(actor: @hans, title: "Kleinunternehmer", item_type: :organization, content: "")
-    iss.update_column(:vat_exempt, true)
-    doc = Document.create!(kind: :rechnung, status: :entwurf, issuer_uuid: iss.uuid)
-    doc.invoice_lines.create!(description: "Leistung", quantity: 1, unit_price: 100, tax_rate: 19, position: 0)
-    assert doc.vat_exempt?
-    assert_equal 0, doc.tax_total
-    assert_equal BigDecimal("100"), doc.gross_total
-    assert_empty doc.tax_breakdown
-  end
-
-  # #541: Rechnungsnummer + Leistungszeitraum (§14 UStG Pflichtfelder) speichern.
-  test "update speichert Rechnungsnummer + Leistungszeitraum" do
-    doc = Document.create!(kind: :rechnung)
-    patch "/documents/#{doc.id}", params: { number: "2026-001", service_start: "2026-05-01", service_end: "2026-05-31" }
-    doc.reload
-    assert_equal "2026-001", doc.number
-    assert_equal Date.new(2026, 5, 1),  doc.service_start
-    assert_equal Date.new(2026, 5, 31), doc.service_end
-  end
-
   # #541: USt-Befreiung am KI umschalten (DB-direkt).
   test "vat_exempt-Toggle setzt das KI-Flag" do
     ki = FileProxy.create(actor: @hans, title: "Firma X", item_type: :organization, content: "")
@@ -404,135 +330,6 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert ki.reload.vat_exempt?
     patch "/knowledge_items/#{ki.uuid}/vat_exempt", params: { vat_exempt: "0" }
     refute ki.reload.vat_exempt?
-  end
-
-  # #541: abrechenbare Projekt-Zeiten als Positionen übernehmen + Zuordnung.
-  test "import_time_entries: Projekt-Zeiten werden Positionen, keine Doppel-Abrechnung" do
-    topic = Topic.create!(name: "Projekt Z", creator: @hans)
-    doc = Document.create!(kind: :rechnung, status: :entwurf, topic_id: topic.id)
-    t1 = TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.local(2026, 5, 2, 9), minutes: 90, topic: topic, billable: true, note: "Konzept")
-    t2 = TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.local(2026, 5, 3, 9), minutes: 60, topic: topic, billable: true, note: "Umsetzung")
-    TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.local(2026, 5, 4, 9), minutes: 30, topic: topic, billable: false)  # nicht abrechenbar
-    assert_equal 2, TimeEntry.for_topic(topic).invoiceable.count
-
-    post "/documents/#{doc.id}/import_time_entries",
-         params: { rate: "80", time_entry_ids: [t1.id, t2.id] },
-         headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_response :ok
-    doc.reload
-    assert_equal 2, doc.invoice_lines.count
-    line1 = doc.invoice_lines.ordered.first
-    assert_equal "Konzept", line1.description
-    assert_equal BigDecimal("1.5"), line1.quantity
-    assert_equal BigDecimal("80"),  line1.unit_price
-    assert_equal BigDecimal("120"), line1.net           # 1,5 Std × 80
-    assert_equal line1.id, t1.reload.invoice_line_id
-    assert_equal 0, TimeEntry.for_topic(topic).invoiceable.count  # nichts mehr offen
-
-    # Position löschen (Upsert) gibt die Zeit wieder frei (dependent: :nullify)
-    keep = doc.invoice_lines.ordered.last.id
-    patch "/documents/#{doc.id}/invoice_lines", params: {
-      lines: [{ id: keep, description: "Umsetzung", quantity: "1", unit_price: "80", tax_rate: "19" }]
-    }
-    assert_nil t1.reload.invoice_line_id
-    assert_equal 1, TimeEntry.for_topic(topic).invoiceable.count
-  end
-
-  # #541: ZUGFeRD-Payload sammelt die EN16931-Daten korrekt (reines Ruby).
-  test "ZugferdGenerator.payload sammelt EN16931-Daten" do
-    iss = FileProxy.create(actor: @hans, title: "Aussteller GmbH", item_type: :organization, content: "")
-    iss.identifiers.create!(label: "USt-IdNr", value: "DE123456789", position: 0)
-    iss.identifiers.create!(label: "IBAN",     value: "DE89370400440532013000", position: 1)
-    rec = FileProxy.create(actor: @hans, title: "Kunde AG", item_type: :organization, content: "")
-    doc = Document.create!(kind: :rechnung, number: "2026-009", status: :entwurf,
-                           issuer_uuid: iss.uuid, recipient_uuid: rec.uuid, document_date: Date.new(2026, 6, 9))
-    doc.invoice_lines.create!(description: "Beratung", quantity: 2, unit: "Std", unit_price: 50, tax_rate: 19, position: 0)
-
-    p = ZugferdGenerator.payload(doc)
-    assert_equal "2026-009", p[:number]
-    assert_equal "2026-06-09", p[:issue_date]
-    assert_equal "DE123456789", p[:seller][:vat_id]
-    assert_equal "DE89370400440532013000", p[:iban]
-    assert_equal "Kunde AG", p[:buyer][:name]
-    assert_equal 1, p[:lines].size
-    assert_equal "HUR", p[:lines][0][:unit]   # "Std" -> HUR
-    assert_equal "100.00", p[:net_total]      # 2 × 50
-    assert_equal "119.00", p[:gross_total]    # +19%
-  end
-
-  # #541 Compliance: Aussteller-spezifische Auto-Nummer (beim Setzen des
-  # Ausstellers) + issuer_tax_ids/IBAN aus den IDs.
-  test "Rechnungsnummer wird je Aussteller vergeben; tax_ids + IBAN aus den IDs" do
-    iss = FileProxy.create(actor: @hans, title: "Meine GmbH", item_type: :organization, content: "")
-    FileProxy.update(actor: @hans, knowledge_item: iss, issuer: true)
-    iss.identifiers.create!(label: "USt-IdNr", value: "DE123456789", position: 0)
-    iss.identifiers.create!(label: "IBAN",     value: "DE89370400440532013000", position: 1)
-
-    post "/documents", params: { kind: "rechnung" }
-    doc = Document.order(:id).last
-    assert_nil doc.number   # noch kein Aussteller -> noch keine Nummer
-
-    post "/documents/#{doc.id}/link", params: { field: "issuer", value: iss.uuid },
-         headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    doc.reload
-    assert_equal "#{Date.current.year}-001", doc.number   # erste Nummer dieses Ausstellers
-    assert_equal [["USt-IdNr", "DE123456789"]], doc.issuer_tax_ids
-    assert_equal "DE89370400440532013000", doc.issuer_iban
-
-    # zweite Rechnung desselben Ausstellers -> -002
-    post "/documents", params: { kind: "rechnung" }
-    doc2 = Document.order(:id).last
-    post "/documents/#{doc2.id}/link", params: { field: "issuer", value: iss.uuid },
-         headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_equal "#{Date.current.year}-002", doc2.reload.number
-  end
-
-  # #541: Positions-Detail-Blade — leere Position + Zeit-Zuordnung (Menge = Stunden).
-  test "invoice_line Blade: Position anlegen, Zeit zuordnen/lösen, Menge aus Stunden" do
-    topic = Topic.create!(name: "Projekt P", creator: @hans)
-    doc = Document.create!(kind: :rechnung, status: :entwurf, topic_id: topic.id)
-
-    assert_difference -> { doc.invoice_lines.count }, 1 do
-      post "/documents/#{doc.id}/add_invoice_line", headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    end
-    line = doc.invoice_lines.ordered.last
-    patch "/invoice_lines/#{line.id}", params: { unit_price: "100", description: "Beratung" },
-          headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_equal BigDecimal("100"), line.reload.unit_price
-
-    te = TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.local(2026, 5, 2, 9), minutes: 90, topic: topic, billable: true)
-    post "/invoice_lines/#{line.id}/assign_time", params: { time_entry_id: te.id },
-         headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_response :success
-    assert_equal line.id, te.reload.invoice_line_id
-    assert_equal BigDecimal("1.5"), line.reload.quantity   # 90 min = 1,5 Std
-    assert_equal BigDecimal("150"), line.net               # 1,5 × 100
-    assert_equal 0, TimeEntry.for_topic(topic).invoiceable.count
-
-    get "/invoice_lines/#{line.id}/card"
-    assert_response :success
-    assert_includes @response.body, "stack_card_invoiceline:#{line.id}"
-
-    delete "/invoice_lines/#{line.id}/unassign_time", params: { time_entry_id: te.id },
-           headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_nil te.reload.invoice_line_id
-    assert_equal 1, TimeEntry.for_topic(topic).invoiceable.count
-
-    # final sperrt die Zuordnung
-    doc.update!(status: :final)
-    post "/invoice_lines/#{line.id}/assign_time", params: { time_entry_id: te.id },
-         headers: { "Accept" => "text/vnd.turbo-stream.html" }
-    assert_response :forbidden
-  end
-
-  # #541: Rechnung blendet Anrede/Text aus, zeigt die Rechnungsnummer.
-  test "card einer Rechnung: keine Anrede/Text, dafür Rechnungsnummer" do
-    doc = Document.create!(kind: :rechnung, subject: "Leistung Mai")
-    get "/documents/#{doc.id}/card"
-    assert_response :success
-    assert_includes @response.body, "Rechnungsnummer"
-    assert_includes @response.body, "Rechnungspositionen"
-    refute_includes @response.body, "Anrede"
   end
 
   test "select_identifiers: Aussteller-Nummer beim Empfänger ist Kandidat (Versichertennummer-Fall)" do
@@ -557,14 +354,6 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     # Nicht-Kandidat wird verworfen
     patch "/documents/#{doc.id}/select_identifiers", params: { identifier_ids: [999999] }
     assert_equal [], doc.reload.shown_identifier_ids
-  end
-
-  test "identifier_candidates umfasst auch Empfänger-Nummern bei mir (Kundennummer)" do
-    me  = FileProxy.create(actor: @hans, title: "Meine Firma", item_type: :organization, content: "")
-    kunde = FileProxy.create(actor: @hans, title: "Kunde AG", item_type: :organization, content: "")
-    kn  = kunde.identifiers.create!(label: "Kundennummer", value: "K-42", counterparty_uuid: me.uuid)
-    doc = Document.create!(kind: :rechnung, issuer_uuid: me.uuid, recipient_uuid: kunde.uuid)
-    assert_equal [kn.id], doc.identifier_candidates.map(&:id)
   end
 
   test "link akzeptiert nur uuids im erlaubten Scope" do
@@ -594,18 +383,14 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     refute_includes lines, "Werksstraße 1"
   end
 
-  # #623: Betreff-Feld zurück für Nicht-Rechnungen.
-  test "Brief-Card zeigt Betreff-Feld, Rechnung nicht (#623)" do
+  # #623: Betreff-Feld nur beim Brief.
+  test "Brief-Card zeigt Betreff-Feld, NDA nicht (#623)" do
     brief = Document.create!(kind: :brief, status: :entwurf, creator: @hans)
     get "/documents/#{brief.id}/card"
     assert_response :success
     assert_includes @response.body, "Betreff des Schreibens"
 
-    re = Document.create!(kind: :rechnung, status: :entwurf, creator: @hans)
-    get "/documents/#{re.id}/card"
-    refute_includes @response.body, "Betreff des Schreibens"
-
-    # #623 v2: NDAs brauchen das Feld ebenfalls nicht.
+    # #623 v2: NDAs brauchen das Feld nicht.
     nda = Document.create!(kind: :nda, status: :entwurf, creator: @hans)
     get "/documents/#{nda.id}/card"
     refute_includes @response.body, "Betreff des Schreibens"

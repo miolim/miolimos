@@ -1,10 +1,9 @@
-<%# #532 (Hans, 2026-06-08): Detail-Blade eines Dokuments. Meta-Felder +
+<%# #532 (Hans, 2026-06-08): Detail-Blade eines Anschreibens. Meta-Felder +
     Picker für die Verknüpfungen (Aussteller/Empfänger/Topic/Body-KI), inline
     auto-save (PATCH, Turbo-Stream ersetzt den Felder-Block). Vorschau/PDF
     rendern den Record über das DIN-5008-Theme. %>
 <% labels = DocumentsController::KIND_LABELS %>
-<%# #559 (Hans): Benennung (Rechnung = Aussteller · Nr · Datum, sonst Betreff)
-    im Header und — hinter der Art — im Spine. %>
+<%# #559 (Hans): Benennung (Betreff) im Header und — hinter der Art — im Spine. %>
 <% name  = document.display_name %>
 <% spine = name ? "#{labels[document.kind]} · #{name}" : labels[document.kind] %>
 <article id="stack_card_document:<%= document.id %>"
@@ -42,21 +41,6 @@
           <%= icon "file_check" %>
         <% end %>
       <% end %>
-      <%# #541: ZUGFeRD (Hybrid-PDF) + XRechnung (reines XML) — nur bei
-          Rechnungen, wenn das Setup da ist. %>
-      <% if document.rechnung? && ZugferdGenerator.available? %>
-        <%= link_to zugferd_pdf_document_path(document), target: "_blank", rel: "noopener",
-              title: t("documents.list.zugferd_pdf_title"), "aria-label": t("documents.list.zugferd_pdf"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-          <%= icon "file_code" %>
-        <% end %>
-        <%# xRechnung hat kein Logo/Icon → „XML" im Rahmen (Hans). %>
-        <%= link_to xrechnung_xml_document_path(document),
-              title: t("documents.list.xrechnung_xml_title"), "aria-label": t("documents.list.xrechnung_xml"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 inline-flex items-center" do %>
-          <span class="text-[8px] font-bold leading-none tracking-tight border border-current rounded-sm px-1 py-[3px]">XML</span>
-        <% end %>
-      <% end %>
       <%# #787: Dokument löschen (Soft-Delete → Papierkorb). %>
       <%= button_to document_path(document), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("documents.trash.confirm") } },
@@ -76,6 +60,6 @@
         per Turbo-Stream live umschaltet (siehe update.turbo_stream). %>
     <%= render "documents/editor", document: document %>
 
-    <%= render "documents/artifacts", document: document %>
+    <%= render "printables/artifacts", printable: document %>
   </div>
 </article>

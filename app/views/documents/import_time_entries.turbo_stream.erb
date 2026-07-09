@@ -1,8 +1,0 @@
-<%# #541: nach dem Übernehmen die Positionen (mit Summen) UND die Zeiten-Liste
-    (übernommene Buchungen sind nun weg) neu rendern. %>
-<%= turbo_stream.replace "document_invoice_lines_#{@document.id}" do %>
-  <%= render "documents/invoice_lines", document: @document %>
-<% end %>
-<%= turbo_stream.replace "document_time_import_#{@document.id}" do %>
-  <%= render "documents/time_import", document: @document %>
-<% end %>

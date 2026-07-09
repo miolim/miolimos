@@ -1493,6 +1493,21 @@ de:
       request_failed: "Anfrage fehlgeschlagen."
       error: "Fehler: %{message}"
 
+  invoices:
+    list:
+      title: "Rechnungen"
+      search_placeholder: "Rechnungen durchsuchen …"
+      new_invoice: "Neue Rechnung"
+      empty: "Noch keine Rechnungen."
+      empty_filtered: "Noch keine Rechnungen (gefiltert)."
+    trash:
+      title: "Papierkorb (Rechnungen)"
+      back: "Zurück zu den Rechnungen"
+      confirm: "Diese Rechnung in den Papierkorb legen? Über den Papierkorb wiederherstellbar."
+      delete_title: "Rechnung in den Papierkorb legen"
+      deleted: "Rechnung in den Papierkorb gelegt."
+      restored: "Rechnung wiederhergestellt."
+      artifact_deleted: "PDF-Stand gelöscht."
   documents:
     lastschrift:   # #786 Inkr.2
       title: "SEPA-Lastschriftmandat"
@@ -1606,6 +1621,7 @@ de:
       label_placeholder: "Bezeichnung"
       value_placeholder: "Wert"
       add_field: "+ Feld"
+      unresolved_placeholders: "Unaufgelöste Platzhalter im Text: %{keys}"
     compliance:
       issuer_details: "Aussteller-Angaben"
       no_tax_id_warning: "Keine Steuernummer/USt-IdNr beim Aussteller — für eine gültige Rechnung Pflicht (in den IDs des Aussteller-Kontakts ergänzen)."
@@ -2035,6 +2051,7 @@ de:
       times: "Zeiten"
       calendar: "Kalender"
       documents: "Dokumente"
+      invoices: "Rechnungen"
       sources: "Quellen"
       docs: "Doku"
       tags: "Tags"

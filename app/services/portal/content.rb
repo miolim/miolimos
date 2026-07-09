@@ -12,12 +12,16 @@ module Portal
            .merge(TaskTopic.order(:position))
     end
 
-    # Freigegebene, eingefrorene Dokument-Stände des Projekts.
+    # Freigegebene, eingefrorene Dokument-Stände des Projekts. #926: die
+    # Artefakt-Schicht ist polymorph (Anschreiben + Rechnungen) — je Typ
+    # ein Query über die zugehörige printable-Tabelle, gemischt sortiert.
     def self.shared_artifacts(topic)
-      DocumentArtifact.where(shared_with_client: true)
-                      .joins(:document)
-                      .where(documents: { topic_id: topic.id })
-                      .order(created_at: :desc)
+      shared = DocumentArtifact.where(shared_with_client: true)
+      ids = shared.where(printable_type: "Document",
+                         printable_id: Document.where(topic_id: topic.id).select(:id)).ids +
+            shared.where(printable_type: "Invoice",
+                         printable_id: Invoice.where(topic_id: topic.id).select(:id)).ids
+      DocumentArtifact.where(id: ids).order(created_at: :desc)
     end
 
     # #573: freigegebene Termine/Ereignisse des Projekts.

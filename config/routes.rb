@@ -27,8 +27,6 @@ Rails.application.routes.draw do
       get   :card                              # Detail-Blade
       get   :pdf, action: :show_pdf, as: :rendered_pdf
       get   :signed_pdf                        # #547: AES-signiertes PDF
-      get   :zugferd_pdf                       # #541: ZUGFeRD-PDF/A-3
-      get   :xrechnung_xml                     # #541: XRechnung-XML
       post  :archive_pdf                       # #532: finalen Stand festschreiben
       post  :toggle_artifact_share             # #536: Portal-Freigabe je Stand
       get   "artifacts/:artifact_id", action: :artifact, as: :artifact  # #532: Stand ausliefern
@@ -36,14 +34,39 @@ Rails.application.routes.draw do
       post  :create_body_ki                    # #532: Text-KI anlegen + verknüpfen
       patch :document_fields                   # #532: freie Key-Value-Felder
       patch :select_identifiers                # #532: Empfänger-IDs an/abwählen
-      patch :invoice_lines                     # #541: Rechnungspositionen (Inline-Upsert, Legacy)
-      post  :import_time_entries               # #541: Zeitbuchungen übernehmen (Legacy)
-      post  :add_invoice_line                  # #541: neue (leere) Position anlegen
     end
     collection do
       get :list_card                           # Listen-Blade (Sidebar/Stack)
       get :suggest_links                       # #532: Picker-Vorschläge (JSON)
       get :trash                               # #787: Papierkorb (gelöschte Dokumente)
+    end
+  end
+
+  # #926 (Hans, 2026-07-09): Rechnung/Angebot als eigene Entität — gleiche
+  # Verfahren-Routen wie documents (PrintableResource) + Positionen/e-Rechnung.
+  resources :invoices, only: [:index, :show, :create, :update, :destroy] do
+    member do
+      post   :restore
+      delete "artifacts/:artifact_id", action: :destroy_artifact, as: :destroy_artifact
+      get   :card
+      get   :pdf, action: :show_pdf, as: :rendered_pdf
+      get   :signed_pdf
+      get   :zugferd_pdf                       # #541: ZUGFeRD-PDF/A-3
+      get   :xrechnung_xml                     # #541: XRechnung-XML
+      post  :archive_pdf
+      post  :toggle_artifact_share
+      get   "artifacts/:artifact_id", action: :artifact, as: :artifact
+      post  :link
+      patch :document_fields
+      patch :select_identifiers
+      patch :invoice_lines                     # #541: Rechnungspositionen (Inline-Upsert, Legacy)
+      post  :import_time_entries               # #541: Zeitbuchungen übernehmen
+      post  :add_invoice_line                  # #541: neue (leere) Position anlegen
+    end
+    collection do
+      get :list_card
+      get :suggest_links
+      get :trash
     end
   end
 

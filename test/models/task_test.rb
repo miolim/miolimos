@@ -125,9 +125,10 @@ class TaskTest < ActiveSupport::TestCase
     assert header, "WIP-Setzen muss den Card-Header neu broadcasten"
     assert_includes header, "border-amber-500"
     # #892: auch der Spine (Status-Icon) wird live ersetzt — orange bei WIP.
+    # #919 (2026-07-09): WIP-Icon-Farbe von amber auf orange umgestellt.
     spine = payloads.find { |p| p.include?("task_spine_#{task.id}") }
     assert spine, "WIP-Setzen muss auch den Card-Spine neu broadcasten"
-    assert_includes spine, "text-amber-500"
+    assert_includes spine, "text-orange-500"
 
     payloads = capture_all_broadcasts { task.update!(wip_actor_id: nil) }
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }

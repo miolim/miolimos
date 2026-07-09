@@ -66,6 +66,7 @@ en:
     no_awaitings:         "No open waiting points."
     process_edge_title:   "Process edge"
     no_process_edge:      "Nothing open — topics have neither a next step nor a waiting point."
+    inbox:                "Task inbox"
     today:                "Today"
     upcoming:             "Upcoming"
     all_tasks:            "All tasks"
@@ -73,6 +74,7 @@ en:
     waiting_point:        "Waiting point"
     today_empty:          "Nothing planned for today."
     week_empty:           "Nothing planned this week."
+    inbox_empty:          "Inbox is empty."
     topics_count:         "%{count} topics"
     agent:
       settings:             "Agent settings"

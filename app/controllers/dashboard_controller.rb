@@ -90,6 +90,9 @@ class DashboardController < ApplicationController
                 .includes(:topics, :assignee, :subtasks, :predecessors)
                 .order(priority: :desc, due_date: :asc)
     scope = @show_done ? scope.where(status: [:open, :done]) : scope.open
+    # #930 (Hans): Aufgabeneingang = die noch nicht triagierten Tasks
+    # (commitment IS NULL = „Eingang", vor Heute/Demnächst auf der Wann-Skala).
+    @inbox_tasks = scope.where(commitment: nil).to_a
     @today_tasks = scope.where(commitment: :today).to_a
     @soon_tasks  = scope.where(commitment: :soon).to_a
 

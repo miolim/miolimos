@@ -66,6 +66,7 @@ de:
     no_awaitings:         "Keine offenen Wartepunkte."
     process_edge_title:   "Prozess-Edge"
     no_process_edge:      "Nichts offen — Themen haben weder Next-Step noch Wartepunkt."
+    inbox:                "Aufgabeneingang"
     today:                "Heute"
     upcoming:             "Demnächst"
     all_tasks:            "Alle Aufgaben"
@@ -73,6 +74,7 @@ de:
     waiting_point:        "Wartepunkt"
     today_empty:          "Heute nichts geplant."
     week_empty:           "Diese Woche nichts geplant."
+    inbox_empty:          "Eingang leer."
     topics_count:         "%{count} Themen"
     agent:
       settings:             "Agent-Einstellungen"

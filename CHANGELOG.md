@@ -15,6 +15,30 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.3.2] - 2026-07-10
+
+### Added
+
+- Incoming invoices can be created manually from the invoice list — a third
+  entry in the "new invoice" popover next to invoice/quote. The issuer picker
+  offers all persons and organisations for incoming invoices (the issuer is an
+  external party), instead of only own issuer companies (#946).
+- Tasks show a backlinks section — knowledge items (notes, replies of other
+  tasks) and other tasks whose description reference the task via a task
+  wikilink. Task references are now recorded in the reference index; existing
+  bodies were backfilled (#953).
+- Task descriptions act as reference sources everywhere: their wikilinks to
+  knowledge items appear in the backlinks panels and anchor popovers, and
+  renaming a knowledge item rewrites title wikilinks in task descriptions too
+  (#953).
+
+### Changed
+
+- Incoming invoices no longer carry a draft/final status or the PDF archiving
+  lifecycle — no status field, no draft badge, no "archive current state". The
+  artifact section is titled "Beleg" and holds the received original document
+  (#946).
+
 ## [0.3.1] - 2026-07-09
 
 ### Added
@@ -251,7 +275,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/miolim/miolimos/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/miolim/miolimos/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/miolim/miolimos/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/miolim/miolimos/compare/v0.2.0...v0.2.1

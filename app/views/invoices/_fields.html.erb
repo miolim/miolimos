@@ -26,14 +26,15 @@
     <% end %>
   </div>
 
-  <%# — Aussteller — %>
+  <%# — Aussteller — #946: Richtung im suggest_url — bei Eingangsrechnungen
+      schlägt der Picker fremde Personen/Orgs vor statt der eigenen Firmen. %>
   <div class="<%= rowcls %>">
     <span class="text-slate-500"><%= t("documents.fields.issuer") %></span>
     <%= render "shared/entity_picker",
           icon: "building", icon_only: true, placeholder: t("documents.fields.issuer_placeholder"), chips_first: true, close_after_pick: true,
           chips_id: "invoice_issuer_chip_#{invoice.id}", chips_partial: "printables/link_chip",
           chips_locals: { printable: invoice, field: "issuer", record: invoice.issuer },
-          suggest_url: suggest_links_invoices_path(kind: "issuer"),
+          suggest_url: suggest_links_invoices_path(kind: "issuer", direction: invoice.direction),
           add_url: link_invoice_path(invoice, field: "issuer"),
           param_name: "value", create_label: "", allow_create: false %>
   </div>

@@ -33,9 +33,12 @@ class InvoicesController < ApplicationController
   def create
     kind = params[:kind].to_s
     kind = "rechnung" unless CREATABLE_KINDS.include?(kind)
+    # #946: Eingangsrechnung auch manuell anlegbar (bisher nur Dokument-Import).
+    # Richtung nur für Rechnungen wählbar; Angebote bleiben ausgehend.
+    direction = (kind == "rechnung" && params[:direction].to_s == "eingehend") ? :eingehend : :ausgehend
     # #541: Rechnungsnummer ist Aussteller-spezifisch → erst beim Setzen des
     # Ausstellers vergeben (siehe after_link), nicht schon beim Anlegen.
-    invoice = Invoice.create!(kind: kind, status: :entwurf,
+    invoice = Invoice.create!(kind: kind, direction: direction, status: :entwurf,
                               creator: current_actor, document_date: Date.current)
     # #871 (Hans): an den AKTUELLEN Stack anhängen statt neuen Stack aufzubauen.
     respond_to do |format|
@@ -170,9 +173,17 @@ class InvoicesController < ApplicationController
 
   def suggest_scope(kind)
     case kind
-    when "issuer"    then KnowledgeItem.issuers
+    # #946: bei Eingangsrechnungen ist der Aussteller eine FREMDE Partei —
+    # der Picker schlägt dann Personen/Orgs vor statt der eigenen Firmen
+    # (issuer:true). Die Richtung kommt als Query-Param aus dem Felder-Blade.
+    when "issuer"    then params[:direction].to_s == "eingehend" ? KnowledgeItem.persons_and_orgs : KnowledgeItem.issuers
     when "recipient" then KnowledgeItem.persons_and_orgs
     end
+  end
+
+  # #946: Gegenstück beim Setzen der Verknüpfung (siehe suggest_scope).
+  def issuer_link_scope
+    @invoice.eingehend? ? KnowledgeItem.persons_and_orgs : KnowledgeItem.issuers
   end
 
   # #541: Aussteller-spezifische Rechnungsnummer vergeben, sobald der

@@ -96,7 +96,7 @@ module PrintableResource
     @field = params[:field].to_s
     value  = params[:value].to_s.strip
     case @field
-    when "issuer"    then @printable.update!(issuer_uuid:    resolve_ki(value, KnowledgeItem.issuers))
+    when "issuer"    then @printable.update!(issuer_uuid:    resolve_ki(value, issuer_link_scope))
     when "recipient" then @printable.update!(recipient_uuid: resolve_ki(value, KnowledgeItem.persons_and_orgs))
     when "topic"     then @printable.update!(topic_id:       (Topic.find_by(slug: value)&.id if value.present?))
     else
@@ -246,6 +246,11 @@ module PrintableResource
   # true = behandelt, false = unbekanntes Feld (422).
   def link_extra_field!(_field, _value) = false
   def after_link(_field) = nil
+
+  # #946: erlaubter Scope für die Aussteller-Verknüpfung. Default: eigene
+  # Firmen (issuer:true); Invoices weiten bei Eingangsrechnungen auf
+  # Personen/Orgs auf (fremder Aussteller).
+  def issuer_link_scope = KnowledgeItem.issuers
 
   def trash_i18n_scope = "#{controller_name}.trash"
 

@@ -119,6 +119,13 @@
               <span class="w-5 flex justify-center text-slate-500"><%= icon "file_text" %></span><%= lbl %>
             <% end %>
           <% end %>
+          <%# #946: Eingangsrechnung manuell erfassen (fremder Beleg, ohne
+              Dokument-Import) — direction:eingehend, Nummer kommt vom Aussteller. %>
+          <%= button_to invoices_path(kind: "rechnung", direction: "eingehend"), method: :post,
+                form: { class: "block" },
+                class: "w-full text-left flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
+            <span class="w-5 flex justify-center text-slate-500"><%= icon "inbox" %></span><%= t("invoices.list.new_incoming") %>
+          <% end %>
         </div>
       </div>
     </div>

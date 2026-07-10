@@ -296,6 +296,55 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Fällig am"
   end
 
+  # ── #946: Eingangsrechnung manuell anlegen ───────────────────────────────
+  test "create mit direction=eingehend legt eine Eingangsrechnung an" do
+    assert_difference -> { Invoice.count }, 1 do
+      post "/invoices", params: { kind: "rechnung", direction: "eingehend" }
+    end
+    invoice = Invoice.order(:id).last
+    assert invoice.eingehend?
+    assert_nil invoice.number   # Nummer kommt vom fremden Aussteller
+  end
+
+  test "create: Angebote bleiben ausgehend, direction wird ignoriert" do
+    post "/invoices", params: { kind: "angebot", direction: "eingehend" }
+    assert Invoice.order(:id).last.ausgehend?
+  end
+
+  test "Aussteller-Picker: eingehend schlägt Personen/Orgs vor, ausgehend nur eigene Firmen" do
+    own = FileProxy.create(actor: @hans, title: "Eigene GmbH", item_type: :organization, content: "")
+    FileProxy.update(actor: @hans, knowledge_item: own, issuer: true)
+    FileProxy.create(actor: @hans, title: "Stadtwerke", item_type: :organization, content: "")
+
+    get "/invoices/suggest_links", params: { kind: "issuer", q: "stadt" }
+    assert_empty JSON.parse(@response.body)["items"]
+
+    get "/invoices/suggest_links", params: { kind: "issuer", q: "stadt", direction: "eingehend" }
+    labels = JSON.parse(@response.body)["items"].map { |i| i["label"] }
+    assert_includes labels, "Stadtwerke"
+  end
+
+  test "link: Eingangsrechnung akzeptiert fremde Org als Aussteller, ausgehend nicht" do
+    fremd = FileProxy.create(actor: @hans, title: "Stadtwerke", item_type: :organization, content: "")
+    ein  = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    aus  = Invoice.create!(kind: :rechnung, direction: :ausgehend)
+
+    post "/invoices/#{ein.id}/link", params: { field: "issuer", value: fremd.uuid },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal fremd.uuid, ein.reload.issuer_uuid
+
+    post "/invoices/#{aus.id}/link", params: { field: "issuer", value: fremd.uuid },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_nil aus.reload.issuer_uuid, "ausgehend: nur issuer:true-Firmen erlaubt"
+  end
+
+  test "Listen-Blade bietet die manuelle Eingangsrechnung an" do
+    get "/invoices/list_card"
+    assert_response :success
+    assert_includes @response.body, "Eingangsrechnung"
+    assert_includes @response.body, "direction=eingehend"
+  end
+
   test "Liste filtert nach Richtung" do
     Invoice.create!(kind: :rechnung, direction: :eingehend, number: "EIN-1")
     Invoice.create!(kind: :rechnung, direction: :ausgehend, number: "AUS-1")

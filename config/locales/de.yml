@@ -1517,6 +1517,11 @@ de:
       new_incoming: "Eingangsrechnung"
       empty: "Noch keine Rechnungen."
       empty_filtered: "Noch keine Rechnungen (gefiltert)."
+    upload:
+      button: "Beleg hochladen (PDF)"
+      missing: "Keine Datei ausgewählt."
+      too_large: "Datei zu groß (max. 25 MB)."
+      not_pdf: "Nur PDF-Dateien — der Beleg wird als PDF abgelegt."
     trash:
       title: "Papierkorb (Rechnungen)"
       back: "Zurück zu den Rechnungen"

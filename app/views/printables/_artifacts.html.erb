@@ -41,7 +41,19 @@
   <% else %>
     <p class="text-slate-400 italic"><%= incoming ? t("documents.list.no_artifacts_incoming") : t("documents.list.no_artifacts") %></p>
   <% end %>
-  <% unless incoming %>
+  <% if incoming %>
+    <%# #964 (Hans): Beleg (Original-PDF) manuell anhängen — bisher kamen
+        Artefakte nur aus dem Dokument-Import. Verstecktes File-Input,
+        Label als Button, Auto-Submit bei Auswahl. %>
+    <%= form_with url: upload_artifact_invoice_path(printable), method: :post, multipart: true,
+          class: "mt-1" do %>
+      <label class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 cursor-pointer">
+        <%= icon "paperclip", size: "w-3.5 h-3.5" %><%= t("invoices.upload.button") %>
+        <input type="file" name="file" accept="application/pdf" class="hidden"
+               onchange="this.form.requestSubmit()">
+      </label>
+    <% end %>
+  <% else %>
     <% if printable.final? %>
       <%= button_to t("documents.list.archive_current"), polymorphic_path([:archive_pdf, printable]), method: :post,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },

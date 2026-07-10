@@ -296,6 +296,41 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Fällig am"
   end
 
+  # ── #964: Beleg (PDF) manuell an Eingangsrechnung hängen ─────────────────
+  test "upload_artifact: PDF an Eingangsrechnung, danach in der Beleg-Sektion" do
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend, number: "UP-1")
+    pdf = Rack::Test::UploadedFile.new(StringIO.new("%PDF-1.7 test"), "application/pdf",
+                                       original_filename: "beleg.pdf")
+    assert_difference -> { invoice.document_artifacts.count }, 1 do
+      post "/invoices/#{invoice.id}/upload_artifact", params: { file: pdf },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :success
+    assert_equal "%PDF-1.7 test", invoice.document_artifacts.last.pdf
+    assert_includes @response.body, "invoice_artifacts_#{invoice.id}"
+  end
+
+  test "upload_artifact: ausgehend abgelehnt, Nicht-PDF abgelehnt" do
+    aus = Invoice.create!(kind: :rechnung, direction: :ausgehend)
+    pdf = Rack::Test::UploadedFile.new(StringIO.new("%PDF-1.7"), "application/pdf",
+                                       original_filename: "x.pdf")
+    assert_no_difference -> { DocumentArtifact.count } do
+      post "/invoices/#{aus.id}/upload_artifact", params: { file: pdf },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :unprocessable_content
+
+    ein = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    txt = Rack::Test::UploadedFile.new(StringIO.new("kein pdf"), "application/pdf",
+                                       original_filename: "fake.pdf")
+    assert_no_difference -> { DocumentArtifact.count } do
+      post "/invoices/#{ein.id}/upload_artifact", params: { file: txt },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :success   # Toast mit Fehlermeldung
+    assert_includes @response.body, "Nur PDF-Dateien"
+  end
+
   # #946 Folge (Hans): Eingangsrechnungen haben keinen Status-Lebenszyklus.
   test "card einer Eingangsrechnung: kein Status-Select, kein Festschreiben, Heading Beleg" do
     ein = Invoice.create!(kind: :rechnung, direction: :eingehend, number: "SW-12")

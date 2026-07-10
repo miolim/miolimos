@@ -139,7 +139,46 @@ class InvoicesController < ApplicationController
     render plain: "XRechnung-Erzeugung fehlgeschlagen: #{e.message}", status: :unprocessable_content
   end
 
+  # #964 (Hans): Beleg (Original-PDF) manuell an eine EINGANGSRECHNUNG
+  # hängen — bisher kamen Artefakte nur aus dem Dokument-Import. Nur
+  # eingehend (ausgehende Stände entstehen ausschließlich über das
+  # Festschreiben); nur PDF (die Artefakt-Schicht serviert application/pdf).
+  MAX_ARTIFACT_BYTES = 25.megabytes
+
+  def upload_artifact
+    load_printable
+    return head(:unprocessable_content) unless @invoice.eingehend?
+    file = params[:file]
+    error =
+      if file.blank?                                  then t("invoices.upload.missing")
+      elsif file.size > MAX_ARTIFACT_BYTES            then t("invoices.upload.too_large")
+      elsif !pdf_upload?(file)                        then t("invoices.upload.not_pdf")
+      end
+    if error
+      respond_to do |format|
+        format.turbo_stream { render turbo_stream: helpers.toast_stream(message: error) }
+        format.html { redirect_to printable_stack_path(@invoice), alert: error, status: :see_other }
+      end
+      return
+    end
+    @invoice.document_artifacts.create!(pdf: file.read, creator: current_actor)
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace("invoice_artifacts_#{@invoice.id}",
+          partial: "printables/artifacts", locals: { printable: @invoice })
+      end
+      format.html { redirect_to printable_stack_path(@invoice), status: :see_other }
+    end
+  end
+
   private
+
+  # PDF-Erkennung über die Magic Bytes (Content-Type ist Client-Angabe).
+  def pdf_upload?(file)
+    head = file.read(5)
+    file.rewind
+    head == "%PDF-"
+  end
 
   def printable_model = Invoice
 

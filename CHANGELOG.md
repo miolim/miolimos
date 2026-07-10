@@ -15,6 +15,12 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Incoming invoices accept manually uploaded documents (PDF): an "upload
+  document" button in the "Beleg" section attaches the original to invoices
+  that were created manually instead of through the document import (#964).
+
 ## [0.3.2] - 2026-07-10
 
 ### Added

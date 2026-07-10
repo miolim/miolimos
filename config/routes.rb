@@ -54,6 +54,7 @@ Rails.application.routes.draw do
       get   :zugferd_pdf                       # #541: ZUGFeRD-PDF/A-3
       get   :xrechnung_xml                     # #541: XRechnung-XML
       post  :archive_pdf
+      post  :upload_artifact                   # #964: Beleg (PDF) manuell anhängen — nur eingehend
       post  :toggle_artifact_share
       get   "artifacts/:artifact_id", action: :artifact, as: :artifact
       post  :link

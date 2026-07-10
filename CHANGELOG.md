@@ -21,6 +21,14 @@ release is cut, this section is renamed to the new version and a fresh
   document" button in the "Beleg" section attaches the original to invoices
   that were created manually instead of through the document import (#964).
 
+### Fixed
+
+- Picking a task template no longer leaves its description invisibly stuck on
+  the quick-add form: the selection now shows as a removable chip, and clearing
+  the title (or removing the chip) discards the template description. Tasks
+  typed without a template no longer silently carry the body of the last picked
+  template (#966).
+
 ## [0.3.2] - 2026-07-10
 
 ### Added

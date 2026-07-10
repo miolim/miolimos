@@ -225,6 +225,9 @@ de:
     index_title:      "Aufgaben"
     new:              "Neue Aufgabe"
     quick_add_placeholder: "Neue Aufgabe …"
+    template_picker:
+      chip_label: "Vorlage"
+      chip_remove: "Vorlage entfernen — die Vorlagen-Beschreibung wird verworfen"
     blocked_by:       "Blockiert durch"
     blocks:           "Blockiert"
     subtasks:         "Unteraufgaben"

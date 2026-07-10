@@ -23,7 +23,9 @@ export default class extends Controller {
   static values  = {
     agentId:              String,
     titleTargetId:        String,
-    descriptionTargetId:  String
+    descriptionTargetId:  String,
+    chipLabel:            String,   // #966: "Vorlage: %s" (aus den Views/i18n)
+    chipRemoveTitle:      String
   }
 
   connect() {
@@ -37,6 +39,7 @@ export default class extends Controller {
     this._onSubmitEnd = (e) => {
       if (this.element.contains(e.target) && e.detail?.success) {
         this._hide()
+        this._clearPicked({ keepDescription: true })  // Form wird eh frisch gerendert
       }
     }
     document.addEventListener("turbo:submit-end", this._onSubmitEnd)
@@ -55,6 +58,7 @@ export default class extends Controller {
     clearTimeout(this._debounce)
     if (this._onSubmitEnd) document.removeEventListener("turbo:submit-end", this._onSubmitEnd)
     this._scrollAncestors?.forEach(el => el.removeEventListener("scroll", this._onAncestorScroll))
+    this._clearPicked({ keepDescription: true })
   }
 
   _findScrollAncestors() {
@@ -170,6 +174,13 @@ export default class extends Controller {
       descEl.value = tpl.description || ""
       descEl.dispatchEvent(new Event("input", { bubbles: true }))
     }
+    // #966: Bei HIDDEN-Description die Wahl sichtbar machen (Chip mit ✕).
+    // Ohne das blieb der Vorlagen-Body unsichtbar am Formular kleben —
+    // Titel neu tippen ersetzte ihn NICHT, und "Nicht-Vorlagen-Aufgaben"
+    // trugen still die Beschreibung der zuletzt gewählten Vorlage.
+    if (titleEl && descEl && descEl.type === "hidden" && tpl.description) {
+      this._showPicked(tpl, titleEl, descEl)
+    }
     // Wenn der Picker-Input ein separates Feld ist, leeren wir es;
     // wenn er IDENTISCH mit dem Title-Feld ist (Inline-Picker im
     // Quickadd), bleibt der Wert stehen.
@@ -192,5 +203,45 @@ export default class extends Controller {
   blur() {
     // setTimeout, damit der mousedown auf einem List-Item noch durchgeht.
     setTimeout(() => this._hide(), 150)
+  }
+
+  // ── #966: sichtbarer Vorlagen-Zustand ────────────────────────────────
+  _showPicked(tpl, titleEl, descEl) {
+    this._clearPicked()
+    this._picked = { titleEl, descEl }
+    const chip = document.createElement("div")
+    chip.className = "mt-1 inline-flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 " +
+                     "rounded border border-emerald-200 bg-emerald-50 text-emerald-800"
+    const label = document.createElement("span")
+    label.className = "truncate max-w-56"
+    label.textContent = `${this.chipLabelValue || "Vorlage"}: ${tpl.title}`
+    const x = document.createElement("button")
+    x.type = "button"
+    x.textContent = "✕"
+    x.title = this.chipRemoveTitleValue || ""
+    x.className = "cursor-pointer hover:text-emerald-950 shrink-0"
+    // mousedown statt click — analog zur Trefferliste (blur-Wettlauf).
+    x.addEventListener("mousedown", (e) => { e.preventDefault(); this._clearPicked() })
+    chip.append(label, x)
+    this.element.appendChild(chip)
+    this._chip = chip
+    // Titel komplett geleert = neu anfangen → Vorlage samt Body verwerfen.
+    this._onTitleInput = () => {
+      if (titleEl.value.trim() === "") this._clearPicked()
+    }
+    titleEl.addEventListener("input", this._onTitleInput)
+  }
+
+  _clearPicked({ keepDescription = false } = {}) {
+    if (this._onTitleInput) {
+      this._picked?.titleEl?.removeEventListener("input", this._onTitleInput)
+      this._onTitleInput = null
+    }
+    if (!keepDescription && this._picked?.descEl) {
+      this._picked.descEl.value = ""
+    }
+    this._chip?.remove()
+    this._chip = null
+    this._picked = null
   }
 }

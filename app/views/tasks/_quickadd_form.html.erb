@@ -7,6 +7,8 @@
 <div data-controller="task-template-picker"
      data-task-template-picker-title-target-id-value="task_quickadd_form_title"
      data-task-template-picker-description-target-id-value="task_quickadd_form_description"
+     data-task-template-picker-chip-label-value="<%= t("tasks.template_picker.chip_label") %>"
+     data-task-template-picker-chip-remove-title-value="<%= t("tasks.template_picker.chip_remove") %>"
      class="relative">
   <%= form_with url: tasks_path, method: :post, id: "task_quickadd_form", class: "flex gap-2" do |f| %>
     <%= f.hidden_field :topic_id, value: topic.id %>

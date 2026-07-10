@@ -1,0 +1,37 @@
+<%# #953 (Hans, 2026-07-10): Backlinks-Sektion im Task-Detail — KIs
+    (Notizen, Antworten anderer Aufgaben/KIs), deren Body diese Aufgabe
+    per [[#id]] referenziert. Gleiches Muster wie die Backlinks-Sektion
+    im KI-Detail (_detail_link_panels); Quellen-Darstellung/Navigation
+    über backlink_source_descriptor (#501). Eigene Antworten der Aufgabe
+    zählen nicht (siehe Task#backlink_sources). Rendert nur bei Treffern. %>
+<% backlink_sources = task.backlink_sources %>
+<% if backlink_sources.any? %>
+  <section data-controller="disclosure"
+           data-disclosure-storage-key-value="tasks.<%= task.id %>.backlinks"
+           class="border border-slate-200 rounded">
+    <button type="button"
+            data-action="click->disclosure#toggle"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+      <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
+        <%= icon "chevron_right" %>
+      </span>
+      <span class="font-medium"><%= t("knowledge.detail.backlinks") %></span>
+      <span class="text-slate-400">· <%= backlink_sources.size %></span>
+    </button>
+    <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
+      <% backlink_sources.each do |src| %>
+        <% d = backlink_source_descriptor(src) %>
+        <% link_data = { action: "click->blade-stack#openInStack", target_uuid: d[:nav_uuid] } %>
+        <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
+        <div class="text-[13px] flex items-center gap-2">
+          <span class="w-5 flex justify-center text-slate-500">
+            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src) %>
+          </span>
+          <%= link_to d[:label], knowledge_item_path(src.uuid),
+                data: link_data,
+                class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>

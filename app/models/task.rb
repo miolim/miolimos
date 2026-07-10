@@ -47,6 +47,20 @@ class Task < ApplicationRecord
 
   has_many :attachments, -> { order(:created_at) }, class_name: "TaskAttachment", dependent: :destroy
 
+  # #953: Backlinks — KIs (Notizen, Antworten anderer Aufgaben/KIs), deren
+  # Body diese Aufgabe per [[#id]] referenziert. Rows bleiben bei Task-
+  # Löschung stehen (der Link im Body existiert ja weiter und rendert
+  # dann als „nicht gefunden"); die Abfrage läuft immer von der Task-Seite.
+  has_many :incoming_references, class_name: "KnowledgeItemReference",
+    foreign_key: :target_task_id
+
+  # Backlink-Quellen fürs Detail-Blade: eigene Antworten DIESER Aufgabe
+  # zählen nicht (Selbst-Erwähnung im eigenen Thread ist Rauschen).
+  def backlink_sources
+    incoming_references.includes(:source).filter_map(&:source).uniq
+      .reject { |src| src.reply? && src.parent_type == "Task" && src.parent_id_int == id }
+  end
+
   has_many :comments, -> { ordered }, class_name: "TaskComment", dependent: :destroy
 
   # #384 Phase 3b (Hans, 2026-05-27): Reply-KIs als universelle

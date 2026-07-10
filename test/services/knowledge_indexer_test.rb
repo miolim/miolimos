@@ -236,6 +236,27 @@ class KnowledgeIndexerTest < ActiveSupport::TestCase
     end
   end
 
+  # #953: Aufgaben-Referenzen [[#id]] landen mit target_task_id im Index.
+  test "aufgaben-referenz [[#id]] wird mit target_task_id indexiert" do
+    with_isolated_miolimos_base do |base|
+      task = Task.create!(title: "Ziel-Aufgabe", creator: @hans)
+      uuid = SecureRandom.uuid
+      write_md(base, "knowledge/notes/s.md",
+        frontmatter: { "id" => uuid, "type" => "note", "source" => "manual" },
+        body:        "# S\n\nSiehe [[##{task.id}]] und [[#999999|kaputt]]."
+      )
+
+      KnowledgeIndexer.run
+      refs = KnowledgeItem.find(uuid).outgoing_references
+      assert_equal 1, refs.count, "nicht existierende Task-IDs werden nicht erfasst"
+      ref = refs.first
+      assert_equal task.id, ref.target_task_id
+      assert_equal "##{task.id}", ref.target_title
+      assert_nil ref.target_uuid
+      assert_includes task.incoming_references, ref
+    end
+  end
+
   test "re-indexing replaces old references for the same source" do
     with_isolated_miolimos_base do |base|
       uuid = SecureRandom.uuid

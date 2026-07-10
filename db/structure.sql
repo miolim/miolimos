@@ -1069,7 +1069,8 @@ CREATE TABLE public.knowledge_item_references (
     anchor_type integer DEFAULT 0 NOT NULL,
     anchor_text character varying,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    target_task_id bigint
 );
 
 
@@ -4143,6 +4144,13 @@ CREATE INDEX index_knowledge_item_references_on_source_uuid ON public.knowledge_
 
 
 --
+-- Name: index_knowledge_item_references_on_target_task_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_knowledge_item_references_on_target_task_id ON public.knowledge_item_references USING btree (target_task_id) WHERE (target_task_id IS NOT NULL);
+
+
+--
 -- Name: index_knowledge_item_references_on_target_title; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5810,6 +5818,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260710102124'),
 ('20260709134500'),
 ('20260709100000'),
 ('20260706063810'),

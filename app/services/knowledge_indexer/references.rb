@@ -37,6 +37,19 @@ class KnowledgeIndexer
           anchor_text:  anchor
         )
       end
+      # #953: Aufgaben-Referenzen `[[#id]]` — Ziel ist eine Task, nicht
+      # eine KI (target_task_id statt target_uuid). WIKILINK_REGEX
+      # schliesst `#`-Praefix-Links aus, kein Doppel-Erfassen. Nicht
+      # existierende Task-IDs werden nicht erfasst (kaputter Link braucht
+      # keinen Alarm, analog #241).
+      body.to_s.scan(KnowledgeMarkdown::Wikilinks::TASK_REF_RE) do |task_id, _alias|
+        next unless Task.exists?(id: task_id)
+        item.outgoing_references.create!(
+          target_title:   "##{task_id}",
+          target_task_id: task_id,
+          anchor_type:    :file
+        )
+      end
       body.to_s.scan(WIKILINK_REGEX) do |target_id, heading, block|
         anchor_type, anchor_text =
           if block
@@ -94,7 +107,9 @@ class KnowledgeIndexer
                               .where(anchor_type: :block).where.not(target_uuid: nil)
                               .pluck(:target_uuid)
       insert_from_body(item, body)
-      item.outgoing_references.where(target_uuid: nil).find_each do |ref|
+      # #953: Task-Refs sind bereits final (target_task_id) — nicht als
+      # KI-Titel aufzuloesen versuchen.
+      item.outgoing_references.where(target_uuid: nil, target_task_id: nil).find_each do |ref|
         next if ref.target_title =~ UUID_RE
         if anchor_only_ref?(ref)
           # #475: noch nicht indizierter Anker -> spaeter via
@@ -138,7 +153,7 @@ class KnowledgeIndexer
     def resolve_dangling_references_to(title, target_uuid)
       return if title.blank? || target_uuid.blank?
       KnowledgeItemReference
-        .where(target_uuid: nil)
+        .where(target_uuid: nil, target_task_id: nil)  # #953: Task-Refs nie umbiegen
         .where("lower(target_title) = ?", title.to_s.downcase)
         .update_all(target_uuid: target_uuid)
     end
@@ -163,6 +178,7 @@ class KnowledgeIndexer
       title_to_uuid = KnowledgeItem.pluck(:title, :uuid).to_h { |t, u| [t.downcase, u] }
 
       KnowledgeItemReference.find_each do |ref|
+        next if ref.target_task_id.present?  # #953: Task-Refs sind final
         next if ref.target_title =~ UUID_RE
         # #475: Anker-only-Refs ueber KnowledgeItemAnchor statt Titel.
         expected =

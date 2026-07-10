@@ -691,4 +691,47 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Filter-Normalaufgabe"
     assert_includes @response.body, "Filter-Meilenstein"
   end
+
+  # ─── #953: Backlinks-Sektion im Task-Detail ───────────────────────────
+  test "card zeigt Backlinks: KIs, die die Aufgabe per [[#id]] referenzieren" do
+    grant(@hans, "KnowledgeItem", %w[read create update])
+    with_isolated_miolimos_base do
+      task = Task.create!(title: "Backlink-Ziel", creator: @hans)
+      FileProxy.create(actor: @hans, title: "Notiz mit Verweis", item_type: :note,
+                       content: "Siehe [[##{task.id}]].")
+      get "/tasks/#{task.id}/card"
+      assert_response :success
+      assert_includes @response.body, "tasks.#{task.id}.backlinks"
+      assert_includes @response.body, "Notiz mit Verweis"
+    end
+  end
+
+  test "card: eigene Antworten der Aufgabe zählen nicht als Backlink" do
+    grant(@hans, "KnowledgeItem", %w[read create update])
+    with_isolated_miolimos_base do
+      task  = Task.create!(title: "Selbstverweis-Probe", creator: @hans)
+      reply = FileProxy.create(actor: @hans, title: "tmp-reply", item_type: :reply,
+                               content: "hier [[##{task.id}]]")
+      reply.update!(title: nil, parent_type: "Task", parent_id_int: task.id,
+                    published_at: Time.current)
+      get "/tasks/#{task.id}/card"
+      assert_response :success
+      refute_includes @response.body, "tasks.#{task.id}.backlinks"
+    end
+  end
+
+  test "card: Antwort einer ANDEREN Aufgabe erscheint als Backlink „Titel: Antwort“" do
+    grant(@hans, "KnowledgeItem", %w[read create update])
+    with_isolated_miolimos_base do
+      target = Task.create!(title: "Backlink-Ziel-B", creator: @hans)
+      andere = Task.create!(title: "Quell-Aufgabe", creator: @hans)
+      reply  = FileProxy.create(actor: @hans, title: "tmp-reply2", item_type: :reply,
+                                content: "vgl. [[##{target.id}]]")
+      reply.update!(title: nil, parent_type: "Task", parent_id_int: andere.id,
+                    published_at: Time.current)
+      get "/tasks/#{target.id}/card"
+      assert_response :success
+      assert_includes @response.body, "Quell-Aufgabe: Antwort"
+    end
+  end
 end

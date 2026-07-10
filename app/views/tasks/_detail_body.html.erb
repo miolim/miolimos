@@ -19,6 +19,9 @@
       (Stempel · Felder · Picker). Tag-Picker wandert mit in den
       Picker-Bereich. %>
   <%= render "tasks/detail_section",      task: task %>
+  <%# #953: Backlinks — wer referenziert diese Aufgabe per [[#id]]?
+      Erscheint nur, wenn es Treffer gibt. %>
+  <%= render "tasks/detail_backlinks",    task: task %>
   <%# #384 Phase 3c (Hans, 2026-05-27): Reply-KIs sind der universelle
       Beitragsmechanismus. task_comments-Thread entfernt; alte
       Comments wurden zu Reply-KIs migriert (Migration

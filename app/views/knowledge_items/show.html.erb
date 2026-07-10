@@ -37,15 +37,16 @@
   <% end %>
 
   <%# Soft-deleted Source-KIs werden durch default_scope ausgeblendet,
-      `ref.source` ist dann nil — daher filter_map vor dem Render. %>
-  <% incoming = @item.incoming_references.filter_map(&:source).uniq %>
+      `ref.source` ist dann nil — daher filter_map vor dem Render.
+      #953 Folge: Quellen können auch Aufgaben sein (Beschreibung). %>
+  <% incoming = @item.incoming_references.filter_map(&:source_object).uniq %>
   <% if incoming.any? %>
     <section class="bg-white rounded border border-slate-200 p-4">
       <h2 class="text-sm font-semibold mb-2"><%= t("knowledge.references_in") %></h2>
       <ul class="text-[13px]">
         <% incoming.each do |source| %>
           <% d = backlink_source_descriptor(source) %>
-          <li class="py-0.5"><%= link_to d[:label], knowledge_item_path(source.uuid), class: "hover:underline" %></li>
+          <li class="py-0.5"><%= link_to d[:label], backlink_source_path(source), class: "hover:underline" %></li>
         <% end %>
       </ul>
     </section>

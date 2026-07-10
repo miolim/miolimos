@@ -720,6 +720,32 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # #953 Folge: auch Task-BESCHREIBUNGEN sind Backlink-Quellen.
+  test "card: Beschreibung einer anderen Aufgabe erscheint als Backlink" do
+    grant(@hans, "KnowledgeItem", %w[read create update])
+    with_isolated_miolimos_base do
+      ziel   = Task.create!(title: "Desc-Backlink-Ziel", creator: @hans)
+      quelle = Task.create!(title: "Desc-Quelle", creator: @hans,
+                            description: "hängt an [[##{ziel.id}]]")
+      get "/tasks/#{ziel.id}/card"
+      assert_response :success
+      assert_includes @response.body, "tasks.#{ziel.id}.backlinks"
+      assert_includes @response.body, "##{quelle.id} Desc-Quelle"
+    end
+  end
+
+  test "KI-Card: Aufgabe mit [[Titel]]-Link in der Beschreibung erscheint als Backlink" do
+    grant(@hans, "KnowledgeItem", %w[read create update])
+    with_isolated_miolimos_base do
+      ki     = FileProxy.create(actor: @hans, title: "Panel-Ziel-Notiz", item_type: :note, content: "x")
+      quelle = Task.create!(title: "KI-Verweis-Aufgabe", creator: @hans,
+                            description: "siehe [[Panel-Ziel-Notiz]]")
+      get "/knowledge_items/#{ki.uuid}/card"
+      assert_response :success
+      assert_includes @response.body, "##{quelle.id} KI-Verweis-Aufgabe"
+    end
+  end
+
   test "card: Antwort einer ANDEREN Aufgabe erscheint als Backlink „Titel: Antwort“" do
     grant(@hans, "KnowledgeItem", %w[read create update])
     with_isolated_miolimos_base do

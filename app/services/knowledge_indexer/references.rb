@@ -131,6 +131,56 @@ class KnowledgeIndexer
       bust_render_caches((old_block_targets + new_block_targets).uniq - [item.uuid])
     end
 
+    # #953 Folge (Hans): auch Task-BESCHREIBUNGEN sind Referenz-Quellen —
+    # Aufgaben- ([[#id]]) wie KI-Links ([[Titel]], [[uuid]], [[^anker]])
+    # landen mit source_task_id im Index. Aufgerufen von Task#save bei
+    # geänderter Beschreibung und vom Backfill. Titel werden sofort
+    # aufgelöst; dangling Refs zieht resolve_dangling_references_to /
+    # rebuild_all später nach (gleiche Semantik wie KI-Bodies).
+    def index_task_description_references(task)
+      old_block_targets = KnowledgeItemReference
+                            .where(source_task_id: task.id, anchor_type: :block)
+                            .where.not(target_uuid: nil).pluck(:target_uuid)
+      KnowledgeItemReference.where(source_task_id: task.id).delete_all
+      body = task.description.to_s
+
+      body.scan(KnowledgeMarkdown::Wikilinks::ANCHOR_ONLY_RE) do |anchor, _alias|
+        row = KnowledgeItemAnchor.find_by(anchor: anchor)
+        KnowledgeItemReference.create!(
+          source_task_id: task.id, target_title: anchor,
+          target_uuid: row&.knowledge_item_uuid, anchor_type: :block, anchor_text: anchor)
+      end
+      body.scan(KnowledgeMarkdown::Wikilinks::TASK_REF_RE) do |task_id, _alias|
+        next if task_id.to_i == task.id  # Selbstverweis ist kein Backlink
+        next unless Task.exists?(id: task_id)
+        KnowledgeItemReference.create!(
+          source_task_id: task.id, target_title: "##{task_id}",
+          target_task_id: task_id, anchor_type: :file)
+      end
+      body.scan(WIKILINK_REGEX) do |target_id, heading, block|
+        anchor_type, anchor_text =
+          if block then [:block, block.to_s.strip]
+          elsif heading then [:heading, heading.to_s.strip]
+          else [:file, nil]
+          end
+        target_id = target_id.to_s.strip
+        target_uuid =
+          if target_id =~ UUID_RE
+            target_id.downcase if KnowledgeItem.with_discarded.where(uuid: target_id.downcase).exists?
+          else
+            KnowledgeItem.by_title_ci(target_id).first&.uuid
+          end
+        KnowledgeItemReference.create!(
+          source_task_id: task.id, target_title: target_id,
+          target_uuid: target_uuid, anchor_type: anchor_type, anchor_text: anchor_text)
+      end
+
+      new_block_targets = KnowledgeItemReference
+                            .where(source_task_id: task.id, anchor_type: :block)
+                            .where.not(target_uuid: nil).pluck(:target_uuid)
+      bust_render_caches((old_block_targets + new_block_targets).uniq)
+    end
+
     # #663: aktuelle Block-Anker-Ziele eines Items (mit aufgelöster UUID).
     def current_block_anchor_targets(item)
       item.outgoing_references

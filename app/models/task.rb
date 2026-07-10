@@ -47,18 +47,25 @@ class Task < ApplicationRecord
 
   has_many :attachments, -> { order(:created_at) }, class_name: "TaskAttachment", dependent: :destroy
 
-  # #953: Backlinks — KIs (Notizen, Antworten anderer Aufgaben/KIs), deren
-  # Body diese Aufgabe per [[#id]] referenziert. Rows bleiben bei Task-
-  # Löschung stehen (der Link im Body existiert ja weiter und rendert
-  # dann als „nicht gefunden"); die Abfrage läuft immer von der Task-Seite.
+  # #953: Backlinks — KIs (Notizen, Antworten anderer Aufgaben/KIs) und
+  # Aufgaben (Beschreibung, #953 Folge), die diese Aufgabe per [[#id]]
+  # referenzieren. Incoming-Rows bleiben bei Task-Löschung stehen (der
+  # Link im Quell-Body existiert ja weiter und rendert dann als „nicht
+  # gefunden"); die Abfrage läuft immer von der Task-Seite.
   has_many :incoming_references, class_name: "KnowledgeItemReference",
     foreign_key: :target_task_id
+
+  # #953 Folge: Referenzen AUS der eigenen Beschreibung ([[#id]]/[[Titel]]).
+  has_many :outgoing_references, class_name: "KnowledgeItemReference",
+    foreign_key: :source_task_id, dependent: :delete_all
+  after_save :reindex_description_references, if: :saved_change_to_description?
 
   # Backlink-Quellen fürs Detail-Blade: eigene Antworten DIESER Aufgabe
   # zählen nicht (Selbst-Erwähnung im eigenen Thread ist Rauschen).
   def backlink_sources
-    incoming_references.includes(:source).filter_map(&:source).uniq
-      .reject { |src| src.reply? && src.parent_type == "Task" && src.parent_id_int == id }
+    incoming_references.includes(:source, :source_task)
+      .filter_map(&:source_object).uniq
+      .reject { |src| src.is_a?(KnowledgeItem) && src.reply? && src.parent_type == "Task" && src.parent_id_int == id }
   end
 
   has_many :comments, -> { ordered }, class_name: "TaskComment", dependent: :destroy
@@ -222,6 +229,12 @@ class Task < ApplicationRecord
   end
 
   private
+
+  # #953 Folge: Wikilinks in der Beschreibung sofort in den Referenz-
+  # Index schreiben (analog FileProxy.create/update für KI-Bodies).
+  def reindex_description_references
+    KnowledgeIndexer.index_task_description_references(self)
+  end
 
   # Wer eine Aufgabe anlegt, kriegt sie standardmäßig selbst zugewiesen.
   # Quelle ist Current.actor (gesetzt im ApplicationController + API

@@ -397,11 +397,20 @@ class FileProxy
     def rewrite_title_wikilinks(actor:, item:, old_title:)
       refs = KnowledgeItemReference.where(target_uuid: item.uuid)
                                    .where("LOWER(target_title) = ?", old_title.downcase)
-                                   .includes(:source)
-      sources = refs.filter_map(&:source).uniq
-      return if sources.empty?
+                                   .includes(:source, :source_task)
+      sources      = refs.filter_map(&:source).uniq
+      task_sources = refs.filter_map(&:source_task).uniq
 
       re = /\[\[(#{Regexp.escape(old_title)})((?:#[^\]|]+)?(?:\^[^\]|]+)?(?:\|[^\]]+)?)\]\]/i
+
+      # #953 Folge: Titel-Wikilinks in Task-BESCHREIBUNGEN mit-rewriten —
+      # das update! triggert den Description-Reindex, die Refs ziehen nach.
+      task_sources.each do |task|
+        new_desc = task.description.to_s.gsub(re) { "[[#{item.title}#{Regexp.last_match(2)}]]" }
+        task.update!(description: new_desc) if new_desc != task.description.to_s
+      end
+
+      return if sources.empty?
       sources.each do |src|
         next if src.uuid == item.uuid  # Selbst-Verweis: nicht relevant
         raw = Reader.read(actor: actor, knowledge_item: src)

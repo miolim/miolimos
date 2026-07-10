@@ -257,6 +257,46 @@ class KnowledgeIndexerTest < ActiveSupport::TestCase
     end
   end
 
+  # ── #953 Folge: Task-BESCHREIBUNGEN als Referenz-Quellen ────────────────
+  test "task-beschreibung indexiert [[#id]]- und [[Titel]]-Links, ohne Selbstverweis" do
+    with_isolated_miolimos_base do
+      ziel = Task.create!(title: "Ziel-Aufgabe-B", creator: @hans)
+      ki   = FileProxy.create(actor: @hans, title: "Ziel-Notiz-B", item_type: :note, content: "x")
+      quelle = Task.create!(title: "Quell-Aufgabe-B", creator: @hans)
+      quelle.update!(description: "Siehe [[##{ziel.id}]], [[Ziel-Notiz-B]] und mich selbst [[##{quelle.id}]].")
+
+      refs = quelle.outgoing_references.reload
+      assert_equal 2, refs.count, "Selbstverweis wird nicht erfasst"
+      task_ref = refs.find { |r| r.target_task_id.present? }
+      ki_ref   = refs.find { |r| r.target_uuid.present? }
+      assert_equal ziel.id, task_ref.target_task_id
+      assert_equal ki.uuid, ki_ref.target_uuid, "KI-Titel wird sofort aufgelöst"
+
+      assert_includes ziel.backlink_sources, quelle
+      assert_includes ki.incoming_references.map(&:source_object), quelle
+
+      # Beschreibung ändern ersetzt die Refs; Task-Löschung räumt sie ab.
+      quelle.update!(description: "nur noch [[##{ziel.id}]]")
+      assert_equal 1, quelle.outgoing_references.reload.count
+      quelle.destroy!
+      assert_equal 0, KnowledgeItemReference.where(source_task_id: quelle.id).count
+    end
+  end
+
+  test "KI-Umbenennung rewritet Titel-Wikilinks auch in Task-Beschreibungen" do
+    with_isolated_miolimos_base do
+      target = FileProxy.create(actor: @hans, title: "Alter Titel C", item_type: :note, content: "x")
+      quelle = Task.create!(title: "Quell-Aufgabe-C", creator: @hans,
+                            description: "Sieh [[Alter Titel C]] an.")
+      FileProxy.update(actor: @hans, knowledge_item: target, title: "Neuer Titel C")
+      quelle.reload
+      assert_includes quelle.description, "[[Neuer Titel C]]"
+      ref = quelle.outgoing_references.sole
+      assert_equal target.uuid, ref.target_uuid
+      assert_equal "Neuer Titel C", ref.target_title
+    end
+  end
+
   test "re-indexing replaces old references for the same source" do
     with_isolated_miolimos_base do |base|
       uuid = SecureRandom.uuid

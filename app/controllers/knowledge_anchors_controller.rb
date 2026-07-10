@@ -93,15 +93,15 @@ class KnowledgeAnchorsController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
-  # Backlinks für einen Anker — alle KIs, die per [[Title^anchor]] auf
-  # diesen Block verweisen.
+  # Backlinks für einen Anker — alle KIs (und Aufgaben-Beschreibungen,
+  # #953 Folge), die per [[Title^anchor]] auf diesen Block verweisen.
   def backlinks
     anchor = params.require(:anchor).to_s
     refs   = KnowledgeItemReference.where(target_uuid: @item.uuid,
                                           anchor_type: :block,
                                           anchor_text: anchor)
-                                   .includes(:source)
-    items = refs.filter_map(&:source).uniq
+                                   .includes(:source, :source_task)
+    items = refs.filter_map(&:source_object).uniq
     render json: {
       anchor: anchor,
       items:  items.map { |k| helpers.backlink_source_descriptor(k) }

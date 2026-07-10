@@ -56,10 +56,11 @@
   <%= render "knowledge_items/person_backlinks", item: item %>
 <% end %>
 
-<%# Linked-Mentions-Panel: alle KIs, die auf DIESES verweisen.
-    outgoing_references zeigt umgekehrt, was die aktuelle KI
-    referenziert. Klick auf einen Eintrag öffnet die Card im Stack. %>
-<% incoming_sources = item.incoming_references.includes(:source).filter_map(&:source).uniq %>
+<%# Linked-Mentions-Panel: alle KIs — und Aufgaben, deren BESCHREIBUNG
+    verweist (#953 Folge) —, die auf DIESES zeigen. outgoing_references
+    zeigt umgekehrt, was die aktuelle KI referenziert. Klick auf einen
+    Eintrag öffnet die Card im Stack. %>
+<% incoming_sources = item.incoming_references.includes(:source, :source_task).filter_map(&:source_object).uniq %>
 <% if incoming_sources.any? && !item.item_type.in?(%w[person organization]) %>
   <section data-controller="disclosure"
            data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.backlinks"
@@ -83,9 +84,9 @@
         <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
         <div class="text-[13px] flex items-center gap-2">
           <span class="w-5 flex justify-center text-slate-500">
-            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src) %>
+            <%= backlink_source_icon(src, d) %>
           </span>
-          <%= link_to d[:label], knowledge_item_path(src.uuid),
+          <%= link_to d[:label], backlink_source_path(src),
                 data: link_data,
                 class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
         </div>

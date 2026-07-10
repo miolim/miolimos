@@ -265,6 +265,8 @@ class KnowledgeIndexer
   def self.resolve_parent_org_uuid(value)       = References.resolve_parent_org_uuid(value)
   def self.index_body_references_for(item, body) = References.index_body_references_for(item, body)
   def self.resolve_dangling_references_to(t, u)  = References.resolve_dangling_references_to(t, u)
+  # #953 Folge: Task-Beschreibung als Referenz-Quelle (von Task#save).
+  def self.index_task_description_references(task) = References.index_task_description_references(task)
 
   def rebuild_references
     References.rebuild_all

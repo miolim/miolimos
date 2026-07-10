@@ -1063,14 +1063,15 @@ ALTER SEQUENCE public.knowledge_item_pins_id_seq OWNED BY public.knowledge_item_
 
 CREATE TABLE public.knowledge_item_references (
     id bigint NOT NULL,
-    source_uuid character varying NOT NULL,
+    source_uuid character varying,
     target_uuid character varying,
     target_title character varying NOT NULL,
     anchor_type integer DEFAULT 0 NOT NULL,
     anchor_text character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    target_task_id bigint
+    target_task_id bigint,
+    source_task_id bigint
 );
 
 
@@ -4137,6 +4138,13 @@ CREATE INDEX index_knowledge_item_pins_on_actor_id_and_pinned_at ON public.knowl
 
 
 --
+-- Name: index_knowledge_item_references_on_source_task_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_knowledge_item_references_on_source_task_id ON public.knowledge_item_references USING btree (source_task_id) WHERE (source_task_id IS NOT NULL);
+
+
+--
 -- Name: index_knowledge_item_references_on_source_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5818,6 +5826,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260710110054'),
 ('20260710102124'),
 ('20260709134500'),
 ('20260709100000'),

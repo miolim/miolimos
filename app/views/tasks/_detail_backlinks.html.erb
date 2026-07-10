@@ -1,9 +1,10 @@
 <%# #953 (Hans, 2026-07-10): Backlinks-Sektion im Task-Detail — KIs
-    (Notizen, Antworten anderer Aufgaben/KIs), deren Body diese Aufgabe
-    per [[#id]] referenziert. Gleiches Muster wie die Backlinks-Sektion
-    im KI-Detail (_detail_link_panels); Quellen-Darstellung/Navigation
-    über backlink_source_descriptor (#501). Eigene Antworten der Aufgabe
-    zählen nicht (siehe Task#backlink_sources). Rendert nur bei Treffern. %>
+    (Notizen, Antworten anderer Aufgaben/KIs) und Aufgaben (Beschreibung,
+    #953 Folge), die diese Aufgabe per [[#id]] referenzieren. Gleiches
+    Muster wie die Backlinks-Sektion im KI-Detail (_detail_link_panels);
+    Quellen-Darstellung/Navigation über backlink_source_descriptor (#501).
+    Eigene Antworten der Aufgabe zählen nicht (siehe
+    Task#backlink_sources). Rendert nur bei Treffern. %>
 <% backlink_sources = task.backlink_sources %>
 <% if backlink_sources.any? %>
   <section data-controller="disclosure"
@@ -25,9 +26,9 @@
         <% link_data[:target_anchor] = d[:scroll_to] if d[:scroll_to] %>
         <div class="text-[13px] flex items-center gap-2">
           <span class="w-5 flex justify-center text-slate-500">
-            <%= d[:icon] == "task" ? icon("tasks", size: "w-4 h-4") : knowledge_type_icon(src) %>
+            <%= backlink_source_icon(src, d) %>
           </span>
-          <%= link_to d[:label], knowledge_item_path(src.uuid),
+          <%= link_to d[:label], backlink_source_path(src),
                 data: link_data,
                 class: "wikilink text-emerald-700 hover:underline truncate flex-1" %>
         </div>

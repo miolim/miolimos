@@ -85,7 +85,10 @@
       <div class="flex justify-between"><span class="text-slate-500"><%= t("documents.invoice.gross") %></span><span class="tabular-nums font-medium"><%= document_euro(line.gross) %></span></div>
     <% end %>
 
-    <%# — Zugeordnete Zeiten — %>
+    <%# — Zugeordnete Zeiten — #968 (Hans): nur bei AUSGEHENDEN Rechnungen.
+        Zeiten-Zuordnung dient der Abrechnung eigener Arbeit; an fremden
+        Belegen (eingehend) hat sie nichts verloren. %>
+    <% unless doc.eingehend? %>
     <div class="pt-2 border-t border-slate-100 space-y-1">
       <div class="text-slate-500 font-medium"><%= t("documents.invoice.assigned_times") %> · <%= line.time_entries.size %></div>
       <% line.time_entries.sort_by { |t| t.started_at || Time.zone.at(0) }.reverse.each do |te| %>
@@ -102,11 +105,12 @@
       <% end %>
       <% if line.time_entries.empty? %><p class="text-slate-400 italic"><%= t("documents.invoice.no_times_assigned") %></p><% end %>
     </div>
+    <% end %>
 
     <%# — Zuordenbare Zeiten — #541 (Hans): auf Item-Level konsolidiert, plus
         projekt-only-Buchungen. Klick auf ein Item öffnet dessen Blade (Zeiten).
-        Section bleibt offen (open). — %>
-    <% unless locked %>
+        Section bleibt offen (open). #968: nicht bei eingehend. — %>
+    <% unless locked || doc.eingehend? %>
       <% if doc.topic %>
         <% cands = TimeEntry.for_topic(doc.topic).invoiceable.includes(:time_segments).to_a %>
         <% if cands.any? %>

@@ -30,6 +30,7 @@ class InvoiceLinesController < ApplicationController
   # Item-Gruppe (time_entry_ids[]). #541 (Hans, 2026-06-09).
   def assign_time
     return reject_locked if @line.invoice.locked?
+    return head(:unprocessable_content) if @line.invoice.eingehend?  # #968: keine Zeiten an fremden Belegen
     ids = Array(params[:time_entry_ids]).presence || [params[:time_entry_id]].compact
     TimeEntry.where(id: ids, invoice_line_id: nil, billable: true, status: "finished")
              .update_all(invoice_line_id: @line.id)

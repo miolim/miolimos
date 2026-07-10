@@ -195,6 +195,32 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # #541: Positions-Detail-Blade — leere Position + Zeit-Zuordnung (Menge = Stunden).
+  # #968 (Hans): Zeiten-Zuordnung nur an AUSGEHENDEN Rechnungen.
+  test "eingehend: Positions-Blade ohne Zeiten-Sektionen, Endpoints lehnen ab" do
+    topic = Topic.create!(name: "Projekt E", creator: @hans)
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend, topic_id: topic.id)
+    line = invoice.invoice_lines.create!(description: "Fremdposten", quantity: 1, unit_price: 10, position: 0)
+    te = TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.local(2026, 5, 2, 9), minutes: 60, topic: topic, billable: true)
+
+    get "/invoice_lines/#{line.id}/card"
+    assert_response :success
+    refute_includes @response.body, "Zugeordnete Zeiten"
+    refute_includes @response.body, "Zeiten zuordnen"
+
+    get "/invoices/#{invoice.id}/card"
+    refute_includes @response.body, "invoice_time_import_#{invoice.id}"
+
+    post "/invoice_lines/#{line.id}/assign_time", params: { time_entry_id: te.id },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :unprocessable_content
+    assert_nil te.reload.invoice_line_id
+
+    post "/invoices/#{invoice.id}/import_time_entries", params: { rate: "100", time_entry_ids: [te.id] },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :unprocessable_content
+    assert_equal 1, invoice.invoice_lines.count
+  end
+
   test "invoice_line Blade: Position anlegen, Zeit zuordnen/lösen, Menge aus Stunden" do
     topic = Topic.create!(name: "Projekt P", creator: @hans)
     invoice = Invoice.create!(kind: :rechnung, status: :entwurf, topic_id: topic.id)

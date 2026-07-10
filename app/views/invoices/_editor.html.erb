@@ -15,6 +15,8 @@
     <%# #541: Rechnungspositionen (Liste; jede öffnet ihr Detail-Blade mit
         Zeit-Zuordnung) + Summen. %>
     <%= render "invoices/invoice_lines", invoice: invoice %>
-    <%= render "invoices/time_import", invoice: invoice %>
+    <%# #968: Zeiten-Import nur ausgehend — eingehende Belege rechnen
+        keine eigene Arbeitszeit ab. %>
+    <%= render "invoices/time_import", invoice: invoice unless invoice.eingehend? %>
   <% end %>
 </div>

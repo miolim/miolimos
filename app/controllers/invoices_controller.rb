@@ -98,6 +98,7 @@ class InvoicesController < ApplicationController
   # Zeit doppelt abgerechnet.
   def import_time_entries
     load_printable
+    return head(:unprocessable_content) if @invoice.eingehend?  # #968: keine Zeiten an fremden Belegen
     rate = decimal_param(params[:rate])
     pos  = @invoice.invoice_lines.maximum(:position).to_i
     if @invoice.topic

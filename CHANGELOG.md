@@ -28,6 +28,10 @@ release is cut, this section is renamed to the new version and a fresh
   the title (or removing the chip) discards the template description. Tasks
   typed without a template no longer silently carry the body of the last picked
   template (#966).
+- Incoming invoices no longer offer time-entry assignment: the line blade hides
+  the assigned/assignable times sections, the invoice card hides the time
+  import, and the endpoints reject incoming invoices — billing own hours only
+  applies to outgoing invoices (#968).
 
 ## [0.3.2] - 2026-07-10
 

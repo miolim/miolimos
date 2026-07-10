@@ -296,6 +296,33 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Fällig am"
   end
 
+  # #946 Folge (Hans): Eingangsrechnungen haben keinen Status-Lebenszyklus.
+  test "card einer Eingangsrechnung: kein Status-Select, kein Festschreiben, Heading Beleg" do
+    ein = Invoice.create!(kind: :rechnung, direction: :eingehend, number: "SW-12")
+    get "/invoices/#{ein.id}/card"
+    assert_response :success
+    refute_includes @response.body, 'name="status"'
+    refute_includes @response.body, "festzuschreiben"          # Archive-Hint
+    refute_includes @response.body, archive_pdf_invoice_path(ein)
+    assert_includes @response.body, "Beleg"
+    refute_includes @response.body, "Festgeschriebene Stände"
+
+    aus = Invoice.create!(kind: :rechnung, direction: :ausgehend)
+    get "/invoices/#{aus.id}/card"
+    assert_includes @response.body, 'name="status"'
+    assert_includes @response.body, "Festgeschriebene Stände"
+  end
+
+  test "Liste: Eingangsrechnung im Entwurf zeigt kein Entwurf-Badge" do
+    Invoice.create!(kind: :rechnung, direction: :eingehend, status: :entwurf, number: "EIN-BADGE-1")
+    get "/invoices/list_card"
+    assert_response :success
+    row = @response.body[/id="invoice_row_#{Invoice.find_by(number: 'EIN-BADGE-1').id}".*?<\/li>/m]
+    assert row, "Listenzeile nicht gefunden"
+    assert_includes row, "Eingang"
+    refute_includes row, "Entwurf"
+  end
+
   # ── #946: Eingangsrechnung manuell anlegen ───────────────────────────────
   test "create mit direction=eingehend legt eine Eingangsrechnung an" do
     assert_difference -> { Invoice.count }, 1 do

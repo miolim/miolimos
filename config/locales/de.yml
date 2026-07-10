@@ -1724,6 +1724,8 @@ de:
       xrechnung_xml: "XRechnung (XML)"
       xrechnung_xml_title: "Reine EN16931-XML (B2G)"
       artifacts_heading: "Festgeschriebene Stände"
+      artifacts_heading_incoming: "Beleg"
+      no_artifacts_incoming: "Kein Beleg hinterlegt."
       signed: "signiert"
       unsigned: "unsigniert"
       in_portal: "im Portal ✓"

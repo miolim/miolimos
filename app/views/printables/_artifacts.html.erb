@@ -1,11 +1,15 @@
 <%# #532 (Hans, 2026-06-08): festgeschriebene PDF-Stände — seit #926 die
     geteilte Artefakt-Sektion aller druckbaren Entitäten (local: printable).
     Liste mit Datum/Zeit/Ersteller, anklickbar (öffnet das gespeicherte PDF).
-    Bei Status final der Button zum Festschreiben des aktuellen Stands. %>
+    Bei Status final der Button zum Festschreiben des aktuellen Stands.
+    #946 (Hans): Eingangsrechnungen haben KEINEN Festschreib-Lebenszyklus —
+    ihr Artefakt ist der empfangene Beleg (Original-PDF aus dem Import);
+    Überschrift „Beleg", kein Festschreiben-Button/-Hint. %>
 <% printable = local_assigns.fetch(:printable) %>
 <% key = printable.model_name.param_key %>
+<% incoming = printable.respond_to?(:eingehend?) && printable.eingehend? %>
 <div id="<%= key %>_artifacts_<%= printable.id %>" class="space-y-1 text-[13px] pt-3 mt-3 border-t border-slate-300">
-  <div class="text-[15px] font-semibold text-slate-600"><%= t("documents.list.artifacts_heading") %></div>
+  <div class="text-[15px] font-semibold text-slate-600"><%= incoming ? t("documents.list.artifacts_heading_incoming") : t("documents.list.artifacts_heading") %></div>
   <% arts = printable.document_artifacts.recent %>
   <% if arts.any? %>
     <ul class="space-y-0.5">
@@ -35,13 +39,15 @@
       <% end %>
     </ul>
   <% else %>
-    <p class="text-slate-400 italic"><%= t("documents.list.no_artifacts") %></p>
+    <p class="text-slate-400 italic"><%= incoming ? t("documents.list.no_artifacts_incoming") : t("documents.list.no_artifacts") %></p>
   <% end %>
-  <% if printable.final? %>
-    <%= button_to t("documents.list.archive_current"), polymorphic_path([:archive_pdf, printable]), method: :post,
-          form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-          class: "mt-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer" %>
-  <% else %>
-    <p class="text-[11px] text-slate-400"><%= t("documents.list.archive_hint_html") %></p>
+  <% unless incoming %>
+    <% if printable.final? %>
+      <%= button_to t("documents.list.archive_current"), polymorphic_path([:archive_pdf, printable]), method: :post,
+            form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+            class: "mt-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer" %>
+    <% else %>
+      <p class="text-[11px] text-slate-400"><%= t("documents.list.archive_hint_html") %></p>
+    <% end %>
   <% end %>
 </div>

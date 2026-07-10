@@ -142,7 +142,8 @@
               <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
               <% if invoice.eingehend? %><span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span><% end %>
               <span class="font-medium text-slate-800 truncate"><%= invoice.display_name || t("documents.list.unnamed") %></span>
-              <% if invoice.entwurf? %><span class="ml-auto shrink-0 text-[10px] text-amber-600"><%= t("documents.list.draft") %></span><% end %>
+              <%# #946 (Hans): Eingangsrechnungen haben keinen Status — kein Entwurf-Badge. %>
+              <% if invoice.entwurf? && invoice.ausgehend? %><span class="ml-auto shrink-0 text-[10px] text-amber-600"><%= t("documents.list.draft") %></span><% end %>
             </div>
             <div class="text-xs text-slate-500 truncate mt-0.5">
               <% if invoice.document_date %><span class="text-slate-600 tabular-nums"><%= l(invoice.document_date, format: :default) %></span> <span class="text-slate-300">·</span> <% end %><%= invoice.issuer&.title || "—" %> <span class="text-slate-300">|</span> <%= invoice.recipient&.title || "—" %>

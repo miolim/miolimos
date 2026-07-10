@@ -17,14 +17,18 @@
           param_name: "value", create_label: "", allow_create: false %>
   </div>
 
-  <%# — Status — %>
-  <div class="<%= rowcls %>">
-    <span class="text-slate-500"><%= t("documents.fields.status") %></span>
-    <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
-      <%= f.select :status, Invoice.statuses.keys.map { |s| [s.capitalize, s] }, { selected: invoice.status },
-            onchange: "this.form.requestSubmit()", class: inputcls %>
-    <% end %>
-  </div>
+  <%# — Status — #946 (Hans): nur bei AUSGEHENDEN Belegen. Eingangs-
+      rechnungen haben keinen Entwurf/Final-Lebenszyklus — sie sind
+      einfach da (Original hängt als Artefakt). %>
+  <% if invoice.ausgehend? %>
+    <div class="<%= rowcls %>">
+      <span class="text-slate-500"><%= t("documents.fields.status") %></span>
+      <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
+        <%= f.select :status, Invoice.statuses.keys.map { |s| [s.capitalize, s] }, { selected: invoice.status },
+              onchange: "this.form.requestSubmit()", class: inputcls %>
+      <% end %>
+    </div>
+  <% end %>
 
   <%# — Aussteller — #946: Richtung im suggest_url — bei Eingangsrechnungen
       schlägt der Picker fremde Personen/Orgs vor statt der eigenen Firmen. %>

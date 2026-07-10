@@ -5,7 +5,7 @@
 <% invoice = local_assigns.fetch(:invoice) %>
 <%# #541 (Hans, 2026-06-09): alle Rechnungsangaben sammeln sich im Infoblock
     (keine Doppelung mehr unter der Überschrift). Reihenfolge: Rechnungs-
-    nummer zuoberst … Datum zuunterst. §14 UStG schreibt nur den INHALT vor,
+    nummer zuoberst … Datum zuunterst. § 14 UStG schreibt nur den INHALT vor,
     nicht die Position; DIN-5008-Konvention ist der Infoblock. %>
 <% rows = [] %>
 <% rows << [t("documents.render.invoice_number"), invoice.number] if invoice.number.present? %>

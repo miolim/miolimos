@@ -559,7 +559,7 @@ en:
       parent_org_label_html: 'Parent organization <span class="text-slate-400 font-normal">(title or UUID, empty = top-level)</span>'
       parent_org_placeholder: "e.g. BigCorp"
       issuer_label_html: 'Issuer <span class="text-slate-400 font-normal">(own legal entity)</span>'
-      vat_exempt_label_html: 'VAT exempt <span class="text-slate-400 font-normal">(e.g. §19 UStG)</span>'
+      vat_exempt_label_html: 'VAT exempt <span class="text-slate-400 font-normal">(e.g. § 19 UStG)</span>'
       change_source: "Change source"
       source_picker_placeholder: "Slug or full-text search — empty = decouple"
       tag: "Tag"
@@ -1602,7 +1602,7 @@ en:
       new_position_placeholder: "(new item)"
       open_position: "Open item (assign times)"
       no_positions_yet: 'No items yet — add „+ Item".'
-      vat_exempt_note: "VAT-exempt – no VAT is shown (e.g. §19 UStG / small business)."
+      vat_exempt_note: "VAT-exempt – no VAT is shown (e.g. § 19 UStG / small business)."
     fields:
       issuer: "Issuer"
       declarant: "Declarant"
@@ -1659,7 +1659,7 @@ en:
       net_total: "Net amount"
       plus_vat: "plus VAT %{rate} %"
       gross_total: "Total amount"
-      vat_exempt_note: "Exempt from VAT – no value-added tax is shown (§ 19 UStG / small business)."
+      vat_exempt_note: "Exempt from VAT – no value-added tax is shown (§ 19 UStG / small business)."
       payment_terms: "Payable within 14 days without deduction"
       payment_to_account: " to the account stated below"
       payment_thanks: ". Thank you for your cooperation."

@@ -32,6 +32,9 @@ release is cut, this section is renamed to the new version and a fresh
   the assigned/assignable times sections, the invoice card hides the time
   import, and the endpoints reject incoming invoices — billing own hours only
   applies to outgoing invoices (#968).
+- VAT strings use a consistent section-sign notation with a non-breaking space
+  ("§ 19 UStG" instead of "§19 UStG") in the German and English locales (#969,
+  reported from immoOS).
 
 ## [0.3.2] - 2026-07-10
 

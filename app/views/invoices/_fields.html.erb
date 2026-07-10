@@ -93,7 +93,7 @@
     </div>
   <% end %>
 
-  <%# #541 — Rechnungsnummer + Leistungszeitraum (§14 UStG). %>
+  <%# #541 — Rechnungsnummer + Leistungszeitraum (§ 14 UStG). %>
   <div class="<%= rowcls %>">
     <span class="text-slate-500"><%= t("documents.fields.invoice_number") %></span>
     <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>

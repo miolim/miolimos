@@ -562,7 +562,7 @@ de:
       parent_org_label_html: 'Übergeordnete Organisation <span class="text-slate-400 font-normal">(Title oder UUID, leer = top-level)</span>'
       parent_org_placeholder: "z.B. BigCorp"
       issuer_label_html: 'Aussteller <span class="text-slate-400 font-normal">(eigenes Rechtssubjekt)</span>'
-      vat_exempt_label_html: 'Umsatzsteuerbefreit <span class="text-slate-400 font-normal">(z.B. §19 UStG)</span>'
+      vat_exempt_label_html: 'Umsatzsteuerbefreit <span class="text-slate-400 font-normal">(z. B. § 19 UStG)</span>'
       change_source: "Quelle aendern"
       source_picker_placeholder: "Slug oder Volltext-Suche — leer = entkoppeln"
       tag: "Tag"
@@ -1612,7 +1612,7 @@ de:
       new_position_placeholder: "(neue Position)"
       open_position: "Position öffnen (Zeiten zuordnen)"
       no_positions_yet: 'Noch keine Positionen — „+ Position" anlegen.'
-      vat_exempt_note: "Umsatzsteuerbefreit – es wird keine Umsatzsteuer ausgewiesen (z. B. §19 UStG / Kleinunternehmer)."
+      vat_exempt_note: "Umsatzsteuerbefreit – es wird keine Umsatzsteuer ausgewiesen (z. B. § 19 UStG / Kleinunternehmer)."
     fields:
       issuer: "Aussteller"
       declarant: "Erklärender"
@@ -1669,7 +1669,7 @@ de:
       net_total: "Nettobetrag"
       plus_vat: "zzgl. USt %{rate} %"
       gross_total: "Gesamtbetrag"
-      vat_exempt_note: "Umsatzsteuerbefreit – es wird keine Umsatzsteuer ausgewiesen (§ 19 UStG / Kleinunternehmer)."
+      vat_exempt_note: "Umsatzsteuerbefreit – es wird keine Umsatzsteuer ausgewiesen (§ 19 UStG / Kleinunternehmer)."
       payment_terms: "Zahlbar innerhalb von 14 Tagen ohne Abzug"
       payment_to_account: " auf das unten genannte Konto"
       payment_thanks: ". Vielen Dank für die Zusammenarbeit."

@@ -399,8 +399,13 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
   .stack-card .stack-spine {
     flex-direction: row !important;
     align-self: auto !important;
+    align-items: center !important;
     width: 100% !important;
-    height: 2.25rem !important;          /* 36px, ordentlicher Touch-Target */
+    /* #950: min-height statt fixer height — waechst der Inhalt (z.B.
+       Android-Font-Boosting), waechst der Balken mit, statt dass der
+       Inhalt an die Oberkante gedrueckt wird. */
+    height: auto !important;
+    min-height: 2.25rem !important;      /* 36px, ordentlicher Touch-Target */
     padding: 0 0.5rem !important;
     gap: 0.5rem !important;
     border-right: 0 !important;
@@ -413,8 +418,11 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
     writing-mode: horizontal-tb !important;
     flex: 1 1 auto;
   }
-  /* Close-Button: kein mb-1 mehr noetig. */
-  .stack-card .stack-spine .shared-blade-close {
+  /* #950: Fuss-Buttons (Verlauf, Schliessen-X, Entwurfs-Stift) tragen mb-1
+     fuer den vertikalen Desktop-Spine; horizontal drueckt der Margin sie
+     ueber die Mitte. Vorher zielte der Reset auf `.shared-blade-close`,
+     eine Klasse, die im Markup nie existierte. */
+  .stack-card .stack-spine > * {
     margin-bottom: 0 !important;
   }
 }

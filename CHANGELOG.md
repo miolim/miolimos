@@ -23,6 +23,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- On mobile, the horizontal card title bar (spine) keeps its content vertically
+  centered: the footer buttons (history, close, draft pencil) no longer sit
+  above the middle, and the bar grows with its content instead of pinning it to
+  the top edge when the browser scales text (#950).
 - Picking a task template no longer leaves its description invisibly stuck on
   the quick-add form: the selection now shows as a removable chip, and clearing
   the title (or removing the chip) discards the template description. Tasks

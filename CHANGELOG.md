@@ -23,6 +23,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The browser tab no longer reads "Wissen" when opening persons or organizations
+  as a stack: the contacts list (sidebar "Personen" and the old `/contacts`
+  redirect) titles the tab "Kontakte", and a person or organization opened as
+  the first stack card titles it with its name (#982).
 - On mobile, the horizontal card title bar (spine) keeps its content vertically
   centered: the footer buttons (history, close, draft pencil) no longer sit
   above the middle, and the bar grows with its content instead of pinning it to

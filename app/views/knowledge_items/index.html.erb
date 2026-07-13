@@ -1,4 +1,20 @@
-<% content_for :title, t("knowledge.index_title") %>
+<%# #982: Tab-Titel folgt dem Einstieg — die Seite hostet auch die
+    Personen-Liste (Sidebar „Personen" → ?stack=list:persons, alter
+    /contacts-Redirect → ?item_type=person) und Person/Org-Details als
+    Stack. Pauschal „Wissen" war dort irreführend. %>
+<%
+  first_item = @initial_stack_items&.first
+  tab_title =
+    if @initial_stack_items&.any? { |i| i.kind == :list && i.id == "persons" } ||
+       Array(params[:item_type]).flat_map { |t| t.to_s.split(",") }.presence&.all? { |t| t.in?(%w[person organization]) }
+      t("contacts.index_title")
+    elsif first_item&.kind == :ki && first_item.record.item_type.in?(%w[person organization])
+      first_item.record.title
+    else
+      t("knowledge.index_title")
+    end
+%>
+<% content_for :title, tab_title %>
 
 <%# #163 Phase 6c (KI): /knowledge_items ist jetzt eine Blade-Stack-
     Seite ohne separates Aside. Die ehemalige Liste lebt als

@@ -34,7 +34,8 @@
             data-target-uuid="<%= local_assigns[:uuid] %>"
             title="<%= t("tasks.duplicate_card") %>" aria-label="<%= t("tasks.duplicate_card") %>"
             class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-      <%= icon "copy" %>
+      <%# #1007 (Hans): copy-plus statt copy — unterscheidbar vom Kopieren-Icon. %>
+      <%= icon "copy-plus" %>
     </button>
   <% end %>
   <% if show_reload %>

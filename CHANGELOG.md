@@ -28,6 +28,11 @@ release is cut, this section is renamed to the new version and a fresh
   document" button in the "Beleg" section attaches the original to invoices
   that were created manually instead of through the document import (#964).
 
+### Changed
+
+- The "duplicate card" icon in the card toolbar is now `copy-plus` instead of
+  `copy`, so it is distinguishable from copy-to-clipboard actions (#1007).
+
 ### Fixed
 
 - The tab row of a topic card no longer shows a vertical scrollbar: the active

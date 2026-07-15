@@ -30,6 +30,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The tab row of a topic card no longer shows a vertical scrollbar: the active
+  tab's underline overlap made the horizontally scrollable tab nav overflow by
+  one pixel vertically; the separator line now lives on a wrapper so the tab
+  links stay inside the scroll box (#998).
 - The browser tab no longer reads "Wissen" when opening persons or organizations
   as a stack: the contacts list (sidebar "Personen" and the old `/contacts`
   redirect) titles the tab "Kontakte", and a person or organization opened as

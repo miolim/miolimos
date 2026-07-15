@@ -114,23 +114,29 @@
         Tab-Fallback. %>
     <%# #637: overflow-x-auto — auf schmalen Screens (Handy, große
         Schrift) lief die Leiste über und hintere Reiter waren ohne
-        Scroll schlicht unerreichbar. %>
-    <nav class="flex gap-1 border-b border-slate-200 text-sm shrink-0 items-center px-3 mt-2 overflow-x-auto">
-      <%# #399 (Hans, 2026-05-28): Badge oberhalb des Icons. #484 (Hans,
-          2026-06-03): Diskussion rechtsbündig (ml-auto am Diskussions-Reiter). %>
-      <% (tabs + [discussion_tab]).each do |(key, label, icon_name, badge)| %>
-        <%= link_to topic_path(@topic, tab: key),
-              title: label, "aria-label": label,
-              data: { action: "click->topic-tabs#switch",
-                      "topic-tabs-url-param": list_card_topic_path(@topic, tab: key) },
-              class: "flex flex-col items-center shrink-0 px-1.5 py-1 -mb-px border-b-2 leading-none #{'ml-auto' if key == 'discussion'} #{@tab == key ? "border-emerald-500 text-emerald-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-800"}" do %>
-          <span class="text-[10px] tabular-nums h-3 leading-3">
-            <%= badge if badge %>
-          </span>
-          <%= icon icon_name %>
+        Scroll schlicht unerreichbar.
+        #998 (Hans): die Trennlinie liegt auf dem Wrapper, die nav überlappt
+        sie per -mb-px — die Tab-Links bleiben im Fluss. Vorher ragten die
+        Links selbst per -mb-px aus der Scroll-Box; der 1px-Überstand machte
+        aus overflow-x-auto einen vertikalen Scrollbalken. %>
+    <div class="border-b border-slate-200 px-3 mt-2">
+      <nav class="flex gap-1 text-sm shrink-0 items-center overflow-x-auto -mb-px">
+        <%# #399 (Hans, 2026-05-28): Badge oberhalb des Icons. #484 (Hans,
+            2026-06-03): Diskussion rechtsbündig (ml-auto am Diskussions-Reiter). %>
+        <% (tabs + [discussion_tab]).each do |(key, label, icon_name, badge)| %>
+          <%= link_to topic_path(@topic, tab: key),
+                title: label, "aria-label": label,
+                data: { action: "click->topic-tabs#switch",
+                        "topic-tabs-url-param": list_card_topic_path(@topic, tab: key) },
+                class: "flex flex-col items-center shrink-0 px-1.5 py-1 border-b-2 leading-none #{'ml-auto' if key == 'discussion'} #{@tab == key ? "border-emerald-500 text-emerald-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-800"}" do %>
+            <span class="text-[10px] tabular-nums h-3 leading-3">
+              <%= badge if badge %>
+            </span>
+            <%= icon icon_name %>
+          <% end %>
         <% end %>
-      <% end %>
-    </nav>
+      </nav>
+    </div>
 
     <%# Tab-Body. Liegt direkt in der Card, kein split_pane mehr —
         Detail-Klicks (Task/Awaiting/Communication/KI-Row) gehen via

@@ -166,6 +166,13 @@ module TaskMemberActions
     if incoming.present? && incoming != @task.description.to_s
       @task.update!(description: incoming)
     end
+    # #1010 (Hans): Titel analog — er speichert nur onblur; beim Publish mit
+    # Fokus im Titelfeld ginge die Aenderung sonst verloren. Gleicher
+    # Leer-Guard wie #397, damit ein stale/leeres Feld nichts ueberschreibt.
+    incoming_title = params[:title].to_s
+    if incoming_title.present? && incoming_title != @task.title.to_s
+      @task.update!(title: incoming_title)
+    end
     @task.publish!
     # #382 (Hans, 2026-06-03): Wenn Hans eine Aufgabe an einen Agenten
     # veroeffentlicht, den Agenten direkt anstupsen (statt nur auf den

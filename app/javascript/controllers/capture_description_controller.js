@@ -31,8 +31,19 @@ export default class extends Controller {
     const ta = card.querySelector("textarea[data-description-toggle-target='input']") ||
                card.querySelector("textarea[name='task[description]']") ||
                card.querySelector("textarea[name='description']")
-    if (!ta) return
-    const hidden = this.element.querySelector("input[type='hidden'][name='description']")
-    if (hidden) hidden.value = ta.value
+    if (ta) {
+      const hidden = this.element.querySelector("input[type='hidden'][name='description']")
+      if (hidden) hidden.value = ta.value
+    }
+    // #1010 (Hans): Gleiche Falle beim TITEL — der speichert nur onblur.
+    // Wird mit Fokus im Titelfeld per Strg+Umschalt+Enter veroeffentlicht,
+    // verliert das Publish-Rerender das Rennen gegen den Blur-PATCH und
+    // zeigt den alten Titel. Daher den aktuell getippten Titel mitnehmen;
+    // Server-Guard analog #397 (nur nicht-leer und geaendert).
+    const titleField = card.querySelector("textarea[name='task[title]'], input[name='task[title]']")
+    if (titleField) {
+      const hiddenTitle = this.element.querySelector("input[type='hidden'][name='title']")
+      if (hiddenTitle) hiddenTitle.value = titleField.value
+    }
   }
 }

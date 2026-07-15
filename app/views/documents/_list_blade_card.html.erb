@@ -40,6 +40,8 @@
       <div class="flex-1 min-w-0">
         <%= render "shared/list_search", placeholder: t("documents.list.search_placeholder") %>
       </div>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
 
       <%# Filter-Popover: Typ / Absender / Empfänger (GET-Reload). %>
       <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">

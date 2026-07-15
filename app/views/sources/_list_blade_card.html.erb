@@ -27,6 +27,8 @@
       <div class="flex-1 min-w-0">
         <%= render "shared/list_search", placeholder: t("sources.search_placeholder") %>
       </div>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
       <%# #631 v3: Expand-Link raus — das Blade IST die Quellen-Seite.
           Dafür: Neue Quelle anlegen. %>
       <%= link_to new_source_path, data: { turbo_frame: "_top" },

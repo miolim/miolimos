@@ -18,6 +18,8 @@
       <%= status_pill(item.status) %>
 
       <div class="flex items-center gap-1 shrink-0 text-slate-500 ml-1">
+        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
         <% if item.status != "archived" %>
           <%= button_to archive_inbox_item_path(item), method: :post,
                 class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer",

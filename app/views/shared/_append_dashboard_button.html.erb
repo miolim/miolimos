@@ -1,0 +1,12 @@
+<%# #1005 (Hans): „Card an Dashboard-Stack anhängen" — EIN Button für alle
+    Card-Köpfe (Card-Werkzeugleiste, Listen-Kopf, Settings-/Sonder-Header).
+    Der Handler (blade-stack#appendToDashboard) findet die Card über
+    closest(.stack-card); das uuid-Local ist nur Fallback ohne Card-Vorfahr.
+    Locals (optional): uuid, size (Icon-Größe, Default "w-5 h-5"). %>
+<button type="button"
+        data-action="click->blade-stack#appendToDashboard"
+        data-target-uuid="<%= local_assigns[:uuid] %>"
+        title="<%= t("tasks.append_dashboard_card") %>" aria-label="<%= t("tasks.append_dashboard_card") %>"
+        class="p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+  <%= icon "layers-plus", size: local_assigns.fetch(:size, "w-5 h-5") %>
+</button>

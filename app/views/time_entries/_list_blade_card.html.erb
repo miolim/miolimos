@@ -29,6 +29,10 @@
           <%= label %>
         </button>
       <% end %>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <span class="ml-auto flex items-center pb-1.5">
+        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
+      </span>
     </nav>
 
     <div data-simple-tabs-target="panel" data-name="all" class="p-3">

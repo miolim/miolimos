@@ -20,6 +20,8 @@
                    border-b border-slate-100 flex items-center gap-2">
       <span class="text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon spec[:icon] %></span>
       <span class="flex-1 min-w-0 truncate font-semibold"><%= spec[:title] %></span>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
     </header>
     <%= render spec[:partial], **spec[:locals] %>
   </div>

@@ -19,7 +19,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 - The card toolbar has a new `layers-plus` action that appends the card to the
   dashboard stack without navigating there — a toast confirms; the card shows
-  up the next time the dashboard is opened (#1005).
+  up the next time the dashboard is opened. The action sits in every card
+  head, not just the unified toolbar: list blades, settings pages and
+  sub-pages, calendar, history, inbox, sources, time entries, tag lists,
+  reference/render/properties blades and the tree-focus blade (#1005).
 - Letters and outgoing invoices can be franked with a Deutsche Post
   Internetmarke printed straight into the DIN address field, so the letter
   goes into a window envelope with no separate stamp. A "Frankieren" block
@@ -38,6 +41,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Publishing a task draft with Ctrl+Shift+Enter while the title field still
+  has focus no longer loses the freshly typed title: the publish request now
+  carries the current title (like it already did for the description), and the
+  server applies it before publishing (#1010).
 - The tab row of a topic card no longer shows a vertical scrollbar: the active
   tab's underline overlap made the horizontally scrollable tab nav overflow by
   one pixel vertically; the separator line now lives on a wrapper so the tab

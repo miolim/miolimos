@@ -52,6 +52,8 @@
         <%= t("tags.tag_label", tag: tag) %>
       </h1>
       <span class="text-xs text-slate-500"><%= total %></span>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
     </header>
 
     <% if tasks_arr.any? %>

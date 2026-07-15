@@ -41,6 +41,8 @@
         <span class="text-slate-500"><%= icon "history" %></span>
         <span class="flex-1 min-w-0 truncate font-semibold text-sm"><%= t("history.title") %></span>
         <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= views.size %></span>
+        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+        <span class="ml-auto"><%= render "shared/append_dashboard_button", size: "w-4 h-4" %></span>
         <%# #631: Expand-Link raus — das Blade IST die Verlaufs-Seite. %>
       </div>
       <%# #462: Entitaets-Filter-Pills (nur geladene Typen). %>

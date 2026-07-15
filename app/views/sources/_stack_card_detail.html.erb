@@ -17,6 +17,8 @@
                       hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none truncate" %>
       <% end %>
       <div class="flex items-center gap-1 shrink-0 text-slate-500">
+        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
         <% if source.url.present? %>
           <%= link_to source.url, target: "_blank", rel: "noopener",
                 title: t("sources.open_url"), "aria-label": t("sources.open_url"),

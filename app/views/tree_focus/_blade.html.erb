@@ -21,6 +21,11 @@
         label: t("tree_focus.spine_label", name: topic.name) %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3">
+    <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen.
+        Das Fokus-Blade hat keinen eigenen Kopf; schmale Icon-Zeile oben rechts. %>
+    <div class="flex justify-end -mt-1 -mr-1">
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
+    </div>
     <%= turbo_frame_tag "tree_focus_frame_#{entry.id}" do %>
       <%= render "tree_focus/panel", entry: entry, focus: focus %>
     <% end %>

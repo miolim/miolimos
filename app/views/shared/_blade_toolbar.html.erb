@@ -28,14 +28,8 @@
   <%= entity_actions %>
   <div class="mr-auto"></div>
   <%# #1005 (Hans): Card an den Dashboard-Stack anhängen — ohne Navigation,
-      nur Toast. Handler schreibt die Dashboard-Restore-Keys. %>
-  <button type="button"
-          data-action="click->blade-stack#appendToDashboard"
-          data-target-uuid="<%= local_assigns[:uuid] %>"
-          title="<%= t("tasks.append_dashboard_card") %>" aria-label="<%= t("tasks.append_dashboard_card") %>"
-          class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-    <%= icon "layers-plus" %>
-  </button>
+      nur Toast. Ein Partial für ALLE Card-Köpfe (Follow-up: nicht nur KIs). %>
+  <%= render "shared/append_dashboard_button", uuid: local_assigns[:uuid] %>
   <% if show_duplicate %>
     <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
     <button type="button"

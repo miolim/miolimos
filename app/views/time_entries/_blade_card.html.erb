@@ -18,6 +18,8 @@
         <span class="w-2 h-2 rounded-full shrink-0
                      <%= entry.running? ? 'bg-emerald-500' : (entry.paused? ? 'bg-amber-400' : 'bg-slate-300') %>"></span>
         <h2 class="font-semibold text-sm"><%= t("time_entries.entry") %> · <%= format_minutes(entry.duration_minutes) %></h2>
+        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+        <span class="ml-auto"><%= render "shared/append_dashboard_button", size: "w-4 h-4" %></span>
         <%# #533 (Hans-Wunsch): Buchung löschen, rechts oben. %>
         <button type="button" data-action="time-edit#destroy"
                 title="<%= t("time_entries.delete_entry") %>" aria-label="<%= t("actions.delete") %>"

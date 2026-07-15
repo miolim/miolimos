@@ -74,6 +74,8 @@
           <span class="font-semibold text-sm">Inbox</span>
           <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= items.size %></span>
           <span class="flex-1"></span>
+          <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+          <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
           <details class="relative shrink-0">
             <summary title="<%= t("inbox_items.add_to_inbox") %>" aria-label="<%= t("inbox_items.add_to_inbox") %>"
                      class="list-none p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&::-webkit-details-marker]:hidden">

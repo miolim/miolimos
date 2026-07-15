@@ -16,6 +16,8 @@
       <span class="inline-block w-3 h-3 rounded-full shrink-0"
             style="background: <%= topic.color.presence || '#94a3b8' %>"></span>
       <span class="flex-1 min-w-0 truncate font-semibold"><%= t("topics.properties") %> · <%= topic.name %></span>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
     </header>
 
     <%# #566: Kunde — macht das Topic zum Projekt (Portal-Sektion im

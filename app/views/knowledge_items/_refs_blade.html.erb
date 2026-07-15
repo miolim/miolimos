@@ -31,6 +31,8 @@
       <h2 class="font-semibold text-sm"><%= t("knowledge.list.refs.heading") %></h2>
       <span class="text-xs text-slate-500"><%= t("knowledge.list.refs.from", title: item.title) %></span>
       <span class="text-xs text-slate-400 ml-auto"><%= targets.size + cited_sources.size %></span>
+      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
+      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
       <%# #360 (Hans, 2026-05-25): Per-Blade-Reload. %>
       <button type="button"
               data-action="click->blade-stack#reloadCard"

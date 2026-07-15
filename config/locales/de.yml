@@ -296,6 +296,7 @@ de:
     create_tag:       "Tag anlegen"
     priority_title:   "Priorität: %{label}"
     duplicate_card:   "Card duplizieren"
+    append_dashboard_card: "Card an Dashboard-Stack anhängen"
     reload_card:      "Card neu laden"
     focus_card:       "Fokus: nur diese Card (ESC schließt)"
     focus_card_aria:  "Fokusansicht — nur diese Card"
@@ -1358,6 +1359,8 @@ de:
   # #619 Stufe 3: Strings für die JS-Schicht (Stimulus). Bereitgestellt als
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) liest hier.
   js:
+    blade_stack:
+      appended_to_dashboard: "Card an den Dashboard-Stack angehängt"
     paragraph:
       highlight_paragraph: "Absatz %{color} hervorheben"
       highlight_remove: "Hervorhebung entfernen"

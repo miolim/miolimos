@@ -27,6 +27,15 @@
      class="<%= outer_class %> border-b border-slate-100 flex items-center gap-2 text-slate-500">
   <%= entity_actions %>
   <div class="mr-auto"></div>
+  <%# #1005 (Hans): Card an den Dashboard-Stack anhängen — ohne Navigation,
+      nur Toast. Handler schreibt die Dashboard-Restore-Keys. %>
+  <button type="button"
+          data-action="click->blade-stack#appendToDashboard"
+          data-target-uuid="<%= local_assigns[:uuid] %>"
+          title="<%= t("tasks.append_dashboard_card") %>" aria-label="<%= t("tasks.append_dashboard_card") %>"
+          class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
+    <%= icon "layers-plus" %>
+  </button>
   <% if show_duplicate %>
     <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
     <button type="button"

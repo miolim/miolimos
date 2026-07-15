@@ -518,6 +518,56 @@ class BladeStackController extends Controller {
     this.pushTrailState()
   }
 
+  // #1005 (Hans): Card an den Dashboard-Stack anhängen — OHNE dorthin zu
+  // wechseln, nur ein Toast. Mechanik: die beiden Dashboard-Restore-Keys
+  // (sessionStorage `stack./dashboard` gewinnt beim Restore, localStorage
+  // `stack.last./dashboard` ist der Neustart-Fallback — siehe
+  // blade_stack_trail.js) um die Card-uuid erweitern. Ist das Dashboard die
+  // aktuelle Seite, wird die Card stattdessen direkt angehängt. Grenze: eine
+  // in einem ANDEREN Tab offene Dashboard-Session überschreibt die Keys beim
+  // nächsten eigenen Stack-Wechsel — akzeptiert (Single-User-Praxis).
+  appendToDashboard(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    const btn = event.currentTarget
+    const sourceCard = btn.closest(".stack-card")
+    // Live-uuid der Card gewinnt (Tab-Suffix etc.), wie beim Duplizieren (#620).
+    const uuid = sourceCard?.dataset?.uuid || btn.dataset.targetUuid
+    if (!uuid) return
+    if (window.location.pathname === "/dashboard") {
+      this.appendStackIds([uuid])
+    } else {
+      const SESSION_KEY = "stack./dashboard"
+      const LAST_KEY    = "stack.last./dashboard"
+      const read = (store, key) => {
+        try { return (store.getItem(key) || "").split(",").map(s => s.trim()).filter(Boolean) }
+        catch (_) { return [] }
+      }
+      const sess = read(sessionStorage, SESSION_KEY)
+      const base = sess.length ? sess : read(localStorage, LAST_KEY)
+      const ids  = base.length ? base : ["list:dashboard"]
+      if (!ids.includes(uuid)) ids.push(uuid)
+      const val = ids.join(",")
+      try { sessionStorage.setItem(SESSION_KEY, val) } catch (_) { /* silent */ }
+      try { localStorage.setItem(LAST_KEY, val) } catch (_) { /* silent */ }
+    }
+    this._flashToast(window.t("js.blade_stack.appended_to_dashboard"))
+  }
+
+  // #1005: Toast aus dem Client (Muster copy_clipboard_controller#flashToast).
+  _flashToast(message) {
+    const stack = document.getElementById("toast_stack")
+    if (!stack) return
+    const div = document.createElement("div")
+    div.setAttribute("data-controller", "toast")
+    div.setAttribute("data-action", "mouseenter->toast#pause mouseleave->toast#resume")
+    div.className = "flex items-center gap-3 bg-slate-900 text-white text-sm px-3 py-2 rounded shadow-lg"
+    div.innerHTML = `<span class="flex-1 min-w-0">${message}</span>
+      <button type="button" data-action="click->toast#dismiss"
+              class="text-slate-400 hover:text-white text-lg leading-none">×</button>`
+    stack.appendChild(div)
+  }
+
   // Klick auf einen Wikilink innerhalb einer Card.
   async openInStack(event) {
     event.preventDefault()

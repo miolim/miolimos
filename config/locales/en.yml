@@ -293,6 +293,7 @@ en:
     create_tag:       "Create tag"
     priority_title:   "Priority: %{label}"
     duplicate_card:   "Duplicate card"
+    append_dashboard_card: "Append card to dashboard stack"
     reload_card:      "Reload card"
     focus_card:       "Focus: just this card (ESC closes)"
     focus_card_aria:  "Focus view — just this card"
@@ -1354,6 +1355,8 @@ en:
   # #619 Stufe 3: strings for the JS layer (Stimulus). Provided as
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) reads here.
   js:
+    blade_stack:
+      appended_to_dashboard: "Card appended to the dashboard stack"
     paragraph:
       highlight_paragraph: "Highlight paragraph %{color}"
       highlight_remove: "Remove highlight"

@@ -17,6 +17,9 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- The card toolbar has a new `layers-plus` action that appends the card to the
+  dashboard stack without navigating there — a toast confirms; the card shows
+  up the next time the dashboard is opened (#1005).
 - Letters and outgoing invoices can be franked with a Deutsche Post
   Internetmarke printed straight into the DIN address field, so the letter
   goes into a window envelope with no separate stamp. A "Frankieren" block

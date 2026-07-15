@@ -60,6 +60,9 @@
         per Turbo-Stream live umschaltet (siehe update.turbo_stream). %>
     <%= render "documents/editor", document: document %>
 
+    <%# #995: Frankierung (Internetmarke/Dummy) — nur DIN-Fenster-Dokumente. %>
+    <%= render "printables/franking", printable: document %>
+
     <%= render "printables/artifacts", printable: document %>
   </div>
 </article>

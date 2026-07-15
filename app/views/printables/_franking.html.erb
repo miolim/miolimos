@@ -1,0 +1,55 @@
+<%# #995: Frankierungs-Block im Detail-Blade — Internetmarke kaufen (über
+    die Zugangsdaten des Nutzers) oder Dummy-Marke setzen (Layout-Test).
+    Die Marke erscheint im Anschriftfeld (Kuvert-Fenster) von Vorschau/PDF. %>
+<% pv = printable.postage_voucher %>
+<% franking_url = send("franking_#{printable.model_name.param_key}_path", printable) %>
+<div id="<%= printable.model_name.param_key %>_franking_<%= printable.id %>">
+  <% if printable.frankable? %>
+    <div class="border border-slate-200 rounded p-2 space-y-2">
+      <div class="text-[10px] uppercase tracking-wide text-slate-500"><%= t("printables.franking.title") %></div>
+      <% if pv %>
+        <div class="flex items-center gap-2">
+          <img src="<%= pv.image %>" alt="<%= t("printables.franking.title") %>" class="h-8 border border-slate-100">
+          <div class="text-xs text-slate-600 min-w-0">
+            <div class="truncate">
+              <%= pv.product_label %> · <%= pv.price_euro %>
+              <% if pv.dummy? %>
+                <span class="text-rose-600 font-semibold"><%= t("printables.franking.dummy_badge") %></span>
+              <% end %>
+            </div>
+            <% if pv.voucher_id.present? %>
+              <div class="text-slate-400 truncate"><%= t("printables.franking.voucher_id") %> <%= pv.voucher_id %></div>
+            <% end %>
+          </div>
+          <%= button_to franking_url, method: :delete,
+                form: { class: "inline m-0 p-0 ml-auto",
+                        data: { turbo_confirm: pv.dummy? ? nil : t("printables.franking.remove_confirm_real") } },
+                title: t("printables.franking.remove"), "aria-label": t("printables.franking.remove"),
+                class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" do %>
+            <%= icon "trash" %>
+          <% end %>
+        </div>
+      <% else %>
+        <%= form_with url: franking_url, method: :post,
+              class: "flex items-center gap-2 flex-wrap" do %>
+          <select name="product" class="text-xs border border-slate-200 rounded px-1.5 py-1 bg-white">
+            <% Internetmarke::PRODUCTS.each do |p| %>
+              <option value="<%= p[:code] %>"><%= p[:label] %> · <%= format("%.2f", p[:cents] / 100.0).tr(".", ",") %> €</option>
+            <% end %>
+          </select>
+          <button type="submit"
+                  class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+            <%= t("printables.franking.buy") %>
+          </button>
+          <button type="submit" name="dummy" value="1"
+                  class="text-xs px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
+            <%= t("printables.franking.dummy") %>
+          </button>
+        <% end %>
+        <% unless current_actor.internetmarke_credential %>
+          <p class="text-[11px] text-slate-400"><%= t("printables.franking.credentials_hint") %></p>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

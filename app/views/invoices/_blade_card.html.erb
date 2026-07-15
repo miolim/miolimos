@@ -81,6 +81,9 @@
     <%# #532/#556: bei Status final read-only (gesperrt), sonst editierbar. %>
     <%= render "invoices/editor", invoice: invoice %>
 
+    <%# #995: Frankierung (Internetmarke/Dummy) — nur ausgehende Belege. %>
+    <%= render "printables/franking", printable: invoice %>
+
     <%= render "printables/artifacts", printable: invoice %>
   </div>
 </article>

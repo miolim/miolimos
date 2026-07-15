@@ -22,6 +22,9 @@ class Invoice < ApplicationRecord
 
   validates :kind, presence: true
 
+  # #995: nur eigene (ausgehende) Belege werden kuvertiert und frankiert.
+  def frankable? = ausgehend?
+
   # #559 (Hans): Benennung = Aussteller · Rechnungsnummer · Datum.
   def display_name
     parts = [issuer&.title, number.presence, document_date&.strftime("%d.%m.%Y")]

@@ -185,6 +185,42 @@ module PrintableResource
       partial: "printables/artifacts", locals: { printable: @printable })
   end
 
+  # #995: Frankieren — Internetmarke ins Anschriftfeld. dummy=1 erzeugt eine
+  # MUSTER-Marke (Layout-Test ohne Portokasse); sonst Kauf über die
+  # Zugangsdaten des aktuellen Nutzers (Einstellungen → Frankierung).
+  def franking
+    load_printable
+    return franking_error(t("printables.franking.not_frankable")) unless @printable.frankable?
+    product = Internetmarke.product(params[:product])
+    return franking_error(t("printables.franking.unknown_product")) unless product
+
+    if params[:dummy].present?
+      attrs = { dummy: true, image: Internetmarke::DummyStamp.data_uri(product) }
+    else
+      credential = current_actor.internetmarke_credential
+      return franking_error(t("printables.franking.no_credentials")) unless credential
+      bought = Internetmarke::Client.new(credential)
+                 .buy_png(product_code: product[:code], price_cents: product[:cents])
+      attrs = { dummy: false, voucher_id: bought[:voucher_id],
+                wallet_balance_cents: bought[:wallet_balance],
+                image: "data:image/png;base64,#{Base64.strict_encode64(bought[:png])}" }
+    end
+    @printable.postage_voucher&.destroy!
+    @printable.create_postage_voucher!(attrs.merge(
+      product_code: product[:code], product_label: product[:label],
+      price_cents: product[:cents], creator: current_actor))
+    replace_franking
+  rescue Internetmarke::Client::Error => e
+    franking_error(t("printables.franking.buy_failed", error: e.message))
+  end
+
+  # #995: Frankierung entfernen (echte Marke: Porto verfällt — confirm im View).
+  def destroy_franking
+    load_printable
+    @printable.postage_voucher&.destroy!
+    replace_franking
+  end
+
   # #787: einen finalen PDF-Stand (Artefakt) hart löschen (re-archivierbar).
   def destroy_artifact
     load_printable
@@ -237,6 +273,24 @@ module PrintableResource
   end
 
   private
+
+  # #995: Frankierungs-Block im Blade live austauschen (beide Verben).
+  def replace_franking
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace("#{printable_param_key}_franking_#{@printable.id}",
+          partial: "printables/franking", locals: { printable: @printable })
+      end
+      format.html { redirect_to printable_stack_path(@printable), status: :see_other }
+    end
+  end
+
+  def franking_error(message)
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: helpers.toast_stream(message: message) }
+      format.html { redirect_to printable_stack_path(@printable), alert: message, status: :see_other }
+    end
+  end
 
   def printable_model = raise(NotImplementedError)
   def printable_param_key   = printable_model.model_name.param_key

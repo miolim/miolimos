@@ -1,0 +1,53 @@
+<%# #995: Einstellungs-Blade „Frankierung" — Internetmarke-Zugangsdaten des
+    aktuellen Nutzers (Portokasse + DHL-API-App). Secrets werden nie wieder
+    angezeigt; leer lassen = beim Speichern unverändert. %>
+<% cred = current_actor.internetmarke_credential %>
+
+<div class="p-4 max-w-md space-y-4">
+  <h1 class="text-lg font-semibold"><%= t("settings.internetmarke.title") %></h1>
+  <p class="text-sm text-slate-600"><%= t("settings.internetmarke.intro_html") %></p>
+
+  <% if cred %>
+    <div class="border border-slate-200 rounded p-3 bg-white text-sm space-y-1">
+      <div><span class="text-slate-500"><%= t("settings.internetmarke.portokasse_email") %>:</span> <%= cred.portokasse_email %></div>
+      <div><span class="text-slate-500"><%= t("settings.internetmarke.client_id") %>:</span> <%= cred.client_id %></div>
+      <div class="text-xs text-slate-400"><%= t("settings.internetmarke.secrets_stored") %></div>
+    </div>
+    <div class="flex items-center gap-2">
+      <%= button_to t("settings.internetmarke.test"), test_settings_internetmarke_path, method: :post,
+            class: "text-xs px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer" %>
+      <%= button_to t("settings.internetmarke.remove"), settings_internetmarke_path, method: :delete,
+            form: { data: { turbo_confirm: t("settings.internetmarke.remove_confirm") } },
+            class: "text-xs px-2 py-1 rounded border border-slate-200 text-rose-600 hover:bg-rose-50 cursor-pointer" %>
+    </div>
+  <% else %>
+    <p class="text-slate-400 italic text-sm"><%= t("settings.internetmarke.none_yet") %></p>
+  <% end %>
+
+  <%= form_with url: settings_internetmarke_path, method: :patch, data: { turbo: false },
+        class: "space-y-2" do %>
+    <div class="grid grid-cols-1 gap-2">
+      <label class="text-xs text-slate-600"><%= t("settings.internetmarke.portokasse_email") %>
+        <input type="email" name="portokasse_email" value="<%= cred&.portokasse_email %>" required
+               class="mt-0.5 w-full text-sm border border-slate-200 rounded px-2 py-1">
+      </label>
+      <label class="text-xs text-slate-600"><%= t("settings.internetmarke.portokasse_password") %>
+        <input type="password" name="portokasse_password" autocomplete="new-password"
+               placeholder="<%= t("settings.internetmarke.keep_placeholder") if cred %>" <%= "required" unless cred %>
+               class="mt-0.5 w-full text-sm border border-slate-200 rounded px-2 py-1">
+      </label>
+      <label class="text-xs text-slate-600"><%= t("settings.internetmarke.client_id") %>
+        <input type="text" name="client_id" value="<%= cred&.client_id %>" required
+               class="mt-0.5 w-full text-sm border border-slate-200 rounded px-2 py-1">
+      </label>
+      <label class="text-xs text-slate-600"><%= t("settings.internetmarke.client_secret") %>
+        <input type="password" name="client_secret" autocomplete="new-password"
+               placeholder="<%= t("settings.internetmarke.keep_placeholder") if cred %>" <%= "required" unless cred %>
+               class="mt-0.5 w-full text-sm border border-slate-200 rounded px-2 py-1">
+      </label>
+    </div>
+    <button type="submit" class="text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+      <%= t("settings.internetmarke.save") %>
+    </button>
+  <% end %>
+</div>

@@ -916,6 +916,22 @@ en:
       broadcast:              "Broadcast"
       ai_conversation:        "AI conversation"
 
+  # #995: shared partials of printable entities (app/views/printables/).
+  printables:
+    franking:
+      title:               "Franking"
+      buy:                 "Buy postage"
+      dummy:               "Dummy stamp (test)"
+      dummy_badge:         "SPECIMEN"
+      voucher_id:          "Voucher ID:"
+      remove:              "Remove franking"
+      remove_confirm_real: "Remove the real stamp? The postage has been paid and is lost with the document."
+      unknown_product:     "Unknown postage product."
+      not_frankable:       "This document has no DIN address field and cannot be franked."
+      no_credentials:      "No Internetmarke credentials on file — add them under Settings → Franking (or use the dummy stamp)."
+      buy_failed:          "Franking failed: %{error}"
+      credentials_hint:    "For real stamps: add credentials under Settings → Franking. The dummy stamp only tests the layout."
+
   settings:
     title:       "Settings"
     pages:
@@ -933,6 +949,7 @@ en:
       tag_icons:        "Tag icons"
       preferences:      "Preferences"
       signature:        "Signature"
+      internetmarke:    "Franking"
     tag_icons:
       title:         "Tag icons"
       intro_html:    'Map tag names to <a href="https://lucide.dev/icons" target="_blank" class="text-emerald-700 hover:underline">Lucide icons</a>. The icon then appears before the tag in lists and details. New icon names are loaded automatically from the CDN on save.'
@@ -952,6 +969,25 @@ en:
       remove_confirm: "Really remove the signature?"
       none_yet:       "No signature stored yet."
       upload:         "Upload"
+    internetmarke:
+      title:               "Franking (Internetmarke)"
+      intro_html:          'Credentials for the <strong>Deutsche Post Internetmarke</strong>: a <a href="https://portokasse.deutschepost.de" target="_blank" class="text-emerald-700 hover:underline">Portokasse</a> (prepaid account) and an app in the <a href="https://developer.dhl.com" target="_blank" class="text-emerald-700 hover:underline">DHL developer portal</a> (client ID/secret). Lets you frank letters right in the address field — stamp in the envelope window, no sticking stamps.'
+      portokasse_email:    "Portokasse email"
+      portokasse_password: "Portokasse password"
+      client_id:           "API client ID"
+      client_secret:       "API client secret"
+      secrets_stored:      "Password and client secret are stored encrypted."
+      keep_placeholder:    "leave unchanged"
+      none_yet:            "No credentials stored yet."
+      save:                "Save"
+      saved:               "Credentials saved."
+      remove:              "Remove credentials"
+      remove_confirm:      "Really remove the Internetmarke credentials?"
+      removed:             "Credentials removed."
+      test:                "Test connection"
+      test_ok:             "Login successful."
+      test_ok_balance:     "Login successful — Portokasse balance: %{balance}."
+      test_failed:         "Connection failed: %{error}"
     accounts:
       title:              "Connected accounts"
       connect:            "Connect Gmail account"

@@ -25,7 +25,8 @@ class Settings::BladesController < Settings::BaseController
     "relations"        => { label: "Beziehungstypen",  resource: "KnowledgeItem",   icon: "link" },
     "tag_icons"        => { label: "Tag-Icons",        resource: "Actor",           icon: "tag" },
     "preferences"      => { label: "Vorlieben",        resource: "Actor",           icon: "settings" },
-    "signature"        => { label: "Unterschrift",     resource: "Actor",           icon: "pencil" }
+    "signature"        => { label: "Unterschrift",     resource: "Actor",           icon: "pencil" },
+    "internetmarke"    => { label: "Frankierung",      resource: "Actor",           icon: "mail" }
   }.freeze
 
   def card

@@ -920,6 +920,22 @@ de:
       broadcast:              "Sendung"
       ai_conversation:        "KI-Konversation"
 
+  # #995: geteilte Partials druckbarer Entitäten (app/views/printables/).
+  printables:
+    franking:
+      title:               "Frankierung"
+      buy:                 "Frankieren"
+      dummy:               "Dummy-Marke (Test)"
+      dummy_badge:         "MUSTER"
+      voucher_id:          "Marken-ID:"
+      remove:              "Frankierung entfernen"
+      remove_confirm_real: "Echte Marke entfernen? Das Porto ist bereits bezahlt und verfällt mit dem Dokument."
+      unknown_product:     "Unbekanntes Portoprodukt."
+      not_frankable:       "Dieses Dokument hat kein DIN-Anschriftfeld und kann nicht frankiert werden."
+      no_credentials:      "Keine Internetmarke-Zugangsdaten hinterlegt — unter Einstellungen → Frankierung eintragen (oder Dummy-Marke nutzen)."
+      buy_failed:          "Frankieren fehlgeschlagen: %{error}"
+      credentials_hint:    "Für echte Marken: Zugangsdaten unter Einstellungen → Frankierung hinterlegen. Die Dummy-Marke testet nur das Layout."
+
   settings:
     title:       "Einstellungen"
     pages:
@@ -937,6 +953,7 @@ de:
       tag_icons:        "Tag-Icons"
       preferences:      "Vorlieben"
       signature:        "Unterschrift"
+      internetmarke:    "Frankierung"
     tag_icons:
       title:         "Tag-Icons"
       intro_html:    'Mappe Tag-Namen auf <a href="https://lucide.dev/icons" target="_blank" class="text-emerald-700 hover:underline">Lucide-Icons</a>. Das Icon erscheint dann vor dem Tag in den Listen und Details. Neue Icon-Namen werden beim Speichern automatisch vom CDN geladen.'
@@ -956,6 +973,25 @@ de:
       remove_confirm: "Unterschrift wirklich entfernen?"
       none_yet:       "Noch keine Unterschrift hinterlegt."
       upload:         "Hochladen"
+    internetmarke:
+      title:               "Frankierung (Internetmarke)"
+      intro_html:          'Zugangsdaten für die <strong>Deutsche-Post-Internetmarke</strong>: eine <a href="https://portokasse.deutschepost.de" target="_blank" class="text-emerald-700 hover:underline">Portokasse</a> (Prepaid-Konto) und eine App im <a href="https://developer.dhl.com" target="_blank" class="text-emerald-700 hover:underline">DHL-Developer-Portal</a> (Client-ID/-Secret). Damit frankierst Du Briefe direkt im Adressfeld — Marke im Sichtfenster, kein Aufkleben mehr.'
+      portokasse_email:    "Portokasse-E-Mail"
+      portokasse_password: "Portokasse-Passwort"
+      client_id:           "API Client-ID"
+      client_secret:       "API Client-Secret"
+      secrets_stored:      "Passwort und Client-Secret sind verschlüsselt hinterlegt."
+      keep_placeholder:    "unverändert lassen"
+      none_yet:            "Noch keine Zugangsdaten hinterlegt."
+      save:                "Speichern"
+      saved:               "Zugangsdaten gespeichert."
+      remove:              "Zugangsdaten entfernen"
+      remove_confirm:      "Internetmarke-Zugangsdaten wirklich entfernen?"
+      removed:             "Zugangsdaten entfernt."
+      test:                "Verbindung testen"
+      test_ok:             "Login erfolgreich."
+      test_ok_balance:     "Login erfolgreich — Portokasse: %{balance}."
+      test_failed:         "Verbindung fehlgeschlagen: %{error}"
     accounts:
       title:              "Verbundene Accounts"
       connect:            "Gmail-Account verbinden"

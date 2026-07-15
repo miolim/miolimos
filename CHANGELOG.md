@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Letters and outgoing invoices can be franked with a Deutsche Post
+  Internetmarke printed straight into the DIN address field, so the letter
+  goes into a window envelope with no separate stamp. A "Frankieren" block
+  in the document blade buys the stamp via the Internetmarke REST API
+  (per-user Portokasse/API credentials under Settings → Frankierung,
+  secrets encrypted) or inserts a clearly marked dummy stamp for layout
+  testing without an account (#995).
 - Incoming invoices accept manually uploaded documents (PDF): an "upload
   document" button in the "Beleg" section attaches the original to invoices
   that were created manually instead of through the document import (#964).

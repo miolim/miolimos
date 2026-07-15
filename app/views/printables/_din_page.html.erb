@@ -12,7 +12,9 @@
 
   <div class="din-address">
     <div class="din-return"><%= document_sender_oneline(printable.issuer) %></div>
-    <div class="din-zvz">&nbsp;</div>
+    <%# #995: Frankiervermerk (Internetmarke/Dummy) in der Zusatz-/Vermerkzone —
+        die Post erlaubt die Marke im Sichtfenster, oberhalb der Anschrift. %>
+    <div class="din-zvz"><% if (pv = printable.postage_voucher) %><img class="din-franking" src="<%= pv.image %>" alt="Frankierung"><% else %>&nbsp;<% end %></div>
     <div class="din-recipient">
       <% lines = document_recipient_lines(printable.recipient, override: printable.chosen_recipient_address) %>
       <strong><%= lines.first %></strong><% lines.drop(1).each do |l| %><br><%= l %><% end %>

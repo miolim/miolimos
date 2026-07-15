@@ -42,6 +42,9 @@ class Actor < ApplicationRecord
 
   has_many :audit_logs, dependent: :nullify
 
+  # #995: Portokassen-/API-Zugang für die Internetmarke (Einstellungen).
+  has_one :internetmarke_credential, dependent: :destroy
+
   validates :name, presence: true
   validates :type, presence: true
 

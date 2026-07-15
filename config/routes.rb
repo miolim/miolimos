@@ -34,6 +34,8 @@ Rails.application.routes.draw do
       post  :create_body_ki                    # #532: Text-KI anlegen + verknüpfen
       patch :document_fields                   # #532: freie Key-Value-Felder
       patch :select_identifiers                # #532: Empfänger-IDs an/abwählen
+      post   :franking                         # #995: Internetmarke/Dummy setzen
+      delete :franking, action: :destroy_franking, as: nil
     end
     collection do
       get :list_card                           # Listen-Blade (Sidebar/Stack)
@@ -63,6 +65,8 @@ Rails.application.routes.draw do
       patch :invoice_lines                     # #541: Rechnungspositionen (Inline-Upsert, Legacy)
       post  :import_time_entries               # #541: Zeitbuchungen übernehmen
       post  :add_invoice_line                  # #541: neue (leere) Position anlegen
+      post   :franking                         # #995: Internetmarke/Dummy setzen
+      delete :franking, action: :destroy_franking, as: nil
     end
     collection do
       get :list_card
@@ -490,6 +494,10 @@ Rails.application.routes.draw do
     resource :preferences, only: [:show, :update], controller: "preferences"
     # #547: Unterschriftsbild des Users (fürs signierte PDF).
     resource :signature, only: [:show, :update, :destroy], controller: "signatures"
+    # #995: Internetmarke-Zugangsdaten (Portokasse/DHL-API) fürs Frankieren.
+    resource :internetmarke, only: [:show, :update, :destroy], controller: "internetmarke" do
+      post :test
+    end
     resources :teams, only: [:index]
     resources :templates, only: [:index]
     # #299: Task-Vorlagen — Builder-Konfig fuer den Quickadd-Picker.

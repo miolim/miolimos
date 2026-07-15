@@ -30,6 +30,8 @@ module Printable
     # #532: festgeschriebene PDF-Stände (bei Status final) — seit #926 die
     # EINE gemeinsame Artefakt-Schicht aller druckbaren Entitäten.
     has_many :document_artifacts, -> { recent }, as: :printable, dependent: :destroy
+    # #995: Frankierung (Internetmarke bzw. Dummy) — wandert ins Anschriftfeld.
+    has_one :postage_voucher, as: :printable, dependent: :destroy
 
     # #787: Soft-Delete (Papierkorb) wie bei KnowledgeItem/Task.
     default_scope { where(deleted_at: nil) }
@@ -95,6 +97,11 @@ module Printable
   # IBAN des Ausstellers (für den Zahlungsblock). Optional BIC.
   def issuer_iban = issuer&.identifiers&.to_a&.find { |i| i.label.to_s =~ /iban/i }&.value
   def issuer_bic  = issuer&.identifiers&.to_a&.find { |i| i.label.to_s =~ /\bbic\b|swift/i }&.value
+
+  # #995: kann diese Entität frankiert werden? Nur Dokumente mit
+  # DIN-Fenster-Geometrie (Marke sitzt im Anschriftfeld); Entitäten
+  # schränken weiter ein (Document: nicht NDA, Invoice: nur ausgehend).
+  def frankable? = !print_paged?
 
   # ── Verfahren-Hooks (DocumentRenderer / Output-Actions) ──────────────────
   # Mehrseitiger Render mit Fußzeile pro Seite (Ferrum/CDP)? Default: nein.

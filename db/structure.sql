@@ -838,6 +838,41 @@ ALTER SEQUENCE public.inbox_items_id_seq OWNED BY public.inbox_items.id;
 
 
 --
+-- Name: internetmarke_credentials; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.internetmarke_credentials (
+    id bigint NOT NULL,
+    actor_id bigint NOT NULL,
+    portokasse_email character varying NOT NULL,
+    portokasse_password_ciphertext character varying NOT NULL,
+    client_id character varying NOT NULL,
+    client_secret_ciphertext character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: internetmarke_credentials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.internetmarke_credentials_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: internetmarke_credentials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.internetmarke_credentials_id_seq OWNED BY public.internetmarke_credentials.id;
+
+
+--
 -- Name: invoice_lines; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1293,6 +1328,46 @@ CREATE SEQUENCE public.portal_accesses_id_seq
 --
 
 ALTER SEQUENCE public.portal_accesses_id_seq OWNED BY public.portal_accesses.id;
+
+
+--
+-- Name: postage_vouchers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postage_vouchers (
+    id bigint NOT NULL,
+    printable_type character varying NOT NULL,
+    printable_id bigint NOT NULL,
+    voucher_id character varying,
+    product_code integer NOT NULL,
+    product_label character varying NOT NULL,
+    price_cents integer NOT NULL,
+    dummy boolean DEFAULT false NOT NULL,
+    image text NOT NULL,
+    wallet_balance_cents integer,
+    creator_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: postage_vouchers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.postage_vouchers_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: postage_vouchers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.postage_vouchers_id_seq OWNED BY public.postage_vouchers.id;
 
 
 --
@@ -2608,6 +2683,13 @@ ALTER TABLE ONLY public.inbox_items ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: internetmarke_credentials id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.internetmarke_credentials ALTER COLUMN id SET DEFAULT nextval('public.internetmarke_credentials_id_seq'::regclass);
+
+
+--
 -- Name: invoice_lines id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2682,6 +2764,13 @@ ALTER TABLE ONLY public.oauth_credentials ALTER COLUMN id SET DEFAULT nextval('p
 --
 
 ALTER TABLE ONLY public.portal_accesses ALTER COLUMN id SET DEFAULT nextval('public.portal_accesses_id_seq'::regclass);
+
+
+--
+-- Name: postage_vouchers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postage_vouchers ALTER COLUMN id SET DEFAULT nextval('public.postage_vouchers_id_seq'::regclass);
 
 
 --
@@ -3085,6 +3174,14 @@ ALTER TABLE ONLY public.inbox_items
 
 
 --
+-- Name: internetmarke_credentials internetmarke_credentials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.internetmarke_credentials
+    ADD CONSTRAINT internetmarke_credentials_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: invoice_lines invoice_lines_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3178,6 +3275,14 @@ ALTER TABLE ONLY public.oauth_credentials
 
 ALTER TABLE ONLY public.portal_accesses
     ADD CONSTRAINT portal_accesses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: postage_vouchers postage_vouchers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postage_vouchers
+    ADD CONSTRAINT postage_vouchers_pkey PRIMARY KEY (id);
 
 
 --
@@ -4026,6 +4131,13 @@ CREATE INDEX index_inbox_items_on_status ON public.inbox_items USING btree (stat
 
 
 --
+-- Name: index_internetmarke_credentials_on_actor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_internetmarke_credentials_on_actor_id ON public.internetmarke_credentials USING btree (actor_id);
+
+
+--
 -- Name: index_invoice_lines_on_invoice_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4373,6 +4485,20 @@ CREATE INDEX index_portal_accesses_on_topic_id ON public.portal_accesses USING b
 --
 
 CREATE UNIQUE INDEX index_portal_accesses_on_topic_id_and_email ON public.portal_accesses USING btree (topic_id, email);
+
+
+--
+-- Name: index_postage_vouchers_on_creator_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_postage_vouchers_on_creator_id ON public.postage_vouchers USING btree (creator_id);
+
+
+--
+-- Name: index_postage_vouchers_on_printable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_postage_vouchers_on_printable ON public.postage_vouchers USING btree (printable_type, printable_id);
 
 
 --
@@ -5404,6 +5530,14 @@ ALTER TABLE ONLY public.task_topics
 
 
 --
+-- Name: postage_vouchers fk_rails_66a4f36492; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postage_vouchers
+    ADD CONSTRAINT fk_rails_66a4f36492 FOREIGN KEY (creator_id) REFERENCES public.actors(id);
+
+
+--
 -- Name: topics fk_rails_685fe8bf50; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5812,6 +5946,14 @@ ALTER TABLE ONLY public.task_templates
 
 
 --
+-- Name: internetmarke_credentials fk_rails_fe79832c91; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.internetmarke_credentials
+    ADD CONSTRAINT fk_rails_fe79832c91 FOREIGN KEY (actor_id) REFERENCES public.actors(id);
+
+
+--
 -- Name: sources fk_rails_feff9c4680; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5826,6 +5968,8 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260715100002'),
+('20260715100001'),
 ('20260710110054'),
 ('20260710102124'),
 ('20260709134500'),

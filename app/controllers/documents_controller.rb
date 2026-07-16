@@ -149,9 +149,7 @@ class DocumentsController < ApplicationController
   # Notiz-KI mit Tag "vorlage:<kind>" (z.B. "vorlage:nda"). Existiert keine,
   # bleibt der Body leer. Bewusst NICHT im Code, da dieser veröffentlicht wird.
   def document_template_body(kind)
-    KnowledgeItem.where(item_type: "note")
-                 .where("? = ANY(tags)", "vorlage:#{kind}")
-                 .order(:created_at).first&.body.to_s
+    KnowledgeItem.templates_for(kind).first&.body.to_s
   end
 
   # #532: Aussteller-KIs für den Briefkopf. @issuer = gewählter (Param) oder

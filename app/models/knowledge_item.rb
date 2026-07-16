@@ -380,6 +380,9 @@ class KnowledgeItem < ApplicationRecord
   end
 
   scope :notes,           -> { where(item_type: :note) }
+  # #766/#1036: Vorlagen-KIs — Notiz mit Tag "vorlage:<typ>" (brief, nda,
+  # lastschrift, email). Älteste zuerst; bei Dokumenten zieht die erste.
+  scope :templates_for,   ->(kind) { notes.where("? = ANY(tags)", "vorlage:#{kind}").order(:created_at) }
   scope :comments,        -> { where(item_type: :comment) }
   scope :abstracts,       -> { where(item_type: :abstract) }
   scope :transcripts,     -> { where(item_type: :transcript) }

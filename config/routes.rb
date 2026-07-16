@@ -506,6 +506,9 @@ Rails.application.routes.draw do
     resources :task_templates, except: [:show]
     # #301: KI-Vorlagen — Konfig fuer den KI-Quick-Create-Picker.
     resources :ki_templates, except: [:show]
+    # #1036: Dokument- & E-Mail-Vorlagen — sichtbare Verwaltung der
+    # vorlage:<typ>-Notiz-KIs (destroy = nur Tag entfernen, KI bleibt).
+    resources :document_templates, only: [:index, :create, :destroy], param: :uuid
     # #239 Phase C: Uebersicht der typed-Wikilink-Labels (Beziehungstypen).
     # Phase D: zusaetzlich CRUD fuer das RelationType-Vokabular.
     resources :relations, only: [:index, :create, :update, :destroy]

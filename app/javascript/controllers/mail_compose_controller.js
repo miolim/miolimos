@@ -7,10 +7,20 @@ import { Controller } from "@hotwired/stimulus"
 // Clients — ab MAILTO_LIMIT wandert der Text stattdessen in die
 // Zwischenablage und der Entwurf öffnet ohne Body.
 export default class extends Controller {
-  static targets = ["to", "subject", "body"]
+  static targets = ["to", "subject", "body", "template"]
   static values  = { strategy: { type: String, default: "mailto" } }
 
   MAILTO_LIMIT = 1800
+
+  // #1036: E-Mail-Vorlage einsetzen — Betreff + Text kommen fertig
+  // gemergt aus den data-Attributen der gewählten Option (Server-seitig
+  // pro Empfänger aufgelöst). Leere Auswahl (Placeholder) tut nichts.
+  applyTemplate(event) {
+    const opt = event.target.selectedOptions?.[0]
+    if (!opt || !opt.value) return
+    this.subjectTarget.value = opt.dataset.subject || ""
+    this.bodyTarget.value    = opt.dataset.body || ""
+  }
 
   async open(event) {
     event.preventDefault()

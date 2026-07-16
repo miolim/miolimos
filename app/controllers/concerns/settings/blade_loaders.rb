@@ -43,6 +43,14 @@ module Settings::BladeLoaders
     @prompt_templates = PromptTemplate.order(:name)
   end
 
+  # #1036: Dokument- & E-Mail-Vorlagen = Notiz-KIs mit Tag "vorlage:<typ>",
+  # gruppiert nach Typ (Reihenfolge = KINDS im Controller).
+  def load_document_templates
+    @document_templates = Settings::DocumentTemplatesController::KINDS.index_with do |kind|
+      KnowledgeItem.templates_for(kind).to_a
+    end
+  end
+
   def load_llm_activities
     # #613/#614: Filter leben jetzt IM Blade (Turbo-Frame auf den
     # Card-Endpoint) — Status/Kind kommen als Query-Params mit.

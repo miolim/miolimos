@@ -54,6 +54,21 @@
                   <input type="text" data-mail-compose-target="to" value="<%= cp.value %>"
                          aria-label="<%= t("knowledge.editors.contacts.compose_to") %>"
                          class="w-full border border-slate-200 rounded px-2 py-1 text-xs">
+                  <%# #1036: E-Mail-Vorlagen (vorlage:email-KIs) — Auswahl
+                      befüllt Betreff + Text, Platzhalter sind server-seitig
+                      pro Empfänger gemergt. Nur sichtbar, wenn Vorlagen
+                      existieren (Verwaltung: Einstellungen → Dokumentvorlagen). %>
+                  <% mail_templates = mail_compose_templates(recipient_title: item.title, email: cp.value) %>
+                  <% if mail_templates.any? %>
+                    <select data-mail-compose-target="template" data-action="change->mail-compose#applyTemplate"
+                            aria-label="<%= t("knowledge.editors.contacts.compose_template") %>"
+                            class="w-full border border-slate-200 rounded px-2 py-1 text-xs bg-white">
+                      <option value=""><%= t("knowledge.editors.contacts.compose_template") %></option>
+                      <% mail_templates.each do |tpl| %>
+                        <option value="<%= tpl[:uuid] %>" data-subject="<%= tpl[:subject] %>" data-body="<%= tpl[:body] %>"><%= tpl[:title] %></option>
+                      <% end %>
+                    </select>
+                  <% end %>
                   <input type="text" data-mail-compose-target="subject" placeholder="<%= t("knowledge.editors.contacts.compose_subject") %>"
                          aria-label="<%= t("knowledge.editors.contacts.compose_subject") %>"
                          class="w-full border border-slate-200 rounded px-2 py-1 text-xs">

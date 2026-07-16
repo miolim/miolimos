@@ -35,4 +35,24 @@ class MailComposeTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "https://mail.google.com/mail/?"
     assert_includes @response.body, "data-mail-compose-strategy-value=\"gmail\""
   end
+
+  # #1036: E-Mail-Vorlagen (vorlage:email-KIs) erscheinen als Auswahl im
+  # Popover — Platzhalter pro Empfänger gemergt, "Betreff:"-Zeile → Betreff.
+  test "vorlage:email-KI erscheint als gemergte Option im Compose-Popover" do
+    FileProxy.create(actor: @hans, title: "Willkommen", item_type: :note,
+                     content: "Betreff: Hallo {{name}}\nGuten Tag {{name}}, Ihre Adresse ist {{email}}. {{offen}}",
+                     tags: ["vorlage:email"])
+    get "/knowledge_items/#{@person.uuid}/card"
+    assert_response :success
+    assert_includes @response.body, "data-mail-compose-target=\"template\""
+    assert_includes @response.body, "data-subject=\"Hallo Mail-Kontakt\""
+    assert_includes @response.body, "Guten Tag Mail-Kontakt, Ihre Adresse ist kontakt@example.org."
+    assert_includes @response.body, "{{offen}}", "unaufgelöste Platzhalter bleiben literal"
+  end
+
+  test "ohne E-Mail-Vorlagen rendert das Popover keine Vorlagen-Auswahl" do
+    get "/knowledge_items/#{@person.uuid}/card"
+    assert_response :success
+    assert_not_includes @response.body, "data-mail-compose-target=\"template\""
+  end
 end

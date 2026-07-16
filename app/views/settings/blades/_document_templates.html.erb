@@ -1,0 +1,92 @@
+<%# #1036 (Hans): Sichtbare Verwaltung der Dokument- & E-Mail-Vorlagen.
+    Eine Vorlage = Notiz-KI mit Tag "vorlage:<typ>" (Mechanik aus #766,
+    bewusst beibehalten — Vorlagentext bleibt in den DATEN, nicht im Code).
+    Daten lädt Settings::BladesController#load_document_templates:
+    @document_templates = { kind => [KIs, älteste zuerst] }. %>
+<%
+  kind_labels = {
+    "brief"       => t("settings.document_templates.kinds.brief"),
+    "nda"         => t("settings.document_templates.kinds.nda"),
+    "lastschrift" => t("settings.document_templates.kinds.lastschrift"),
+    "email"       => t("settings.document_templates.kinds.email")
+  }
+%>
+<div class="space-y-3">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <section class="md:col-span-2 space-y-4">
+      <% @document_templates.each do |kind, templates| %>
+        <div class="bg-white rounded border border-slate-200">
+          <header class="px-4 py-2.5 flex items-center gap-3 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-900"><%= kind_labels[kind] %></h2>
+            <span class="text-xs text-slate-500"><%= templates.size %></span>
+          </header>
+          <% if templates.any? %>
+            <ul class="divide-y divide-slate-100">
+              <% templates.each_with_index do |ki, idx| %>
+                <li class="px-4 py-2 flex items-center gap-3 group hover:bg-slate-50">
+                  <button type="button"
+                          data-controller="blade-link"
+                          data-blade-link-kind-value="ki"
+                          data-blade-link-id-value="<%= ki.uuid %>"
+                          data-action="click->blade-link#append"
+                          title="<%= t("settings.document_templates.open_hint") %>"
+                          class="flex-1 min-w-0 text-left text-sm font-medium text-slate-900 hover:text-emerald-700 truncate bg-transparent border-0 p-0 cursor-pointer">
+                    <%= ki.title %>
+                  </button>
+                  <%# Dokumenttypen nutzen nur die ÄLTESTE Vorlage (#766) —
+                      bei Mehrfachbelegung sichtbar machen, welche zieht.
+                      E-Mail-Vorlagen sind alle wählbar (Popover-Auswahl). %>
+                  <% if kind != "email" && templates.size > 1 %>
+                    <span class="shrink-0 inline-flex items-center px-1.5 py-0 rounded text-[10px] uppercase tracking-wider <%= idx.zero? ? "bg-emerald-50 border border-emerald-200 text-emerald-800" : "bg-slate-50 border border-slate-200 text-slate-400" %>">
+                      <%= idx.zero? ? t("settings.document_templates.active") : t("settings.document_templates.inactive") %>
+                    </span>
+                  <% end %>
+                  <span class="shrink-0 text-xs text-slate-400"><%= l ki.created_at.to_date, format: :short %></span>
+                  <%= button_to t("settings.document_templates.remove"), settings_document_template_path(ki.uuid),
+                        method: :delete,
+                        form: { class: "inline shrink-0", data: { turbo_confirm: t("settings.document_templates.remove_confirm", title: ki.title) } },
+                        class: "text-xs text-rose-600 hover:text-rose-800 bg-transparent border-0 cursor-pointer p-0" %>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="px-4 py-2.5 text-sm text-slate-500 italic"><%= t("settings.document_templates.empty") %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="space-y-4">
+      <div class="bg-white rounded border border-slate-200">
+        <header class="px-4 py-3 border-b border-slate-100">
+          <h2 class="text-sm font-semibold text-slate-900"><%= t("settings.document_templates.form_new_title") %></h2>
+        </header>
+        <%= form_with url: settings_document_templates_path, method: :post,
+              class: "px-4 py-3 space-y-3", data: { turbo: false } do |f| %>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.document_templates.field_kind") %></span>
+            <%= f.select :kind, kind_labels.map { |k, lbl| [lbl, k] }, {},
+                  class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.document_templates.field_title") %></span>
+            <%= f.text_field :title, required: true,
+                  placeholder: t("settings.document_templates.title_placeholder"),
+                  class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+          </label>
+          <div class="flex justify-end pt-1">
+            <%= f.submit t("actions.create"),
+                  class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="bg-slate-50 rounded border border-slate-200 px-4 py-3 text-xs text-slate-600 space-y-2">
+        <p class="font-semibold text-slate-700"><%= t("settings.document_templates.hint_title") %></p>
+        <p><%= t("settings.document_templates.hint_mechanism_html") %></p>
+        <p><%= t("settings.document_templates.hint_placeholders_html") %></p>
+        <p><%= t("settings.document_templates.hint_email_html") %></p>
+      </div>
+    </section>
+  </div>
+</div>

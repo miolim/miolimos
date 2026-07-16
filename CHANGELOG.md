@@ -17,6 +17,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Document and email templates get a visible management area (Settings →
+  "Dokumentvorlagen"): templates are still regular notes tagged
+  `vorlage:<type>` under the hood, but can now be created, opened and
+  retired per type (letter, NDA, SEPA mandate, email) without knowing the
+  tag convention; the area explains the `{{placeholder}}` mechanics and
+  marks which template is active per document type. Email templates
+  (`vorlage:email`) additionally appear as a picker in the "compose email"
+  popover, prefilling subject ("Betreff:" first line) and body with
+  `{{name}}`/`{{email}}`/`{{datum}}` resolved per recipient (#1036, #1027).
 - On desktop, the close cross at the bottom of a card spine now opens a
   small menu instead of closing immediately: "close this card" or "close
   this card and all cards to its right" (disabled when the card is the

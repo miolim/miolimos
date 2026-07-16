@@ -340,6 +340,33 @@ module ApplicationHelper
     end
   end
 
+  # #1036: E-Mail-Vorlagen fürs Compose-Popover — vorlage:email-KIs, pro
+  # Empfänger fertig gemergt ({{name}}/{{email}}/{{datum}}; Unaufgelöstes
+  # bleibt literal stehen, gleiches Prinzip wie bei Dokumenten). Konvention:
+  # erste Zeile "Betreff: …" wird zum Betreff, der Rest zum Text.
+  # Memoized pro Request (Templates), Merge pro Kontaktpunkt.
+  def mail_compose_templates(recipient_title:, email:)
+    @_mail_compose_templates ||= KnowledgeItem.visible_to(current_actor)
+                                              .templates_for("email").to_a
+    ctx = {
+      "name"  => recipient_title,
+      "email" => email,
+      "datum" => I18n.l(Date.current, format: :long)
+    }.compact
+    @_mail_compose_templates.map do |tpl|
+      raw = tpl.body.to_s
+      first, rest = raw.split("\n", 2)
+      if first.to_s.strip =~ /\Abetreff:\s*(.+)\z/i
+        subject, body = Regexp.last_match(1), rest.to_s.lstrip
+      else
+        subject, body = "", raw
+      end
+      { uuid: tpl.uuid, title: tpl.title,
+        subject: TemplateMerge.merge(subject, ctx),
+        body: TemplateMerge.merge(body, ctx) }
+    end
+  end
+
   # Memoized pro Request: Org-Titel für das datalist-Autocomplete im
   # #533 1d: Minuten → „1:23 h" / „45 min".
   def format_minutes(mins)

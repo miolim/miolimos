@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Composing an email from a contact point no longer requires Gmail: a new
+  per-user preference ("Compose email opens") picks between Gmail in the
+  browser and the device's default mail app via `mailto:` — the automatic
+  default uses Gmail only when the user's own Google account is connected.
+  Email contact points additionally get a "compose with subject and text"
+  popover that carries a prefilled subject and body into the draft; overlong
+  mailto bodies fall back to the clipboard with a toast hint (#1027).
 - Communication lists support batch editing like task lists: a multi-select
   toggle in the inbox card and the topic communications tab reveals per-row
   checkboxes and an action bar to assign the selected communications to a

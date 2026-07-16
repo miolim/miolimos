@@ -17,6 +17,24 @@
       </select>
     </section>
 
+    <%# #1027 (Hans): Womit „E-Mail schreiben" öffnet — Gmail im Browser oder
+        der Standard-Mail-Client (mailto:). "auto" wählt Gmail nur, wenn ein
+        eigenes Google-Konto verbunden ist. %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.mail_compose_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.mail_compose_help") %></p>
+      <% stored = ActorPreferences::MAIL_COMPOSE_TARGETS.include?(current_actor.preferences["mail_compose"].to_s) ? current_actor.preferences["mail_compose"] : "auto" %>
+      <div class="flex flex-col gap-1 text-sm">
+        <% ActorPreferences::MAIL_COMPOSE_TARGETS.each do |target| %>
+          <label class="flex items-center gap-1.5">
+            <input type="radio" name="preferences[mail_compose]" value="<%= target %>"
+                   <%= "checked" if stored == target %>>
+            <span><%= t("preferences.mail_compose_#{target}") %></span>
+          </label>
+        <% end %>
+      </div>
+    </section>
+
     <section class="px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.card_widths_title") %></h2>
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.card_widths_help") %></p>

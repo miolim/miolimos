@@ -10,7 +10,7 @@ class Settings::PreferencesController < Settings::BaseController
     # #564: explizite Permit-Liste statt permit! — update_preferences filtert
     # zwar selbst, aber die Schlüssel sollen schon hier benannt sein.
     permitted = params.require(:preferences).permit(
-      :locale, :wheel_preset, :sidebar_click_mode,
+      :locale, :wheel_preset, :sidebar_click_mode, :mail_compose,
       :sidebar_recent_topics_count, :person_ki_title, card_widths: {},
       sidebar_layout: {}
     )

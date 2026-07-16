@@ -638,7 +638,13 @@ en:
         kind_url: "Web"
         kind_fax: "Fax"
         kind_im: "Messenger"
-        compose_email: "Compose email in Gmail"
+        compose_email: "Compose email"
+        compose_with_text: "Compose email with subject and text"
+        compose_to: "To"
+        compose_subject: "Subject"
+        compose_body: "Text"
+        compose_open: "Open draft"
+        compose_copy: "Copy text"
         call: "Call"
         copy_number: "Copy number"
         number_copied: "Number copied."
@@ -1260,6 +1266,11 @@ en:
   preferences:
     language_title: "Language"
     language_help:  "Language of the user interface. Your content (tasks, knowledge, transcripts) stays unchanged."
+    mail_compose_title: "Compose email opens"
+    mail_compose_help:  "What the email icons (e.g. on contact details) open a draft with: Gmail in the browser or your device's default mail app."
+    mail_compose_auto:   "Automatic — Gmail if your Google account is connected, otherwise mail app"
+    mail_compose_gmail:  "Gmail (in the browser)"
+    mail_compose_mailto: "Default mail app (mailto)"
     saved:          "Settings saved."
     card_widths_title: "Card widths (desktop, rem)"
     card_widths_help:  "Default width of the individual card types. Can also be overridden live in the browser via the resize handle — the value here is the global default per device/login."
@@ -1363,6 +1374,9 @@ en:
   # #619 Stufe 3: strings for the JS layer (Stimulus). Provided as
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) reads here.
   js:
+    mail_compose:
+      copied: "Text copied."
+      copied_overflow: "Text is too long for the mailto link — it is in your clipboard, paste it into the draft."
     blade_stack:
       appended_to_dashboard: "Card appended to the dashboard stack"
     paragraph:

@@ -321,6 +321,25 @@ module ApplicationHelper
     content_tag(:svg, inner, attrs)
   end
 
+  # #1027: Compose-URL für „E-Mail schreiben" — je nach Actor-Vorliebe
+  # Gmail-Compose im Browser (#723-Verhalten) oder mailto: für den
+  # Standard-Mail-Client (Nutzer ohne Gmail).
+  def mail_compose_url(to, subject: nil, body: nil)
+    if current_actor&.pref_mail_compose_target == "gmail"
+      params = { view: "cm", fs: 1, to: to }
+      params[:su]   = subject if subject.present?
+      params[:body] = body    if body.present?
+      "https://mail.google.com/mail/?#{params.to_query}"
+    else
+      query = {}
+      query[:subject] = subject if subject.present?
+      query[:body]    = body    if body.present?
+      url = "mailto:#{ERB::Util.url_encode(to.to_s)}"
+      url += "?#{query.map { |k, v| "#{k}=#{ERB::Util.url_encode(v)}" }.join('&')}" if query.any?
+      url
+    end
+  end
+
   # Memoized pro Request: Org-Titel für das datalist-Autocomplete im
   # #533 1d: Minuten → „1:23 h" / „45 min".
   def format_minutes(mins)

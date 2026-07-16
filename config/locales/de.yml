@@ -641,7 +641,13 @@ de:
         kind_url: "Web"
         kind_fax: "Fax"
         kind_im: "Messenger"
-        compose_email: "E-Mail in Gmail schreiben"
+        compose_email: "E-Mail schreiben"
+        compose_with_text: "E-Mail mit Betreff und Text verfassen"
+        compose_to: "An"
+        compose_subject: "Betreff"
+        compose_body: "Text"
+        compose_open: "Entwurf öffnen"
+        compose_copy: "Text kopieren"
         call: "Anrufen"
         copy_number: "Nummer kopieren"
         number_copied: "Nummer kopiert."
@@ -1264,6 +1270,11 @@ de:
   preferences:
     language_title: "Sprache"
     language_help:  "Sprache der Bedienoberfläche. Deine Inhalte (Aufgaben, Wissen, Transkripte) bleiben unverändert."
+    mail_compose_title: "E-Mail schreiben öffnet"
+    mail_compose_help:  "Womit die E-Mail-Icons (z.B. an Kontaktdaten) einen Entwurf öffnen: Gmail im Browser oder dein Standard-Mail-Programm auf dem Gerät."
+    mail_compose_auto:   "Automatisch — Gmail, wenn dein Google-Konto verbunden ist, sonst Mail-Programm"
+    mail_compose_gmail:  "Gmail (im Browser)"
+    mail_compose_mailto: "Standard-Mail-Programm (mailto)"
     saved:          "Einstellungen gespeichert."
     card_widths_title: "Card-Breiten (Desktop, rem)"
     card_widths_help:  "Standardbreite der einzelnen Card-Typen. Wird im Browser per Resize-Handle auch live überschrieben — der Wert hier ist die globale Voreinstellung pro Gerät/Login."
@@ -1367,6 +1378,9 @@ de:
   # #619 Stufe 3: Strings für die JS-Schicht (Stimulus). Bereitgestellt als
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) liest hier.
   js:
+    mail_compose:
+      copied: "Text kopiert."
+      copied_overflow: "Text ist zu lang für den mailto-Link — er liegt in der Zwischenablage, im Entwurf einfügen."
     blade_stack:
       appended_to_dashboard: "Card an den Dashboard-Stack angehängt"
     paragraph:

@@ -44,6 +44,23 @@ module ActorPreferences
     LOCALES.include?(val) ? val : I18n.default_locale.to_s
   end
 
+  # #1027 (Hans, 2026-07-16): Womit „E-Mail schreiben" öffnet. "auto"
+  # (Default) = Gmail-Compose im Browser, wenn der Actor ein eigenes
+  # Google-Konto verbunden hat, sonst der Standard-Mail-Client (mailto:) —
+  # Nutzer ohne Gmail-Adresse brauchen keine Einstellung anzufassen.
+  MAIL_COMPOSE_TARGETS = %w[auto gmail mailto].freeze
+
+  def pref_mail_compose_target
+    val = preferences["mail_compose"].to_s
+    val = "auto" unless MAIL_COMPOSE_TARGETS.include?(val)
+    return val unless val == "auto"
+    google_account_connected? ? "gmail" : "mailto"
+  end
+
+  def google_account_connected?
+    OauthCredential.active.where(provider: "google", actor_id: id).exists?
+  end
+
   def pref_card_width(kind)
     (preferences.dig("card_widths", kind.to_s) ||
      CARD_WIDTH_DEFAULTS[kind.to_s] ||
@@ -181,6 +198,8 @@ module ActorPreferences
         new_prefs["sidebar_layout"] = sanitize_sidebar_layout(value)
       when "locale"
         new_prefs["locale"] = value.to_s if LOCALES.include?(value.to_s)
+      when "mail_compose"
+        new_prefs["mail_compose"] = value.to_s if MAIL_COMPOSE_TARGETS.include?(value.to_s)
       end
     end
     update!(preferences: new_prefs)

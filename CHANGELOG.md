@@ -17,6 +17,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- On desktop, the close cross at the bottom of a card spine now opens a
+  small menu instead of closing immediately: "close this card" or "close
+  this card and all cards to its right" (disabled when the card is the
+  rightmost). Closing several cards asks about unsaved drafts once across
+  all of them; on mobile the cross keeps closing directly (#1032).
 - Composing an email from a contact point no longer requires Gmail: a new
   per-user preference ("Compose email opens") picks between Gmail in the
   browser and the device's default mail app via `mailto:` — the automatic

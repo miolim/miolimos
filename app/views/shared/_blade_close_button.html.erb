@@ -18,8 +18,11 @@
         class="stack-history-toggle shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
   <%= icon "history", size: "w-4 h-4" %>
 </button>
+<%# #1032 (Hans): Desktop-Klick öffnet ein Menü (Diese Card schließen /
+    Diese Card und alle rechts davon schließen); mobil schließt der Klick
+    weiterhin direkt. Beides in blade-stack#closeCardMenu. %>
 <button type="button" title="<%= t("shared.close_button.close_card") %>" aria-label="<%= t("shared.close_button.close") %>"
-        data-action="click->blade-stack#closeCard"
+        data-action="click->blade-stack#closeCardMenu"
         class="shrink-0 mb-1 p-0.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 bg-transparent border-0 cursor-pointer">
   <%= icon "x", size: "w-4 h-4" %>
 </button>

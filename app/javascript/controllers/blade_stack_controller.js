@@ -450,6 +450,7 @@ class BladeStackController extends Controller {
       this.snapshotToHistory()
     }
     this.mutObserver?.disconnect()
+    this._dismissCloseMenu()
     document.body.classList.remove("has-blade-stack")
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
   }
@@ -678,6 +679,85 @@ class BladeStackController extends Controller {
     this._closeCardElement(card)
   }
 
+  // #1032 (Hans): Unteres Spine-X — auf dem Desktop öffnet der Klick ein
+  // kleines Menü (Diese Card schließen / Diese Card und alle rechts davon
+  // schließen) statt sofort zu schließen. Mobil bleibt der Direkt-Close.
+  closeCardMenu(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    const card = event.currentTarget.closest("[data-uuid]")
+    if (!card) return
+    if (!this._isDesktop()) { this._closeCardElement(card); return }
+    // Zweiter Klick auf denselben Trigger = Toggle zu (der Outside-Click-
+    // Handler ignoriert den Trigger, sonst würde er dismiss + reopen).
+    if (this._closeMenuEl) { this._dismissCloseMenu(); return }
+    this._openCloseMenu(event.currentTarget, card)
+  }
+
+  _openCloseMenu(trigger, card) {
+    const hasRight = !!(card.nextElementSibling?.classList?.contains("stack-card"))
+    const menu = document.createElement("div")
+    menu.className = "fixed z-50 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-52 text-sm text-slate-700"
+    const addItem = (label, enabled, onPick) => {
+      const b = document.createElement("button")
+      b.type = "button"
+      b.className = "w-full text-left block px-3 py-1.5 bg-transparent border-0 cursor-pointer hover:bg-slate-50 disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent"
+      b.textContent = label
+      b.disabled = !enabled
+      b.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        this._dismissCloseMenu()
+        onPick()
+      })
+      menu.appendChild(b)
+    }
+    addItem("Diese Card schließen", true, () => this._closeCardElement(card))
+    addItem("Diese Card und alle rechts davon schließen", hasRight, () => this._closeCardsFrom(card))
+    document.body.appendChild(menu)
+    // Über dem Trigger positionieren (das X sitzt am Card-Boden), links-
+    // bündig zum Trigger, in den Viewport geclampt.
+    const r = trigger.getBoundingClientRect()
+    let top = r.top - menu.offsetHeight - 4
+    if (top < 8) top = r.bottom + 4
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))
+    menu.style.top = `${Math.round(top)}px`
+    menu.style.left = `${Math.round(left)}px`
+    this._closeMenuEl = menu
+    this._closeMenuTrigger = trigger
+    this._closeMenuDismiss = (e) => {
+      if (e.type === "keydown" && e.key !== "Escape") return
+      if (e.type === "click" && (menu.contains(e.target) || this._closeMenuTrigger?.contains(e.target))) return
+      this._dismissCloseMenu()
+    }
+    document.addEventListener("click", this._closeMenuDismiss, true)
+    document.addEventListener("keydown", this._closeMenuDismiss)
+    window.addEventListener("scroll", this._closeMenuDismiss, true)
+    window.addEventListener("resize", this._closeMenuDismiss)
+  }
+
+  _dismissCloseMenu() {
+    if (!this._closeMenuEl) return
+    this._closeMenuEl.remove()
+    this._closeMenuEl = null
+    this._closeMenuTrigger = null
+    document.removeEventListener("click", this._closeMenuDismiss, true)
+    document.removeEventListener("keydown", this._closeMenuDismiss)
+    window.removeEventListener("scroll", this._closeMenuDismiss, true)
+    window.removeEventListener("resize", this._closeMenuDismiss)
+  }
+
+  // #1032: die Card selbst plus alle Cards rechts davon schließen.
+  _closeCardsFrom(card) {
+    const cards = [card]
+    let el = card.nextElementSibling
+    while (el) {
+      if (el.classList?.contains("stack-card")) cards.push(el)
+      el = el.nextElementSibling
+    }
+    this._closeCardElements(cards)
+  }
+
   // #593 (Hans, 2026-06-10): Entwurfs-Schutz für Stack-Mutationen. Turbo-
   // Visits deckt dirty-warn global ab; Card-Remove/Replace im Stack läuft
   // aber an Turbo vorbei (fetch + DOM) und hat Entwürfe kommentarlos
@@ -700,16 +780,27 @@ class BladeStackController extends Controller {
   // dasselbe Verhalten triggern kann.
   // #358 (Hans, 2026-05-25): nach Close bekommt die linke Nachbarcard
   // den Focus; existiert keine links, dann die rechte.
+  // #1032: auf mehrere Cards verallgemeinert (Menü „Diese Card und alle
+  // rechts davon schließen") — EIN Entwurfs-Confirm über alle Cards,
+  // Focus landet auf dem linken Nachbarn der ersten geschlossenen Card.
   _closeCardElement(card) {
-    if (!this._confirmDiscardDrafts(card)) return
-    // Nachbar vorab bestimmen — `previousElementSibling` ist die Card
-    // links davon. Falls keine da (= Card war erste im Stack), nehmen
-    // wir die rechte.
-    const focusNext = (card.previousElementSibling?.classList?.contains("stack-card")
-                        ? card.previousElementSibling
+    this._closeCardElements([card])
+  }
+
+  _closeCardElements(cards) {
+    cards = cards.filter(c => c && !c.classList.contains("is-closing"))  // Doppelklick-Schutz
+    if (!cards.length) return
+    if (!this._confirmDiscardDrafts(cards)) return
+    // Nachbar vorab bestimmen — `previousElementSibling` der ersten Card
+    // ist die Card links davon. Falls keine da (= Card war erste im
+    // Stack), nehmen wir die rechts von der letzten geschlossenen.
+    const first = cards[0]
+    const last  = cards[cards.length - 1]
+    const focusNext = (first.previousElementSibling?.classList?.contains("stack-card")
+                        ? first.previousElementSibling
                         : null)
-                       || (card.nextElementSibling?.classList?.contains("stack-card")
-                            ? card.nextElementSibling
+                       || (last.nextElementSibling?.classList?.contains("stack-card")
+                            ? last.nextElementSibling
                             : null)
 
     // #256: Smooth-Close. Auf Mobile (scroll-snap-Layout) wuerde eine
@@ -718,7 +809,7 @@ class BladeStackController extends Controller {
     // die Nachbar-Cards ruecken durch den Flex-Reflow weich nach. Nach
     // der Transition (oder via Timeout-Fallback) raus aus dem DOM.
     if (this._mediaMobile?.matches) {
-      card.remove()
+      cards.forEach(c => c.remove())
       if (focusNext) {
         this.setActiveCard(focusNext)
         this._scrollCardIntoFocus(focusNext)
@@ -726,31 +817,37 @@ class BladeStackController extends Controller {
       this.pushTrailState()
       return
     }
-    if (card.classList.contains("is-closing")) return  // Doppelklick-Schutz
-    // #256 v2: Inner-Content einfrieren, bevor die Card auf Breite 0
-    // collapsed. Sonst wuerde der Body (flex-1, min-w-0) jeden Frame
-    // neu umbrechen waehrend die Card schmaler wird — genau das Ruckeln.
-    // Mit flex:0 0 <px> behalten Spine + Body ihre Groesse und werden
-    // einfach vom card-overflow:hidden sauber abgeschnitten.
-    card.querySelectorAll(":scope > *").forEach(child => {
-      child.style.flex = `0 0 ${Math.round(child.getBoundingClientRect().width)}px`
-    })
-    card.classList.add("is-closing")
-    let removed = false
-    const finish = () => {
-      if (removed) return
-      removed = true
-      card.removeEventListener("transitionend", finish)
-      card.remove()
-      // #358: Focus auf Nachbar setzen nachdem die alte Card weg ist.
+    let pending = cards.length
+    const finishAll = () => {
+      // #358: Focus auf Nachbar setzen nachdem die alten Cards weg sind.
       if (focusNext && focusNext.isConnected) {
         this.setActiveCard(focusNext)
         this._scrollCardIntoFocus(focusNext)
       }
       this.pushTrailState()
     }
-    card.addEventListener("transitionend", finish)
-    setTimeout(finish, 320)  // Fallback, falls transitionend nicht feuert
+    cards.forEach(card => {
+      // #256 v2: Inner-Content einfrieren, bevor die Card auf Breite 0
+      // collapsed. Sonst wuerde der Body (flex-1, min-w-0) jeden Frame
+      // neu umbrechen waehrend die Card schmaler wird — genau das Ruckeln.
+      // Mit flex:0 0 <px> behalten Spine + Body ihre Groesse und werden
+      // einfach vom card-overflow:hidden sauber abgeschnitten.
+      card.querySelectorAll(":scope > *").forEach(child => {
+        child.style.flex = `0 0 ${Math.round(child.getBoundingClientRect().width)}px`
+      })
+      card.classList.add("is-closing")
+      let removed = false
+      const finish = () => {
+        if (removed) return
+        removed = true
+        card.removeEventListener("transitionend", finish)
+        card.remove()
+        pending -= 1
+        if (pending === 0) finishAll()
+      }
+      card.addEventListener("transitionend", finish)
+      setTimeout(finish, 320)  // Fallback, falls transitionend nicht feuert
+    })
   }
 
   // Klick auf einen Spine: Card aus dem Stapel zurück in den Mittel-

@@ -17,6 +17,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- When editing a template note (`vorlage:<type>` tag), the body editor shows
+  a placeholder chip bar with the keys available for that template type —
+  click copies the `{{placeholder}}` to the clipboard; document types add a
+  hint that every info-block field is available under its label. Regular
+  notes stay unchanged (#1036).
 - Document and email templates get a visible management area (Settings →
   "Dokumentvorlagen"): templates are still regular notes tagged
   `vorlage:<type>` under the hood, but can now be created, opened and

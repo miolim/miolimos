@@ -127,6 +127,9 @@
 
   <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3">
     <% if mode == :edit %>
+      <%# #1036 Follow-up: Platzhalter-Chips beim Vorlagen-Bauen — rendert
+          nur bei KIs mit vorlage:<typ>-Tag etwas. %>
+      <%= render "knowledge_items/template_placeholder_bar", item: item %>
       <%# #698 (Hans): draft-persist VOR cm6-editor — sichert den Text
           lokal (localStorage) gegen Session-Ablauf/Browser-Close. %>
       <div data-controller="draft-persist wikilink-autocomplete cite-autocomplete cm6-editor image-paste"

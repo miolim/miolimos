@@ -487,6 +487,12 @@ en:
       unmark:      "Personally known — undo"
       comm_yes:    "Communication on record (automatic)"
       comm_no:     "No communication recorded"
+    # #1036: placeholder chips in the edit mode of template KIs.
+    template_placeholders:
+      label: "Placeholders:"
+      copy_hint: "Click copies the placeholder"
+      copied: "%{key} copied — paste it into the text."
+      infoblock_hint: "… plus every info-block field of the document as {{fieldname}}"
     detail:
       original_chat_title: "Original chat title: %{title}"
       duplicate_card: "Duplicate card"

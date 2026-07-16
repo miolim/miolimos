@@ -1,0 +1,30 @@
+<%# #1036 Follow-up (Hans): Platzhalter-Chips beim VORLAGEN-Bauen — nur im
+    Edit-Modus einer KI mit vorlage:<typ>-Tag (normale KIs bleiben clean).
+    Klick kopiert den Platzhalter in die Zwischenablage. Die Key-Sets
+    spiegeln Printable#merge_context (+ Document) bzw. den E-Mail-Merge
+    aus mail_compose_templates. Local: item %>
+<%
+  template_kind = item.tags.to_a.find { |t| t.start_with?("vorlage:") }&.delete_prefix("vorlage:")
+  placeholder_keys = case template_kind
+                     when "email"
+                       %w[name email datum]
+                     when "brief", "nda", "lastschrift"
+                       %w[empfaenger aussteller datum projekt betreff anrede]
+                     end
+%>
+<% if placeholder_keys %>
+  <div class="mb-2 flex flex-wrap items-center gap-1.5 text-xs" data-ui-label="Platzhalter-Chips">
+    <span class="text-slate-500"><%= t("knowledge.template_placeholders.label") %></span>
+    <% placeholder_keys.each do |key| %>
+      <button type="button"
+              data-controller="copy-clipboard" data-action="click->copy-clipboard#copy"
+              data-copy-clipboard-content-value="{{<%= key %>}}"
+              data-copy-clipboard-toast-value="<%= t("knowledge.template_placeholders.copied", key: "{{#{key}}}") %>"
+              title="<%= t("knowledge.template_placeholders.copy_hint") %>"
+              class="px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-700 font-mono cursor-pointer">{{<%= key %>}}</button>
+    <% end %>
+    <% unless template_kind == "email" %>
+      <span class="text-slate-400"><%= t("knowledge.template_placeholders.infoblock_hint") %></span>
+    <% end %>
+  </div>
+<% end %>

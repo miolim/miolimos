@@ -490,6 +490,12 @@ de:
       unmark:      "Persönlich bekannt — zurücknehmen"
       comm_yes:    "Kommunikation vorhanden (automatisch)"
       comm_no:     "Keine Kommunikation erfasst"
+    # #1036: Platzhalter-Chips im Edit-Modus von Vorlagen-KIs.
+    template_placeholders:
+      label: "Platzhalter:"
+      copy_hint: "Klick kopiert den Platzhalter"
+      copied: "%{key} kopiert — im Text einfügen."
+      infoblock_hint: "… plus jedes Infoblock-Feld des Dokuments als {{feldname}}"
     detail:
       original_chat_title: "Original-Chat-Titel: %{title}"
       duplicate_card: "Card duplizieren"

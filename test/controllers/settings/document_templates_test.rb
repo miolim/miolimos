@@ -50,4 +50,31 @@ class Settings::DocumentTemplatesTest < ActionDispatch::IntegrationTest
     assert_match %r{>\s*aktiv\s*<}, @response.body, "älteste Vorlage ist als aktiv markiert"
     assert_match %r{>\s*inaktiv\s*<}, @response.body, "jüngere Vorlage ist als inaktiv markiert"
   end
+
+  # #1036 Follow-up: Platzhalter-Chips im Edit-Modus — nur bei Vorlagen-KIs.
+  test "edit einer Vorlagen-KI zeigt Platzhalter-Chips, normale Notiz nicht" do
+    brief = FileProxy.create(actor: @hans, title: "Brief-Vorlage", item_type: :note,
+                             content: "", tags: ["vorlage:brief"])
+    get "/knowledge_items/#{brief.uuid}/edit"
+    assert_response :success
+    assert_includes @response.body, "data-copy-clipboard-content-value=\"{{empfaenger}}\""
+    assert_includes @response.body, "data-copy-clipboard-content-value=\"{{anrede}}\""
+    assert_includes @response.body, "Infoblock-Feld"
+
+    email = FileProxy.create(actor: @hans, title: "Mail-Vorlage", item_type: :note,
+                             content: "", tags: ["vorlage:email"])
+    get "/knowledge_items/#{email.uuid}/edit"
+    assert_response :success
+    assert_includes @response.body, "data-copy-clipboard-content-value=\"{{name}}\""
+    assert_not_includes @response.body, "data-copy-clipboard-content-value=\"{{anrede}}\"",
+                        "E-Mail-Vorlage zeigt nur name/email/datum"
+    assert_not_includes @response.body, "Infoblock-Feld", "Infoblock-Hinweis nur bei Dokumenttypen"
+
+    plain = FileProxy.create(actor: @hans, title: "Normale Notiz", item_type: :note,
+                             content: "", tags: [])
+    get "/knowledge_items/#{plain.uuid}/edit"
+    assert_response :success
+    assert_not_includes @response.body, "data-copy-clipboard-content-value=\"{{",
+                        "normale KIs bleiben ohne Platzhalter-Chips"
+  end
 end

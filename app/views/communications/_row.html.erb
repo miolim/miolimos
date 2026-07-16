@@ -7,6 +7,14 @@
 <% blade_id   = local_assigns[:blade_id] %>
 <li id="communication_row_<%= comm.id %>"
     class="group px-4 py-2 flex items-center gap-3 hover:bg-slate-50 text-[13px] border-l-4 border-l-transparent data-[active=true]:border-l-slate-700 data-[active=true]:bg-slate-50 <%= 'bg-blue-50/40' if comm.unread? %>">
+  <%# #1018 (Hans, 2026-07-16): Bulk-Select-Checkbox — unsichtbar bis
+      `.bulk-active` auf der bulk-select-Wurzel liegt (wie tasks/_row). %>
+  <input type="checkbox"
+         data-bulk-select-target="checkbox"
+         data-action="change->bulk-select#toggleRow"
+         data-bulk-id="<%= comm.id %>"
+         class="bulk-checkbox hidden shrink-0 w-4 h-4 cursor-pointer accent-emerald-600"
+         aria-label="<%= t("communications.select_communication") %>" />
   <span class="<%= comm.inbound? ? 'text-blue-600' : 'text-slate-400' %>"><%= comm.inbound? ? '↓' : '↑' %></span>
   <%# Unread-Indikator: kleiner blauer Punkt vor dem Betreff. %>
   <% if comm.unread? %>

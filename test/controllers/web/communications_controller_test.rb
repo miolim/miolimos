@@ -50,6 +50,50 @@ class CommunicationsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Detail-Test-Z"
   end
 
+  # #1018 (Hans, 2026-07-16): Batch-Edit von Kommunikationen.
+  test "POST /communications/bulk_update ordnet allen ids das Thema zu" do
+    topic = Topic.create!(name: "BulkTopic", slug: "bulk-#{SecureRandom.hex(2)}", creator: @hans)
+    c1 = build_comm(subject: "BULK-A")
+    c2 = build_comm(subject: "BULK-B")
+    c3 = build_comm(subject: "BULK-C")
+
+    post bulk_update_communications_path,
+         params: { ids: [c1.id, c2.id], add_topic_id: topic.id },
+         as: :turbo_stream
+    assert_response :success
+
+    assert_includes c1.reload.topics, topic
+    assert_includes c2.reload.topics, topic
+    assert_empty    c3.reload.topics
+    # Zuordnung ist idempotent (find_or_create).
+    post bulk_update_communications_path,
+         params: { ids: [c1.id], add_topic_id: topic.id },
+         as: :turbo_stream
+    assert_equal 1, c1.reload.communication_topics.count
+  end
+
+  test "POST /communications/bulk_update mode=delete loescht die ids" do
+    grant(@hans, "Communication", %w[read update delete])
+    c1 = build_comm(subject: "DEL-A")
+    c2 = build_comm(subject: "DEL-B")
+    c3 = build_comm(subject: "KEEP-C")
+
+    assert_difference -> { Communication.count }, -2 do
+      post bulk_update_communications_path,
+           params: { ids: [c1.id, c2.id], mode: "delete" },
+           as: :turbo_stream
+    end
+    assert_response :success
+    assert_includes @response.body, "communication_row_#{c1.id}"
+    assert Communication.exists?(c3.id)
+  end
+
+  test "POST /communications/bulk_update ohne ids antwortet mit Toast" do
+    post bulk_update_communications_path, params: { mode: "delete" }, as: :turbo_stream
+    assert_response :success
+    assert_match(/ausgew/i, @response.body)
+  end
+
   test "POST /communications/:id/create_task creates a task" do
     c = build_comm(subject: "Wichtige Sache")
     assert_difference -> { Task.count }, 1 do

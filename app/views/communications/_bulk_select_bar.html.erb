@@ -1,0 +1,45 @@
+<%# #1018 (Hans, 2026-07-16): Bulk-Apply-Leiste fuer Kommunikationslisten
+    (analog shared/_bulk_select_bar, position :bottom). Aktionen:
+    Thema zuordnen (additiv) + Loeschen (hart, Gmail unveraendert).
+    Der Caller setzt `data-controller="bulk-select"` auf einem Element,
+    das Rows, Toggle-Button und diese Leiste umschliesst.
+
+    Locals:
+      key   — Stable-Id-Suffix (z.B. "communications", "topic-7")
+      topic — optional, Default-Auswahl im Themen-Picker. %>
+<%
+  topic         = local_assigns[:topic]
+  topic_choices = Topic.visible_to(Current.actor).where(template: false).order(:name).pluck(:name, :id)
+%>
+<%= form_with url: bulk_update_communications_path, method: :post,
+      data: { bulk_select_target: "applyForm bar",
+              action: "submit->bulk-select#apply",
+              turbo_stream: true },
+      id: "bulk_bar_#{key}",
+      hidden: true,
+      class: "sticky bottom-0 z-10 mt-2 p-2 rounded border border-emerald-300 bg-emerald-50 shadow-sm flex flex-wrap items-center gap-2 text-xs" do |f| %>
+  <span class="font-medium">
+    <span data-bulk-select-target="counter">0</span> <%= t("shared.bulk.selected") %>
+  </span>
+  <span class="text-slate-400">·</span>
+  <%= f.select :add_topic_id,
+        [["— #{t("shared.bulk.add_topic")} —", ""]] + topic_choices,
+        { selected: topic&.id },
+        class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
+  <span class="ml-auto flex items-center gap-1.5">
+    <button type="submit"
+            class="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer border-0">
+      <%= t("shared.bulk.apply") %>
+    </button>
+    <button type="submit" name="mode" value="delete"
+            data-turbo-confirm="<%= t("communications.bulk_delete_confirm") %>"
+            class="px-2 py-1 rounded bg-rose-600 text-white hover:bg-rose-700 cursor-pointer border-0">
+      <%= t("actions.delete") %>
+    </button>
+    <button type="button"
+            data-action="bulk-select#cancel"
+            class="px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer border-0">
+      <%= t("actions.cancel") %>
+    </button>
+  </span>
+<% end %>

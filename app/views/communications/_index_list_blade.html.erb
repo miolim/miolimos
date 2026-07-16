@@ -5,8 +5,11 @@
     Datenquelle: @communications + @unclassified_count + @classifier_available
     (aus CommunicationsController#index). %>
 <% stack_id = "list:communications" %>
+<%# #1018 (Hans, 2026-07-16): bulk-select auf der Card — umschliesst
+    Toggle (Header), Row-Checkboxen und die Apply-Leiste im Frame. %>
 <article id="stack_card_<%= stack_id %>"
          data-uuid="<%= stack_id %>"
+         data-controller="bulk-select"
          class="stack-card shrink-0 relative
                 w-[38rem] max-w-[calc(100vw-3rem)]
                 bg-white border-l border-slate-200 first:border-l-0
@@ -40,6 +43,12 @@
       <% end %>
 
       <span class="ml-auto flex items-center gap-1">
+        <%# #1018 (Hans, 2026-07-16): Mehrfachauswahl-Modus (wie bei Aufgaben). %>
+        <button type="button" data-action="bulk-select#toggleMode"
+                title="<%= t("shared.bulk.multi_select") %>"
+                class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+          <%= icon "check", size: "w-3.5 h-3.5" %>
+        </button>
         <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
         <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
         <%= render "shared/list_toolbar",
@@ -75,6 +84,10 @@
         </ul>
       <% end %>
     </section>
+    <%# #1018: Bulk-Apply-Leiste (Thema zuordnen / Löschen). %>
+    <div class="px-3 pb-3">
+      <%= render "communications/bulk_select_bar", key: "communications", topic: nil %>
+    </div>
     </turbo-frame>
   </div>
 </article>

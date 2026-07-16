@@ -100,6 +100,45 @@ class CommunicationsController < ApplicationController
     redirect_to communications_path, notice: "Aus miolimOS entfernt (in Gmail unverändert)"
   end
 
+  # POST /communications/bulk_update
+  # #1018 (Hans, 2026-07-16): Batch-Edit fuer Kommunikationslisten (analog
+  # tasks#bulk_update). Erwartet ids[] (Pflicht) und entweder
+  # mode=delete (hartes Loeschen wie #destroy — Gmail unveraendert) oder
+  # add_topic_id (additive Themen-Zuordnung, bestehende bleiben).
+  def bulk_update
+    ids = Array(params[:ids]).map(&:to_i).uniq.reject(&:zero?)
+    comms = Communication.visible_to(current_actor).where(id: ids)
+                         .includes(:topics, :oauth_credential,
+                                   communication_mentions: :mentioned)
+    if comms.empty?
+      render turbo_stream: helpers.toast_stream(message: t("shared.bulk.nothing_selected"))
+      return
+    end
+
+    if params[:mode] == "delete"
+      removed = comms.map(&:id)
+      Communication.transaction { comms.each(&:destroy!) }
+      streams = removed.map { |id| turbo_stream.remove("communication_row_#{id}") }
+      streams << helpers.toast_stream(
+        message: t("communications.bulk_deleted", count: removed.size))
+      render turbo_stream: streams
+    elsif (topic = Topic.find_by(id: params[:add_topic_id].presence&.to_i))
+      Communication.transaction do
+        comms.each { |c| CommunicationTopic.find_or_create_by!(communication: c, topic: topic) }
+      end
+      streams = comms.map do |c|
+        turbo_stream.replace("communication_row_#{c.id}",
+          partial: "communications/row",
+          locals: { comm: c.reload, blade_kind: "communication", blade_id: c.id })
+      end
+      streams << helpers.toast_stream(
+        message: t("communications.bulk_assigned", count: comms.size, topic: topic.name))
+      render turbo_stream: streams
+    else
+      render turbo_stream: helpers.toast_stream(message: t("shared.bulk.no_action"))
+    end
+  end
+
   # Phase 6a — User übernimmt den Classifier-Vorschlag.
   def accept_topic_suggestion
     topic = @communication.suggested_topic

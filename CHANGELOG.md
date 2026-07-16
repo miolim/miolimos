@@ -17,6 +17,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Communication lists support batch editing like task lists: a multi-select
+  toggle in the inbox card and the topic communications tab reveals per-row
+  checkboxes and an action bar to assign the selected communications to a
+  topic (additive) or delete them from miolimOS in one go (Gmail stays
+  unchanged, with a confirmation prompt) (#1018).
 - The card toolbar has a new `layers-plus` action that appends the card to the
   dashboard stack without navigating there — a toast confirms; the card shows
   up the next time the dashboard is opened. The action sits in every card

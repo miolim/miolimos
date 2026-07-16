@@ -286,6 +286,8 @@ Rails.application.routes.draw do
     collection do
       post :classify_all    # Batch-Klassifikation aller Mails ohne Thema
       get  :list_card       # #163 Phase 5a-2: Listen-Blade fuer Cross-Entity-Stack
+      # #1018 (Hans, 2026-07-16): Batch-Edit — ids[] + Thema zuordnen/loeschen.
+      post :bulk_update
     end
     resources :topics, only: [:create, :destroy], controller: "communication_topics"
     # #695: Tags (string[]-Spalte, analog task_tags).

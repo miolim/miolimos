@@ -5,11 +5,23 @@
   # #348 Phase 3: Lazy-Load fuer Dashboard-Stack-Loader-Pfad.
   @communications ||= topic.communications.order(sent_at: :desc).limit(200).to_a
 %>
+<%# #1018 (Hans, 2026-07-16): Mehrfachauswahl wie beim Aufgaben-Reiter —
+    bulk-select-Controller auf der Section, Toggle in der Befehlszeile,
+    Apply-Leiste (Thema zuordnen / Löschen) am Sektionsende. %>
+<% comm_toolbar = capture do %>
+    <button type="button" data-action="bulk-select#toggleMode"
+            title="<%= t("shared.bulk.multi_select") %>"
+            class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+      <%= icon "check", size: "w-3.5 h-3.5" %>
+    </button>
+<% end %>
 <%= render layout: "topics/tab_shell",
       locals: {
         title:        t("topics.tabs.communications"),
         count:        @communications.size,
         row_selector: "li[id^='communication_row_']",
+        controllers:  "bulk-select",
+        controls:     comm_toolbar,
         empty:        @communications.any?
       } do %>
   <% if @communications.empty? %>
@@ -22,4 +34,5 @@
       <% end %>
     </ul>
   <% end %>
+  <%= render "communications/bulk_select_bar", key: "topic-#{topic.id}-communications", topic: topic %>
 <% end %>

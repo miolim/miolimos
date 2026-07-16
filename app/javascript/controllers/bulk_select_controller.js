@@ -52,7 +52,9 @@ export default class extends Controller {
   }
 
   selectedIds() {
-    return this.checkboxTargets.filter(cb => cb.checked).map(cb => cb.dataset.taskId)
+    // #1018: data-bulk-id ist der generische Schluessel (Kommunikation etc.);
+    // data-task-id bleibt fuer die bestehenden Aufgaben-Rows.
+    return this.checkboxTargets.filter(cb => cb.checked).map(cb => cb.dataset.bulkId || cb.dataset.taskId)
   }
 
   update() {

@@ -360,6 +360,14 @@ de:
 
   communications:
     ollama_unavailable: "Ollama nicht erreichbar — siehe phase6a-setup.md"
+    select_communication: "Kommunikation auswählen"
+    bulk_delete_confirm: "Ausgewählte Kommunikationen aus miolimOS löschen? (Gmail bleibt unverändert)"
+    bulk_deleted:
+      one: "1 Kommunikation entfernt (Gmail unverändert)."
+      other: "%{count} Kommunikationen entfernt (Gmail unverändert)."
+    bulk_assigned:
+      one: "1 Kommunikation „%{topic}“ zugeordnet."
+      other: "%{count} Kommunikationen „%{topic}“ zugeordnet."
     setup_hint: "Setup-Hinweis in docs/ollama-setup.md"
     index_title:    "Inbox"
     list_title:     "Kommunikation"
@@ -2157,6 +2165,8 @@ de:
     bulk:
       multi_select: "Mehrfach-Auswahl"
       selected: "ausgewaehlt"
+      nothing_selected: "Nichts ausgewählt."
+      no_action: "Keine Aktion gewählt."
       assignment: "Zuweisung"
       remove: "entfernen"
       status: "Status"

@@ -963,6 +963,7 @@ de:
       task_templates:   "Aufgabenvorlagen"
       ki_templates:     "KI-Vorlagen"
       prompt_templates: "Prompt-Vorlagen"
+      document_templates: "Dokumentvorlagen"
       llm_activities:   "LLM-Aktivität"
       knowledge_import: "Wissens-Import"
       relations:        "Beziehungstypen"

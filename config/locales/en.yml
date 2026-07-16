@@ -959,6 +959,7 @@ en:
       task_templates:   "Task templates"
       ki_templates:     "Knowledge templates"
       prompt_templates: "Prompt templates"
+      document_templates: "Document templates"
       llm_activities:   "LLM activity"
       knowledge_import: "Knowledge import"
       relations:        "Relation types"

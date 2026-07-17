@@ -1,5 +1,5 @@
 class Settings::UsersController < Settings::BaseController
-  before_action :set_user, only: [:edit, :update, :destroy]
+  before_action :set_user, only: [:edit, :update, :destroy, :reset_two_factor]
 
   # #613: Einstellungen sind ein Blade-Stack — die alte Reiter-URL
   # leitet auf den Stack mit geöffnetem Bereichs-Blade.
@@ -38,6 +38,19 @@ class Settings::UsersController < Settings::BaseController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  # #1051: Admin-Rettungsweg bei verlorenem zweiten Faktor — setzt 2FA des
+  # Nutzers komplett zurück (Secret, Recovery-Codes). Nur Admins; die
+  # eigene 2FA verwaltet man unter Einstellungen → Sicherheit.
+  def reset_two_factor
+    unless current_actor&.admin?
+      redirect_to settings_users_path, alert: t("settings.two_factor.admin_only")
+      return
+    end
+    @user.disable_otp!
+    redirect_to settings_path(stack: "list:settings,settings:users,settingssub:users:#{@user.id}:edit"),
+                notice: t("settings.two_factor.reset_done", name: @user.name)
   end
 
   def destroy

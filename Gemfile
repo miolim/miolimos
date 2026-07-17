@@ -13,6 +13,9 @@ gem "jbuilder"
 
 gem "bcrypt", "~> 3.1.7"
 
+# #1051: TOTP-Zweitfaktor für den Web-Login — reines Ruby, kein natives Zeug.
+gem "rotp"
+
 # Phase 4: Web-UI – Turbo, Stimulus, Tailwind, Markdown
 gem "importmap-rails"
 gem "turbo-rails"

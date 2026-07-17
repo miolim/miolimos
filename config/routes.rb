@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   # ─── Auth ──────────────────────────────────────────────────────────────
   get    "/login",  to: "sessions#new",     as: :login
   post   "/login",  to: "sessions#create"
+  # #1051: zweiter Login-Schritt (TOTP-/Recovery-Code) bei aktivierter 2FA.
+  get    "/login/otp", to: "sessions#otp",        as: :login_otp
+  post   "/login/otp", to: "sessions#verify_otp"
   # #816: geräteübergreifender Stack-Verlauf (Drawer-Sync).
   resources :stack_snapshots, only: [:index, :create, :update, :destroy]
 
@@ -485,7 +488,20 @@ Rails.application.routes.draw do
         patch :update_settings
       end
     end
-    resources :users
+    resources :users do
+      member do
+        # #1051: Admin-Rettungsweg — 2FA eines (anderen) Nutzers zurücksetzen.
+        post :reset_two_factor
+      end
+    end
+    # #1051: TOTP-Selbstverwaltung des eingeloggten Nutzers (Enrollment,
+    # Recovery-Codes, Deaktivieren) — Seite „Sicherheit" im Settings-Stack.
+    resource :two_factor, only: [], controller: "two_factor" do
+      post :start
+      post :confirm
+      post :regenerate_codes
+      post :disable
+    end
     resources :agents do
       member do
         post :regenerate_token

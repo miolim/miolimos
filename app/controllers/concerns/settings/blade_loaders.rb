@@ -102,5 +102,13 @@ module Settings::BladeLoaders
     @mapping = helpers.tag_icons_map
   end
 
+  # #1051: Sicherheit — 2FA-Zustand des ECHTEN eingeloggten Nutzers
+  # (real_actor, nie der Preview-Actor) + ggf. laufendes Enrollment
+  # (Kandidaten-Secret aus der Session).
+  def load_security
+    @otp_actor        = real_actor
+    @otp_setup_secret = session[:otp_setup_secret]
+  end
+
   # preferences/signature: keine Loader (Views lesen current_actor/Helpers).
 end

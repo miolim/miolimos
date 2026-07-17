@@ -1,0 +1,63 @@
+<%# #1051: Sicherheit — TOTP-Zweitfaktor des eingeloggten Nutzers.
+    Daten: Settings::BladeLoaders#load_security (@otp_actor = real_actor,
+    @otp_setup_secret = laufendes Enrollment aus der Session). Die
+    Recovery-Codes kommen einmalig als flash[:otp_recovery_codes] aus
+    Settings::TwoFactorController — in der DB liegen nur Digests. %>
+<% recovery_codes = flash[:otp_recovery_codes] %>
+<div class="p-4 max-w-md space-y-4">
+  <h1 class="text-lg font-semibold"><%= t("settings.two_factor.title") %></h1>
+  <p class="text-sm text-slate-600"><%= t("settings.two_factor.intro") %></p>
+
+  <% if recovery_codes.present? %>
+    <div class="border border-amber-300 bg-amber-50 rounded p-3 space-y-2">
+      <p class="text-sm font-medium text-amber-900"><%= t("settings.two_factor.codes_heading") %></p>
+      <p class="text-xs text-amber-800"><%= t("settings.two_factor.codes_hint") %></p>
+      <div class="grid grid-cols-2 gap-1 font-mono text-sm text-slate-800">
+        <% recovery_codes.each do |code| %><span><%= code %></span><% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @otp_actor.otp_enabled? %>
+    <div class="border border-emerald-200 bg-emerald-50 rounded p-3 text-sm text-emerald-900">
+      <%= t("settings.two_factor.enabled_since", date: l(@otp_actor.otp_enabled_at.to_date)) %>
+      <span class="text-emerald-700"><%= t("settings.two_factor.codes_left", count: @otp_actor.otp_recovery_codes.size) %></span>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= button_to t("settings.two_factor.regenerate_codes"), regenerate_codes_settings_two_factor_path,
+            method: :post,
+            form: { data: { turbo_confirm: t("settings.two_factor.regenerate_confirm") } },
+            class: "text-sm px-3 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
+      <%= button_to t("settings.two_factor.disable"), disable_settings_two_factor_path,
+            method: :post,
+            form: { data: { turbo_confirm: t("settings.two_factor.disable_confirm") } },
+            class: "text-sm px-3 py-1 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer" %>
+    </div>
+  <% elsif @otp_setup_secret.present? %>
+    <div class="space-y-3">
+      <p class="text-sm text-slate-700"><%= t("settings.two_factor.scan_hint") %></p>
+      <div class="inline-block border border-slate-200 rounded p-2 bg-white">
+        <%= raw RQRCode::QRCode.new(@otp_actor.otp_provisioning_uri(@otp_setup_secret))
+              .as_svg(module_size: 3, color: "1e293b", viewbox: false) %>
+      </div>
+      <p class="text-xs text-slate-500">
+        <%= t("settings.two_factor.manual_secret") %>
+        <code class="font-mono bg-slate-100 px-1 rounded"><%= @otp_setup_secret %></code>
+      </p>
+      <%= form_with url: confirm_settings_two_factor_path, method: :post, class: "flex items-center gap-2" do |f| %>
+        <%= f.text_field :code, autofocus: true, required: true,
+              autocomplete: "one-time-code", inputmode: "numeric",
+              placeholder: t("settings.two_factor.code_placeholder"),
+              class: "w-36 rounded border border-slate-200 px-2 py-1 font-mono" %>
+        <%= f.submit t("settings.two_factor.confirm"),
+              class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+      <% end %>
+      <%= button_to t("settings.two_factor.cancel_setup"), disable_settings_two_factor_path, method: :post,
+            class: "text-xs px-2 py-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
+    </div>
+  <% else %>
+    <p class="text-sm text-slate-500 italic"><%= t("settings.two_factor.disabled_state") %></p>
+    <%= button_to t("settings.two_factor.enable"), start_settings_two_factor_path, method: :post,
+          class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+  <% end %>
+</div>

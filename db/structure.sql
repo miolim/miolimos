@@ -138,7 +138,11 @@ CREATE TABLE public.actors (
     preferences jsonb DEFAULT '{}'::jsonb NOT NULL,
     signature_image text,
     role integer DEFAULT 1 NOT NULL,
-    person_ki_uuid character varying
+    person_ki_uuid character varying,
+    otp_secret_ciphertext text,
+    otp_enabled_at timestamp(6) without time zone,
+    otp_recovery_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    otp_consumed_timestep bigint
 );
 
 
@@ -5968,6 +5972,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260717200000'),
 ('20260715100002'),
 ('20260715100001'),
 ('20260710110054'),

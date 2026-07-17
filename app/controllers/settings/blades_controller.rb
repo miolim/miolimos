@@ -27,6 +27,8 @@ class Settings::BladesController < Settings::BaseController
     "tag_icons"        => { label: "Tag-Icons",        resource: "Actor",           icon: "tag" },
     "preferences"      => { label: "Vorlieben",        resource: "Actor",           icon: "settings" },
     "signature"        => { label: "Unterschrift",     resource: "Actor",           icon: "pencil" },
+    # #1051: 2FA-Selbstverwaltung (TOTP) des eingeloggten Nutzers.
+    "security"         => { label: "Sicherheit",       resource: "Actor",           icon: "shield" },
     "internetmarke"    => { label: "Frankierung",      resource: "Actor",           icon: "mail" }
   }.freeze
 

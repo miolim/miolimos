@@ -47,3 +47,19 @@
           class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
   </div>
 <% end %>
+
+<%# #1051: 2FA-Status + Admin-Rettungsweg (verlorener zweiter Faktor).
+    Eigenes Formular AUSSERHALB des Haupt-Forms (kein Nested-Form-HTML).
+    Die eigene 2FA richtet man unter Einstellungen → Sicherheit ein. %>
+<% if user.persisted? && user.otp_enabled? %>
+  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-600">
+    <span><%= t("settings.two_factor.user_enabled_badge") %></span>
+    <% if current_actor&.admin? %>
+      <%= button_to t("settings.two_factor.reset"), reset_two_factor_settings_user_path(user),
+            method: :post,
+            form: { class: "inline m-0 p-0",
+                    data: { turbo_confirm: t("settings.two_factor.reset_confirm", name: user.name) } },
+            class: "px-2 py-0.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer" %>
+    <% end %>
+  </div>
+<% end %>

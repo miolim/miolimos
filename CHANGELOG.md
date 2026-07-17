@@ -17,6 +17,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Two-factor authentication (TOTP) for the web login, opt-in per user: a new
+  Settings → "Sicherheit" area enrolls an authenticator app via QR code,
+  shows one-time recovery codes and lets you regenerate or disable the
+  second factor; sign-in becomes two-step for enrolled users (password →
+  code, with a 5-minute window), admins can reset a user's lost second
+  factor from the user form, and both login steps are rate-limited
+  (10 attempts / 3 minutes per IP) against brute force (#1051).
+
 - List cards (tasks, notes, contacts, pinned, topics, tags, documents,
   invoices, communications, awaitings, inbox, history, time entries, sources,
   calendar, settings, dashboard) now carry the same card toolbar as detail

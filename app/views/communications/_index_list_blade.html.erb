@@ -21,6 +21,11 @@
         label: t("communications.index_title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — Body ohne Padding,
+        daher ohne Negativ-Margins; vor dem Frame, damit Sortier-/Filter-
+        Reloads sie nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id,
+          toolbar_class: "px-3 pt-2 pb-2 bg-white" %>
     <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>
     <turbo-frame id="communications_list_frame" class="contents">
     <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-2">
@@ -49,8 +54,7 @@
                 class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
           <%= icon "check", size: "w-3.5 h-3.5" %>
         </button>
-        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
-        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
+        <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
         <%= render "shared/list_toolbar",
               path:           communications_path,
               frame:          "communications_list_frame",

@@ -1,0 +1,18 @@
+<%# #1049 (Hans): Card-Werkzeugleiste für Listen-Cards — dieselbe generische
+    Icon-Zeile wie bei Detail-Cards (#868: Dashboard-Anhängen/Duplizieren/
+    Reload/Fokus/Schließen), nur mit Listen-Spacing (p-3-Body statt p-4) und
+    mb-3, damit der sticky Listen-Kopf (-mt-3) bündig unter der Trennlinie
+    andockt. Der Dashboard-Anhängen-Button (#1005) wandert aus den Listen-
+    Köpfen hierher. Duplizieren/Reload laufen über die generische
+    /:resource/list_card-Route (blade_stack_routes: prefix "list:").
+
+    Locals:
+      - stack_id — die list:*-Stack-ID der Card (Pflicht)
+      - alle weiteren blade_toolbar-Locals (entity_actions, duplicate/reload/
+        focus/close, toolbar_class für Cards mit p-4- oder padding-losem
+        Body) werden durchgereicht %>
+<%= render "shared/blade_toolbar",
+      { uuid: stack_id,
+        toolbar_class: "-mx-3 -mt-3 mb-3 px-3 pt-2 pb-2 bg-white" }
+        .merge(local_assigns.slice(:entity_actions, :append_dashboard, :duplicate,
+                                   :reload, :focus, :close, :toolbar_class)) %>

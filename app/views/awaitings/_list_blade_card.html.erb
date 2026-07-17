@@ -17,6 +17,8 @@
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2"
        data-controller="list-search">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
     <%# #703 (Hans): einheitlicher Topbereich via shared/list_header. %>
     <%= render "shared/list_header",
           lead_icon: "waiting", title: t("nav.waiting"),

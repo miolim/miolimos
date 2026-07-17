@@ -21,6 +21,10 @@
         label: t("time_entries.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto" data-controller="simple-tabs">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — Body ohne p-3,
+        daher ohne Negativ-Margins. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id,
+          toolbar_class: "px-3 pt-2 pb-2 bg-white" %>
     <nav class="flex gap-1 border-b border-slate-200 px-3 pt-3 text-sm sticky top-0 bg-white z-10">
       <% [["all", t("time_entries.tab_all")], ["task", t("time_entries.tab_task")], ["topic", t("time_entries.tab_topic")]].each do |name, label| %>
         <button type="button" data-simple-tabs-target="tab" data-name="<%= name %>"
@@ -29,10 +33,7 @@
           <%= label %>
         </button>
       <% end %>
-      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
-      <span class="ml-auto flex items-center pb-1.5">
-        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
-      </span>
+      <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
     </nav>
 
     <div data-simple-tabs-target="panel" data-name="all" class="p-3">

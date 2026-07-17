@@ -47,6 +47,8 @@
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search"
        data-list-search-selector-value="li[data-tag]">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards. %>
+    <%= render "shared/list_blade_toolbar", stack_id: "list:tags" %>
     <%# #420 (Hans, 2026-05-30/Iter 2): Toolbar-Header analog Aufgaben/
         Wissen — Titel, Anzahl, Suchschlitz in einer Zeile. %>
     <%# #703 (Hans): einheitlicher Topbereich (kein extra Kasten). %>

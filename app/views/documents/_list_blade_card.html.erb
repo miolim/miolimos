@@ -28,6 +28,9 @@
         label: t("documents.list.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2" data-controller="list-search">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — vor dem Frame,
+        damit Filter-Reloads sie nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
     <%# #558: Filter (GET) rendert die Liste IN-PLACE in diesem Frame neu, statt
         per _top den ganzen Stack zurückzusetzen. display:contents = der Frame
         beeinflusst das Layout nicht. %>
@@ -40,9 +43,7 @@
       <div class="flex-1 min-w-0">
         <%= render "shared/list_search", placeholder: t("documents.list.search_placeholder") %>
       </div>
-      <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
-      <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
-
+      <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
       <%# Filter-Popover: Typ / Absender / Empfänger (GET-Reload). %>
       <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
         <button type="button" data-action="click->popover#toggle"

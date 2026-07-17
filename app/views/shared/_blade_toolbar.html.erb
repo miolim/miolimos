@@ -11,12 +11,15 @@
       - entity_actions — optionaler HTML-Block links (Default: leer)
       - duplicate/reload/focus/close — Bool-Flags (Default: true), um pro Card
                          das aktuelle Card-Icon-Set abzubilden
+      - append_dashboard — Bool-Flag (Default: true); false z. B. für die
+                         Dashboard-Listen-Card (#1049), die IST der Stack
       - toolbar_class  — Container-Positions/-Abstands/-Hintergrund-Klassen
                          (Default `-mx-4 -mt-4 px-4 pt-2 pb-2 bg-white`; z. B.
                          Topic-Toolbar nutzt px-3, Kommunikation eine sticky-
                          Variante mit bg-white/95 backdrop-blur) %>
 <%
   entity_actions = local_assigns.fetch(:entity_actions, "".html_safe)
+  show_append    = local_assigns.fetch(:append_dashboard, true)
   show_duplicate = local_assigns.fetch(:duplicate, true)
   show_reload    = local_assigns.fetch(:reload, true)
   show_focus     = local_assigns.fetch(:focus, true)
@@ -29,7 +32,9 @@
   <div class="mr-auto"></div>
   <%# #1005 (Hans): Card an den Dashboard-Stack anhängen — ohne Navigation,
       nur Toast. Ein Partial für ALLE Card-Köpfe (Follow-up: nicht nur KIs). %>
-  <%= render "shared/append_dashboard_button", uuid: local_assigns[:uuid] %>
+  <% if show_append %>
+    <%= render "shared/append_dashboard_button", uuid: local_assigns[:uuid] %>
+  <% end %>
   <% if show_duplicate %>
     <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
     <button type="button"

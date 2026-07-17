@@ -57,6 +57,9 @@
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — vor dem Frame,
+        damit Sortier-/Filter-Reloads sie nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
     <%# #558: Sortieren/Filtern rendert IN-PLACE in diesem Frame (Stack bleibt).
         display:contents = layout-neutral (sticky Header bleibt funktionsfähig). %>
     <turbo-frame id="knowledge_list_frame" class="contents">

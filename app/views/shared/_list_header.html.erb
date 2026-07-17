@@ -28,8 +28,8 @@
   <div class="flex items-center gap-2">
     <span class="shrink-0 text-slate-500 [&_svg]:w-5 [&_svg]:h-5"><%= icon lead_icon %></span>
     <span class="font-semibold text-sm flex-1 min-w-0 truncate"><%= title %></span>
-    <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Listen-Köpfen. %>
-    <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
+    <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeug-
+        leiste (shared/_list_blade_toolbar) oberhalb dieses Kopfes. %>
     <% if add %><span class="shrink-0 flex items-center gap-1"><%= add %></span><% end %>
   </div>
   <%# Zeile 2 %>

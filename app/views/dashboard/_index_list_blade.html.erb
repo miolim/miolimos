@@ -25,6 +25,9 @@
         label: t("dashboard.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards. Dashboard-Anhängen
+        entfällt hier (die Card IST der Dashboard-Stack). %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id, append_dashboard: false %>
     <%# #388 (Hans, 2026-05-28): Bulk-Select-Wurzel umschliesst alle
         Dashboard-Sektionen, ein einziger Toggle aktiviert die
         Checkboxen in Heute / Demnaechst / Agent-Bundles gleichzeitig. %>

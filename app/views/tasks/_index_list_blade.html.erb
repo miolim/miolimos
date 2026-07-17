@@ -92,6 +92,9 @@
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search"
        data-list-search-selector-value="li[data-task-id], div[data-task-id]">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — vor dem Frame,
+        damit Sortier-/Filter-Reloads sie nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
     <%# #558: Sortieren/Filtern in-place in diesem Frame (Stack bleibt). %>
     <turbo-frame id="tasks_list_frame" class="contents">
     <%# #703 (Hans): einheitlicher Topbereich (kein extra Kasten). Live-Zähler

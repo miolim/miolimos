@@ -33,6 +33,9 @@
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2"
        data-controller="list-search">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — vor dem Frame,
+        damit In-Place-Reloads sie nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
    <%= turbo_frame_tag "persons_list_body" do %>
     <%# #703 (Hans): einheitlicher Topbereich. Add = Typ-Picker (Plus),
         Controls = Bekanntheits-Toggle (#702). %>

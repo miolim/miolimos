@@ -20,11 +20,15 @@
         icon_html: icon("calendar"), label: t("calendar.title") %>
 
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — p-4-Body, daher
+        4er-Negativ-Margins; vor dem Frame, damit Perioden-Reloads sie
+        nicht mitrendern. %>
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id,
+          toolbar_class: "-mx-4 -mt-4 mb-4 px-4 pt-2 pb-2 bg-white" %>
     <turbo-frame id="calendar_list_frame" class="contents" target="_top">
       <div class="sticky -top-4 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-white/95 backdrop-blur z-20 border-b border-slate-100 flex items-center gap-2">
         <span class="font-semibold text-sm flex-1 min-w-0 truncate"><%= t("calendar.title") %></span>
-        <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
-        <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
+        <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
       </div>
 
       <%= render "calendar/period", anchor: anchor, view: view, topic: nil,

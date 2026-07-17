@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- List cards (tasks, notes, contacts, pinned, topics, tags, documents,
+  invoices, communications, awaitings, inbox, history, time entries, sources,
+  calendar, settings, dashboard) now carry the same card toolbar as detail
+  cards — attach-to-dashboard, duplicate, reload, focus and close in one
+  consistent icon row above the list header; the attach-to-dashboard button
+  moves out of the individual list headers into the toolbar (#1049).
+
 - When editing a template note (`vorlage:<type>` tag), the body editor shows
   a placeholder chip bar with the keys available for that template type —
   click copies the `{{placeholder}}` to the clipboard; document types add a

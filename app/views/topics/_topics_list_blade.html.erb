@@ -25,6 +25,9 @@
   <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3"
        data-controller="list-search"
        data-list-search-selector-value="li[data-topic]">
+    <%# #1049: Card-Werkzeugleiste wie bei Detail-Cards — vor dem Frame,
+        damit der Status-Filter-Reload sie nicht mitrendert. %>
+    <%= render "shared/list_blade_toolbar", stack_id: "list:topics" %>
     <%# #817/#558: Frame um den Listeninhalt — der Status-Filter lädt nur
         dieses Fragment neu, der Stack bleibt stehen. %>
     <turbo-frame id="topics_list_frame" class="contents">

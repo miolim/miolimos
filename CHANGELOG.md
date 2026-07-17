@@ -94,6 +94,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Buying a real Internetmarke no longer crashes after payment when the DHL
+  API returns the voucher list as a plain array (one of its documented
+  response shapes): the parser threw a TypeError and the paid voucher id was
+  lost. Found by the new purchase-path tests, which now cover the login,
+  both voucher response shapes, the wallet-empty error and the stamp
+  download (#1055).
 - Editing a task template no longer crashes with a 500: the edit link had
   been rendering an index view that was removed when settings moved into the
   blade stack (#613); editing now opens as a proper sub-blade (like users and

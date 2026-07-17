@@ -16,11 +16,17 @@ class SessionsController < ActionController::Base
   skip_before_action :verify_authenticity_token, only: [:create, :verify_otp]
 
   # #1051: Brute-Force-Bremse auf beiden Login-Schritten (Rails-8-eigenes
-  # rate_limit, Zaehler im Rails.cache). 10 Versuche / 3 Minuten pro
-  # Client-IP reichen fuer jeden Tippfehler-Menschen und wuergen
-  # Passwort-/Code-Raten ab. Hinter cloudflared liefert remote_ip die
-  # echte Client-IP (XFF vom trusted 127.0.0.1-Proxy-Hop).
+  # rate_limit). 10 Versuche / 3 Minuten pro Client-IP reichen fuer jeden
+  # Tippfehler-Menschen und wuergen Passwort-/Code-Raten ab. Hinter
+  # cloudflared liefert remote_ip die echte Client-IP (XFF vom trusted
+  # 127.0.0.1-Proxy-Hop).
+  # #1055: expliziter MemoryStore statt Rails.cache — der Default-Store
+  # ist im Test-Env ein :null_store (Bremse wäre ungetestet) und in Prod
+  # der File-Store; bei Single-Puma ist der Prozess-Speicher gleichwertig
+  # (Zaehler ueberleben keinen Restart — fuer eine Login-Bremse ok).
+  RATE_LIMIT_STORE = ActiveSupport::Cache::MemoryStore.new
   rate_limit to: 10, within: 3.minutes, only: [:create, :verify_otp],
+             store: RATE_LIMIT_STORE,
              with: -> { redirect_to login_path, alert: t("sessions.rate_limited") }
 
   # #1051: Der halb-authentifizierte Zustand (Passwort ok, Code fehlt)

@@ -57,8 +57,12 @@ module Internetmarke
         }]
       }
       res = post_json("/app/shoppingcart/png", body)
-      vouchers = Array(res.dig("shoppingCart", "voucherList", "voucher") ||
-                       res.dig("shoppingCart", "voucherList") || res["vouchers"])
+      # #1055: voucherList kommt je nach API-Variante als Hash {voucher: [...]}
+      # ODER direkt als Array — die alte dig-Kette warf beim Array einen
+      # TypeError (String-Key auf Array) und crashte NACH dem Bezahlen.
+      voucher_list = res.dig("shoppingCart", "voucherList")
+      voucher_list = voucher_list["voucher"] if voucher_list.is_a?(Hash)
+      vouchers = Array(voucher_list.presence || res["vouchers"])
       voucher_id = vouchers.filter_map { |v| v["voucherId"] || v["voucher_id"] }.first
       link = res["link"] or raise Error, "Checkout ohne Download-Link: #{res.keys.join(', ')}"
       {

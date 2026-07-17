@@ -86,6 +86,11 @@ group :development, :test do
   # Test coverage reporting
   gem "simplecov", require: false
 
+  # #1055: HTTP-Stubbing für den Internetmarke-Kaufpfad (Net::HTTP).
+  # require: false — Aktivierung nur lokal in den Tests, die es brauchen
+  # (dort disable_net_connect! im setup, allow im teardown).
+  gem "webmock", require: false
+
   # #206 Phase 1: System-Tests fuer Stimulus-Controller. Cuprite faehrt
   # headless Chromium via CDP (kein Selenium-Server, kein chromedriver).
   gem "capybara"

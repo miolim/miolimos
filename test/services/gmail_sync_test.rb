@@ -533,4 +533,59 @@ class GmailSyncTest < ActiveSupport::TestCase
     assert_equal [ projekt.id ], comm.topics.pluck(:id),
       "Mail der Projekt-Kundin muss automatisch am Projekt hängen"
   end
+
+  # ─── #1055: prune — der destruktive Zweig (Remote-Löschung → lokales
+  # destroy!) war ungetestet. Wichtig: NUR die gemeldete Mail fliegt,
+  # Task-Backlinks werden genullt (dependent: :nullify), unbekannte IDs
+  # sind No-Ops, Fehler beim Löschen zählen als error statt zu raisen. ───
+
+  def deleted_history_page(deleted_ids, top_history_id: 1500)
+    entries = deleted_ids.map.with_index do |id, idx|
+      OpenStruct.new(
+        id: (top_history_id + idx).to_s,
+        messages_deleted: [OpenStruct.new(message: OpenStruct.new(id: id))]
+      )
+    end
+    OpenStruct.new(history: entries, next_page_token: nil)
+  end
+
+  test "prune: remote gelöschte Mail wird lokal entfernt, Task-Backlink genullt, andere bleiben" do
+    cred  = build_cred(last_history_id: "900")
+    gone  = Email.create!(external_id: "gone-1", subject: "Alte Mail")
+    stays = Email.create!(external_id: "stays-1", subject: "Bleibt")
+    task  = Task.create!(title: "Folge-Aufgabe", creator: @sync_actor, communication: gone)
+
+    client = FakeGmailClient.new
+    client.history_pages = [ deleted_history_page(%w[gone-1]) ]
+    result = GmailSync.sync(cred, client: client)
+
+    assert_equal 1, result.deleted
+    assert_nil Communication.find_by(external_id: "gone-1")
+    assert Communication.exists?(stays.id), "nicht gemeldete Mail darf nicht gelöscht werden"
+    task.reload
+    assert_nil task.communication_id
+    assert Task.exists?(task.id), "Task mit Backlink muss überleben"
+  end
+
+  test "prune: unbekannte Message-ID ist ein No-Op, TRASH-Label löscht ebenfalls" do
+    cred = build_cred(last_history_id: "900")
+    trashed = Email.create!(external_id: "trash-1", subject: "In den Papierkorb")
+
+    client = FakeGmailClient.new
+    trash_entry = OpenStruct.new(
+      id: "1600",
+      labels_added: [OpenStruct.new(message: OpenStruct.new(id: "trash-1"),
+                                    label_ids: ["TRASH"])]
+    )
+    unknown_entry = OpenStruct.new(
+      id: "1601",
+      messages_deleted: [OpenStruct.new(message: OpenStruct.new(id: "nie-gesehen"))]
+    )
+    client.history_pages = [ OpenStruct.new(history: [trash_entry, unknown_entry], next_page_token: nil) ]
+    result = GmailSync.sync(cred, client: client)
+
+    assert_equal 1, result.deleted, "TRASH-Label muss prunen, unbekannte ID nicht zählen"
+    assert_equal 0, result.errors
+    assert_nil Communication.find_by(external_id: "trash-1")
+  end
 end

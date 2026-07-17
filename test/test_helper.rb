@@ -45,6 +45,12 @@ module ActiveSupport
     # to keep state explicit per test.
     self.use_transactional_tests = true
 
+    # #1055: Der Login-Rate-Limit-Store (SessionsController) ist ein
+    # Prozess-MemoryStore — ohne Clearing zählen die login-POSTs ALLER
+    # Tests eines Workers zusammen und ab dem elften wird jeder
+    # Test-Login gebremst (549 rote Tests beim ersten Versuch).
+    setup { SessionsController::RATE_LIMIT_STORE.clear }
+
     # ─── Factories ───────────────────────────────────────────────────────────
     # Lightweight, explicit builders — no gem dependency.
 

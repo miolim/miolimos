@@ -40,6 +40,15 @@ module SettingsBladesHelper
         { title: mode == :new ? "Neue Prompt-Vorlage" : "Vorlage: #{tpl.name}",
           icon: "sparkles", partial: "prompt_templates/form", locals: { template: tpl } }
       end
+    when "task_templates"
+      # #1054: nur Edit — Anlegen läuft über die Inline-Form im Bereichs-
+      # Blade. Vorher rendete die Edit-Action die seit #613 gelöschte
+      # index-View (500 bei jedem Bearbeiten-Klick).
+      return nil unless mode == :edit
+      tpl = TaskTemplate.find(rid)
+      { title: "Vorlage: #{tpl.title}", icon: "check",
+        partial: "settings/task_templates/form",
+        locals: { template: tpl, agent_actors: AgentActor.order(:name) } }
     end
   end
 end

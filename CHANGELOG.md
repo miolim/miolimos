@@ -94,6 +94,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Editing a task template no longer crashes with a 500: the edit link had
+  been rendering an index view that was removed when settings moved into the
+  blade stack (#613); editing now opens as a proper sub-blade (like users and
+  agents), and validation failures redirect with an alert instead of hitting
+  the missing view (#1054).
 - Publishing a task draft with Ctrl+Shift+Enter while the title field still
   has focus no longer loses the freshly typed title: the publish request now
   carries the current title (like it already did for the description), and the

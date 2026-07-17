@@ -7,30 +7,32 @@ class Settings::TaskTemplatesController < Settings::BaseController
     redirect_to settings_path(stack: "list:settings,settings:task_templates")
   end
 
+  # #1054: die `render :index`-Fehlerpfade zeigten auf die seit #613
+  # gelöschte index-View (500). Validierungsfehler (nur Titel-Pflicht,
+  # den blockt schon das required-Feld im Browser) gehen jetzt als
+  # Alert-Redirect zurück in den Stack.
   def create
     @template = TaskTemplate.new(template_params)
     if @template.save
       redirect_to settings_task_templates_path, notice: "Vorlage angelegt."
     else
-      @templates = TaskTemplate.order(:title)
-      @agent_actors = AgentActor.order(:name)
-      render :index, status: :unprocessable_entity
+      redirect_to settings_task_templates_path,
+                  alert: "Vorlage nicht angelegt: #{@template.errors.full_messages.to_sentence}"
     end
   end
 
+  # #1054: Edit als settingssub-Blade (wie Benutzer/Agenten) statt der
+  # kaputten index-Render — settings_sub_spec löst das Partial auf.
   def edit
-    @templates = TaskTemplate.order(:title)
-    @agent_actors = AgentActor.order(:name)
-    render :index
+    redirect_to settings_path(stack: "list:settings,settings:task_templates,settingssub:task_templates:#{@template.id}:edit")
   end
 
   def update
     if @template.update(template_params)
       redirect_to settings_task_templates_path, notice: "Vorlage aktualisiert."
     else
-      @templates = TaskTemplate.order(:title)
-      @agent_actors = AgentActor.order(:name)
-      render :index, status: :unprocessable_entity
+      redirect_to settings_path(stack: "list:settings,settings:task_templates,settingssub:task_templates:#{@template.id}:edit"),
+                  alert: "Nicht gespeichert: #{@template.errors.full_messages.to_sentence}"
     end
   end
 

@@ -1,0 +1,40 @@
+<%# #1054: Edit-Form der Aufgabenvorlage als eigenes Partial — gerendert
+    im settingssub-Blade (settings_sub_spec "task_templates"). Das
+    Anlegen läuft weiter über die Inline-Form im Bereichs-Blade
+    (settings/blades/_task_templates); dieses Partial ist der Edit-Pfad,
+    der seit #613 kaputt war (render :index auf gelöschte View → 500).
+    Locals: template, agent_actors. %>
+<%= form_with model: template, url: settings_task_template_path(template),
+      scope: :task_template, class: "space-y-3", data: { turbo: false } do |f| %>
+  <% if template.errors.any? %>
+    <div class="text-xs text-rose-700">
+      <%= template.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+  <label class="block">
+    <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_title") %></span>
+    <%= f.text_field :title, required: true, autofocus: true,
+          class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
+  </label>
+  <label class="block">
+    <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_description") %></span>
+    <%= f.text_area :description, rows: 12,
+          class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none font-mono [field-sizing:content]" %>
+  </label>
+  <label class="block">
+    <span class="block text-xs font-medium text-slate-700 mb-0.5"><%= t("settings.task_templates.field_default_agent") %></span>
+    <%= f.select :agent_actor_id,
+          agent_actors.map { |a| [a.name, a.id] },
+          { include_blank: t("settings.task_templates.agent_global") },
+          class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none bg-white" %>
+    <span class="block text-[11px] text-slate-500 mt-0.5">
+      <%= t("settings.task_templates.default_agent_hint") %>
+    </span>
+  </label>
+  <div class="flex justify-end gap-2 pt-2">
+    <%= link_to t("actions.cancel"), settings_task_templates_path,
+          class: "text-xs text-slate-500 hover:text-slate-900 self-center" %>
+    <%= f.submit t("settings.task_templates.submit_update"),
+          class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
+  </div>
+<% end %>

@@ -24,7 +24,9 @@ module Api
 
       def authenticate_actor
         token = request.headers["Authorization"]&.split("Bearer ", 2)&.last
-        @current_actor = Actor.find_by(api_token: token, active: true) if token.present?
+        # #1052: DB hält nur SHA256-Digests — reinkommendes Token hashen
+        # und über den Unique-Index vergleichen.
+        @current_actor = Actor.find_by(api_token_digest: Actor.digest_api_token(token), active: true) if token.present?
         unless @current_actor
           render json: { error: "Unauthorized", code: "invalid_token" }, status: :unauthorized
           return

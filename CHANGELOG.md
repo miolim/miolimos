@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Agent API bearer tokens are now stored only as SHA256 digests (like GitHub
+  personal access tokens): a database leak no longer exposes usable tokens.
+  Existing tokens keep working unchanged (they are hashed in place during
+  migration); the plaintext is shown exactly once when an agent is created
+  or its token is rotated — the agent settings page explains this and offers
+  rotation if a token is lost (#1052).
+
 - Two-factor authentication (TOTP) for the web login, opt-in per user: a new
   Settings → "Sicherheit" area enrolls an authenticator app via QR code,
   shows one-time recovery codes and lets you regenerate or disable the

@@ -1284,6 +1284,8 @@ de:
         copy: "Kopieren"
         toast_token_copied: "Token kopiert."
         rotate_token: "Token rotieren (alten ungültig machen)"
+        token_visible_once: "Dieses Token wird nur JETZT einmalig angezeigt — bitte sofort kopieren und sicher ablegen."
+        token_hashed_hint: "Das Token liegt aus Sicherheitsgründen nur als Hash vor und kann nicht mehr angezeigt werden. Verlegt? Einfach rotieren — das neue Token erscheint dann einmalig hier."
         rotate_token_confirm: "Alten Token wirklich invalidieren? Laufende tmux-Sessions des Agents brauchen den neuen Token."
         workflow_body_fallback: "(Workflow-Anleitung im Edit-Form pflegen — dann erscheint sie hier zum Reinkopieren.)"
         setup_steps_heading: "Setup-Schritte (auf Deinem Rechner)"

@@ -63,22 +63,32 @@
     <% end %>
   </div>
 
-  <%# API-Token + Regenerate %>
+  <%# API-Token + Regenerate. #1052: In der DB liegt nur der SHA256-Digest —
+      der Klartext kommt genau einmal per flash[:agent_api_token] hier an
+      (Anlegen/Rotation) und ist danach nirgends mehr abrufbar. %>
+  <% fresh_token = flash[:agent_api_token] %>
   <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-2">
     <h2 class="font-medium text-sm"><%= t("settings.agents.common.api_token") %></h2>
-    <div class="flex items-center gap-2">
-      <code class="flex-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 break-all">
-        <%= agent.api_token %>
-      </code>
-      <button type="button"
-              data-controller="copy-clipboard"
-              data-action="click->copy-clipboard#copy"
-              data-copy-clipboard-content-value="<%= agent.api_token %>"
-              data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_token_copied") %>"
-              class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-        <%= t("settings.agents.common.copy") %>
-      </button>
-    </div>
+    <% if fresh_token %>
+      <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+        <%= t("settings.agents.common.token_visible_once") %>
+      </p>
+      <div class="flex items-center gap-2">
+        <code class="flex-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 break-all">
+          <%= fresh_token %>
+        </code>
+        <button type="button"
+                data-controller="copy-clipboard"
+                data-action="click->copy-clipboard#copy"
+                data-copy-clipboard-content-value="<%= fresh_token %>"
+                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_token_copied") %>"
+                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <%= t("settings.agents.common.copy") %>
+        </button>
+      </div>
+    <% else %>
+      <p class="text-xs text-slate-500"><%= t("settings.agents.common.token_hashed_hint") %></p>
+    <% end %>
     <%= button_to t("settings.agents.common.rotate_token"),
           regenerate_token_settings_agent_path(agent), method: :post,
           class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer",
@@ -95,7 +105,9 @@
   <% memory_index   = "#{memory_dir}/MEMORY.md" %>
   <% inbox_prompt   = "Inbox-Check für #{agent.name} (id=#{agent.id}). Workflow-Details liegen in der Memory `#{safe_session}_workflow.md`. Schritte wie im Memory-File." %>
   <% workflow_body  = agent.workflow_instructions.presence || t("settings.agents.common.workflow_body_fallback") %>
-  <% memory_file_content = "---\nname: #{agent.name} Async-Inbox-Workflow\ndescription: Workflow für Agent #{agent.name} (id=#{agent.id})\ntype: project\n---\n#{workflow_body}\n\n**Identität:**\n- Actor: `#{agent.email}` (id=#{agent.id} in Prod-DB)\n- API-Token: `#{agent.api_token}`\n- Auth-Header: `Authorization: Bearer <token>`\n- API-Base: `https://#{ENV.fetch(%[MIOLIMOS_HOST], %[os.miolim.de])}/api/v1/`\n" %>
+  <%# #1052: Ohne frisches Token (Flash) landet ein Platzhalter im Memory-
+      Snippet — der Klartext ist nach der Einmalanzeige nicht mehr abrufbar. %>
+  <% memory_file_content = "---\nname: #{agent.name} Async-Inbox-Workflow\ndescription: Workflow für Agent #{agent.name} (id=#{agent.id})\ntype: project\n---\n#{workflow_body}\n\n**Identität:**\n- Actor: `#{agent.email}` (id=#{agent.id} in Prod-DB)\n- API-Token: `#{fresh_token || "<TOKEN-BEIM-ROTIEREN-KOPIEREN>"}`\n- Auth-Header: `Authorization: Bearer <token>`\n- API-Base: `https://#{ENV.fetch(%[MIOLIMOS_HOST], %[os.miolim.de])}/api/v1/`\n" %>
   <%# Heredoc mit quoted EOF — verhindert $-Expansion und Backtick-
       Interpretation in der Memory-Inhalt-Sektion, sodass Tokens und
       Sonderzeichen wortwörtlich landen. %>

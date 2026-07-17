@@ -33,7 +33,22 @@ class AgentActorTest < ActiveSupport::TestCase
                         description: "x", api_token: "dup-token-foo")
     agent = build_agent(api_token: "dup-token-foo")
     assert_not agent.valid?
-    assert agent.errors[:api_token].any?
+    # #1052: Eindeutigkeit läuft über den gespeicherten Digest.
+    assert agent.errors[:api_token_digest].any?
+  end
+
+  # #1052: Klartext ist transient — DB hält nur den SHA256-Digest.
+  test "api_token ist nach Reload nicht mehr lesbar, Digest bleibt" do
+    agent = build_agent
+    agent.save!
+    token = agent.api_token
+    assert token.present?
+    assert_equal Actor.digest_api_token(token), agent.api_token_digest
+    # reload behält Ivars derselben Instanz — entscheidend ist, dass eine
+    # FRISCH geladene Instanz (= neuer Request) keinen Klartext mehr hat.
+    fresh = AgentActor.find(agent.id)
+    assert_nil fresh.api_token, "Klartext darf nicht persistiert sein"
+    assert fresh.api_token_digest.present?
   end
 
   test "regenerate_api_token! creates a new token" do

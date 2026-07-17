@@ -126,7 +126,6 @@ CREATE TABLE public.actors (
     name character varying NOT NULL,
     email character varying,
     active boolean DEFAULT true NOT NULL,
-    api_token character varying,
     description text,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
@@ -142,7 +141,8 @@ CREATE TABLE public.actors (
     otp_secret_ciphertext text,
     otp_enabled_at timestamp(6) without time zone,
     otp_recovery_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
-    otp_consumed_timestep bigint
+    otp_consumed_timestep bigint,
+    api_token_digest character varying
 );
 
 
@@ -3694,10 +3694,10 @@ CREATE INDEX index_actor_views_on_viewable ON public.actor_views USING btree (vi
 
 
 --
--- Name: index_actors_on_api_token; Type: INDEX; Schema: public; Owner: -
+-- Name: index_actors_on_api_token_digest; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_actors_on_api_token ON public.actors USING btree (api_token) WHERE (api_token IS NOT NULL);
+CREATE UNIQUE INDEX index_actors_on_api_token_digest ON public.actors USING btree (api_token_digest);
 
 
 --
@@ -5972,6 +5972,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260717230000'),
 ('20260717200000'),
 ('20260715100002'),
 ('20260715100001'),

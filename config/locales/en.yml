@@ -1280,6 +1280,8 @@ en:
         copy: "Copy"
         toast_token_copied: "Token copied."
         rotate_token: "Rotate token (invalidate the old one)"
+        token_visible_once: "This token is shown only ONCE, right now — copy it immediately and store it safely."
+        token_hashed_hint: "For security the token is stored only as a hash and can no longer be displayed. Lost it? Just rotate — the new token will appear here once."
         rotate_token_confirm: "Really invalidate the old token? The agent's running tmux sessions will need the new token."
         workflow_body_fallback: "(Maintain the workflow instructions in the edit form — then they appear here ready to copy in.)"
         setup_steps_heading: "Setup steps (on your machine)"

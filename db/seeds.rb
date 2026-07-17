@@ -28,7 +28,13 @@ classifier.assign_attributes(
   active: true
 )
 classifier.save!
-puts "  ✓ AgentActor: #{classifier.name} (token: #{classifier.api_token[0, 8]}…)"
+# #1052: Klartext-Token gibt es nur direkt nach der Generierung (Neuanlage);
+# bei bestehendem Agent liegt nur noch der Digest vor.
+if classifier.api_token
+  puts "  ✓ AgentActor: #{classifier.name} (token: #{classifier.api_token} — bitte notieren, wird nie wieder angezeigt)"
+else
+  puts "  ✓ AgentActor: #{classifier.name} (Token unverändert, nur als Hash gespeichert)"
+end
 
 # ─── Team ───────────────────────────────────────────────────────────────────
 team = Team.find_or_create_by!(name: "miolim") do |t|

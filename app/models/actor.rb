@@ -57,6 +57,12 @@ class Actor < ApplicationRecord
     name.to_s.parameterize.presence
   end
 
+  # #1052: API-Tokens liegen nur als SHA256-Digest in der DB (wie GitHub-
+  # PATs) — hier der eine Hash-Weg für Speichern UND Auth-Lookup.
+  def self.digest_api_token(token)
+    Digest::SHA256.hexdigest(token.to_s)
+  end
+
   # Finder fuer @-Mentions: probiert Slug, dann Email-Local-Part.
   def self.find_by_mention_slug(slug)
     s = slug.to_s.strip.downcase

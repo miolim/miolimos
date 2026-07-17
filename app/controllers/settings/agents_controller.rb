@@ -18,8 +18,11 @@ class Settings::AgentsController < Settings::BaseController
     include_delete = ActiveModel::Type::Boolean.new.cast(params.dig(:agent_actor, :include_delete))
     if @agent.save
       @agent.grant_default_capabilities!(include_delete: include_delete)
+      # #1052: Klartext-Token existiert nur in dieser Instanz — für die
+      # Einmalanzeige im Agent-Blade über den Flash mitgeben.
+      flash[:agent_api_token] = @agent.api_token
       redirect_to settings_path(stack: "list:settings,settings:agents,settingssub:agents:#{@agent.id}"),
-                  notice: "Agent „#{@agent.name}\" angelegt. API-Token unten kopierbar."
+                  notice: "Agent „#{@agent.name}\" angelegt. API-Token unten kopierbar — nur JETZT sichtbar."
     else
       render :new, status: :unprocessable_entity
     end
@@ -49,10 +52,11 @@ class Settings::AgentsController < Settings::BaseController
   end
 
   # #152: Token rotieren. Alter Token wird sofort ungültig.
+  # #1052: Klartext kommt einmalig per Flash ins Agent-Blade.
   def regenerate_token
-    @agent.regenerate_api_token!
+    flash[:agent_api_token] = @agent.regenerate_api_token!
     redirect_to settings_path(stack: "list:settings,settings:agents,settingssub:agents:#{@agent.id}"),
-                notice: "Neuer API-Token erzeugt — alter ist ab sofort ungültig."
+                notice: "Neuer API-Token erzeugt — alter ist ab sofort ungültig. Token nur JETZT sichtbar."
   end
 
   # #152: Inbox-Run anstoßen. Setzt `inbox_run_requested_at`; der Agent

@@ -48,6 +48,10 @@ export default class extends Controller {
     this.element.querySelectorAll("[data-blade-link-kind-value][data-blade-link-id-value]").forEach(el => {
       // Sidebar-Einträge bleiben unverändert (Hans, #965): dort keine rote Schrift.
       if (el.closest("aside")) return
+      // #1058 (aus immoos #1020 übernommen): verschachtelte Deeplinks (z.B. ein
+      // Icon in einer klickbaren Zeile, das auf eine andere Card zielt) dürfen
+      // die umgebende Zeile NICHT färben — Opt-out per data-stack-no-highlight.
+      if (el.hasAttribute("data-stack-no-highlight")) return
 
       const uuid = stackUuid(el.dataset.bladeLinkKindValue, el.dataset.bladeLinkIdValue)
       let row = el.closest("li, form, tr") || el.parentElement || el

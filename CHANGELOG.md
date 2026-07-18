@@ -15,6 +15,19 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Fixed
+
+- Bolded @-mentions (`**@slug**`) now create an actor mention: the raw-body
+  scan that feeds the agent inbox missed mentions directly behind emphasis
+  markers, so the pill rendered but the mentioned agent was never notified
+  (#1058).
+- The PDF stack card no longer 500s on non-ASCII titles (`·`, umlauts):
+  the base64url payload is now forced to UTF-8 with an invalid-encoding
+  guard (#1058, adopted from immoOS #1042).
+- Stack-highlight opt-out: elements marked `data-stack-no-highlight` (e.g.
+  nested deeplinks inside a clickable row) no longer tint their surrounding
+  row (#1058, adopted from immoOS #1020).
+
 ## [0.3.4] - 2026-07-18
 
 ### Added

@@ -24,6 +24,19 @@ class PdfCardsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, %(href="/invoices/1/artifacts/2")
   end
 
+  # #1058 (aus immoos #1042 übernommen): urlsafe_decode64 liefert BINARY —
+  # ohne force_encoding gab es bei Nicht-ASCII-Titeln (·, Umlaute) einen 500er.
+  test "Titel mit Nicht-ASCII-Zeichen rendert sauber" do
+    get pdf_card_path(payload("/invoices/1/artifacts/2", "Abrechnung 2025 · WE Müller"))
+    assert_response :success
+    assert_includes @response.body, "Abrechnung 2025 · WE Müller"
+  end
+
+  test "Payload mit ungültiger UTF-8-Sequenz wird abgelehnt" do
+    get pdf_card_path(Base64.urlsafe_encode64("/x\n\xFF\xFE".b, padding: false))
+    assert_response :not_found
+  end
+
   test "externe/protokoll-relative URLs werden abgelehnt" do
     get pdf_card_path(payload("https://boese.example/x.pdf"))
     assert_response :not_found

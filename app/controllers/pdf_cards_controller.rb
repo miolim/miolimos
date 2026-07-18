@@ -13,7 +13,12 @@ class PdfCardsController < ApplicationController
     rescue ArgumentError
       nil
     end
-    path, title = raw.to_s.split("\n", 2)
+    # #1058 (aus immoos #1042 übernommen): urlsafe_decode64 liefert BINARY —
+    # ohne force_encoding knallen Nicht-ASCII-Titel (·, Umlaute) beim Rendern
+    # (Encoding::CompatibilityError).
+    raw = raw.to_s.dup.force_encoding(Encoding::UTF_8)
+    raise ActiveRecord::RecordNotFound unless raw.valid_encoding?
+    path, title = raw.split("\n", 2)
     # Nur same-origin-Pfade — keine externen URLs, kein protocol-relative "//".
     raise ActiveRecord::RecordNotFound unless path.to_s.match?(%r{\A/[^/\s]}) || path == "/"
 

@@ -28,12 +28,13 @@
             class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
         <%= icon "external_link" %>
       <% end %>
-      <%# PDF. %>
-      <%= link_to rendered_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
-            title: t("documents.show.pdf"), "aria-label": t("documents.show.pdf"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
+      <%# PDF — #1025 (aus immoos übernommen): als Stack-Card öffnen (dort weiter „im Tab öffnen"). %>
+      <button type="button"
+              <%= tag.attributes(data: pdf_card_data(rendered_pdf_invoice_path(invoice), title: invoice.display_name)) %>
+              title="<%= t("documents.show.pdf") %>" aria-label="<%= t("documents.show.pdf") %>"
+              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 bg-transparent border-0 cursor-pointer">
         <%= icon "file_pdf" %>
-      <% end %>
+      </button>
       <%# #547: AES-signiertes PDF — nur wenn das Signier-Setup vorhanden ist. %>
       <% if DocumentSigner.available? %>
         <%= link_to signed_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",

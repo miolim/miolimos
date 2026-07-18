@@ -49,6 +49,9 @@ Rails.application.routes.draw do
 
   # #926 (Hans, 2026-07-09): Rechnung/Angebot als eigene Entität — gleiche
   # Verfahren-Routen wie documents (PrintableResource) + Positionen/e-Rechnung.
+  # #1025 (aus immoos übernommen): PDF-Viewer-Card — payload = base64url("<pfad>\n<titel>").
+  get "pdf_card/:payload", to: "pdf_cards#card", as: :pdf_card
+
   resources :invoices, only: [:index, :show, :create, :update, :destroy] do
     member do
       post   :restore

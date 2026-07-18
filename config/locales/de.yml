@@ -483,6 +483,11 @@ de:
       open:     "Offen"
       resolved: "Aufgelöst"
 
+  # #1025 (aus immoos übernommen): PDF-Viewer-Card.
+  pdf_cards:
+    title:    "PDF"
+    beleg:    "Beleg"
+    open_tab: "Im Browser-Tab öffnen"
   knowledge:
     # #849 (aus immoos übernommen): Tab-Leiste am Person/Org-Detail.
     person_tabs:

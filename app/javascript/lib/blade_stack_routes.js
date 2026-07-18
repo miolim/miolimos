@@ -92,6 +92,11 @@ const ROUTES = [
   { kind: "invoice", prefix: "invoice:",
     stackId: id => `invoice:${id}`,
     url: rest => `/invoices/${encodeURIComponent(rest)}/card` },
+  // #1025 (aus immoos übernommen): PDF-Viewer-Card — id ist
+  // base64url("<pfad>\n<titel>") (URL-sichere Zeichen, stabil über Restore).
+  { kind: "pdfcard", prefix: "pdfcard:",
+    stackId: id => `pdfcard:${id}`,
+    url: rest => `/pdf_card/${rest}` },
   // #280: KnowledgeItem — nackte UUID, KEIN Prefix. Muss letzter Eintrag
   // sein (matcht alles); URL kommt aus cardUrlTemplate (Seiten können sie
   // überschreiben) bzw. dessen #563-Default.

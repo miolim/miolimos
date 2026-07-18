@@ -15,9 +15,11 @@
     <ul class="space-y-0.5">
       <% arts.each do |art| %>
         <li class="flex items-center gap-2">
-          <%= link_to art.created_at.strftime("%d.%m.%Y %H:%M:%S"),
-                polymorphic_path([:artifact, printable], artifact_id: art.id), target: "_blank", rel: "noopener",
-                class: "hover:underline text-sky-700 tabular-nums" %>
+          <%# #1025 (aus immoos übernommen): Stand als Stack-Card öffnen. %>
+          <button type="button"
+                  <%= tag.attributes(data: pdf_card_data(polymorphic_path([:artifact, printable], artifact_id: art.id),
+                                                         title: "#{printable.display_name.presence || t('pdf_cards.beleg')} · #{art.created_at.strftime('%d.%m.%Y')}")) %>
+                  class="hover:underline text-sky-700 tabular-nums bg-transparent border-0 cursor-pointer p-0"><%= art.created_at.strftime("%d.%m.%Y %H:%M:%S") %></button>
           <span class="text-slate-400 text-xs"><%= art.signed ? t("documents.list.signed") : t("documents.list.unsigned") %><%= " · #{art.creator.name}" if art.creator %></span>
           <%# #536: Portal-Freigabe je Stand — nur wenn das Dokument an einem
               Projekt (Topic mit Kunde) hängt. %>

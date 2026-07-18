@@ -1,0 +1,28 @@
+<%# #1025 (aus immoos übernommen, #1057): PDF-Viewer als Stack-Card —
+    eingebetteter same-origin PDF-Endpunkt; „im Browser-Tab öffnen" bleibt
+    über die Card erreichbar.
+    Locals: payload (base64url, Stack-Id-Rest), path (PDF-Pfad), title (optional). %>
+<% stack_id = "pdfcard:#{payload}" %>
+<% label = title.presence || t("pdf_cards.title") %>
+<article id="stack_card_<%= stack_id %>" data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[44rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+  <%= render "shared/blade_spine", stack_id: stack_id, title: label,
+        icon_html: icon("file_pdf"), label: label %>
+
+  <div class="flex-1 min-w-0 min-h-0 p-3 flex flex-col gap-2">
+    <%= render "shared/blade_toolbar", uuid: stack_id, close: true,
+          toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white" %>
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="min-w-0 truncate text-[13px] font-medium text-slate-700" title="<%= label %>"><%= label %></span>
+      <%# Fallback: das rohe PDF weiterhin im Browser-Tab öffnen können. %>
+      <%= link_to path, target: "_blank", rel: "noopener", data: { turbo: false },
+            title: t("pdf_cards.open_tab"), "aria-label": t("pdf_cards.open_tab"),
+            class: "ml-auto shrink-0 p-1 rounded text-slate-400 hover:text-sky-700 hover:bg-slate-100 [&_svg]:w-4 [&_svg]:h-4" do %>
+        <%= icon "file_output" %>
+      <% end %>
+    </div>
+    <embed src="<%= path %>" type="application/pdf"
+           class="flex-1 min-h-0 w-full rounded border border-slate-200 bg-slate-50">
+  </div>
+</article>

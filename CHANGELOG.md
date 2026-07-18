@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- PDFs open in a stack card instead of a browser tab: the PDF action on
+  document and invoice cards and the saved PDF versions ("Stände"/received
+  documents) in the artifacts section now append an embedded PDF viewer card
+  to the blade stack — with a stable stack id that survives reloads and
+  stack restore, and a toolbar action to still open the raw PDF in a browser
+  tab. Print view, signed PDF and ZUGFeRD keep opening in the tab (#1025,
+  adopted from immoOS via #1057).
+
 ## [0.3.3] - 2026-07-18
 
 ### Added

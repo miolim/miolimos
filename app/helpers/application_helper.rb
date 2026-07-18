@@ -369,6 +369,16 @@ module ApplicationHelper
 
   # Memoized pro Request: Org-Titel für das datalist-Autocomplete im
   # #533 1d: Minuten → „1:23 h" / „45 min".
+  # #1025 (aus immoos übernommen, #1057): data-Attribute für einen Klick, der
+  # ein PDF als Stack-Card öffnet (statt Browser-Tab). path = same-origin
+  # PDF-Endpunkt; title optional. Aufrufer ergänzen selbst stopPropagation,
+  # wenn der Button in einer klickbaren blade-link-Zeile sitzt.
+  def pdf_card_data(path, title: nil)
+    payload = Base64.urlsafe_encode64([path, title].compact.join("\n"), padding: false)
+    { controller: "blade-link", "blade-link-kind-value": "pdfcard",
+      "blade-link-id-value": payload, action: "click->blade-link#append" }
+  end
+
   def format_minutes(mins)
     mins = mins.to_i
     h, m = mins.divmod(60)

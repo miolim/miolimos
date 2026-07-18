@@ -480,6 +480,11 @@ en:
       open:     "Open"
       resolved: "Resolved"
 
+  # #1025 (adopted from immoOS): PDF viewer card.
+  pdf_cards:
+    title:    "PDF"
+    beleg:    "Document"
+    open_tab: "Open in browser tab"
   knowledge:
     # #849 (adopted from immoos): tab bar on the person/org detail.
     person_tabs:

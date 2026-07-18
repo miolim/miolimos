@@ -17,6 +17,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Person and organization cards get an "Invoices" tab whenever the contact
+  is party to an invoice (issuer or recipient): incoming invoices (contact =
+  issuer) and outgoing invoices (contact = recipient) are listed as separate
+  sections, each row opening the invoice in the blade stack (#972, adopted
+  from immoOS via #1057).
 - PDFs open in a stack card instead of a browser tab: the PDF action on
   document and invoice cards and the saved PDF versions ("Stände"/received
   documents) in the artifacts section now append an embedded PDF viewer card

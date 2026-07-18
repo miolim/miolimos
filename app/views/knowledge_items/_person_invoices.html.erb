@@ -1,0 +1,25 @@
+<%# #972 (aus immoos übernommen, #1057): Rechnungen eines Kontakts (Person/Org)
+    im „Rechnungen“-Tab. Zwei Sections: Eingang (Eingangsrechnungen, Kontakt =
+    Aussteller) und Ausgang (Ausgangsrechnungen, Kontakt = Empfänger). Nur
+    nicht-leere Sections; nur Rechnungen (keine Angebote). Klick öffnet die
+    Rechnung im Blade-Stack. %>
+<% item = local_assigns.fetch(:item) %>
+<% incoming = Invoice.for_party(item.uuid).rechnung.eingehend %>
+<% outgoing = Invoice.for_party(item.uuid).rechnung.ausgehend %>
+<div class="space-y-4">
+  <% [[incoming, t("knowledge.person_invoices.incoming")],
+      [outgoing, t("knowledge.person_invoices.outgoing")]].each do |list, heading| %>
+    <% next if list.none? %>
+    <section class="space-y-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs uppercase tracking-wide text-slate-500"><%= heading %></span>
+        <span class="text-xs text-slate-400 tabular-nums">(<%= list.size %>)</span>
+      </div>
+      <ul class="divide-y divide-slate-50 border border-slate-100 rounded text-[13px]">
+        <% list.each do |inv| %>
+          <%= render "invoices/row", inv: inv %>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

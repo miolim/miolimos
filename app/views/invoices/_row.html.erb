@@ -1,0 +1,18 @@
+<%# #972 (aus immoos übernommen, #1057): eine Rechnungszeile als blade-link-
+    Button (öffnet die Rechnung im Stack). Genutzt vom „Rechnungen“-Tab am
+    Kontakt; bewusst generisch für weitere Einbettungen.
+    Locals: inv; direction_badge (bool, default true) — Eingang-Badge zeigen. %>
+<% inv = local_assigns.fetch(:inv) %>
+<% direction_badge = local_assigns.fetch(:direction_badge, true) %>
+<li>
+  <button type="button"
+          data-controller="blade-link" data-blade-link-kind-value="invoice"
+          data-blade-link-id-value="<%= inv.id %>" data-action="click->blade-link#append"
+          class="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 bg-transparent border-0 cursor-pointer">
+    <% if direction_badge && inv.eingehend? %>
+      <span class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span>
+    <% end %>
+    <span class="truncate min-w-0 flex-1"><%= inv.display_name.presence || t("documents.list.unnamed") %></span>
+    <span class="tabular-nums shrink-0 text-slate-500"><%= document_euro(inv.gross_total) %></span>
+  </button>
+</li>

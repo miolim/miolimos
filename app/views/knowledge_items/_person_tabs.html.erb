@@ -18,8 +18,12 @@
   # die übrigen Backlinks (KIs/Aufgaben/Wartepunkte) bleiben als Section in den
   # Stammdaten. Der Tab erscheint deshalb nur bei tatsächlichen E-Mails.
   comm_present = item.communication_mentions.exists?
+  # #972 (aus immoos übernommen): „Rechnungen“-Tab, wenn der Kontakt an
+  # Rechnungen beteiligt ist (Aussteller ODER Empfänger).
+  invoices_present = Invoice.for_party(item.uuid).exists?
 
   tabs = [["master_data", t("knowledge.person_tabs.master_data")]]
+  tabs << ["invoices", t("knowledge.person_tabs.invoices")] if invoices_present
   tabs << ["communication", t("knowledge.person_tabs.communication")] if comm_present
 %>
 <%# Der Stammdaten-Tab bündelt alles, was heute schon da ist, außer E-Mails
@@ -59,6 +63,12 @@
     <div data-simple-tabs-target="panel" data-name="master_data" class="space-y-4">
       <%= master_data %>
     </div>
+
+    <% if invoices_present %>
+      <div data-simple-tabs-target="panel" data-name="invoices" class="hidden">
+        <%= render "knowledge_items/person_invoices", item: item %>
+      </div>
+    <% end %>
 
     <% if comm_present %>
       <div data-simple-tabs-target="panel" data-name="communication" class="hidden">

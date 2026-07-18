@@ -492,7 +492,12 @@ de:
     # #849 (aus immoos übernommen): Tab-Leiste am Person/Org-Detail.
     person_tabs:
       master_data:   "Stammdaten"
+      invoices:      "Rechnungen"
       communication: "Kommunikation"
+    # #972 (aus immoos übernommen): Rechnungen-Sections im Kontakt-Tab.
+    person_invoices:
+      incoming:      "Eingang"
+      outgoing:      "Ausgang"
     # #840: Status-Look + Menü am Personen-Haupticon.
     person_status:
       menu_title:  "Status ändern"

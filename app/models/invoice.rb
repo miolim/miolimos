@@ -25,6 +25,16 @@ class Invoice < ApplicationRecord
   # #995: nur eigene (ausgehende) Belege werden kuvertiert und frankiert.
   def frankable? = ausgehend?
 
+  # #972 (aus immoos übernommen, #1057): Rechnungen, an denen ein Kontakt
+  # (Person/Org-KI) als Aussteller ODER Empfänger beteiligt ist — für den
+  # „Rechnungen“-Tab am Kontakt. Eingang (eingehend) = Kontakt ist Aussteller,
+  # Ausgang (ausgehend) = Kontakt ist Empfänger.
+  def self.for_party(ki_uuid)
+    return none if ki_uuid.blank?
+    where(issuer_uuid: ki_uuid).or(where(recipient_uuid: ki_uuid))
+                               .order(document_date: :desc)
+  end
+
   # #559 (Hans): Benennung = Aussteller · Rechnungsnummer · Datum.
   def display_name
     parts = [issuer&.title, number.presence, document_date&.strftime("%d.%m.%Y")]

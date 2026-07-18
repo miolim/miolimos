@@ -54,6 +54,30 @@ class PersonDetailTabsTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Rückruf"
   end
 
+  test "#972: Kontakt mit Rechnungen bekommt Rechnungen-Tab mit Eingang/Ausgang" do
+    person = create_person("Lieferant GmbH")
+    # Eingang: Kontakt ist Aussteller einer Eingangsrechnung.
+    Invoice.create!(kind: :rechnung, direction: :eingehend, issuer_uuid: person.uuid,
+                    subject: "Wartung Heizung", document_date: Date.current, creator_id: @hans.id)
+    # Ausgang: Kontakt ist Empfänger einer Ausgangsrechnung.
+    Invoice.create!(kind: :rechnung, direction: :ausgehend, recipient_uuid: person.uuid,
+                    subject: "Nebenkosten 2024", document_date: Date.current, creator_id: @hans.id)
+
+    get "/knowledge_items/#{person.uuid}/card"
+    assert_response :success
+    assert_includes @response.body, %(data-controller="simple-tabs")
+    assert_includes @response.body, %(data-simple-tabs-target="panel" data-name="invoices")
+    assert_includes @response.body, I18n.t("knowledge.person_invoices.incoming")
+    assert_includes @response.body, I18n.t("knowledge.person_invoices.outgoing")
+  end
+
+  test "#972: Kontakt ohne Rechnungen hat keinen Rechnungen-Tab" do
+    person = create_person("Ohne Rechnung")
+    get "/knowledge_items/#{person.uuid}/card"
+    assert_response :success
+    assert_not_includes @response.body, %(data-name="invoices")
+  end
+
   test "Person ganz ohne verknüpfte Daten bleibt flach, ohne Tab-Leiste (#849)" do
     person = create_person("Nackte Person")
 

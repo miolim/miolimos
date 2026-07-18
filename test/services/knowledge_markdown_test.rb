@@ -57,6 +57,20 @@ class KnowledgeMarkdownTest < ActiveSupport::TestCase
     assert_includes mid_html,   "actor-mention"
   end
 
+  # #1058 (2026-07-18): `**@slug**` — der Render-Pfad zeigte die Pill (hinter
+  # `<strong>` greift das `>`-Lookbehind), aber sync_for/extract_actors auf dem
+  # Roh-Markdown erkannte den Slug hinter `*` nicht → Pill ohne actor_mentions-
+  # Zeile, die Mention fehlte in der Agenten-Inbox.
+  test "bolded @-mention is extracted from the raw body AND renders as a pill" do
+    actors = KnowledgeMarkdown::ActorMentions.extract_actors("**@hans** — bitte übernehmen")
+    assert_equal [@hans.id], actors.map(&:id), "extract must see the mention behind `**`"
+    assert_includes render("**@hans** — bitte übernehmen"), "actor-mention"
+  end
+
+  test "citations and markdown links still do not count as mentions" do
+    assert_empty KnowledgeMarkdown::ActorMentions.extract_actors("siehe [@hans] und (@hans)")
+  end
+
   test "renders plain markdown to HTML" do
     html = render("# Hallo\n\nWelt.")
     # #341: Headings sind jetzt anker-faehig und bekommen einen id-

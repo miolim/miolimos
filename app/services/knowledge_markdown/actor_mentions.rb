@@ -16,7 +16,15 @@ class KnowledgeMarkdown
     # #519 (Hans, 2026-06-05): `>` ins Lookbehind — resolve() läuft auf dem
     # GERENDERTEN HTML; eine Mention am Absatz-Anfang steht dann direkt hinter
     # `<p>` (Zeichen `>`, kein Whitespace) und wurde sonst nicht gerendert.
-    MENTION_RE = /(?:^|(?<=[\s>]))@([a-zA-Z][a-zA-Z0-9_-]{1,40})(?![a-zA-Z0-9_\-@.])/
+    #
+    # #1058 (2026-07-18): `*` ins Lookbehind — sync_for() läuft auf dem ROH-
+    # Markdown; eine gefettete Mention (`**@slug**`) wurde dort nicht erkannt,
+    # obwohl der Render-Pfad (hinter `<strong>` → `>`) die Pill anzeigte.
+    # Folge: Pill sichtbar, aber keine actor_mentions-Zeile → Mention fehlte
+    # in der Agenten-Inbox und pokte nicht. (Underscore-Emphasis `_@slug_`
+    # bleibt wie bisher unerkannt — `_` ist Slug-Zeichen, der schließende
+    # Unterstrich klebt am Slug.)
+    MENTION_RE = /(?:^|(?<=[\s>*]))@([a-zA-Z][a-zA-Z0-9_-]{1,40})(?![a-zA-Z0-9_\-@.])/
 
     module_function
 

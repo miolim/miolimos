@@ -15,6 +15,8 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.3.3] - 2026-07-18
+
 ### Added
 
 - Organizations get an optional "legal form" field (GdWE, GmbH, UG, AG, GbR,
@@ -410,7 +412,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/miolim/miolimos/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/miolim/miolimos/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/miolim/miolimos/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/miolim/miolimos/compare/v0.2.1...v0.3.0

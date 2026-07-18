@@ -29,6 +29,10 @@ release is cut, this section is renamed to the new version and a fresh
   a card in the blade stack are highlighted in red, in addition to the spine
   chevron — a self-contained Stimulus controller watches the DOM; sidebar
   entries stay unchanged (#965, adopted from immoOS via #1057).
+- `bin/rails gmail:setup` binds its OAuth loopback server to a fixed port
+  when `GMAIL_SETUP_PORT` is set, so an SSH tunnel to a headless server can
+  be established before starting the flow (#989, adopted from immoOS via
+  #1057).
 - Agent API bearer tokens are now stored only as SHA256 digests (like GitHub
   personal access tokens): a database leak no longer exposes usable tokens.
   Existing tokens keep working unchanged (they are hashed in place during

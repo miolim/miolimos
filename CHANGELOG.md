@@ -25,6 +25,10 @@ release is cut, this section is renamed to the new version and a fresh
   where a GdWE legal form on a property's owner marks the property as
   WEG-divided — the fork drops its stopgap column with the next upstream
   merge (#1057).
+- Rows in lists, trees and detail sections whose target is currently open as
+  a card in the blade stack are highlighted in red, in addition to the spine
+  chevron — a self-contained Stimulus controller watches the DOM; sidebar
+  entries stay unchanged (#965, adopted from immoOS via #1057).
 - Agent API bearer tokens are now stored only as SHA256 digests (like GitHub
   personal access tokens): a database leak no longer exposes usable tokens.
   Existing tokens keep working unchanged (they are hashed in place during

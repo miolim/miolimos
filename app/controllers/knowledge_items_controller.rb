@@ -730,6 +730,11 @@ class KnowledgeItemsController < ApplicationController
       last_name:  params[:last_name].presence,
       parent_org: params[:parent_org].presence
     }.compact
+    # #1057 (aus immoos #1031): Rechtsform nur für Organisationen übernehmen;
+    # Nicht-Katalogwerte filtert Frontmatter.build.
+    if item.item_type == "organization" && params[:legal_form].present?
+      fields[:legal_form] = params[:legal_form]
+    end
     if item.person?
       if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
         parts = item.title.split(/\s+/)

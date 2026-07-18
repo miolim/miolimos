@@ -10,9 +10,12 @@ namespace :gmail do
 
     client_id, client_secret = load_google_oauth_credentials
 
-    # Loopback-Server auf einem freien Port binden (Google akzeptiert jede
-    # 127.0.0.1:*-URL für Desktop-App-Clients ohne Registrierung).
-    server = TCPServer.new("127.0.0.1", 0)
+    # Loopback-Server binden (Google akzeptiert jede 127.0.0.1:*-URL für
+    # Desktop-App-Clients ohne Registrierung). #1057 (aus immoos #989): fester
+    # Port via GMAIL_SETUP_PORT, damit man den SSH-Tunnel VORHER aufsetzen kann
+    # (sonst kennt man den Zufallsport erst nach dem Start).
+    fixed  = ENV["GMAIL_SETUP_PORT"].to_i
+    server = fixed > 0 ? TCPServer.new("127.0.0.1", fixed) : TCPServer.new("127.0.0.1", 0)
     port   = server.addr[1]
     redirect_uri = "http://127.0.0.1:#{port}/callback"
     state = SecureRandom.hex(16)

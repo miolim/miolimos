@@ -14,6 +14,15 @@
   </datalist>
 </label>
 
+<%# #1057 (aus immoos #1031): fakultative Rechtsform der Organisation. %>
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.legal_forms.label") %></span>
+  <%= f.select :legal_form,
+        LegalForms::OPTIONS.map { |v| [t("knowledge.legal_forms.#{v}"), v] },
+        { include_blank: t("knowledge.legal_forms.none") },
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white" %>
+</label>
+
 <label class="block text-xs">
   <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.aliases_comma") %></span>
   <%= f.text_field :aliases,

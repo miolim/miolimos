@@ -316,6 +316,18 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
   display: none !important;
 }
 
+/* #1057 (aus immoos #965, Hans): Einträge, die als Card im aktuellen Stack
+   geöffnet sind, zusätzlich zum Chevron in roter Schrift hervorheben. Die
+   Klasse setzt der stack-highlight-Controller auf die Zeile (li/form/tr);
+   Titel/Untertitel tragen oft eigene text-slate-Farben, daher explizit mit
+   übersteuern. */
+.stack-open,
+.stack-open [class*="text-slate"],
+.stack-open .truncate,
+.stack-open input {
+  color: #dc2626;
+}
+
 /* #163 Phase 6a: Spine-Klick toggelt Collapse-State. Collapsed = nur
    Spine sichtbar (Body display: none), Card schrumpft auf Spine-Breite. */
 /* #224 (2026-05-19, Hans): Collapse-Animation, damit der Spine

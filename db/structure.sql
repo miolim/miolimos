@@ -1205,7 +1205,8 @@ CREATE TABLE public.knowledge_items (
     issuer boolean DEFAULT false NOT NULL,
     vat_exempt boolean DEFAULT false NOT NULL,
     personally_known boolean DEFAULT false NOT NULL,
-    render_mode character varying DEFAULT 'markdown'::character varying NOT NULL
+    render_mode character varying DEFAULT 'markdown'::character varying NOT NULL,
+    legal_form character varying
 );
 
 
@@ -5972,6 +5973,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260718090000'),
 ('20260717230000'),
 ('20260717200000'),
 ('20260715100002'),

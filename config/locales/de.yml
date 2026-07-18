@@ -503,6 +503,21 @@ de:
       copy_hint: "Klick kopiert den Platzhalter"
       copied: "%{key} kopiert — im Text einfügen."
       infoblock_hint: "… plus jedes Infoblock-Feld des Dokuments als {{feldname}}"
+    # #1057 (aus immoos #1031): Rechtsform einer Organisation (fakultativ).
+    legal_forms:
+      label:              "Rechtsform"
+      none:               "— Rechtsform —"
+      gdwe:               "GdWE (WEG)"
+      gmbh:               "GmbH"
+      ug:                 "UG (haftungsbeschränkt)"
+      ag:                 "AG"
+      gbr:                "GbR"
+      ohg:                "OHG"
+      kg:                 "KG"
+      eg:                 "eG"
+      ev:                 "e. V."
+      einzelunternehmen:  "Einzelunternehmen"
+      sonstige:           "Sonstige"
     detail:
       original_chat_title: "Original-Chat-Titel: %{title}"
       duplicate_card: "Card duplizieren"

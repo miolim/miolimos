@@ -1189,4 +1189,49 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "bank_accounts_section_#{person.uuid}"
   end
+
+  # #1057 (aus immoos #1031): fakultative Rechtsform an Organisationen.
+  # Katalogwerte werden gesetzt (Create + Inline-PATCH), alles außerhalb
+  # des Katalogs (auch "") räumt das Feld ab — Frontmatter.build filtert.
+  test "#1057 Rechtsform: Create mit legal_form setzt Spalte + Frontmatter" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { title: "Rechtsform AG", item_type: "organization",
+                     content: "", legal_form: "ag" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      org = KnowledgeItem.find_by(title: "Rechtsform AG")
+      assert_equal "ag", org.legal_form
+      assert_equal "ag", FileProxy::Reader.build_frontmatter_hash(org)["legal_form"]
+    end
+  end
+
+  test "#1057 Rechtsform: Inline-PATCH setzt, leerer Wert räumt ab" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "Rechtsform GmbH",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{org.uuid}",
+            params: { legal_form: "gmbh", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :no_content
+      assert_equal "gmbh", org.reload.legal_form
+
+      patch "/knowledge_items/#{org.uuid}",
+            params: { legal_form: "", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_nil org.reload.legal_form
+    end
+  end
+
+  test "#1057 Rechtsform: Nicht-Katalogwert wird nicht übernommen" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "Rechtsform Quatsch",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{org.uuid}",
+            params: { legal_form: "quatsch", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_nil org.reload.legal_form
+    end
+  end
 end

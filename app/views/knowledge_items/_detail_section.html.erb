@@ -144,6 +144,21 @@
             <% end %>
           </datalist>
         </label>
+
+        <%# #1057 (aus immoos #1031): fakultative Rechtsform. inline=1 wie bei
+            Vor-/Nachname (#827) — 204 statt Detail-Replace. %>
+        <label class="flex flex-col gap-0.5" data-empty="<%= item.legal_form.blank? %>">
+          <span class="text-slate-500"><%= t("knowledge.legal_forms.label") %></span>
+          <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "contents" do |f| %>
+            <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+            <%= f.hidden_field :inline, value: "1" %>
+            <%= f.select :legal_form,
+                  LegalForms::OPTIONS.map { |v| [t("knowledge.legal_forms.#{v}"), v] },
+                  { include_blank: t("knowledge.legal_forms.none"), selected: item.legal_form },
+                  onchange: "this.closest('label').dataset.empty = (this.value === ''); this.form.requestSubmit()",
+                  class: "border border-slate-200 rounded px-2 py-0.5 bg-white" %>
+          <% end %>
+        </label>
       <% end %>
 
       <%# #532/#544 Stammdaten: Aussteller-Markierung. Die USt-IdNr wohnt

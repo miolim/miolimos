@@ -17,6 +17,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Organizations get an optional "legal form" field (GdWE, GmbH, UG, AG, GbR,
+  OHG, KG, eG, e. V., sole proprietorship, other): a select on the
+  organization's master-data section and in the create form. The value
+  round-trips through the markdown frontmatter like the other person/org
+  fields; only catalog values are accepted. Adopted from immoOS (#1031),
+  where a GdWE legal form on a property's owner marks the property as
+  WEG-divided — the fork drops its stopgap column with the next upstream
+  merge (#1057).
 - Agent API bearer tokens are now stored only as SHA256 digests (like GitHub
   personal access tokens): a database leak no longer exposes usable tokens.
   Existing tokens keep working unchanged (they are hashed in place during

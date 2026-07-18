@@ -500,6 +500,21 @@ en:
       copy_hint: "Click copies the placeholder"
       copied: "%{key} copied — paste it into the text."
       infoblock_hint: "… plus every info-block field of the document as {{fieldname}}"
+    # #1057 (adopted from immoos #1031): optional legal form of an organization.
+    legal_forms:
+      label:              "Legal form"
+      none:               "— legal form —"
+      gdwe:               "GdWE (condo owners' association)"
+      gmbh:               "GmbH"
+      ug:                 "UG (limited liability)"
+      ag:                 "AG"
+      gbr:                "GbR"
+      ohg:                "OHG"
+      kg:                 "KG"
+      eg:                 "eG"
+      ev:                 "e. V. (registered association)"
+      einzelunternehmen:  "Sole proprietorship"
+      sonstige:           "Other"
     detail:
       original_chat_title: "Original chat title: %{title}"
       duplicate_card: "Duplicate card"

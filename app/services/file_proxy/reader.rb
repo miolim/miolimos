@@ -62,6 +62,7 @@ class FileProxy
       fm["first_name"] = ki.first_name                if ki.first_name.present?
       fm["last_name"]  = ki.last_name                 if ki.last_name.present?
       fm["orcid"]      = ki.orcid                      if ki.orcid.present?   # #516
+      fm["legal_form"] = ki.legal_form                if ki.legal_form.present?  # #1057
       fm["issuer"]     = true                          if ki.respond_to?(:issuer) && ki.issuer?          # #532
       if ki.parent_org_uuid.present?
         parent = KnowledgeItem.find_by(uuid: ki.parent_org_uuid)

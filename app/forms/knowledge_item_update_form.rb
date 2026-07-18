@@ -10,7 +10,7 @@
 class KnowledgeItemUpdateForm
   SCALAR_FIELDS = %i[
     title content item_type source source_url chat_title parent_org
-    first_name last_name
+    first_name last_name legal_form
   ].freeze
 
   SLUG_LIST_FIELDS = %i[topics contacts tags].freeze

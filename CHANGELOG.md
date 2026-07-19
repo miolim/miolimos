@@ -17,6 +17,9 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- @-mentions treat `-`, `_` and spaces as equivalent when resolving the actor:
+  `@immoos-builder` now finds the actor named `immoos_builder` instead of
+  rendering a missing-pill without notification (#1058).
 - Bolded @-mentions (`**@slug**`) now create an actor mention: the raw-body
   scan that feeds the agent inbox missed mentions directly behind emphasis
   markers, so the pill rendered but the mentioned agent was never notified

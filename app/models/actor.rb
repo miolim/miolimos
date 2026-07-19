@@ -63,14 +63,18 @@ class Actor < ApplicationRecord
     Digest::SHA256.hexdigest(token.to_s)
   end
 
-  # Finder fuer @-Mentions: probiert Slug, dann Email-Local-Part.
+  # Finder fuer @-Mentions: probiert Name, dann Email-Local-Part, dann Slug.
+  # #1058-Nachfund (immoos_builder, 2026-07-18): `-`, `_` und Leerzeichen
+  # gelten beim Vergleich als aequivalent — `@immoos-builder` (Mention-Syntax
+  # erlaubt kein Leerzeichen, Autoren tippen Bindestrich) muss den Actor
+  # `immoos_builder` finden. Actor-Tabelle ist klein (<100), Linear-Scan ok.
   def self.find_by_mention_slug(slug)
     s = slug.to_s.strip.downcase
     return nil if s.empty?
-    # 1. Slug ueber parameterize(name) — schmaler Index existiert nicht,
-    #    aber Actor-Tabelle ist klein (<100 Eintraege), Linear-Scan ok.
-    Actor.active.where("LOWER(name) ~ ?", "^#{Regexp.escape(s.tr('-', ' '))}$").first ||
-      Actor.active.where("LOWER(SPLIT_PART(email, '@', 1)) = ?", s).first ||
-      Actor.active.find { |a| a.slug == s }
+    norm   = ->(v) { v.to_s.downcase.tr("-_", "  ") }
+    target = norm.call(s)
+    Actor.active.find { |a| norm.call(a.name) == target } ||
+      Actor.active.find { |a| norm.call(a.email.to_s.split("@").first) == target } ||
+      Actor.active.find { |a| norm.call(a.slug) == target }
   end
 end

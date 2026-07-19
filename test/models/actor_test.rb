@@ -55,4 +55,24 @@ class ActorTest < ActiveSupport::TestCase
     agent.regenerate_api_token!
     refute_equal original, agent.reload.api_token
   end
+
+  # #1058-Nachfund (2026-07-18): `@immoos-builder` (Bindestrich) fand den
+  # Actor `immoos_builder` (Unterstrich) nicht — Mention rendert als
+  # Missing-Pill, keine actor_mentions-Row. `-`/`_`/Leerzeichen sind beim
+  # Lookup aequivalent.
+  test "find_by_mention_slug treats hyphen, underscore and space as equivalent" do
+    spaced     = HumanActor.create!(name: "Miolim Builder", email: "mb-#{SecureRandom.hex(2)}@t.local")
+    underscore = AgentActor.create!(name: "immoos_builder", description: "x")
+
+    assert_equal spaced,     Actor.find_by_mention_slug("miolim-builder")
+    assert_equal underscore, Actor.find_by_mention_slug("immoos-builder")
+    assert_equal underscore, Actor.find_by_mention_slug("immoos_builder")
+  end
+
+  test "find_by_mention_slug falls back to the email local part" do
+    actor = HumanActor.create!(name: "Völlig Anders", email: "immoos_chef@t.local")
+
+    assert_equal actor, Actor.find_by_mention_slug("immoos-chef")
+    assert_nil Actor.find_by_mention_slug("gibt-es-nicht")
+  end
 end

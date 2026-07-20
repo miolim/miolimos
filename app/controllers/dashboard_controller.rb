@@ -1,6 +1,11 @@
 class DashboardController < ApplicationController
   include KnowledgeStackHelpers
 
+  # #1066: History-Bucket des Dashboard-Stacks. Muss mit dem
+  # `data-blade-stack-history-storage-key-value` im View uebereinstimmen —
+  # der View liest deshalb diese Konstante, statt sie zu wiederholen.
+  STACK_HISTORY_KEY = "dashboard.stack.history"
+
   def index
     load_dashboard_sections!
 
@@ -15,7 +20,15 @@ class DashboardController < ApplicationController
       legacy_tokens << "task:#{params[:task]}"                   if params[:task].present?
       legacy_tokens << "awaiting:#{params[:awaiting]}"           if params[:awaiting].present?
       legacy_tokens << "communication:#{params[:communication]}" if params[:communication].present?
-      params[:stack] = legacy_tokens.join(",")
+      # #1066: Ohne jeden Param (= Sidebar-Klick aufs Dashboard) den zuletzt
+      # offenen Stack aus dem DB-Snapshot rendern. Vorher kam hier nur
+      # `list:dashboard`, und der Browser holte den Rest per fetch nach —
+      # eine Anfrage je Card, sequenziell, sichtbar als zweiter Aufbau.
+      # Der Client-Restore (_restoreSessionStackIfNeeded) bleibt als
+      # Fallback, laeuft aber leer, weil die Cards schon im DOM stehen.
+      # Explizite Params gewinnen: ein Legacy-Link meint eine bestimmte Card.
+      restored = legacy_tokens.one? ? restored_stack_tokens : nil
+      params[:stack] = (restored || legacy_tokens).join(",")
     end
     @initial_stack_items  = build_initial_stack
     @initial_stack_bodies = bodies_for_initial_stack(@initial_stack_items)
@@ -71,6 +84,16 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  # #1066: Karten-Folge des zuletzt gespeicherten Dashboard-Stacks, oder nil.
+  # Kein Verfallsdatum — der Stack ist der Arbeitskontext, ein alter ist
+  # besser als ein leerer. Vorschau-Modus (`previewing?`) bleibt aussen vor:
+  # dort ist `current_actor` ein fremder Actor, dessen Stack nichts im
+  # eigenen Dashboard zu suchen hat.
+  def restored_stack_tokens
+    return nil if previewing?
+    StackSnapshot.latest_trail_tokens(actor: current_actor, history_key: STACK_HISTORY_KEY)
+  end
 
   # #434 (Hans, 2026-06-01): Daten fuer die Dashboard-Sektionen (Agent-
   # Bundles, Heute, Demnaechst, Process-Edge, Recent-Communications).

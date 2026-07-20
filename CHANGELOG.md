@@ -17,6 +17,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Returning to the dashboard no longer rebuilds the card stack from scratch:
+  the server now renders the last open stack from the stored snapshot instead
+  of shipping only the dashboard blade and letting the browser re-fetch every
+  other card one after another. One request instead of N, and no second build
+  flashing over the cached page. An explicit `?stack=` (or a legacy `?task=`
+  link) still wins (#1066).
 - Docker Compose now actually works on `http://localhost:3000`: production mode
   forced SSL unconditionally, so the documented local start redirected to an
   HTTPS endpoint nobody serves, and Action Cable rejected the http origin.

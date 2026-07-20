@@ -12,7 +12,7 @@
     Links weiter funktionieren. %>
 <div data-controller="blade-stack"
      data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
-     data-blade-stack-history-storage-key-value="dashboard.stack.history"
+     data-blade-stack-history-storage-key-value="<%= DashboardController::STACK_HISTORY_KEY %>"
      <%= raw blade_stack_pref_attrs %>
      class="flex flex-col h-[calc(100dvh-4rem)]">
   <main id="blade_stack_container" data-blade-stack-target="container"

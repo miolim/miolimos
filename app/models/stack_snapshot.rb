@@ -17,6 +17,19 @@ class StackSnapshot < ApplicationRecord
     Array(trail.last).join(",")
   end
 
+  # #1066: Die Karten-Folge des juengsten Snapshots eines Buckets — die
+  # Tokens sind dieselben, die `?stack=` versteht (BladeStackLoader), weil
+  # der Client den Trail aus `data-uuid` der offenen Cards baut. Damit kann
+  # der Server den zuletzt offenen Stack direkt rendern, statt ihn vom
+  # Browser Card fuer Card nachladen zu lassen. nil, wenn nichts brauchbar
+  # da ist — der Aufrufer faellt dann auf seinen Default zurueck.
+  def self.latest_trail_tokens(actor:, history_key:)
+    return nil if actor.nil?
+    snap = for_bucket(actor, history_key).order(saved_at: :desc).first
+    return nil if snap.nil?
+    Array(snap.trail).last.then { |tokens| Array(tokens).map { |t| t.to_s.strip }.reject(&:empty?).presence }
+  end
+
   # Upsert nach Dedup-Key: gleiche End-Komposition = ein Eintrag, der
   # Jüngere gewinnt; pinned bleibt erhalten (ODER-Semantik). Non-pinned
   # werden je Bucket auf MAX_RECENT getrimmt.

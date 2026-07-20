@@ -141,4 +141,72 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
                  @response.body,
                  "Task-Row muss blade-link-Markup tragen"
   end
+
+  # #1066: Der zuletzt offene Stack kam bisher nicht vom Server — die Seite
+  # lieferte nur `list:dashboard`, der Browser holte jede weitere Card per
+  # fetch nach (sichtbar als zweiter Aufbau). Jetzt rendert der Server ihn
+  # aus dem juengsten StackSnapshot.
+  def snapshot!(trail, at: Time.current, actor: @hans)
+    travel_to(at) do
+      StackSnapshot.record!(actor: actor, history_key: DashboardController::STACK_HISTORY_KEY,
+                            trail: trail, current: 0)
+    end
+  end
+
+  test "GET /dashboard ohne Params rendert den zuletzt offenen Stack serverseitig" do
+    task = Task.create!(title: "Wiederhergestellte-Aufgabe", creator: @hans, assignee: @hans,
+                        status: :open, commitment: :today)
+    snapshot!([["list:dashboard"], ["list:dashboard", "task:#{task.id}"]])
+
+    get "/dashboard"
+    assert_response :success
+    assert_match %r{data-uuid="task:#{task.id}"}, @response.body,
+                 "Card aus dem Snapshot muss ohne Nachladen im HTML stehen"
+  end
+
+  test "GET /dashboard nimmt den juengsten Snapshot" do
+    old_task = Task.create!(title: "Alte-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    new_task = Task.create!(title: "Neue-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{old_task.id}"]], at: 2.hours.ago)
+    snapshot!([["list:dashboard", "task:#{new_task.id}"]], at: 1.minute.ago)
+
+    get "/dashboard"
+    assert_response :success
+    assert_match %r{data-uuid="task:#{new_task.id}"}, @response.body
+    refute_match %r{data-uuid="task:#{old_task.id}"}, @response.body
+  end
+
+  test "expliziter ?stack=-Param schlaegt den Snapshot" do
+    snap_task = Task.create!(title: "Snapshot-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    url_task  = Task.create!(title: "URL-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{snap_task.id}"]])
+
+    get "/dashboard", params: { stack: "list:dashboard,task:#{url_task.id}" }
+    assert_response :success
+    assert_match %r{data-uuid="task:#{url_task.id}"}, @response.body
+    refute_match %r{data-uuid="task:#{snap_task.id}"}, @response.body
+  end
+
+  test "Legacy-Param ?task= schlaegt den Snapshot" do
+    snap_task   = Task.create!(title: "Snapshot-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    legacy_task = Task.create!(title: "Legacy-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{snap_task.id}"]])
+
+    get "/dashboard", params: { task: legacy_task.id }
+    assert_response :success
+    assert_match %r{data-uuid="task:#{legacy_task.id}"}, @response.body
+    refute_match %r{data-uuid="task:#{snap_task.id}"}, @response.body
+  end
+
+  test "fremder Snapshot bleibt aussen vor, ohne Snapshot nur das Dashboard-Blade" do
+    other = HumanActor.create!(name: "Andere", email: "a-#{SecureRandom.hex(3)}@t.local",
+                               password: "secretsecret")
+    other_task = Task.create!(title: "Fremd-Aufgabe", creator: other, assignee: other, status: :open)
+    snapshot!([["list:dashboard", "task:#{other_task.id}"]], actor: other)
+
+    get "/dashboard"
+    assert_response :success
+    refute_match %r{data-uuid="task:#{other_task.id}"}, @response.body,
+                 "Snapshot eines anderen Actors darf nicht wiederhergestellt werden"
+  end
 end

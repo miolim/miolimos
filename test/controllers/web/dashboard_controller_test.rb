@@ -146,11 +146,20 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   # lieferte nur `list:dashboard`, der Browser holte jede weitere Card per
   # fetch nach (sichtbar als zweiter Aufbau). Jetzt rendert der Server ihn
   # aus dem juengsten StackSnapshot.
-  def snapshot!(trail, at: Time.current, actor: @hans)
+  # Der Client schreibt auf dem Dashboard in den aus dem ersten Listen-Blade
+  # abgeleiteten Bucket (`stack.history.list:dashboard`), NICHT in den
+  # Seiten-Default aus dem data-Attribut — siehe _effectiveHistoryKey().
+  # Ein Test, der beide Seiten aus derselben Konstante speist, wuerde einen
+  # falschen Key nicht bemerken; deshalb steht der Key hier woertlich.
+  def snapshot!(trail, at: Time.current, actor: @hans, key: "stack.history.list:dashboard")
     travel_to(at) do
-      StackSnapshot.record!(actor: actor, history_key: DashboardController::STACK_HISTORY_KEY,
-                            trail: trail, current: 0)
+      StackSnapshot.record!(actor: actor, history_key: key, trail: trail, current: 0)
     end
+  end
+
+  test "der Listen-Bucket ist der, in den der Client tatsaechlich schreibt" do
+    assert_equal "stack.history.list:dashboard", DashboardController::LIST_HISTORY_KEY
+    assert_equal "dashboard.stack.history",      DashboardController::PAGE_HISTORY_KEY
   end
 
   test "GET /dashboard ohne Params rendert den zuletzt offenen Stack serverseitig" do
@@ -196,6 +205,26 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match %r{data-uuid="task:#{legacy_task.id}"}, @response.body
     refute_match %r{data-uuid="task:#{snap_task.id}"}, @response.body
+  end
+
+  test "Seiten-Default-Bucket dient als Fallback, Listen-Bucket gewinnt" do
+    page_task = Task.create!(title: "Seiten-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{page_task.id}"]],
+              key: DashboardController::PAGE_HISTORY_KEY)
+
+    get "/dashboard"
+    assert_response :success
+    assert_match %r{data-uuid="task:#{page_task.id}"}, @response.body,
+                 "ohne Listen-Bucket muss der Seiten-Default einspringen"
+
+    list_task = Task.create!(title: "Listen-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{list_task.id}"]])
+
+    get "/dashboard"
+    assert_response :success
+    assert_match %r{data-uuid="task:#{list_task.id}"}, @response.body
+    refute_match %r{data-uuid="task:#{page_task.id}"}, @response.body,
+                 "der Listen-Bucket hat Vorrang vor dem Seiten-Default"
   end
 
   test "fremder Snapshot bleibt aussen vor, ohne Snapshot nur das Dashboard-Blade" do

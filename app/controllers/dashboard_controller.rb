@@ -1,10 +1,20 @@
 class DashboardController < ApplicationController
   include KnowledgeStackHelpers
 
-  # #1066: History-Bucket des Dashboard-Stacks. Muss mit dem
-  # `data-blade-stack-history-storage-key-value` im View uebereinstimmen —
-  # der View liest deshalb diese Konstante, statt sie zu wiederholen.
-  STACK_HISTORY_KEY = "dashboard.stack.history"
+  # #1066: History-Buckets des Dashboard-Stacks — es sind ZWEI, und in der
+  # Praxis schreibt der Client fast immer in den ersten:
+  #
+  #   LIST_HISTORY_KEY — `_effectiveHistoryKey()` (blade_stack_controller.js
+  #     #434) leitet den Bucket aus dem ERSTEN Blade ab, sobald das eine Liste
+  #     ist: `stack.history.<token>`. Auf dem Dashboard ist das immer
+  #     `list:dashboard`, also landen die Snapshots hier.
+  #   PAGE_HISTORY_KEY — der Seiten-Default aus dem View-data-Attribut. Greift
+  #     nur, wenn das erste Blade KEINE Liste ist (Stack ohne Dashboard-Blade).
+  #
+  # Beim Wiederherstellen also erst den Listen-Bucket, dann den Seiten-Default.
+  DEFAULT_STACK_TOKEN = "list:dashboard"
+  LIST_HISTORY_KEY    = "stack.history.#{DEFAULT_STACK_TOKEN}".freeze
+  PAGE_HISTORY_KEY    = "dashboard.stack.history"
 
   def index
     load_dashboard_sections!
@@ -16,7 +26,7 @@ class DashboardController < ApplicationController
     # `?task=X` / `?awaiting=Y` / `?communication=Z` werden auf das
     # Stack-Format gemappt, damit alte Dashboard-Links weiter funktionieren.
     if params[:stack].blank?
-      legacy_tokens = ["list:dashboard"]
+      legacy_tokens = [DEFAULT_STACK_TOKEN]
       legacy_tokens << "task:#{params[:task]}"                   if params[:task].present?
       legacy_tokens << "awaiting:#{params[:awaiting]}"           if params[:awaiting].present?
       legacy_tokens << "communication:#{params[:communication]}" if params[:communication].present?
@@ -92,7 +102,9 @@ class DashboardController < ApplicationController
   # eigenen Dashboard zu suchen hat.
   def restored_stack_tokens
     return nil if previewing?
-    StackSnapshot.latest_trail_tokens(actor: current_actor, history_key: STACK_HISTORY_KEY)
+    [LIST_HISTORY_KEY, PAGE_HISTORY_KEY].lazy.filter_map { |key|
+      StackSnapshot.latest_trail_tokens(actor: current_actor, history_key: key)
+    }.first
   end
 
   # #434 (Hans, 2026-06-01): Daten fuer die Dashboard-Sektionen (Agent-

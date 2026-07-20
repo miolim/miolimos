@@ -10,6 +10,11 @@
 # `db:prepare` automatically (creates + migrates the primary/cache/queue
 # databases on first boot). Background jobs run inside Puma
 # (SOLID_QUEUE_IN_PUMA), so no separate worker container is needed.
+#
+# Plain HTTP on localhost is the default here (MIOLIMOS_PROTOCOL=http), which
+# turns off force_ssl and points the Action Cable origin at http. Putting this
+# behind a TLS-terminating proxy? Set MIOLIMOS_PROTOCOL=https, MIOLIMOS_HOST to
+# your domain, and drop MIOLIMOS_CABLE_ORIGINS.
 
 name: miolimos
 
@@ -36,7 +41,9 @@ services:
       MIOLIMOS_DB_HOST: db
       MIOLIMOS_DB_USER: ${MIOLIMOS_DB_USER:-miolimos_src}
       MIOLIMOS_SRC_DATABASE_PASSWORD: ${MIOLIMOS_SRC_DATABASE_PASSWORD:-miolimos}
-      MIOLIMOS_HOST: ${MIOLIMOS_HOST:-localhost}
+      MIOLIMOS_HOST: ${MIOLIMOS_HOST:-localhost:3000}
+      MIOLIMOS_PROTOCOL: ${MIOLIMOS_PROTOCOL:-http}
+      MIOLIMOS_CABLE_ORIGINS: ${MIOLIMOS_CABLE_ORIGINS:-http://localhost:3000}
       # Run background jobs (Solid Queue) inside the Puma process.
       SOLID_QUEUE_IN_PUMA: "true"
     ports:

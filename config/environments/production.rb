@@ -24,11 +24,18 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
+  # #1060: SSL-Zwang haengt am Protokoll. Default bleibt https (Prod hinter
+  # dem cloudflared-Tunnel, der TLS terminiert). Fuer eine lokale Einzelplatz-
+  # Installation ohne Reverse-Proxy (docker compose, `MIOLIMOS_PROTOCOL=http`)
+  # muss der Redirect aus — sonst schickt die App den Browser von
+  # http://localhost:3000 auf ein https, das dort niemand bedient.
+  ssl = ENV.fetch("MIOLIMOS_PROTOCOL", "https") == "https"
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  config.assume_ssl = true
+  config.assume_ssl = ssl
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  config.force_ssl = ssl
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -59,7 +66,14 @@ Rails.application.configure do
   # Browser oeffnet wss://os.miolim.de/cable; Action Cable prueft den
   # Origin-Header gegen diese Liste.
   # #735: Host konfigurierbar (Self-Hosting). Default = bisheriger Prod-Host.
-  config.action_cable.allowed_request_origins = [ "https://#{ENV.fetch("MIOLIMOS_HOST", "os.miolim.de")}" ]
+  # #1060: Protokoll ebenfalls — bei MIOLIMOS_PROTOCOL=http erwartet Cable
+  # sonst eine https-Origin, die der Browser lokal nie sendet (WebSockets tot).
+  # MIOLIMOS_CABLE_ORIGINS (kommagetrennt) ueberschreibt die Liste komplett —
+  # noetig, wenn der Browser einen Port mitschickt (`http://localhost:3000`),
+  # denn der gehoert in die Origin, aber nicht in MIOLIMOS_HOST (Mailer-URLs).
+  config.action_cable.allowed_request_origins =
+    ENV["MIOLIMOS_CABLE_ORIGINS"].to_s.split(",").map(&:strip).reject(&:empty?).presence ||
+    [ "#{ENV.fetch("MIOLIMOS_PROTOCOL", "https")}://#{ENV.fetch("MIOLIMOS_HOST", "os.miolim.de")}" ]
 
   # #536/#570: Versand über die Gmail-API (GmailSender + Initializer
   # gmail_api_delivery). Fehler sollen knallen — ein Magic-Link, der still

@@ -72,6 +72,11 @@ RAILS_MASTER_KEY=$(cat config/master.key) docker compose up --build
 
 See [compose.yaml](compose.yaml) for the configurable environment variables.
 
+By default this serves plain HTTP on `http://localhost:3000` — suitable for a
+single-machine install that is not reachable from outside. Behind a
+TLS-terminating proxy, set `MIOLIMOS_PROTOCOL=https` and `MIOLIMOS_HOST` to your
+domain; that re-enables `force_ssl` and secure cookies.
+
 ## Running the tests
 
 ```bash

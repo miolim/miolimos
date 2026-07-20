@@ -17,6 +17,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Docker Compose now actually works on `http://localhost:3000`: production mode
+  forced SSL unconditionally, so the documented local start redirected to an
+  HTTPS endpoint nobody serves, and Action Cable rejected the http origin.
+  `force_ssl`, `assume_ssl` and the Cable origin now follow `MIOLIMOS_PROTOCOL`
+  (default `https`, so proxied installs are unaffected); `MIOLIMOS_CABLE_ORIGINS`
+  overrides the origin list when the browser sends a port (#1060).
 - @-mentions treat `-`, `_` and spaces as equivalent when resolving the actor:
   `@immoos-builder` now finds the actor named `immoos_builder` instead of
   rendering a missing-pill without notification (#1058).

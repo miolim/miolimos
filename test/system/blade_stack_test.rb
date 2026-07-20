@@ -341,4 +341,59 @@ class BladeStackTest < ApplicationSystemTestCase
     assert page.has_css?("article.stack-card[data-uuid='list:topic:#{topic.slug}']"),"Topic-Blade serverseitig gerendert"
     assert page.has_css?("article.stack-card[data-uuid='src:#{src.slug}']"),   "Source-Blade serverseitig gerendert"
   end
+
+  # #1067 (Hans, 2026-07-20): Ein Klick auf einen Eintrag, der schon als Card
+  # offen ist, soll dorthin springen statt eine zweite Card anzuhaengen. Der
+  # Sprung existierte vorher nur fuer Klicks INNERHALB einer `list:`-Card
+  # (sourceListId gesetzt); ein blade-link in einer normalen Card — Rechnungen
+  # an einer Person, Aufgaben an einem Thema — schickt kein sourceListId und
+  # oeffnete deshalb jedes Mal neu. Genau dieser Pfad wird hier gefahren:
+  # blade-stack:append OHNE sourceListId.
+  test "Append-Event ohne sourceListId oeffnet einen offenen Eintrag nicht doppelt" do
+    task = Task.create!(title: "Sprung-Probe", creator: @hans, assignee: @hans)
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+
+    dispatch = ->(id) do
+      page.execute_script(<<~JS, id)
+        window.dispatchEvent(new CustomEvent("blade-stack:append",
+          { detail: { kind: "task", id: String(arguments[0]) } }))
+      JS
+    end
+
+    dispatch.call(task.id)
+    assert page.has_css?("article.stack-card[data-uuid='task:#{task.id}']", count: 1),
+           "erster Klick oeffnet die Task-Card"
+
+    # Zweiter Klick auf denselben Eintrag. Das Anhaengen waere asynchron
+    # (fetch), eine Zaehlpruefung direkt danach liefe ins Leere und waere
+    # auch ohne den Fix gruen — deshalb danach eine ZWEITE, andere Card
+    # anfordern und auf sie warten: ist die da, ist die Append-Kette
+    # abgearbeitet und die Anzahl der ersten Card steht fest.
+    dispatch.call(task.id)
+    marker = Task.create!(title: "Marker-Card", creator: @hans, assignee: @hans)
+    dispatch.call(marker.id)
+
+    assert page.has_css?("article.stack-card[data-uuid='task:#{marker.id}']"),
+           "Marker-Card muss ankommen — sonst sagt der Zaehlwert unten nichts"
+    assert_equal 1, page.all("article.stack-card[data-uuid='task:#{task.id}']").size,
+           "zweiter Klick darf keine zweite Card anhaengen, sondern springt zur bestehenden"
+  end
+
+  # #1067: Die Ausnahme bleibt — das Plus-Icon heisst ausdruecklich "noch eine".
+  test "Plus-Icon-Modus appendet auch dann, wenn die Card schon offen ist" do
+    task = Task.create!(title: "Doppel-Probe", creator: @hans, assignee: @hans)
+    visit "/dashboard?stack=list:tasks,task:#{task.id}"
+    assert page.has_css?("article.stack-card[data-uuid='task:#{task.id}']", count: 1)
+
+    page.execute_script(<<~JS, task.id)
+      window.dispatchEvent(new CustomEvent("blade-stack:append", { detail: {
+        kind: "task", id: String(arguments[0]),
+        sourceListId: document.querySelector("article.stack-card[data-uuid='list:tasks']").id,
+        mode: "append_to_substack"
+      } }))
+    JS
+
+    assert page.has_css?("article.stack-card[data-uuid='task:#{task.id}']", count: 2),
+           "append_to_substack muss weiterhin eine zweite Instanz erzeugen"
+  end
 end

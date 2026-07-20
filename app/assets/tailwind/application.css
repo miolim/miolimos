@@ -362,16 +362,10 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
      den ueberlappenden Teil rechts ab. */
   overflow: hidden;
 }
-/* #287: Listen-Rows, deren Item bereits als Blade im Stack offen ist,
-   bekommen Bold + Jump-Pfeil-Button (JS-injected). Bold zielt auf
-   alle Title-Link-Varianten: Task-Row hat <a><span.truncate>Title</span></a>;
-   KI/Source/Communication-Rows haben den Title direkt im <a> mit
-   truncate-Klasse oder in einem <div class="truncate"> innerhalb des
-   <a>. Beide Patterns abgedeckt. */
-.in-stack a:not(.in-stack-jump),
-.in-stack a:not(.in-stack-jump) .truncate {
-  font-weight: 600;
-}
+/* #1067 (Hans, 2026-07-20): Die #287-Markierung (Bold + JS-injizierter
+   Jump-Chevron, der die Zeile einrueckte) ist entfernt. Ob ein Eintrag als
+   Card offen ist, sagt jetzt ausschliesslich die rote Faerbung oben
+   (.stack-open, stack_highlight_controller.js) — eine Sprache statt drei. */
 
 /* #284 v4: visueller Atemraum rechts der letzten Card. Ohne diese
    Margin sitzt die Card flush gegen die Container-Border und sieht

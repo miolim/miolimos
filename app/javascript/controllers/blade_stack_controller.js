@@ -91,9 +91,6 @@ class BladeStackController extends Controller {
     this.restickify()
     this.applyHighlighting()
     this.refreshTrailControls()
-    // #287: Listen-Rows, die einem im Stack offenen Blade entsprechen,
-    // fett + Jump-Pfeil-Button.
-    this._refreshInStackMarkers()
     // #320 (Hans): Mehrfach-Instanzen markieren — Counter-Badge auf jedem
     // Spine, dessen data-uuid ≥2x im Stack vorkommt.
     this._refreshInstanceCounters()
@@ -256,8 +253,6 @@ class BladeStackController extends Controller {
         })
         // #289: Append-Pfad — neue Cards bekommen das Hover-X-Overlay.
         this._upgradeSpineTopIcons()
-        // #287: Append-Pfad — Listen-Markierung neu berechnen.
-        this._refreshInStackMarkers()
         // #320: Append-Pfad — Mehrfach-Instanzen-Counter neu rechnen.
         this._refreshInstanceCounters()
         this.restickify()
@@ -320,7 +315,6 @@ class BladeStackController extends Controller {
       // koennen sich geaendert haben).
       this.restickify()
       this.applyHighlighting()
-      this._refreshInStackMarkers()
       // Scroll-Position nach dem Restickify wiederherstellen.
       if (this._morphScrollLeft != null && this.hasContainerTarget) {
         this.containerTarget.scrollLeft = this._morphScrollLeft
@@ -1096,8 +1090,8 @@ class BladeStackController extends Controller {
   // BladeStackScrollMixin (lib/blade_stack_scroll.js, #529) — via
   // Object.assign auf das Prototype gemixt, `this`-gebunden, reines Code-Move.
 
-  // Spine-Marker-Logic (in-stack-Klasse, Jump-Pfeil, Instance-Counter,
-  // Spine-Top-Close, kind-to-uuid-Mapping) ist in `lib/blade_stack_spine.js`
+  // Spine-Marker-Logic (Instance-Counter, Spine-Top-Close) ist in
+  // `lib/blade_stack_spine.js`
   // ausgelagert (#378 Phase 8) und wird unten auf die Class-Prototype
   // gemixt. Methoden bleiben `this`-gebunden, ohne Verhaltensaenderung.
 

@@ -15,6 +15,13 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Changed
+
+- List entries that are open as a card in the stack are now marked in one way
+  only — the red colouring. The older marker (bold plus a chevron button that
+  was injected at the start of the row and visibly indented it) is gone, along
+  with the jump-to-card click it carried (#1067).
+
 ### Fixed
 
 - Returning to the dashboard no longer rebuilds the card stack from scratch:

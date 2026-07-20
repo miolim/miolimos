@@ -25,20 +25,43 @@ ts=$(date +"%Y%m%d-%H%M%S")
 had_error=0
 
 # Welche DBs sichern wir? Mapping name => unix-user (Owner).
+#
+# #1064 (2026-07-20): Instanzen, die es noch nicht gibt, duerfen hier
+# schon stehen — fehlende DBs werden uebersprungen (siehe SKIP unten),
+# nicht als Fehler gemeldet. Damit faengt das Backup eine neue Instanz
+# automatisch ein, sobald ihre DB angelegt ist, statt darauf zu warten,
+# dass jemand an diese Liste denkt. Genau das war die Luecke: die
+# immoOS-Instanz lief seit Juli ausserhalb jeder Sicherung.
 declare -A DBS=(
   [miolimos_production]=miolimos_src
   [monica_production]=miolimos_monica
+  [immoos_production]=hans
+  [miolimmo_production]=hans
+)
+
+# Verbindungsweg je DB. Die Kern-Instanzen laufen ueber lokalen TCP mit
+# ~/.pgpass (die Cron-Identitaet hans ist NICHT auf miolimos_src/
+# miolimos_monica gemapt, peer-Auth scheidet aus). Die Fork-Instanzen
+# gehoeren dem Unix-User hans selbst — dort greift peer-Auth ueber den
+# Socket, und ein .pgpass-Eintrag existiert gar nicht. Wer hier den
+# falschen Weg nimmt, bekommt „no password supplied" statt eines Dumps.
+declare -A DB_HOST=(
+  [immoos_production]=/var/run/postgresql
+  [miolimmo_production]=/var/run/postgresql
 )
 
 echo "[$(stamp)] backup start" >> "$LOG"
 
 for db in "${!DBS[@]}"; do
   owner="${DBS[$db]}"
+  host="${DB_HOST[$db]:-localhost}"
   out="$BACKUP_DIR/${db}-${ts}.dump"
-  # Auth ueber ~/.pgpass (chmod 600). Lokaler TCP zwingt md5-Auth statt
-  # peer-Auth, fuer die Cron-User-Identitaet hans nicht zur Service-User-
-  # Identitaet (miolimos_src/miolimos_monica) gemapt ist.
-  if pg_dump -h localhost -U "$owner" -d "$db" -Fc -f "$out" 2>>"$LOG"; then
+  # Noch nicht angelegte Instanz-DB: still ueberspringen (kein had_error).
+  if ! psql -h "$host" -U "$owner" -lqtA -F'|' 2>>"$LOG" | cut -d'|' -f1 | grep -qx "$db"; then
+    echo "[$(stamp)] skip $db (DB existiert nicht)" >> "$LOG"
+    continue
+  fi
+  if pg_dump -h "$host" -U "$owner" -d "$db" -Fc -f "$out" 2>>"$LOG"; then
     size=$(stat -c%s "$out")
     echo "[$(stamp)] ok $db ($size bytes)" >> "$LOG"
   else

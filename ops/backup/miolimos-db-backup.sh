@@ -56,15 +56,23 @@ for db in "${!DBS[@]}"; do
   owner="${DBS[$db]}"
   host="${DB_HOST[$db]:-localhost}"
   out="$BACKUP_DIR/${db}-${ts}.dump"
-  # Noch nicht angelegte Instanz-DB: still ueberspringen (kein had_error).
-  if ! psql -h "$host" -U "$owner" -lqtA -F'|' 2>>"$LOG" | cut -d'|' -f1 | grep -qx "$db"; then
-    echo "[$(stamp)] skip $db (DB existiert nicht)" >> "$LOG"
-    continue
-  fi
-  if pg_dump -h "$host" -U "$owner" -d "$db" -Fc -f "$out" 2>>"$LOG"; then
+  # Direkt dumpen und ERST im Fehlerfall unterscheiden. Eine vorgeschaltete
+  # Existenz-Probe per `psql -l` waere hier falsch: sie verbindet sich auf die
+  # Datenbank `postgres`, fuer die es keinen ~/.pgpass-Eintrag gibt (die
+  # Eintraege lauten auf die Ziel-DB) — das Ergebnis war „existiert nicht"
+  # fuer die wichtigsten DBs, ein stiller Ausfall mit errors=0. Nur ein
+  # ausdrueckliches „does not exist" von Postgres zaehlt als „noch nicht
+  # angelegt"; jeder andere Fehler bleibt ein Fehler.
+  err="$BACKUP_DIR/.dumperr-$$"
+  if pg_dump -h "$host" -U "$owner" -d "$db" -Fc -f "$out" 2>"$err"; then
+    cat "$err" >>"$LOG"; rm -f "$err"
     size=$(stat -c%s "$out")
     echo "[$(stamp)] ok $db ($size bytes)" >> "$LOG"
+  elif grep -qiE 'database "'"$db"'" does not exist' "$err"; then
+    cat "$err" >>"$LOG"; rm -f "$err"; rm -f "$out"
+    echo "[$(stamp)] skip $db (DB existiert nicht)" >> "$LOG"
   else
+    cat "$err" >>"$LOG"; rm -f "$err"
     echo "[$(stamp)] FAILED $db" >> "$LOG"
     had_error=1
   fi

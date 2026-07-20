@@ -1391,7 +1391,9 @@ CREATE TABLE public.postal_addresses (
     "position" integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    kind integer DEFAULT 0 NOT NULL
+    kind integer DEFAULT 0 NOT NULL,
+    valid_from date,
+    valid_until date
 );
 
 
@@ -5973,6 +5975,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260720190500'),
 ('20260718090000'),
 ('20260717230000'),
 ('20260717200000'),

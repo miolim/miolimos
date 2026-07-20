@@ -16,7 +16,9 @@ module Api
           postal_addresses: k.postal_addresses.map { |a|
             { kind: a.kind, line1: a.line1, line2: a.line2.presence,
               postal_code: a.postal_code, city: a.city,
-              country: a.country.presence, billing: a.billing } },
+              country: a.country.presence, billing: a.billing,
+              # #1073: Gueltigkeitszeitraum, null = offene Grenze.
+              valid_from: a.valid_from, valid_until: a.valid_until } },
           contact_points: k.contact_points.map { |c|
             { kind: c.kind, label: c.label.presence, value: c.value } },
           identifiers: k.identifiers.map { |i|
@@ -267,7 +269,9 @@ module Api
               # sonst greift der Default. Ungültige Werte → ArgumentError → 422.
               attrs = { line1: a[:line1], line2: a[:line2], postal_code: a[:postal_code],
                         city: a[:city], country: a[:country],
-                        billing: a[:billing].present?, position: i }
+                        billing: a[:billing].present?, position: i,
+                        # #1073: Gueltigkeitszeitraum; fehlt/leer = offene Grenze.
+                        valid_from: a[:valid_from].presence, valid_until: a[:valid_until].presence }
               attrs[:kind] = a[:kind] if a[:kind].present?
               item.postal_addresses.create!(attrs)
             end

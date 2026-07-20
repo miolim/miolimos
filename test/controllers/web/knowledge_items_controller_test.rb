@@ -1026,6 +1026,35 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Berlin", org.postal_addresses.first.city
   end
 
+  # #1073 (Hans, 2026-07-20): Gueltigkeitszeitraum an der Adresse — der
+  # Umzugsfall (alte Postanschrift bleibt stehen, neue gilt ab Einzug).
+  test "PATCH addresses speichert Gueltigkeitszeitraum, leer bleibt unbefristet" do
+    person = FileProxy.create(actor: @hans, title: "Mieter Meier", item_type: :person,
+                              content: "", topics: [], contacts: [], tags: [])
+    patch "/knowledge_items/#{person.uuid}/addresses", params: {
+      addresses: [
+        { line1: "Alte Gasse 3", postal_code: "20095", city: "Hamburg", kind: "post",
+          valid_until: "2026-05-31" },
+        { line1: "Neubau 1", postal_code: "22765", city: "Hamburg", kind: "post",
+          valid_from: "2026-06-01" },
+        { line1: "Unbefristet 7", postal_code: "10117", city: "Berlin",
+          valid_from: "", valid_until: "" }   # leere Felder -> offene Grenzen
+      ]
+    }, headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :ok
+
+    alt, neu, dauerhaft = person.reload.postal_addresses.ordered.to_a
+    assert_equal Date.new(2026, 5, 31), alt.valid_until
+    assert_nil   alt.valid_from
+    assert_equal Date.new(2026, 6, 1),  neu.valid_from
+    assert_nil   dauerhaft.valid_from,  "leeres Feld darf kein Datum erfinden"
+    assert_nil   dauerhaft.valid_until
+
+    # Der Punkt der Aufgabe: nach dem Umzug adressiert der Brief die neue.
+    assert_equal neu, person.reload.mailing_address(Date.new(2026, 7, 1))
+    assert_equal alt, person.reload.mailing_address(Date.new(2026, 4, 1))
+  end
+
   # #542 (Hans, 2026-06-07): Personen-Eintrag öffnet den dedizierten
   # list:persons-Blade (Personen-Chrome + hartcodierter Person/Org-Filter +
   # Plus zum Anlegen), NICHT den gefilterten Wissens-Blade.

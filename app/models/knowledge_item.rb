@@ -97,15 +97,28 @@ class KnowledgeItem < ApplicationRecord
     foreign_key: :knowledge_item_uuid, primary_key: :uuid,
     dependent: :destroy
 
-  # Primäradresse fürs Dokument: bevorzugt billing, sonst erste.
-  def primary_address
-    postal_addresses.detect(&:billing) || postal_addresses.first
+  # #1073: Adressen mit Gueltigkeitszeitraum — fuer Briefe zaehlt nur, was
+  # am Stichtag gilt. Die frühere Anschrift bleibt am KI stehen (Historie),
+  # darf aber nie automatisch adressiert werden. Fallback auf alle Adressen,
+  # wenn keine aktuell gueltig ist: lieber eine veraltete Anschrift als ein
+  # leeres Adressfeld — und Bestandsdaten ohne Zeitraum sind ohnehin
+  # unbefristet, aendern sich also nicht.
+  def current_addresses(on = Date.current)
+    valid = postal_addresses.select { |a| a.current?(on) }
+    valid.presence || postal_addresses.to_a
+  end
+
+  # Primäradresse fürs Dokument: bevorzugt billing, sonst erste — jeweils
+  # unter den am Stichtag gueltigen.
+  def primary_address(on = Date.current)
+    addrs = current_addresses(on)
+    addrs.detect(&:billing) || addrs.first
   end
 
   # #622: Versandanschrift fürs DIN-Fenster — bevorzugt die als
   # Postadresse markierte (Postfach etc.), sonst die primäre.
-  def mailing_address
-    postal_addresses.detect(&:post?) || primary_address
+  def mailing_address(on = Date.current)
+    current_addresses(on).detect(&:post?) || primary_address(on)
   end
 
   # #664: Zeichen, die die Wikilink-Ziel-Syntax brechen (s. WIKILINK_RE).

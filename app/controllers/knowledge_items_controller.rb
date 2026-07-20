@@ -492,7 +492,7 @@ class KnowledgeItemsController < ApplicationController
   def addresses
     seen = []
     Array(params[:addresses]).each_with_index do |row, i|
-      row = row.respond_to?(:permit) ? row.permit(:id, :line1, :line2, :postal_code, :city, :country, :billing, :kind).to_h : row.to_h
+      row = row.respond_to?(:permit) ? row.permit(:id, :line1, :line2, :postal_code, :city, :country, :billing, :kind, :valid_from, :valid_until).to_h : row.to_h
       attrs = %w[line1 line2 postal_code city country].to_h { |k| [k, row[k].to_s.strip] }
       next if attrs.values.all?(&:blank?)
       rec = row["id"].present? ? @item.postal_addresses.find_by(id: row["id"]) : nil
@@ -500,6 +500,9 @@ class KnowledgeItemsController < ApplicationController
       rec.assign_attributes(attrs.merge(
         billing: ActiveModel::Type::Boolean.new.cast(row["billing"]) ? true : false,
         kind:    PostalAddress.kinds.key?(row["kind"].to_s) ? row["kind"] : "liegenschaft",  # #622
+        # #1073: leeres Feld = offene Grenze, nicht „ungueltig".
+        valid_from:  row["valid_from"].presence,
+        valid_until: row["valid_until"].presence,
         position: i))
       rec.save!
       seen << rec.id

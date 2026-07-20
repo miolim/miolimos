@@ -650,6 +650,8 @@ en:
         country_placeholder: "Country"
         kind_property: "Property"
         kind_postal: "Postal address"
+        valid_from: "valid from"     # #1073
+        valid_until: "until"
       bank:   # #786
         title: "Bank accounts"
         add: "Add bank account"

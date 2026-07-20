@@ -653,6 +653,8 @@ de:
         country_placeholder: "Land"
         kind_property: "Liegenschaft"
         kind_postal: "Postadresse"
+        valid_from: "gültig ab"      # #1073
+        valid_until: "bis"
       bank:   # #786
         title: "Bankverbindungen"
         add: "Bankverbindung hinzufügen"

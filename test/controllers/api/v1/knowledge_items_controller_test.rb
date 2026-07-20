@@ -429,6 +429,33 @@ class Api::V1::KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Hauptstr. 1", item["postal_addresses"].first["line1"]
   end
 
+  # #1073 (Hans, 2026-07-20): Gueltigkeitszeitraum geht durch die API — sonst
+  # koennte ein Agent (z.B. beim Import alter Mieterdaten) die Historie nicht
+  # anlegen, und ein Lese-Merge-Schreib-Zyklus wuerde sie sogar loeschen.
+  test "postal_addresses tragen valid_from/valid_until durch Lesen und Schreiben" do
+    person = build_item(title: "Umzugsperson", item_type: :person)
+
+    patch "/api/v1/knowledge_items/#{person.uuid}", headers: @headers, as: :json, params: {
+      postal_addresses: [
+        { kind: "post", line1: "Alte Gasse 3", postal_code: "20095", city: "Hamburg",
+          valid_until: "2026-05-31" },
+        { kind: "post", line1: "Neubau 1", postal_code: "22765", city: "Hamburg",
+          valid_from: "2026-06-01" },
+        { line1: "Ohne Frist 7", postal_code: "10117", city: "Berlin" }
+      ]
+    }
+    assert_response :success
+
+    get "/api/v1/knowledge_items/#{person.uuid}", headers: @headers
+    addrs = JSON.parse(response.body)["data"]["postal_addresses"]
+    assert_equal "2026-05-31", addrs[0]["valid_until"]
+    assert_nil   addrs[0]["valid_from"]
+    assert_equal "2026-06-01", addrs[1]["valid_from"]
+    assert_nil   addrs[2]["valid_until"], "ohne Angabe bleibt die Grenze offen"
+
+    assert_equal "Neubau 1", person.reload.mailing_address(Date.new(2026, 7, 1)).line1
+  end
+
   test "Nicht-Personen-KI hat leere Kontakt-Arrays" do
     note = build_item(title: "Nur Notiz", item_type: :note)
     get "/api/v1/knowledge_items/#{note.uuid}", headers: @headers

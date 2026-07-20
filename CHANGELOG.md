@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Postal addresses can carry a validity period (`valid from` / `until`, either
+  side optional). A person who moves keeps the former address on record while
+  letters go to the one valid today — `mailing_address` and `primary_address`
+  now pick among the currently valid addresses and fall back to all of them
+  only if none is valid. Existing addresses have no period and stay unlimited.
+  The period is editable in the address editor and travels through the API
+  (#1073).
+
 ### Changed
 
 - List entries that are open as a card in the stack are now marked in one way

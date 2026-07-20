@@ -28,7 +28,9 @@
         <% addrs.each do |a| %>
           <%# #723 (Hans): Action-Icon — Adresse in die Zwischenablage kopieren. %>
           <div class="flex items-start gap-1.5">
-            <span class="min-w-0"><%= a.lines.join(", ") %><% if a.post? %> <span class="text-[11px] text-slate-400">· <%= t("knowledge.editors.address.postal") %></span><% end %><% if a.billing %> <span class="text-[11px] text-slate-400">· <%= t("knowledge.editors.address.billing") %></span><% end %></span>
+            <%# #1073: abgelaufene/künftige Adressen bleiben sichtbar, aber gedaempft —
+                sie werden nie automatisch adressiert (KnowledgeItem#current_addresses). %>
+            <span class="min-w-0 <%= "text-slate-400" unless a.current? %>"><%= a.lines.join(", ") %><% if a.post? %> <span class="text-[11px] text-slate-400">· <%= t("knowledge.editors.address.postal") %></span><% end %><% if a.billing %> <span class="text-[11px] text-slate-400">· <%= t("knowledge.editors.address.billing") %></span><% end %><% if a.validity_label %> <span class="text-[11px] <%= a.current? ? "text-slate-400" : "text-amber-600" %>">· <%= a.validity_label %></span><% end %></span>
             <% if a.lines.any? %>
               <button type="button" data-controller="copy-clipboard" data-action="click->copy-clipboard#copy"
                       data-copy-clipboard-content-value="<%= a.lines.join(", ") %>" data-copy-clipboard-toast-value="<%= t("knowledge.editors.address.copied") %>"
@@ -65,6 +67,13 @@
                 </select>
                 <label class="flex items-center gap-1 text-xs text-slate-500"><input type="checkbox" name="addresses[][billing]" value="1"> <%= t("knowledge.editors.address.billing") %></label>
               </div>
+              <%# #1073: Gueltigkeitszeitraum — leer = unbefristet. %>
+              <div class="flex items-center gap-1 text-xs text-slate-500">
+                <span class="shrink-0"><%= t("knowledge.editors.address.valid_from") %></span>
+                <input type="date" name="addresses[][valid_from]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+                <span class="shrink-0"><%= t("knowledge.editors.address.valid_until") %></span>
+                <input type="date" name="addresses[][valid_until]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+              </div>
             </div>
             <button type="button" data-action="click->rows-editor#removeConfirm" class="p-1 text-slate-400 hover:text-rose-600">×</button>
           </div>
@@ -88,6 +97,13 @@
                     <option value="post" <%= "selected" if a.post? %>><%= t("knowledge.editors.address.kind_postal") %></option>
                   </select>
                   <label class="flex items-center gap-1 text-xs text-slate-500"><input type="checkbox" name="addresses[][billing]" value="1" <%= "checked" if a.billing %>> <%= t("knowledge.editors.address.billing") %></label>
+                </div>
+                <%# #1073: Gueltigkeitszeitraum — leer = unbefristet. %>
+                <div class="flex items-center gap-1 text-xs text-slate-500">
+                  <span class="shrink-0"><%= t("knowledge.editors.address.valid_from") %></span>
+                  <input type="date" name="addresses[][valid_from]" value="<%= a.valid_from %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+                  <span class="shrink-0"><%= t("knowledge.editors.address.valid_until") %></span>
+                  <input type="date" name="addresses[][valid_until]" value="<%= a.valid_until %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
                 </div>
               </div>
               <button type="button" data-action="click->rows-editor#removeConfirm" class="p-1 text-slate-400 hover:text-rose-600">×</button>

@@ -1,24 +1,22 @@
 import { Controller } from "@hotwired/stimulus"
+import { BladeStackRoutes } from "lib/blade_stack_routes"
 
 // #1057 (aus immoos #965, Hans): Einträge, die als Card im aktuellen
 // Blade-Stack geöffnet sind, in der Liste bzw. der Quell-Card mit roter
-// Schrift hervorheben — zusätzlich zum Chevron. Rein clientseitig: beobachtet
-// den DOM und toggelt die Klasse `stack-open` auf der Zeile, deren
-// blade-link-Ziel gerade als `.stack-card[data-uuid]` offen ist.
+// Schrift hervorheben. Rein clientseitig: beobachtet den DOM und toggelt die
+// Klasse `stack-open` auf der Zeile, deren blade-link-Ziel gerade als
+// `.stack-card[data-uuid]` offen ist. Seit #1067 ist das die einzige
+// Kennzeichnung (Chevron/Bold sind weg).
 //
-// Eigene kind→stack-uuid-Abbildung analog zu lib/blade_stack_routes.js —
-// bewusst nur die Fälle, deren Prefix nicht einfach `${kind}:` ist.
-const PREFIX = {
-  invoice_line: "invoiceline",
-  source: "src",
-  ki: null // KI-UUID ist die id selbst
-}
-
+// #1067: kind→stack-uuid kommt aus der EINEN Routing-Tabelle
+// (lib/blade_stack_routes) statt aus einer zweiten Abbildung hier. Die alte
+// Kopie kannte nur die Sonderfälle src/invoiceline/topic_list und leitete
+// alles andere als `${kind}:${id}` ab — falsch für jedes kind, dessen Prefix
+// den Unterstrich verliert (`inbox_item` → `inboxitem:`, `tree_focus` →
+// `treefocus:`, `topic_props` → `topicprops:`, `tag_list` → `list:tag:`).
+// Solche Zeilen wurden nie rot, obwohl die Card offen war.
 function stackUuid(kind, id) {
-  if (kind === "ki") return id
-  if (kind === "topic_list") return `list:topic:${id}`
-  const p = kind in PREFIX ? PREFIX[kind] : kind
-  return p ? `${p}:${id}` : id
+  return BladeStackRoutes.forKind(kind, id)?.stackId || null
 }
 
 export default class extends Controller {

@@ -371,9 +371,18 @@ class BladeStackController extends Controller {
       // Kontext: aus Listen-Blade = replace_substack, sonst (Sidebar/
       // Nav-Klick) = append_to_stack.
       const mode = explicitMode || (fromList ? "replace_substack" : "append_to_stack")
+      // #1067 (Hans, 2026-07-20): Ist der Eintrag schon als Card offen (= rot
+      // markiert), zur Card springen statt eine zweite anzuhaengen. Vorher
+      // haing das an `fromList`, und das ist nur wahr, wenn der Klick INNERHALB
+      // einer `list:`-Card passiert (blade_link_controller: closest
+      // article.stack-card[data-uuid^='list:']). Zeilen in einer normalen Card
+      // — Rechnungen an einer Person, Aufgaben an einem Thema — hatten also
+      // forceNew und oeffneten die Card jedes Mal erneut. Ausnahme bleibt das
+      // Plus-Icon: `append_to_substack` heisst ausdruecklich "noch eine".
+      const alreadyOpen = !!this.cardForUuid(stackId)
       await this._appendBladeAtUrl({
         stackId, url,
-        forceNew:       !fromList || mode === "append_to_substack",
+        forceNew:       mode === "append_to_substack" || (!fromList && !alreadyOpen),
         sourceListCard,
         mode
       })

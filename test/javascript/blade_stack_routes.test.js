@@ -83,3 +83,33 @@ test("urlFor treats bare uuids as KnowledgeItems (template overridable)", () => 
   assert.equal(BladeStackRoutes.urlFor(""), null)
   assert.equal(BladeStackRoutes.urlFor(null), null)
 })
+
+// #1067: Das Highlight (rote Markierung offener Eintraege) leitete die
+// stack-uuid aus einer ZWEITEN Abbildung ab, die nur src/invoiceline/
+// topic_list als Sonderfaelle kannte und sonst `${kind}:${id}` bildete.
+// Fuer jedes kind, dessen Prefix den Unterstrich verliert, war das falsch —
+// die Zeile blieb ungefaerbt, obwohl die Card offen war. Seitdem kommt die
+// Ableitung aus dieser Tabelle; der Test haelt genau die Faelle fest, an
+// denen die alte Kopie scheiterte.
+test("forKind covers the kinds whose prefix is not `${kind}:` (#1067)", () => {
+  const naive = (kind, id) => `${kind}:${id}`
+  const drifted = [
+    ["inbox_item",   "12",     "inboxitem:12"],
+    ["tree_focus",   "42",     "treefocus:42"],
+    ["topic_props",  "demo",   "topicprops:demo"],
+    ["tag_list",     "steuer", "list:tag:steuer"],
+    ["invoice_line", "7",      "invoiceline:7"],
+    ["source",       "9",      "src:9"],
+    ["topic_list",   "demo",   "list:topic:demo"],
+    ["settings_page", "accounts", "settings:accounts"]
+  ]
+  drifted.forEach(([kind, id, expected]) => {
+    assert.equal(BladeStackRoutes.forKind(kind, id).stackId, expected)
+    assert.notEqual(expected, naive(kind, id),
+      `${kind} muss vom naiven \`kind:id\` abweichen — sonst ist der Fall hier sinnlos`)
+  })
+})
+
+test("forKind returns null for an unknown kind, so highlight simply skips it", () => {
+  assert.equal(BladeStackRoutes.forKind("gibtsnicht", "1"), null)
+})

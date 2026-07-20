@@ -317,7 +317,8 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
 }
 
 /* #1057 (aus immoos #965, Hans): Einträge, die als Card im aktuellen Stack
-   geöffnet sind, zusätzlich zum Chevron in roter Schrift hervorheben. Die
+   geöffnet sind, in roter Schrift hervorheben — seit #1067 die EINZIGE
+   Kennzeichnung (Chevron und Bold sind entfernt). Die
    Klasse setzt der stack-highlight-Controller auf die Zeile (li/form/tr);
    Titel/Untertitel tragen oft eigene text-slate-Farben, daher explizit mit
    übersteuern. */

@@ -19,8 +19,20 @@ release is cut, this section is renamed to the new version and a fresh
 
 - List entries that are open as a card in the stack are now marked in one way
   only — the red colouring. The older marker (bold plus a chevron button that
-  was injected at the start of the row and visibly indented it) is gone, along
-  with the jump-to-card click it carried (#1067).
+  was injected at the start of the row and visibly indented it) is gone (#1067).
+- Clicking an entry that is already open as a card jumps to that card instead
+  of opening a second copy. This used to depend on the click happening inside a
+  list blade, so rows shown inside a normal card (invoices on a person, for
+  instance) opened a duplicate every time. The plus icon still adds another
+  copy on purpose (#1067).
+
+### Fixed
+
+- The red marking now also reaches entry types whose stack prefix differs from
+  their kind (`inbox_item`, `tree_focus`, `topic_props`, `tag_list`): the
+  highlight derived the id from its own second copy of the kind-to-stack-id
+  table, which only knew a few special cases, so those rows never turned red.
+  Both paths now read the one routing table (#1067).
 
 ### Fixed
 

@@ -32,6 +32,7 @@ module Ops
       key_files: { "Master-Key" => Rails.root.join("config/master.key").to_s,
                    "Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
       key_state_file: "/home/hans/.local/state/miolimos-watch/keys",
+      registry_file: "/home/hans/.local/state/miolimos-watch/registry",
       database_probe: method(:production_databases),
       # Ausdrueckliche Ausnahmen von der Abdeckungspruefung. Hier steht die
       # ENTSCHEIDUNG, nicht die Bequemlichkeit: Wer eine Produktivdatenbank
@@ -51,6 +52,7 @@ module Ops
       @state_file = state_file
       @key_files      = key_files
       @key_state_file = key_state_file
+      @registry_file     = registry_file
       @database_probe    = database_probe
       @ignored_databases = ignored_databases
       @event_log  = event_log
@@ -361,16 +363,28 @@ module Ops
     # Skript. Eine Liste sagt, was gemeint war; das Protokoll sagt, was
     # geschehen ist.
     #
-    # GRENZE, ausdruecklich: geprueft werden nur Datenbanken. Ein
-    # Datenverzeichnis einer neuen Instanz faellt hier nicht auf.
+    # Geprueft werden Datenbanken UND Datenverzeichnisse.
+    #
+    # Der zweite Teil kam am 21.07. dazu, nachdem immoos_builder einen
+    # brauchbaren Pruefstein fuer solche Grenzvermerke formuliert hatte: Eine
+    # Grenze ist eine ENTSCHEIDUNG, wenn man sagen kann, wer den
+    # ausgeschlossenen Fall stattdessen abdeckt — sonst ist sie nur eine
+    # FESTSTELLUNG. Hier war die Antwort „niemand", und damit war der Vermerk
+    # „prueft nur Datenbanken" keine Grenzziehung, sondern eine offene Luecke
+    # mit einem Kommentar davor.
+    #
+    # Die Verzeichnisse kommen aus der Registry des Waechters (eine Quelle,
+    # zwei Leser); ein leeres Feld heisst „hat kein eigenes" und wird
+    # uebersprungen.
     def coverage_section(alerts)
       lines = []
       vorhanden = Array(@database_probe.call)
-      if vorhanden.empty?
-        return Section.new(title: "Abdeckung", lines: [ "keine Datenbanken feststellbar" ])
-      end
-
       abgedeckt = covered_databases
+
+      # KEIN frueher Ausstieg bei leerer Liste: der Verzeichnisteil unten
+      # haengt nicht an den Datenbanken und wurde durch genau so ein `return`
+      # uebersprungen, bis ein Test darueber stolperte.
+      lines << "keine Datenbanken feststellbar" if vorhanden.empty?
 
       vorhanden.sort.each do |db|
         if abgedeckt.include?(db)
@@ -383,9 +397,48 @@ module Ops
         end
       end
 
+      verzeichnisse = registry_data_dirs
+      if verzeichnisse.any?
+        abgedeckte_archive = covered_data_archives
+        lines << ""
+        verzeichnisse.each do |instanz, pfad|
+          if abgedeckte_archive.include?(instanz)
+            lines << "#{instanz} (#{pfad}): gesichert"
+          else
+            alerts << "Das Datenverzeichnis der Instanz #{instanz} (#{pfad}) wird von keiner Sicherung erfasst."
+            lines << "#{instanz} (#{pfad}): NICHT GESICHERT"
+          end
+        end
+      end
+
       Section.new(title: "Abdeckung", lines: lines)
     rescue StandardError => e
       Section.new(title: "Abdeckung", lines: [ "nicht feststellbar (#{e.class})" ])
+    end
+
+    # Instanzname => Datenverzeichnis, aus der Waechter-Registry. Leere Felder
+    # fallen raus: die Instanz teilt sich das Verzeichnis einer anderen.
+    def registry_data_dirs
+      return {} unless File.exist?(@registry_file)
+      File.readlines(@registry_file, chomp: true).each_with_object({}) do |line, acc|
+        name, _port, dir = line.split("\t")
+        acc[name] = dir if name.present? && dir.present?
+      end
+    rescue StandardError
+      {}
+    end
+
+    # Welche Datenverzeichnisse hat der letzte Lauf eingepackt? Die Zeilen
+    # lauten „ok <instanz>-data (… bytes verschluesselt)".
+    def covered_data_archives
+      return [] unless File.exist?(@backup_log)
+      zeilen = tail(@backup_log, 400)
+      start  = zeilen.rindex { |l| l.include?("backup start") }
+      lauf   = start ? zeilen[start..] : zeilen
+      lauf.filter_map { |l|
+        m = l.match(/\]\s+ok\s+(\S+)-data\b/)
+        m && m[1]
+      }.uniq
     end
 
     # Was der letzte Lauf angefasst hat. Die Datei-Archive (…-data) gehoeren

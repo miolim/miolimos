@@ -33,7 +33,7 @@ module Ops
     end
 
     def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil,
-               dbs: nil, ignoriert: [])
+               dbs: nil, ignoriert: [], registry: nil)
       DailyReport.new(
         state_file: state || File.join(@dir, "fehlt-state"),
         event_log:  events || File.join(@dir, "fehlt-events"),
@@ -43,6 +43,7 @@ module Ops
         key_files:      keys.nil? ? { "Master-Key" => @key_path } : keys,
         key_state_file: File.join(@dir, "keystate"),
         database_probe: dbs || -> { [] },
+        registry_file:  registry || File.join(@dir, "keine-registry"),
         ignored_databases: ignoriert,
         now:        @now
       )
@@ -301,6 +302,39 @@ module Ops
       assert_empty r.alerts
       assert_includes r.sections.find { |x| x.title == "Abdeckung" }.lines.join("\n"),
                       "bewusst nicht gesichert"
+    end
+
+
+    test "ein Datenverzeichnis ohne Sicherung ist ein Alarm" do
+      reg = write("registry", "miolimos\t3007\t/home/hans/miolimos\nneu\t3200\t/home/hans/neu_data\n")
+      log = write("backup.log", <<~LOG)
+        [2026-07-21 04:30:01] backup start
+        [2026-07-21 04:30:06] ok miolimos-data (68 bytes verschluesselt)
+        [2026-07-21 04:30:44] backup done (errors=0)
+      LOG
+      r = report(state: write("state", "miolimos up 1\n"), backup: log, registry: reg)
+      assert(r.alerts.any? { |a| a.include?("neu") && a.include?("/home/hans/neu_data") })
+      refute(r.alerts.any? { |a| a.include?("/home/hans/miolimos)") },
+             "ein gesichertes Verzeichnis darf nicht gemeldet werden")
+    end
+
+    test "eine Instanz ohne eigenes Datenverzeichnis wird uebersprungen" do
+      # monica setzt kein MIOLIMOS_DATA_PATH und teilt sich das Verzeichnis
+      # von miolimos — ein leeres Feld darf keinen Alarm ausloesen.
+      reg = write("registry", "miolimos\t3007\t/home/hans/miolimos\nmonica\t3008\t\n")
+      log = write("backup.log", <<~LOG)
+        [2026-07-21 04:30:01] backup start
+        [2026-07-21 04:30:06] ok miolimos-data (68 bytes verschluesselt)
+        [2026-07-21 04:30:44] backup done (errors=0)
+      LOG
+      r = report(state: write("state", "miolimos up 1\n"), backup: log, registry: reg)
+      assert_empty r.alerts
+      refute_includes section(r, "Abdeckung"), "monica"
+    end
+
+    test "ohne Registry bleibt der Verzeichnisteil einfach leer" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert_empty r.alerts.select { |a| a.include?("Datenverzeichnis") }
     end
 
     # ── Code-Sicherung ────────────────────────────────────────────────────

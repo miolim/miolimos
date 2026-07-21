@@ -42,9 +42,15 @@ PROBE_TIMEOUT=${PROBE_TIMEOUT:-5}
 #
 # Das Datenverzeichnis steht hier mit, damit es fuer die Dateisicherung eine
 # Quelle gibt statt zweier, die auseinanderlaufen (Vorschlag immoos_builder).
+# Leeres Feld heisst „hat kein eigenes": `monica` setzt kein
+# MIOLIMOS_DATA_PATH und schreibt darum in den Default ~/miolimos, ist also
+# ueber den miolimos-Eintrag abgedeckt. (Bis 21.07. stand hier
+# /home/hans/miolimos_monica/data — ein Pfad, den es nie gab. Ich hatte ihn
+# aus einer Recherche uebernommen, ohne ihn anzusehen, und zwar in genau der
+# Datei, die ich als „die eine Quelle" bezeichnet habe.)
 DEFAULT_INSTANCES="\
 miolimos|3007|/up|/home/hans/miolimos
-monica|3008|/up|/home/hans/miolimos_monica/data
+monica|3008|/up|
 immoos|3105|/up|/home/hans/immoos_data
 stocker|3106|/up|/home/hans/stocker_data"
 
@@ -102,6 +108,16 @@ while IFS='|' read -r name port path _datadir; do
 done <<< "$INSTANCES"
 
 # Zustand schreiben (atomar, damit ein Abbruch keine halbe Datei hinterlaesst)
+# Registry mitschreiben, damit der taegliche Bericht die Datenverzeichnisse
+# gegen die Sicherung halten kann, ohne dieses Skript zu parsen. Eine Quelle,
+# zwei Leser.
+reg_tmp="$STATE_DIR/registry.$$"
+while IFS='|' read -r name port path datadir; do
+  [[ -n "${name:-}" ]] || continue
+  printf '%s\t%s\t%s\n' "$name" "$port" "${datadir:-}"
+done <<< "$INSTANCES" | sort > "$reg_tmp"
+mv "$reg_tmp" "$STATE_DIR/registry"
+
 tmp="$STATE_FILE.$$"
 for n in "${!new_status[@]}"; do
   echo "$n ${new_status[$n]} ${new_last_ok[$n]}"

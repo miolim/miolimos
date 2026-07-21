@@ -94,8 +94,9 @@ release is cut, this section is renamed to the new version and a fresh
   domain, or a deploy script that exports the instance host before its test
   gate — turned the suite red with nothing wrong in the application. The test
   environment now pins the host (#1076).
-- The daily report now also reports the mirror case: a production database that
-  exists on the machine but is covered by no backup at all. The nightly job can
+- The daily report now also reports the mirror case: a production database — or
+  an instance data directory — that exists on the machine but is covered by no
+  backup at all. The nightly job can
   only miss what it knows about, so a newly created instance database is simply
   never dumped — no error, no log line, nothing to notice. Coverage is derived
   from what the last run actually did (its log), not from the list in the

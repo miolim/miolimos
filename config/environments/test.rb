@@ -50,4 +50,20 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # #1076: pin the public host for the test run.
+  #
+  # Several tests assert on behaviour derived from MIOLIMOS_HOST — most
+  # visibly ExternalLinks, which decides whether a link is "ours" and gets an
+  # external-link marker. Those tests were written against the default host,
+  # so the suite quietly depended on whatever the *calling shell* happened to
+  # export. Anyone self-hosting under their own domain — or any deploy script
+  # that exports the instance host before running the gate — got a red suite
+  # with nothing wrong in the application. It stayed invisible here only
+  # because this installation's host happens to equal the default.
+  #
+  # Found by immoos_builder, whose fork hit it the moment a second instance
+  # with a different host existed. The test environment must not depend on
+  # which instance is being deployed.
+  ENV["MIOLIMOS_HOST"] = "os.miolim.de"
 end

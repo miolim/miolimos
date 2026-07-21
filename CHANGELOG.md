@@ -68,6 +68,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The test suite no longer depends on `MIOLIMOS_HOST` from the calling shell.
+  Tests that assert on link handling were written against the default host, so
+  running them with a different one — anyone self-hosting under their own
+  domain, or a deploy script that exports the instance host before its test
+  gate — turned the suite red with nothing wrong in the application. The test
+  environment now pins the host (#1076).
 - The nightly database backup now tells "not created yet" apart from "was here
   yesterday". A database listed for backup that has since been renamed or
   dropped used to be skipped as silently as one that does not exist yet, and

@@ -6,6 +6,11 @@
 #
 #   RAILS_MASTER_KEY=$(cat config/master.key) docker compose up --build
 #
+# Works on Linux, macOS (Intel and Apple Silicon) and Windows with Docker
+# Desktop: the image is built locally from this repository, and both base
+# images (ruby, postgres) are multi-architecture. The pre-built image on
+# ghcr.io is amd64 only — on Apple Silicon prefer `--build` over pulling it.
+#
 # The app will be available on http://localhost:3000. The entrypoint runs
 # `db:prepare` automatically (creates + migrates the primary/cache/queue
 # databases on first boot). Background jobs run inside Puma
@@ -46,6 +51,21 @@ services:
       MIOLIMOS_CABLE_ORIGINS: ${MIOLIMOS_CABLE_ORIGINS:-http://localhost:3000}
       # Run background jobs (Solid Queue) inside the Puma process.
       SOLID_QUEUE_IN_PUMA: "true"
+      # Set explicitly so the volume below cannot drift from the application's
+      # default (~/miolimos, which resolves to /home/rails/miolimos in the
+      # image).
+      MIOLIMOS_DATA_PATH: /home/rails/miolimos
+    volumes:
+      # WITHOUT THESE TWO the database survives a container rebuild and the
+      # files do not. Everything the application writes to disk lives here:
+      # the knowledge Markdown, and — this is the part that cannot be
+      # reconstructed — every attachment: invoices, settlement documents,
+      # meter photos, profile images. The database keeps only their path, so
+      # after `docker compose up --build` you would get a complete-looking
+      # database full of references to files that no longer exist, without a
+      # single error message.
+      - app_data:/home/rails/miolimos
+      - app_storage:/rails/storage
     ports:
       - "3000:80"
     depends_on:
@@ -54,3 +74,5 @@ services:
 
 volumes:
   pg_data:
+  app_data:
+  app_storage:

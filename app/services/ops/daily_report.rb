@@ -293,8 +293,14 @@ module Ops
     # stillschweigend wertlos. Niemand merkt es — bis zum Restore, bei dem der
     # Dump sauber zurueckgeht und die Instanz trotzdem nicht bootet.
     #
-    # Gespeichert wird nur ein Fingerabdruck, nie der Schluessel selbst. Beim
-    # ersten Lauf wird er still aufgezeichnet (nie gesehen = still, wie
+    # Der Fingerabdruck (SHA-256, gekuerzt) wird nur in der Zustandsdatei
+    # gehalten, NICHT in den Bericht geschrieben — Hans' Rueckfrage vom
+    # 21.07.2026, ob es richtig sei, dass die Schluessel in der Mail genannt
+    # werden. Der Fingerabdruck ist zwar nicht umkehrbar, aber der Bericht
+    # braucht ihn gar nicht: Gefragt ist „hat er sich geaendert", nicht „wie
+    # lautet er". Eine Mail, die weniger enthaelt, ist die bessere Mail.
+    #
+    # Beim ersten Lauf wird still aufgezeichnet (nie gesehen = still, wie
     # ueberall hier); erst eine AENDERUNG ist laut.
     # Hinweis von immoos_builder, 2026-07-21.
     def keys_section(alerts)
@@ -313,12 +319,12 @@ module Ops
         current[label] = fp
 
         if previous[label].nil?
-          lines << "#{label}: #{fp} (erstmals erfasst)"
+          lines << "#{label}: erstmals erfasst"
         elsif previous[label] != fp
           alerts << "#{label} hat sich geaendert (#{previous[label]} → #{fp}). "                     "Die Kopie im Passwortmanager ist damit veraltet und muss aufgefrischt werden — "                     "sonst startet eine Wiederherstellung nicht."
           lines << "#{label}: GEAENDERT (#{previous[label]} → #{fp})"
         else
-          lines << "#{label}: #{fp} unveraendert"
+          lines << "#{label}: unveraendert"
         end
       end
 

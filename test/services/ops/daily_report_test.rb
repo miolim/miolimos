@@ -32,21 +32,42 @@ module Ops
       path
     end
 
+    # EIN Satz neutraler Argumente fuer ALLE Konstruktionen im Test.
+    #
+    # Grund: DailyReport hat lauter Vorgabewerte, die die ECHTE Maschine lesen
+    # (Zustandsdatei des Waechters, Backup-Protokoll, config/master.key, die
+    # Registry, die Datenbankliste). Ein Test, der nur die halbe Liste
+    # ueberschreibt, haengt still am Rechner, auf dem er zufaellig laeuft —
+    # das ist mir am 21.07. VIERMAL passiert, zuletzt durch einen neu
+    # hinzugekommenen Parameter, der zwei bestehende Tests umwarf.
+    # Kommt kuenftig ein Vorgabewert dazu, gehoert er hier hinein, und zwar
+    # genau einmal.
+    def neutrale_args(**ueber)
+      {
+        state_file:     File.join(@dir, "fehlt-state"),
+        event_log:      File.join(@dir, "fehlt-events"),
+        backup_log:     File.join(@dir, "fehlt-backup"),
+        repos:          {},
+        repo_probe:     ->(_path) { { status: :synced } },
+        key_files:      { "Master-Key" => @key_path },
+        key_state_file: File.join(@dir, "keystate"),
+        database_probe: -> { [] },
+        registry_file:  File.join(@dir, "keine-registry"),
+        now:            @now
+      }.merge(ueber)
+    end
+
     def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil,
                dbs: nil, ignoriert: [], registry: nil)
-      DailyReport.new(
-        state_file: state || File.join(@dir, "fehlt-state"),
-        event_log:  events || File.join(@dir, "fehlt-events"),
-        backup_log: backup || File.join(@dir, "fehlt-backup"),
-        repos:      repos,
-        repo_probe: probe || ->(_path) { { status: :synced } },
-        key_files:      keys.nil? ? { "Master-Key" => @key_path } : keys,
-        key_state_file: File.join(@dir, "keystate"),
-        database_probe: dbs || -> { [] },
-        registry_file:  registry || File.join(@dir, "keine-registry"),
-        ignored_databases: ignoriert,
-        now:        @now
-      )
+      args = neutrale_args(repos: repos, ignored_databases: ignoriert)
+      args[:state_file]     = state    if state
+      args[:event_log]      = events   if events
+      args[:backup_log]     = backup   if backup
+      args[:repo_probe]     = probe    if probe
+      args[:key_files]      = keys     if keys
+      args[:database_probe] = dbs      if dbs
+      args[:registry_file]  = registry if registry
+      DailyReport.new(**args)
     end
 
     def section(report, title)
@@ -231,10 +252,20 @@ module Ops
       assert(r.alerts.any? { |a| a.include?("fehlt") && a.include?("startet") })
     end
 
-    test "der Fingerabdruck ist nicht der Schluessel selbst" do
+    test "weder Schluessel noch Fingerabdruck stehen im Bericht" do
+      # Hans, 21.07.2026: „Ist es richtig, dass die Schluessel in der E-Mail
+      # genannt werden?" — Der Fingerabdruck ist zwar nicht umkehrbar, gehoert
+      # aber trotzdem nicht in eine Mail: Gefragt ist, OB er sich geaendert
+      # hat, nicht wie er lautet.
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
-      refute_includes section(r, "Schluessel"), "0" * 32
-      refute_includes File.read(File.join(@dir, "keystate")), "0" * 32
+      zeilen = section(r, "Schluessel")
+      refute_includes zeilen, "0" * 32, "der Schluessel selbst darf nie im Bericht stehen"
+      fp = Digest::SHA256.file(@key_path).hexdigest[0, 12]
+      refute_includes zeilen, fp, "auch der Fingerabdruck gehoert nicht in die Mail"
+      assert_includes zeilen, "erstmals erfasst"
+      # In der Zustandsdatei muss er dagegen stehen — sonst gibt es keinen
+      # Vergleich beim naechsten Lauf.
+      assert_includes File.read(File.join(@dir, "keystate")), fp
     end
 
 
@@ -291,14 +322,13 @@ module Ops
       # Wenn jemand die Ausnahme aus der Vorgabe entfernt, faellt es hier auf --
       # und nicht erst dadurch, dass Hans wieder eine Meldung bekommt, die er
       # schon einmal beantwortet hat.
-      r = DailyReport.new(state_file: write("state", "miolimos up 1\n"),
-                          event_log: File.join(@dir, "fehlt"),
-                          backup_log: healthy_backup,
-                          repos: {}, repo_probe: ->(_p) { { status: :synced } },
-                          key_files: { "Master-Key" => @key_path },
-                          key_state_file: File.join(@dir, "keystate2"),
-                          database_probe: -> { %w[pan_rp_production] },
-                          now: @now)
+      # ohne `ignored_databases` — genau darum geht es hier
+      r = DailyReport.new(**neutrale_args(
+        state_file: write("state", "miolimos up 1\n"),
+        backup_log: healthy_backup,
+        key_state_file: File.join(@dir, "keystate2"),
+        database_probe: -> { %w[pan_rp_production] }
+      ))
       assert_empty r.alerts
       assert_includes r.sections.find { |x| x.title == "Abdeckung" }.lines.join("\n"),
                       "bewusst nicht gesichert"

@@ -88,6 +88,16 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Docker Compose now persists the application's files, not just its database.
+  The `web` service had no volume at all, so everything written to disk lived
+  inside the container: the knowledge Markdown and — the part that cannot be
+  reconstructed — every attachment. A container rebuild left a
+  complete-looking database full of references to files that no longer
+  existed, without an error. Two named volumes now cover the data path and
+  Active Storage (#1060).
+- The daily operations report no longer prints key fingerprints. They are kept
+  in its state file, where the comparison happens; the report only says whether
+  a key changed. What the reader needs is the answer, not the value (#1076).
 - The disaster-recovery runbook now produces an instance that actually works.
   Rehearsing it end to end for the first time showed two defects that only
   surface *after* a restore: `pg_restore --no-owner` leaves the tables owned by

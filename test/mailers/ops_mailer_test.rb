@@ -39,6 +39,9 @@ class OpsMailerTest < ActionMailer::TestCase
                          # der "gruene" Fall daran, welche DBs zufaellig
                          # existieren. Dritter Anlauf derselben Lektion.
                          database_probe: -> { [] },
+                         # ebenfalls ausdruecklich: sonst liest der Bericht die
+                         # Waechter-Registry der echten Maschine.
+                         registry_file: "/nonexistent-registry",
                          now: Time.zone.parse("2026-07-21 09:00"))
   end
 

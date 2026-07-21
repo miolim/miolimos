@@ -20,9 +20,19 @@ class OpsMailerTest < ActionMailer::TestCase
     state = Tempfile.new("state")
     state.write("miolimos up #{Time.zone.parse('2026-07-21 08:00').to_i}\n")
     state.flush
-    @tempfiles = [ log, state ]
+    # Schluessel und Zustandsdatei ausdruecklich setzen: config/master.key ist
+    # gitignoriert und existiert in einem frischen Checkout (CI!) nicht — ein
+    # Test, der ihn stillschweigend erwartet, ist genau die Umgebungs-
+    # abhaengigkeit, die #1076 beim Host beseitigt hat.
+    key = Tempfile.new("masterkey")
+    key.write("x" * 32)
+    key.flush
+    keystate = Tempfile.new("keystate")
+    @tempfiles = [ log, state, key, keystate ]
     Ops::DailyReport.new(state_file: state.path, event_log: "/nonexistent",
                          backup_log: log.path, repos: {},
+                         key_files: { "Master-Key" => key.path },
+                         key_state_file: keystate.path,
                          now: Time.zone.parse("2026-07-21 09:00"))
   end
 

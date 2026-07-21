@@ -29,6 +29,9 @@ module Ops
 
     def initialize(
       state_file: "/home/hans/.local/state/miolimos-watch/state",
+      key_files: { "Master-Key" => Rails.root.join("config/master.key").to_s,
+                   "Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
+      key_state_file: "/home/hans/.local/state/miolimos-watch/keys",
       event_log:  "/home/hans/log/miolimos-service-watch.log",
       backup_log: "/home/hans/log/miolimos-db-backup.log",
       repos:      { "App-Code" => "/home/hans/miolimos_src",
@@ -37,6 +40,8 @@ module Ops
       now: Time.current
     )
       @state_file = state_file
+      @key_files      = key_files
+      @key_state_file = key_state_file
       @event_log  = event_log
       @backup_log = backup_log
       @repos      = repos
@@ -67,7 +72,8 @@ module Ops
           services_section(alerts),
           backup_section(alerts),
           push_section(alerts),
-          mail_section(alerts)
+          mail_section(alerts),
+          keys_section(alerts)
         ]
         [ alerts, sections ]
       end
@@ -253,6 +259,72 @@ module Ops
       Section.new(title: "Postausgang", lines: lines)
     rescue StandardError => e
       Section.new(title: "Postausgang", lines: [ "nicht feststellbar (#{e.class})" ])
+    end
+
+
+    # ── Schluessel ───────────────────────────────────────────────────────
+    # config/master.key und credentials.yml.enc liegen BEWUSST nicht im
+    # Backup: laegen sie im Datenarchiv, schloesse die eine Backup-Passphrase
+    # alles auf — Daten und Schluessel im selben Behaelter. Ihre einzige
+    # Zweitschrift ist die Kopie im Passwortmanager.
+    #
+    # Genau daraus folgt der Fall, den dieser Abschnitt sichtbar macht: Wird
+    # der Schluessel gewechselt, wird die Kopie im Passwortmanager
+    # stillschweigend wertlos. Niemand merkt es — bis zum Restore, bei dem der
+    # Dump sauber zurueckgeht und die Instanz trotzdem nicht bootet.
+    #
+    # Gespeichert wird nur ein Fingerabdruck, nie der Schluessel selbst. Beim
+    # ersten Lauf wird er still aufgezeichnet (nie gesehen = still, wie
+    # ueberall hier); erst eine AENDERUNG ist laut.
+    # Hinweis von immoos_builder, 2026-07-21.
+    def keys_section(alerts)
+      lines = []
+      previous = read_key_state
+      current  = {}
+
+      @key_files.each do |label, path|
+        unless File.exist?(path)
+          alerts << "#{label} fehlt (#{path}) — die Instanz startet ohne ihn nicht."
+          lines << "#{label}: FEHLT"
+          next
+        end
+
+        fp = Digest::SHA256.file(path).hexdigest[0, 12]
+        current[label] = fp
+
+        if previous[label].nil?
+          lines << "#{label}: #{fp} (erstmals erfasst)"
+        elsif previous[label] != fp
+          alerts << "#{label} hat sich geaendert (#{previous[label]} → #{fp}). "                     "Die Kopie im Passwortmanager ist damit veraltet und muss aufgefrischt werden — "                     "sonst startet eine Wiederherstellung nicht."
+          lines << "#{label}: GEAENDERT (#{previous[label]} → #{fp})"
+        else
+          lines << "#{label}: #{fp} unveraendert"
+        end
+      end
+
+      write_key_state(previous.merge(current))
+      lines << ""
+      lines << "Diese Dateien liegen nicht im Backup — ihre Zweitschrift ist der Passwortmanager."
+      Section.new(title: "Schluessel", lines: lines)
+    rescue StandardError => e
+      Section.new(title: "Schluessel", lines: [ "nicht feststellbar (#{e.class})" ])
+    end
+
+    def read_key_state
+      return {} unless File.exist?(@key_state_file)
+      File.readlines(@key_state_file, chomp: true).to_h do |line|
+        label, fp = line.split("\t", 2)
+        [ label, fp ]
+      end
+    rescue StandardError
+      {}
+    end
+
+    def write_key_state(map)
+      FileUtils.mkdir_p(File.dirname(@key_state_file))
+      File.write(@key_state_file, map.map { |k, v| "#{k}\t#{v}" }.join("\n"))
+    rescue StandardError
+      nil # Ein nicht schreibbarer Zustand darf den Bericht nicht verhindern.
     end
 
     # Zustand eines Arbeitsverzeichnisses gegenueber seiner Fernkopie.

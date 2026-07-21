@@ -14,6 +14,30 @@ Stand: #545 (2026-06-08).
    - Google-Konto für Drive (Ordner `miolimos-backups`)
    - **Backup-Passphrase** (die GPG-Passphrase der Dumps) — *ohne sie ist kein
      Restore möglich.*
+   - **`config/master.key`** (32 Zeichen) und **`config/credentials.yml.enc`**
+     der Instanz — *ohne sie startet die wiederhergestellte Instanz überhaupt
+     nicht.*
+
+   > **Diese beiden Dateien liegen bewusst NICHT im Backup.** Sie sind
+   > gitignoriert und existieren nur im Checkout auf der Maschine. Sie gehören
+   > auch nicht ins Datenarchiv: Dann schlösse die eine Backup-Passphrase alles
+   > auf — Daten und Schlüssel im selben Behälter. So ist ein entwendetes
+   > Archiv ohne den Schlüssel nur teilweise verwertbar.
+   >
+   > **Prüfe jetzt, nicht im Ernstfall, ob beide im Passwortmanager liegen.**
+   > Fehlt der Master-Key, bootet `production` nicht (`lockbox.rb` bricht mit
+   > `LOCKBOX_MASTER_KEY missing` ab), und alle mit `has_encrypted` abgelegten
+   > Felder sind dauerhaft unlesbar: Gmail-Zugangstoken, Internetmarke-Zugang,
+   > 2FA-Geheimnisse der Nutzer. Die **Fachdaten** sind davon nicht betroffen —
+   > Personen, Aufgaben, Rechnungen sind unverschlüsselt und nach einem
+   > Neuschlüsseln wieder lesbar. Der Preis ist also kein Datenverlust, sondern:
+   > Instanz neu schlüsseln, alle hinterlegten Zugänge neu einrichten, 2FA für
+   > alle Nutzer neu aufsetzen.
+   >
+   > Ändert sich der Master-Key später, wird die Kopie im Passwortmanager
+   > stillschweigend wertlos. Der tägliche Betriebsbericht meldet deshalb einen
+   > Wechsel (Abschnitt „Schlüssel"); wenn er das tut, gehört die Kopie
+   > aufgefrischt.
 3. Ein **Linux-Rechner** (Ubuntu o.ä.) mit Internet.
 
 ## Wie die Sicherung aufgebaut ist (3-3-3)

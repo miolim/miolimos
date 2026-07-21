@@ -12,6 +12,8 @@ module Ops
       # Postausgang-Abschnitt in jedem Test an und verfaelscht die
       # Alarm-Zaehlung. Die Postausgang-Tests setzen ihn selbst neu.
       healthy_credential
+      @key_path = File.join(@dir, "master.key")
+      File.write(@key_path, "0" * 32)
     end
 
     def healthy_credential
@@ -29,13 +31,15 @@ module Ops
       path
     end
 
-    def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil)
+    def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil)
       DailyReport.new(
         state_file: state || File.join(@dir, "fehlt-state"),
         event_log:  events || File.join(@dir, "fehlt-events"),
         backup_log: backup || File.join(@dir, "fehlt-backup"),
         repos:      repos,
         repo_probe: probe || ->(_path) { { status: :synced } },
+        key_files:      keys.nil? ? { "Master-Key" => @key_path } : keys,
+        key_state_file: File.join(@dir, "keystate"),
         now:        @now
       )
     end
@@ -170,6 +174,45 @@ module Ops
       OauthCredential.where(provider: "google").delete_all
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
       assert(r.alerts.any? { |a| a.include?("kein Google-Konto verbunden") })
+    end
+
+
+    # ── Schluessel ────────────────────────────────────────────────────────
+    # config/master.key liegt bewusst nicht im Backup; seine einzige
+    # Zweitschrift ist der Passwortmanager. Ein Wechsel macht die still
+    # wertlos — das muss auffallen. Hinweis von immoos_builder.
+
+    test "der erste Lauf zeichnet den Fingerabdruck still auf" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert_empty r.alerts
+      assert_includes section(r, "Schluessel"), "erstmals erfasst"
+    end
+
+    test "ein geaenderter Schluessel ist ein Alarm mit Handlungsanweisung" do
+      report(state: write("state", "miolimos up 1\n"), backup: healthy_backup).alerts  # erster Lauf
+      File.write(@key_path, "1" * 32)                                                   # Schluessel gewechselt
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?("hat sich geaendert") })
+      assert(r.alerts.any? { |a| a.include?("Passwortmanager") }, "muss sagen, was zu tun ist")
+    end
+
+    test "ein unveraenderter Schluessel erzeugt keinen Alarm" do
+      report(state: write("state", "miolimos up 1\n"), backup: healthy_backup).alerts
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert_empty r.alerts
+      assert_includes section(r, "Schluessel"), "unveraendert"
+    end
+
+    test "ein fehlender Schluessel ist ein Alarm" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
+                 keys: { "Master-Key" => File.join(@dir, "gibtsnicht.key") })
+      assert(r.alerts.any? { |a| a.include?("fehlt") && a.include?("startet") })
+    end
+
+    test "der Fingerabdruck ist nicht der Schluessel selbst" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      refute_includes section(r, "Schluessel"), "0" * 32
+      refute_includes File.read(File.join(@dir, "keystate")), "0" * 32
     end
 
     # ── Code-Sicherung ────────────────────────────────────────────────────

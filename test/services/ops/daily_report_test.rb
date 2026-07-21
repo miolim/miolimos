@@ -8,6 +8,17 @@ module Ops
     setup do
       @dir = Dir.mktmpdir
       @now = Time.zone.parse("2026-07-21 09:00:00")
+      # Ausgangslage: Mailversand in Ordnung. Sonst schlaegt der
+      # Postausgang-Abschnitt in jedem Test an und verfaelscht die
+      # Alarm-Zaehlung. Die Postausgang-Tests setzen ihn selbst neu.
+      healthy_credential
+    end
+
+    def healthy_credential
+      OauthCredential.where(provider: "google").delete_all
+      OauthCredential.create!(actor: create_human, provider: "google",
+                              email_address: "postausgang-ok@test.local",
+                              active: true, expires_at: @now + 30.days)
     end
 
     teardown { FileUtils.remove_entry(@dir) }
@@ -27,6 +38,10 @@ module Ops
         repo_probe: probe || ->(_path) { { status: :synced } },
         now:        @now
       )
+    end
+
+    def section(report, title)
+      report.sections.find { |s| s.title == title }.lines.join("\n")
     end
 
     def healthy_backup
@@ -116,6 +131,47 @@ module Ops
       assert(r.alerts.any? { |a| a.include?("Kein Backup-Protokoll") })
     end
 
+
+    # ── Postausgang ───────────────────────────────────────────────────────
+    # Der Bericht prueft seinen eigenen Zustellweg. Am 21.07.2026 war die
+    # Google-Credential zehn Tage abgelaufen, und niemand hat es bemerkt.
+
+    test "eine abgelaufene Mail-Credential ist ein Alarm mit Handlungsanweisung" do
+      OauthCredential.where(provider: "google").delete_all
+      OauthCredential.create!(actor: create_human, provider: "google",
+                              email_address: "test-abgelaufen@example.com",
+                              active: false, expires_at: Time.zone.parse("2026-07-11 11:30"))
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?("Mailversand ist abgeschaltet") })
+      assert(r.alerts.any? { |a| a.include?("11.07.2026") })
+      assert(r.alerts.any? { |a| a.include?("Einstellungen") }, "muss sagen, was zu tun ist")
+    end
+
+    test "eine bald ablaufende Credential warnt VOR dem Ablauf" do
+      OauthCredential.where(provider: "google").delete_all
+      OauthCredential.create!(actor: create_human, provider: "google",
+                              email_address: "test-bald@example.com",
+                              active: true, expires_at: @now + 2.days)
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?("laeuft am") })
+    end
+
+    test "eine gesunde Credential erzeugt keinen Alarm" do
+      OauthCredential.where(provider: "google").delete_all
+      OauthCredential.create!(actor: create_human, provider: "google",
+                              email_address: "test-ok@example.com",
+                              active: true, expires_at: @now + 30.days)
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert_empty r.alerts
+      assert_includes r.sections.map(&:title), "Postausgang"
+    end
+
+    test "gar kein verbundenes Konto ist ein Alarm" do
+      OauthCredential.where(provider: "google").delete_all
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?("kein Google-Konto verbunden") })
+    end
+
     # ── Code-Sicherung ────────────────────────────────────────────────────
 
     test "unveroeffentlichte Arbeit wird gemeldet, mit Alter des aeltesten Commits" do
@@ -134,14 +190,14 @@ module Ops
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
                  repos: { "App-Code" => "/irgendwo" }, probe: probe)
       assert_empty r.alerts
-      assert_includes r.sections.last.lines.join("\n"), "warten auf den naechsten Push"
+      assert_includes section(r, "Code-Sicherung nach GitHub"), "warten auf den naechsten Push"
     end
 
     test "ein vollstaendig gepushtes Repo erzeugt keinen Alarm" do
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
                  repos: { "Wissensdateien" => "/irgendwo" })
       assert_empty r.alerts
-      assert_includes r.sections.last.lines.join("\n"), "vollstaendig auf GitHub"
+      assert_includes section(r, "Code-Sicherung nach GitHub"), "vollstaendig auf GitHub"
     end
 
     test "ein Repo ganz ohne Fernkopie ist ein Alarm" do
@@ -197,7 +253,7 @@ module Ops
       probe = ->(_p) { { status: :missing } }
       r = report(repos: { "App-Code" => File.join(@dir, "gibtsnicht") }, probe: probe)
       assert_nothing_raised { r.subject }
-      assert_includes r.sections.last.lines.join("\n"), "kein Repository unter"
+      assert_includes section(r, "Code-Sicherung nach GitHub"), "kein Repository unter"
     end
   end
 end

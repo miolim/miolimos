@@ -2,6 +2,16 @@ require "test_helper"
 
 # #1076: der taegliche Betriebsbericht.
 class OpsMailerTest < ActionMailer::TestCase
+  setup do
+    # Ausgangslage: Mailversand in Ordnung — sonst meldet der
+    # Postausgang-Abschnitt eine Auffaelligkeit und der "gruene" Fall
+    # existiert gar nicht.
+    OauthCredential.where(provider: "google").delete_all
+    OauthCredential.create!(actor: create_human, provider: "google",
+                            email_address: "postausgang-ok@test.local",
+                            active: true, expires_at: 30.days.from_now)
+  end
+
   def report_with(alerts:)
     log = Tempfile.new("backup")
     log.write(alerts ? "[2026-07-21 04:30:44] backup done (errors=1)\n"

@@ -24,8 +24,11 @@ release is cut, this section is renamed to the new version and a fresh
   repeat itself. `rails ops:daily_report` mails a daily operations summary
   (services, database backup, unpushed commits) — it is sent every day even
   when everything is green, so that its absence is itself the alarm.
-  `rails ops:report_preview` prints the same report without sending it
-  (#1076).
+  `rails ops:report_preview` prints the same report without sending it. The
+  report also checks its own delivery path — an expired Google credential
+  silently disables *all* outgoing mail, including portal magic links — and
+  falls back to filing itself as a knowledge item when the mail cannot be
+  sent (#1076).
 - Postal addresses can carry a validity period (`valid from` / `until`, either
   side optional). A person who moves keeps the former address on record while
   letters go to the one valid today — `mailing_address` and `primary_address`

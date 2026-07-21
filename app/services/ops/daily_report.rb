@@ -66,7 +66,8 @@ module Ops
         sections = [
           services_section(alerts),
           backup_section(alerts),
-          push_section(alerts)
+          push_section(alerts),
+          mail_section(alerts)
         ]
         [ alerts, sections ]
       end
@@ -214,6 +215,44 @@ module Ops
         end
       end
       Section.new(title: "Code-Sicherung nach GitHub", lines: lines)
+    end
+
+    # ── Postausgang ──────────────────────────────────────────────────────
+    # Der Bericht prueft seinen EIGENEN Zustellweg, und das ist keine
+    # Spielerei: Am 21.07.2026 war die Google-Credential seit zehn Tagen
+    # abgelaufen — miolimOS konnte keine einzige Mail verschicken, auch keinen
+    # Portal-Magic-Link, und nichts hat das gemeldet. Ein Ueberwachungssystem,
+    # dessen einziger Kanal still kaputtgeht, ueberwacht nichts mehr.
+    #
+    # Deshalb steht die Ablauf-Warnung hier VOR dem Ablauf: Ein Token, das in
+    # zwei Tagen faellig ist, ist noch reparierbar; eines, das gestern abgelaufen
+    # ist, hat schon Post verschluckt.
+    def mail_section(alerts)
+      lines = []
+      cred = OauthCredential.where(provider: "google").order(:id).last
+
+      if cred.nil?
+        lines << "kein Google-Konto verbunden — Mailversand nicht moeglich"
+        alerts << "Es ist kein Google-Konto verbunden; miolimOS kann keine Mails verschicken."
+      elsif !cred.active?
+        lines << "#{cred.email_address}: NICHT AKTIV"
+        alerts << "Der Mailversand ist abgeschaltet: das Google-Konto #{cred.email_address} ist nicht mehr aktiv" \
+                  "#{cred.expires_at ? " (abgelaufen am #{cred.expires_at.strftime('%d.%m.%Y')})" : ''}. " \
+                  "Unter Einstellungen → Konten neu verbinden — betrifft auch Portal-Mails und Magic-Links."
+      elsif cred.expired?
+        lines << "#{cred.email_address}: Zugang abgelaufen"
+        alerts << "Der Google-Zugang #{cred.email_address} ist abgelaufen und muss neu verbunden werden."
+      elsif cred.expires_at && cred.expires_at < @now + 3.days
+        lines << "#{cred.email_address}: laeuft ab am #{cred.expires_at.strftime('%d.%m.%Y %H:%M')}"
+        alerts << "Der Google-Zugang #{cred.email_address} laeuft am " \
+                  "#{cred.expires_at.strftime('%d.%m.%Y')} ab — vorher neu verbinden."
+      else
+        lines << "#{cred.email_address}: aktiv#{cred.expires_at ? ", gueltig bis #{cred.expires_at.strftime('%d.%m.%Y %H:%M')}" : ''}"
+      end
+
+      Section.new(title: "Postausgang", lines: lines)
+    rescue StandardError => e
+      Section.new(title: "Postausgang", lines: [ "nicht feststellbar (#{e.class})" ])
     end
 
     # Zustand eines Arbeitsverzeichnisses gegenueber seiner Fernkopie.

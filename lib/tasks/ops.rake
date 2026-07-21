@@ -2,12 +2,27 @@
 namespace :ops do
   desc "Taeglichen Betriebsbericht per Mail verschicken (Empfaenger: OPS_REPORT_TO oder erster Admin)"
   task daily_report: :environment do
-    to = ENV["OPS_REPORT_TO"].presence || HumanActor.where(role: "admin").order(:id).first&.email
+    admin = HumanActor.where(role: "admin").order(:id).first
+    to = ENV["OPS_REPORT_TO"].presence || admin&.email
     abort "ops:daily_report: kein Empfaenger (OPS_REPORT_TO setzen oder Admin anlegen)" if to.blank?
 
     report = Ops::DailyReport.new
-    OpsMailer.daily_report(report, to: to).deliver_now
-    puts "ops:daily_report: an #{to} verschickt — #{report.subject}"
+
+    begin
+      OpsMailer.daily_report(report, to: to).deliver_now
+      puts "ops:daily_report: an #{to} verschickt — #{report.subject}"
+    rescue StandardError => e
+      # ERSATZWEG. Ein Ueberwachungssystem, dessen einziger Kanal kaputt ist,
+      # ueberwacht nichts mehr — und genau dieser Fall lag am 21.07.2026 vor:
+      # die Google-Credential war zehn Tage abgelaufen, ohne dass es jemand
+      # merkte. Kommt die Mail nicht durch, wird der Bericht dort abgelegt, wo
+      # Hans ohnehin taeglich hinschaut. Nur im Fehlerfall — sonst waechst der
+      # Wissensbestand taeglich zu.
+      warn "ops:daily_report: Mailversand fehlgeschlagen (#{e.class}: #{e.message})"
+      Ops::ReportFallback.new(report, actor: admin, reason: "#{e.class}: #{e.message}").deliver!
+      puts "ops:daily_report: als Wissenselement abgelegt — #{report.subject}"
+      exit 1
+    end
   end
 
   desc "Betriebsbericht auf der Konsole ausgeben, ohne ihn zu verschicken"

@@ -33,7 +33,14 @@ module Ops
                    "Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
       key_state_file: "/home/hans/.local/state/miolimos-watch/keys",
       database_probe: method(:production_databases),
-      ignored_databases: [],
+      # Ausdrueckliche Ausnahmen von der Abdeckungspruefung. Hier steht die
+      # ENTSCHEIDUNG, nicht die Bequemlichkeit: Wer eine Produktivdatenbank
+      # hier eintraegt, erklaert, dass ihr Verlust hinnehmbar ist. Alles, was
+      # nicht drinsteht und nicht gesichert wird, meldet sich jeden Morgen.
+      #
+      #   pan_rp_production — Hans, 21.07.2026, auf Rueckfrage: „Nein, PanRP
+      #   braucht nicht gesichert zu werden. Das war nur ein Experiment."
+      ignored_databases: %w[pan_rp_production],
       event_log:  "/home/hans/log/miolimos-service-watch.log",
       backup_log: "/home/hans/log/miolimos-db-backup.log",
       repos:      { "App-Code" => "/home/hans/miolimos_src",
@@ -235,9 +242,18 @@ module Ops
     # Portal-Magic-Link, und nichts hat das gemeldet. Ein Ueberwachungssystem,
     # dessen einziger Kanal still kaputtgeht, ueberwacht nichts mehr.
     #
-    # Deshalb steht die Ablauf-Warnung hier VOR dem Ablauf: Ein Token, das in
-    # zwei Tagen faellig ist, ist noch reparierbar; eines, das gestern abgelaufen
-    # ist, hat schon Post verschluckt.
+    # KORREKTUR (21.07.2026, beim ersten Lauf gegen eine WIEDER VERBUNDENE
+    # Credential aufgefallen): `expires_at` ist NICHT die Gueltigkeit des
+    # Zugangs, sondern die des kurzlebigen Zugriffstokens — es laeuft im
+    # Stundentakt ab und wird von GmailSender#refresh_token_if_needed! ueber
+    # den refresh_token selbsttaetig erneuert. Eine Warnung „laeuft demnaechst
+    # ab" haette deshalb JEDEN Tag gefeuert, an dem alles in Ordnung ist.
+    #
+    # Das ist die Sorte Fehlalarm, die ein Ueberwachungssystem umbringt:
+    # taeglicher Alarm ohne Anlass, bis niemand mehr hinsieht — und dann faellt
+    # der eine echte auch nicht mehr auf. Geprueft werden deshalb nur die
+    # Zustaende, die ein Mensch beheben muss: kein Konto, Konto inaktiv, oder
+    # abgelaufen OHNE Erneuerungs-Token (dann hilft nur neu verbinden).
     def mail_section(alerts)
       lines = []
       cred = OauthCredential.where(provider: "google").order(:id).last
@@ -250,15 +266,12 @@ module Ops
         alerts << "Der Mailversand ist abgeschaltet: das Google-Konto #{cred.email_address} ist nicht mehr aktiv" \
                   "#{cred.expires_at ? " (abgelaufen am #{cred.expires_at.strftime('%d.%m.%Y')})" : ''}. " \
                   "Unter Einstellungen → Konten neu verbinden — betrifft auch Portal-Mails und Magic-Links."
-      elsif cred.expired?
-        lines << "#{cred.email_address}: Zugang abgelaufen"
-        alerts << "Der Google-Zugang #{cred.email_address} ist abgelaufen und muss neu verbunden werden."
-      elsif cred.expires_at && cred.expires_at < @now + 3.days
-        lines << "#{cred.email_address}: laeuft ab am #{cred.expires_at.strftime('%d.%m.%Y %H:%M')}"
-        alerts << "Der Google-Zugang #{cred.email_address} laeuft am " \
-                  "#{cred.expires_at.strftime('%d.%m.%Y')} ab — vorher neu verbinden."
+      elsif cred.refresh_token.blank?
+        lines << "#{cred.email_address}: kein Erneuerungs-Token"
+        alerts << "Der Google-Zugang #{cred.email_address} hat keinen Erneuerungs-Token — " \
+                  "sobald das Zugriffstoken ablaeuft, steht der Mailversand. Neu verbinden."
       else
-        lines << "#{cred.email_address}: aktiv#{cred.expires_at ? ", gueltig bis #{cred.expires_at.strftime('%d.%m.%Y %H:%M')}" : ''}"
+        lines << "#{cred.email_address}: aktiv (Zugriffstoken erneuert sich selbst)"
       end
 
       Section.new(title: "Postausgang", lines: lines)

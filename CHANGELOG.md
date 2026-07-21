@@ -25,6 +25,9 @@ release is cut, this section is renamed to the new version and a fresh
   (services, database backup, unpushed commits) — it is sent every day even
   when everything is green, so that its absence is itself the alarm.
   `rails ops:report_preview` prints the same report without sending it. The
+  It no longer warns about an access token nearing expiry — that token is
+  refreshed automatically, so the warning would have fired on every healthy
+  day, and a daily alarm without cause is how monitoring gets ignored. The
   report also watches the instance keys — `config/master.key` and
   `credentials.yml.enc` are deliberately kept out of the backup (putting them
   in the data archive would let one passphrase unlock both data and keys), so

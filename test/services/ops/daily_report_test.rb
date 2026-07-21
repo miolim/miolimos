@@ -20,7 +20,8 @@ module Ops
       OauthCredential.where(provider: "google").delete_all
       OauthCredential.create!(actor: create_human, provider: "google",
                               email_address: "postausgang-ok@test.local",
-                              active: true, expires_at: @now + 30.days)
+                              active: true, expires_at: @now + 30.days,
+                              refresh_token: "vorhanden")
     end
 
     teardown { FileUtils.remove_entry(@dir) }
@@ -154,20 +155,37 @@ module Ops
       assert(r.alerts.any? { |a| a.include?("Einstellungen") }, "muss sagen, was zu tun ist")
     end
 
-    test "eine bald ablaufende Credential warnt VOR dem Ablauf" do
+    test "ein bald ablaufendes Zugriffstoken ist KEIN Alarm" do
+      # Es erneuert sich selbst (GmailSender#refresh_token_if_needed!). Eine
+      # Warnung darauf haette jeden Tag gefeuert, an dem alles in Ordnung ist —
+      # und taeglicher Alarm ohne Anlass bringt ein Ueberwachungssystem um.
       OauthCredential.where(provider: "google").delete_all
       OauthCredential.create!(actor: create_human, provider: "google",
                               email_address: "test-bald@example.com",
-                              active: true, expires_at: @now + 2.days)
+                              active: true, expires_at: @now + 30.minutes,
+                              refresh_token: "vorhanden")
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
-      assert(r.alerts.any? { |a| a.include?("laeuft am") })
+      assert_empty r.alerts
+      assert_includes section(r, "Postausgang"), "erneuert sich selbst"
+    end
+
+    test "eine Credential ohne Erneuerungs-Token ist ein Alarm" do
+      OauthCredential.where(provider: "google").delete_all
+      OauthCredential.create!(actor: create_human, provider: "google",
+                              email_address: "test-ohne@example.com",
+                              active: true, expires_at: @now + 30.minutes,
+                              refresh_token: nil)
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?("Erneuerungs-Token") && a.include?("Neu verbinden") })
+      assert_includes section(r, "Postausgang"), "kein Erneuerungs-Token"
     end
 
     test "eine gesunde Credential erzeugt keinen Alarm" do
       OauthCredential.where(provider: "google").delete_all
       OauthCredential.create!(actor: create_human, provider: "google",
                               email_address: "test-ok@example.com",
-                              active: true, expires_at: @now + 30.days)
+                              active: true, expires_at: @now + 30.days,
+                              refresh_token: "vorhanden")
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
       assert_empty r.alerts
       assert_includes r.sections.map(&:title), "Postausgang"
@@ -265,6 +283,24 @@ module Ops
                  dbs: -> { %w[stocker_production] })
       assert(r.alerts.any? { |a| a.include?("stocker_production") },
              "ein -data-Archiv darf die gleichnamige DB nicht als gesichert ausweisen")
+    end
+
+
+    test "die eingetragene Vorgabe-Ausnahme wirkt auch ohne Parameter" do
+      # Wenn jemand die Ausnahme aus der Vorgabe entfernt, faellt es hier auf --
+      # und nicht erst dadurch, dass Hans wieder eine Meldung bekommt, die er
+      # schon einmal beantwortet hat.
+      r = DailyReport.new(state_file: write("state", "miolimos up 1\n"),
+                          event_log: File.join(@dir, "fehlt"),
+                          backup_log: healthy_backup,
+                          repos: {}, repo_probe: ->(_p) { { status: :synced } },
+                          key_files: { "Master-Key" => @key_path },
+                          key_state_file: File.join(@dir, "keystate2"),
+                          database_probe: -> { %w[pan_rp_production] },
+                          now: @now)
+      assert_empty r.alerts
+      assert_includes r.sections.find { |x| x.title == "Abdeckung" }.lines.join("\n"),
+                      "bewusst nicht gesichert"
     end
 
     # ── Code-Sicherung ────────────────────────────────────────────────────

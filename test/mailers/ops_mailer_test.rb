@@ -9,7 +9,8 @@ class OpsMailerTest < ActionMailer::TestCase
     OauthCredential.where(provider: "google").delete_all
     OauthCredential.create!(actor: create_human, provider: "google",
                             email_address: "postausgang-ok@test.local",
-                            active: true, expires_at: 30.days.from_now)
+                            active: true, expires_at: 30.days.from_now,
+                            refresh_token: "vorhanden")
   end
 
   def report_with(alerts:)

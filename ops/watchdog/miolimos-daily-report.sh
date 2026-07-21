@@ -11,7 +11,11 @@
 # Wahrheit gibt.
 set -euo pipefail
 
-cd "$(dirname "$0")/../.."
+# readlink -f, NICHT nur dirname $0: der Cron ruft das Skript ueber den
+# Symlink /home/hans/bin/... auf, dann zeigt dirname nach /home/hans/bin und
+# das relative ../.. landet in /home statt im Repo ("Could not locate
+# Gemfile"). Aufgefallen beim ersten Lauf im echten Cron-Umfeld.
+cd "$(dirname "$(readlink -f "$0")")/../.."
 export RAILS_ENV=production
 
 BUNDLE=${BUNDLE:-/home/hans/.rbenv/shims/bundle}

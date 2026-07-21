@@ -36,6 +36,21 @@ workers ENV.fetch("WEB_CONCURRENCY", 4)
 preload_app!
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
+#
+# NOTE: do not add a bind address here (`port ENV.fetch("PORT", 3000), host`).
+# When the server is started through `rails server`, Rails passes its own bind
+# address to Puma and silently overrides whatever this file sets — the change
+# looks clean and does nothing. Verified 2026-07-21 on the sibling instances:
+# both kept listening on 0.0.0.0 after the config was changed, and only `-b`
+# on the command line took effect.
+#
+# That matters for more than tidiness. This app is meant to sit behind a
+# tunnel or reverse proxy, so production should bind the loopback interface
+# and nothing else; a stray 0.0.0.0 exposes it to every host on the local
+# network (and to any mesh VPN the machine happens to be part of). Set it
+# where the process is started, e.g. in the systemd unit:
+#
+#   ExecStart=... bundle exec rails server -e production -b 127.0.0.1 -p 3007
 port ENV.fetch("PORT", 3000)
 
 # Allow puma to be restarted by `bin/rails restart` command.

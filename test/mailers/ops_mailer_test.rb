@@ -12,7 +12,7 @@ class OpsMailerTest < ActionMailer::TestCase
     state.flush
     @tempfiles = [ log, state ]
     Ops::DailyReport.new(state_file: state.path, event_log: "/nonexistent",
-                         backup_log: log.path, push_logs: {},
+                         backup_log: log.path, repos: {},
                          now: Time.zone.parse("2026-07-21 09:00"))
   end
 

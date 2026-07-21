@@ -36,7 +36,7 @@ declare -A DBS=(
   [miolimos_production]=miolimos_src
   [monica_production]=miolimos_monica
   [immoos_production]=hans
-  [miolimmo_production]=hans
+  [stocker_production]=hans
 )
 
 # Verbindungsweg je DB. Die Kern-Instanzen laufen ueber lokalen TCP mit
@@ -47,7 +47,7 @@ declare -A DBS=(
 # falschen Weg nimmt, bekommt „no password supplied" statt eines Dumps.
 declare -A DB_HOST=(
   [immoos_production]=/var/run/postgresql
-  [miolimmo_production]=/var/run/postgresql
+  [stocker_production]=/var/run/postgresql
 )
 
 echo "[$(stamp)] backup start" >> "$LOG"

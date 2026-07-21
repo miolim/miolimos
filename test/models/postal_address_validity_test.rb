@@ -80,14 +80,39 @@ class PostalAddressValidityTest < ActiveSupport::TestCase
     assert_equal abgelaufen_billing, @person.reload.primary_address(Date.new(2026, 4, 1))
   end
 
-  # Fallback: lieber eine veraltete Anschrift als ein leeres Adressfeld.
-  # Bestandsdaten ohne Zeitraum sind ohnehin unbefristet, dieser Fall
+  # Hans, 2026-07-21: KEIN Fallback auf abgelaufene Adressen. Ein leeres
+  # Adressfeld ist das Signal, dass etwas fehlt — eine still eingesetzte
+  # veraltete Anschrift sieht richtig aus und geht falsch raus. Der Fall
   # entsteht nur, wenn ALLE Adressen befristet und abgelaufen sind.
-  test "sind alle Adressen abgelaufen, bleibt die Auswahl trotzdem befuellt" do
+  test "sind alle Adressen abgelaufen, bleibt die Auswahl leer" do
+    addr(kind: "post", valid_until: Date.new(2026, 5, 31))
+
+    person = @person.reload
+    assert_empty person.current_addresses(Date.new(2026, 7, 1))
+    assert_nil   person.primary_address(Date.new(2026, 7, 1))
+    assert_nil   person.mailing_address(Date.new(2026, 7, 1))
+  end
+
+  test "eine noch nicht begonnene Adresse wird nicht vorzeitig adressiert" do
+    addr(valid_from: Date.new(2026, 9, 1))
+
+    assert_nil @person.reload.mailing_address(Date.new(2026, 7, 1))
+  end
+
+  # Die Historie bleibt am KI stehen — leer ist nur die AUSWAHL, nicht der
+  # Bestand. Sonst waere die frühere Anschrift des Mieters verloren (#1073).
+  test "abgelaufene Adressen bleiben am Personen-Eintrag erhalten" do
     alt = addr(valid_until: Date.new(2026, 5, 31))
 
-    assert_equal alt, @person.reload.primary_address(Date.new(2026, 7, 1))
-    assert_equal [alt], @person.reload.current_addresses(Date.new(2026, 7, 1))
+    assert_equal [alt], @person.reload.postal_addresses.to_a
+  end
+
+  # Ohne gueltige Adresse bleibt das DIN-Adressfeld leer statt veraltet.
+  test "das Adressfeld im Brief bleibt leer, wenn keine Adresse gilt" do
+    addr(kind: "post", line1: "Altweg 1", valid_until: Date.new(2026, 5, 31))
+
+    lines = ApplicationController.helpers.document_address_lines(@person.reload)
+    assert_empty lines, "eine abgelaufene Anschrift darf nicht ins DIN-Fenster"
   end
 
   test "Bestandsadressen ohne Zeitraum bleiben unveraendert waehlbar" do

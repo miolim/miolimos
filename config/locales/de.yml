@@ -1783,6 +1783,7 @@ de:
       recipient_placeholder: "Empfänger (Person/Org) …"
       address: "Anschrift"
       address_auto: "Automatisch (%{address})"
+      address_auto_none: "Automatisch (keine am Stichtag gültige Anschrift)"  # #1073
       debtor_account: "Bankverbindung"  # #786
       debtor_account_auto: "Automatisch (%{account})"  # #786
       date: "Datum"

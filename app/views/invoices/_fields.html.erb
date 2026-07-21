@@ -59,13 +59,16 @@
       hat. Leer = automatisch (mailing_address). Bei 0/1 erscheint die Zeile nicht. %>
   <% recipient_addrs = invoice.recipient&.postal_addresses&.ordered.to_a %>
   <% if recipient_addrs.size > 1 %>
+    <%# #1073: keine am Stichtag gueltige Adresse → Automatik waehlt bewusst keine. %>
+    <% auto_addr = invoice.recipient.mailing_address&.oneline.presence %>
     <div class="<%= rowcls %>">
       <span class="text-slate-500"><%= t("documents.fields.address") %></span>
       <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
         <%= f.select :recipient_address_id,
               recipient_addrs.map { |a| [a.oneline, a.id] },
               { selected: invoice.chosen_recipient_address&.id,
-                include_blank: t("documents.fields.address_auto", address: invoice.recipient.mailing_address&.oneline) },
+                include_blank: (auto_addr ? t("documents.fields.address_auto", address: auto_addr)
+                                          : t("documents.fields.address_auto_none")) },
               onchange: "this.form.requestSubmit()", class: inputcls %>
       <% end %>
     </div>

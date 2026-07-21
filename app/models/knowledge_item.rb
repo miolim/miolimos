@@ -99,13 +99,15 @@ class KnowledgeItem < ApplicationRecord
 
   # #1073: Adressen mit Gueltigkeitszeitraum — fuer Briefe zaehlt nur, was
   # am Stichtag gilt. Die frühere Anschrift bleibt am KI stehen (Historie),
-  # darf aber nie automatisch adressiert werden. Fallback auf alle Adressen,
-  # wenn keine aktuell gueltig ist: lieber eine veraltete Anschrift als ein
-  # leeres Adressfeld — und Bestandsdaten ohne Zeitraum sind ohnehin
-  # unbefristet, aendern sich also nicht.
+  # darf aber nie automatisch adressiert werden.
+  #
+  # KEIN Fallback auf abgelaufene Adressen (Hans, 2026-07-21): ist am Stichtag
+  # keine gueltig, bleibt die Auswahl leer. Ein leeres Adressfeld ist genau
+  # das Signal, dass etwas fehlt — eine stillschweigend eingesetzte veraltete
+  # Anschrift sieht richtig aus und geht falsch raus. Bestandsdaten ohne
+  # Zeitraum sind unbefristet, sie trifft das nicht.
   def current_addresses(on = Date.current)
-    valid = postal_addresses.select { |a| a.current?(on) }
-    valid.presence || postal_addresses.to_a
+    postal_addresses.select { |a| a.current?(on) }
   end
 
   # Primäradresse fürs Dokument: bevorzugt billing, sonst erste — jeweils

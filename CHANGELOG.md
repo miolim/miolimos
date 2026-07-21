@@ -53,10 +53,11 @@ release is cut, this section is renamed to the new version and a fresh
 - Postal addresses can carry a validity period (`valid from` / `until`, either
   side optional). A person who moves keeps the former address on record while
   letters go to the one valid today — `mailing_address` and `primary_address`
-  now pick among the currently valid addresses and fall back to all of them
-  only if none is valid. Existing addresses have no period and stay unlimited.
-  The period is editable in the address editor and travels through the API
-  (#1073).
+  pick among the addresses valid on a given date, and select none at all when
+  none is valid. An empty address field is the signal that something is
+  missing; a silently substituted expired address looks right and goes out
+  wrong. Existing addresses have no period and stay unlimited. The period is
+  editable in the address editor and travels through the API (#1073).
 
 ### Changed
 

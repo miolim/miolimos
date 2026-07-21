@@ -1773,6 +1773,7 @@ en:
       recipient_placeholder: "Recipient (person/org) …"
       address: "Address"
       address_auto: "Automatic (%{address})"
+      address_auto_none: "Automatic (no address valid on that date)"  # #1073
       debtor_account: "Bank account"  # #786
       debtor_account_auto: "Automatic (%{account})"  # #786
       date: "Date"

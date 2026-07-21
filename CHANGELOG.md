@@ -88,6 +88,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The disaster-recovery runbook now produces an instance that actually works.
+  Rehearsing it end to end for the first time showed two defects that only
+  surface *after* a restore: `pg_restore --no-owner` leaves the tables owned by
+  whoever ran it, so the application — connecting as its own database user —
+  got `permission denied` on data that was fully present; and the `cache`/
+  `queue` databases are deliberately not backed up but still required, so the
+  restored instance booted, answered its health check, and then failed on the
+  first background job. Both steps are corrected and verified, and the runbook
+  gained a section on rehearsing safely on a live machine (#1080).
 - The test suite no longer depends on `MIOLIMOS_HOST` from the calling shell.
   Tests that assert on link handling were written against the default host, so
   running them with a different one — anyone self-hosting under their own

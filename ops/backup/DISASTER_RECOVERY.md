@@ -101,12 +101,50 @@ rm -f /tmp/pp
 ```
 
 ### 6. Datenbanken zurückspielen
+
+> **Diese Schritte wurden am 21.07.2026 einmal vollständig durchgespielt.** Die
+> vorherige Fassung führte zu einer Instanz, die nicht lesen konnte und keine
+> Hintergrundaufträge ausführen konnte — beides fiel erst nach dem Restore auf.
+> Was unten steht, ist die geprüfte Fassung.
+
+**Es sind drei Datenbanken je Instanz, nicht eine.** Gesichert wird nur die
+Hauptdatenbank; `…_cache` und `…_queue` enthalten nichts Erhaltenswertes, die
+Anwendung braucht sie aber. Fehlen sie, startet die Instanz trotzdem und
+antwortet auf `/up` — und scheitert erst beim ersten Hintergrundauftrag
+(`ActiveRecord::NoDatabaseError`). Man hält den Restore dann längst für
+gelungen.
+
+**Der Besitzer ist entscheidend.** `pg_restore --no-owner` legt die Tabellen
+dem an, der den Befehl ausführt. Ist das nicht der Benutzer, mit dem sich die
+Anwendung verbindet (`miolimos_src`), bekommt sie beim ersten Zugriff
+`PG::InsufficientPrivilege: permission denied for table knowledge_items` — die
+Daten sind vollständig da und trotzdem unerreichbar.
+
 ```bash
-createdb -h localhost miolimos_production
-pg_restore -h localhost -d miolimos_production --no-owner /tmp/restore/miolimos_production-*.dump
-createdb -h localhost monica_production
-pg_restore -h localhost -d monica_production --no-owner /tmp/restore/monica_production-*.dump
+# 1. Alle drei Datenbanken anlegen, dem App-Benutzer gehoerend.
+#    Braucht Rechte zum Anlegen — der App-Benutzer selbst hat sie NICHT
+#    (`permission denied to create database`), also als DB-Admin ausfuehren.
+for db in miolimos_production miolimos_production_cache miolimos_production_queue; do
+  createdb -O miolimos_src "$db"
+done
+
+# 2. Hauptdatenbank zurueckspielen — ALS miolimos_src, nicht als Admin.
+PGPASSWORD='<aus dem Passwortmanager>' \
+  pg_restore -h localhost -U miolimos_src -d miolimos_production --no-owner \
+             /tmp/restore/miolimos_production-*.dump
+
+# 3. Schemata fuer cache/queue anlegen (die sind leer und brauchen nur Struktur)
+RAILS_ENV=production bin/rails db:prepare
+
+# 4. Gegenprobe: gehoeren die Tabellen dem richtigen Benutzer?
+psql -tA -d miolimos_production \
+  -c "select tableowner, count(*) from pg_tables where schemaname='public' group by 1"
+#    -> muss `miolimos_src|69` liefern, nicht den Namen des Admins.
 ```
+
+Für **monica** analog (`monica_production` + `_cache` + `_queue`, Benutzer
+`miolimos_monica`), für die miolimmo-Instanzen mit deren eigenen Namen und dem
+Unix-Benutzer `hans`.
 
 ### 7. Signierschlüssel zurücklegen
 ```bash
@@ -202,6 +240,40 @@ Wenn `~/.config/miolimos-backup.conf` + Passphrase-Datei schon stehen:
 ~/bin/miolimos-restore-offsite.sh restore /tmp/miolimos_production-<ts>.dump restore_check
 # prüfen, dann:  dropdb restore_check
 ```
+
+## Probelauf auf der laufenden Maschine (vierteljährlich)
+
+Die Anleitung oben ist für eine **nackte** Maschine geschrieben. Für den
+regelmäßigen Probelauf auf dem laufenden System gilt zusätzlich:
+
+- **Wegwerf-Namen verwenden.** `createdb miolimos_production` würde hier auf
+  die echte Datenbank treffen. Stattdessen z. B. `probe_miolimos` samt
+  `_cache`/`_queue`, und am Ende `dropdb`.
+- **`database.yml` ist beim Namen fest verdrahtet.** Ein Restore lässt sich
+  deshalb nicht ohne Weiteres neben der laufenden Instanz starten; dafür
+  braucht es einen eigenen Checkout mit angepasster `database.yml`
+  (`git clone`, `config/master.key` und `credentials.yml.enc` dazulegen).
+- **Ohne Hintergrundarbeiter starten.** `SOLID_QUEUE_IN_PUMA` NICHT setzen.
+  Sonst beginnt die wiederhergestellte Instanz, die mitgesicherten Aufträge
+  abzuarbeiten — und verschickt echte Mails an echte Empfänger.
+- **Auf einem freien Port binden**, nie auf 3007.
+- **Aufräumen:** Datenbanken löschen, Checkout und `/tmp/restore*` entfernen.
+
+Was der Probelauf beantworten soll, in dieser Reihenfolge:
+
+1. Lassen sich die Archive vom Remote holen und entschlüsseln?
+2. Spielt der Dump fehlerfrei zurück?
+3. Kann die Anwendung die Daten **lesen** (Besitzverhältnisse)?
+4. Kommt der Webserver hoch (`/up` → 200)?
+5. Laufen Hintergrundaufträge (`SolidQueue::Job.count` ohne Fehler)?
+6. **Finden die Verweise aus der Datenbank ihre Dateien?**
+
+Punkt 6 ist der eigentliche Grund für die Dateisicherung und lässt sich
+maschinell prüfen — jeder `file_path` aus `task_attachments` und
+`knowledge_items` gegen den wiederhergestellten Baum. Am 21.07.2026 ergab das:
+31 von 31 Anhängen auflösbar, und die 2.554 toten Verweise unter den
+Wissenselementen fehlen **auch im Live-Bestand** — die Sicherung ist also treu,
+der Dateispiegel weicht schon vorher von der Datenbank ab.
 
 ## Wichtig
 - **Ohne die Passphrase ist kein Restore möglich.** Sie liegt nur lokal in

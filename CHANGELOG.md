@@ -17,6 +17,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Operations monitoring for self-hosted installs. `ops/watchdog/` carries a
+  cron-driven watchdog that probes every known instance on `127.0.0.1/up` and
+  reports the *transition*: a service that once answered and stopped is loud,
+  one that has never answered stays silent, and a service still down does not
+  repeat itself. `rails ops:daily_report` mails a daily operations summary
+  (services, database backup, unpushed commits) — it is sent every day even
+  when everything is green, so that its absence is itself the alarm.
+  `rails ops:report_preview` prints the same report without sending it
+  (#1076).
 - Postal addresses can carry a validity period (`valid from` / `until`, either
   side optional). A person who moves keeps the former address on record while
   letters go to the one valid today — `mailing_address` and `primary_address`

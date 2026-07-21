@@ -1,0 +1,26 @@
+<p>
+  <% if @report.alerts.empty? %>
+    Alle überwachten Dienste und Sicherungen sind unauffällig.
+  <% else %>
+    <strong>Es gibt <%= @report.alerts.size %> <%= @report.alerts.size == 1 ? "Auffälligkeit" : "Auffälligkeiten" %>:</strong>
+  <% end %>
+</p>
+
+<% if @report.alerts.any? %>
+  <ul>
+    <% @report.alerts.each do |a| %>
+      <li><%= a %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% @report.sections.each do |section| %>
+  <h3><%= section.title %></h3>
+  <pre style="font-family: ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin: 0 0 1em 0;"><%= section.lines.join("\n") %></pre>
+<% end %>
+
+<hr>
+<p style="color:#666; font-size: 90%;">
+  Dieser Bericht kommt täglich, auch wenn alles in Ordnung ist — sein Ausbleiben
+  ist selbst ein Alarmzeichen. Erzeugt von <code>rails ops:daily_report</code>.
+</p>

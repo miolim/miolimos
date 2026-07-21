@@ -46,6 +46,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The nightly database backup now tells "not created yet" apart from "was here
+  yesterday". A database listed for backup that has since been renamed or
+  dropped used to be skipped as silently as one that does not exist yet, and
+  the run still finished with `errors=0` — so a production database could fall
+  out of the backup unnoticed. A missing database that has an earlier dump on
+  disk is now reported as `MISSING` and fails the run (which also trips the
+  dead-man's switch); one with no history stays silent as before. Added
+  `ops/backup/selftest.sh`, which exercises both cases without a database
+  (#1064).
 - Returning to the dashboard no longer rebuilds the card stack from scratch:
   the server now renders the last open stack from the stored snapshot instead
   of shipping only the dashboard blade and letting the browser re-fetch every

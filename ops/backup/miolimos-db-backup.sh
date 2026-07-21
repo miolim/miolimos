@@ -13,11 +13,14 @@
 #   .../fail bei Fehler), damit ein ausbleibendes/fehlerhaftes Backup auffaellt.
 set -euo pipefail
 
-BACKUP_DIR=/home/hans/miolimos-backups/auto
-LOG=/home/hans/log/miolimos-db-backup.log
-CONF=/home/hans/.config/miolimos-backup.conf
-RCLONE=/home/hans/bin/rclone
-SIGNING_DIR=/home/hans/miolimos_signing
+# Pfade sind ueberschreibbar, damit der Selbsttest (selftest.sh) das Skript
+# gegen ein Wegwerf-Verzeichnis laufen lassen kann. Im Cron-Betrieb greifen
+# ausnahmslos die Defaults.
+BACKUP_DIR=${BACKUP_DIR:-/home/hans/miolimos-backups/auto}
+LOG=${LOG:-/home/hans/log/miolimos-db-backup.log}
+CONF=${CONF:-/home/hans/.config/miolimos-backup.conf}
+RCLONE=${RCLONE:-/home/hans/bin/rclone}
+SIGNING_DIR=${SIGNING_DIR:-/home/hans/miolimos_signing}
 mkdir -p "$BACKUP_DIR" "$(dirname "$LOG")"
 
 stamp() { date +"%Y-%m-%d %H:%M:%S"; }
@@ -32,6 +35,10 @@ had_error=0
 # automatisch ein, sobald ihre DB angelegt ist, statt darauf zu warten,
 # dass jemand an diese Liste denkt. Genau das war die Luecke: die
 # immoOS-Instanz lief seit Juli ausserhalb jeder Sicherung.
+#
+# Wird eine Instanz umbenannt, gehoert BEIDE Seiten hierher: der neue Name
+# rein, der alte raus. Der alte Name darf nicht einfach stehenbleiben — er
+# wuerde ab dem naechsten Lauf als MISSING gemeldet (siehe Schleife unten).
 declare -A DBS=(
   [miolimos_production]=miolimos_src
   [monica_production]=miolimos_monica
@@ -70,7 +77,24 @@ for db in "${!DBS[@]}"; do
     echo "[$(stamp)] ok $db ($size bytes)" >> "$LOG"
   elif grep -qiE 'database "'"$db"'" does not exist' "$err"; then
     cat "$err" >>"$LOG"; rm -f "$err"; rm -f "$out"
-    echo "[$(stamp)] skip $db (DB existiert nicht)" >> "$LOG"
+    # #1064 Nachtrag 2 (2026-07-21, Hinweis von immoos_builder): „gibt es noch
+    # nicht" und „hiess gestern noch anders" sehen beide wie eine fehlende DB
+    # aus — mit stillem Skip faellt eine umbenannte oder geloeschte Produktiv-DB
+    # lautlos aus der Sicherung, und die Abschlusszeile meldet weiter errors=0.
+    # Genau das ist beim Rename miolimmo_production -> stocker_production
+    # passiert. Unterscheidungsmerkmal ist der Vorlauf: Liegt fuer diese DB
+    # schon ein frueherer Dump im BACKUP_DIR, war sie einmal da — dann ist ihr
+    # Verschwinden ein Fehler. Der Bestand der Dumps ist dabei die Zustands-
+    # quelle, keine zusaetzliche Statusdatei: er ueberlebt ein geloeschtes
+    # State-File und verstummt von selbst, sobald die Retention den letzten
+    # alten Dump abgeraeumt hat.
+    if compgen -G "$BACKUP_DIR/${db}-*.dump" > /dev/null; then
+      last=$(basename "$(ls -1t "$BACKUP_DIR"/${db}-*.dump | head -1)")
+      echo "[$(stamp)] MISSING $db (war frueher gesichert, zuletzt $last) — umbenannt oder geloescht?" >> "$LOG"
+      had_error=1
+    else
+      echo "[$(stamp)] skip $db (DB existiert nicht)" >> "$LOG"
+    fi
   else
     cat "$err" >>"$LOG"; rm -f "$err"
     echo "[$(stamp)] FAILED $db" >> "$LOG"

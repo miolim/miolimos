@@ -158,6 +158,24 @@ cd ~/miolimos && find . -type f -not -path "./.git/*" | sed 's|^\./||' | sort > 
 diff /tmp/a /tmp/b && echo "deckungsgleich"
 ```
 
+> **Das `-not -path "./.git/*"` gehört nur hierher — nicht in die Gegenprobe der
+> anderen Instanzen.** Es steht da, weil das miolimos-Archiv kein `.git`
+> enthält (die Historie kam oben aus dem Klon); ohne den Ausschluss meldete der
+> Vergleich die gesamte Historie als Überschuss. Bei **`stocker_data` ist es
+> genau umgekehrt** — dort steckt `.git` im Archiv und muss auf beiden Seiten
+> mitgezählt werden:
+>
+> ```bash
+> tar -tzf /tmp/restore/stocker-data.tar.gz | grep -v '/$' | sed 's|^stocker_data/||' | sort > /tmp/a
+> cd ~/stocker_data && find . -type f | sed 's|^\./||' | sort > /tmp/b
+> diff /tmp/a /tmp/b && echo "deckungsgleich"
+> ```
+>
+> Beim Übertragen des Befehls von einer Instanz auf die andere entsteht sonst
+> eine Abweichung, die keine ist — genau in dem Moment, in dem man nach einer
+> Katastrophe wissen will, ob die Wiederherstellung vollständig war. (Gefunden
+> am 21.07.2026, indem der Ablauf einmal ausgeführt statt gelesen wurde.)
+
 ### 8. App-Konfig + Start
 - Rails-Credentials/Master-Key und `~/.pgpass` (DB-Passwörter) aus dem
   Passwortmanager wiederherstellen.

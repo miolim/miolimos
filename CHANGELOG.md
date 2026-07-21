@@ -37,8 +37,11 @@ release is cut, this section is renamed to the new version and a fresh
   no longer exist. They are archived in the same run and under the same
   timestamp as the dump — a restore from two different points in time is
   worse than one known to be inconsistent — encrypted before upload and kept
-  off-site only, since a second local copy of local files protects nothing
-  (#1076).
+  off-site only, since a second local copy of local files protects nothing.
+  Exclusions are set per directory: a data directory whose git history is the
+  only copy keeps it (the app serves per-note version history and restore from
+  that repository), while one mirrored to GitHub leaves it out. The restore
+  procedure is documented in `ops/backup/DISASTER_RECOVERY.md` (#1076).
 - Postal addresses can carry a validity period (`valid from` / `until`, either
   side optional). A person who moves keeps the former address on record while
   letters go to the one valid today — `mailing_address` and `primary_address`

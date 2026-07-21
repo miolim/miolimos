@@ -90,6 +90,50 @@ tar -xzf /tmp/restore/signing-*.tar.gz -C ~   # ergibt ~/miolimos_signing/
 chmod 600 ~/miolimos_signing/key.pem
 ```
 
+### 7b. Datenverzeichnisse zurückspielen (#1076)
+
+Die Datenbank kennt von einem Anhang nur den Pfad — Rechnungsbelege,
+Abrechnungen, Zählerstandsfotos und Profilbilder liegen im Dateisystem. Ohne
+diesen Schritt bekommst du eine **vollständig aussehende** Datenbank, hinter
+deren Verweisen nichts steht, und zwar ohne jede Fehlermeldung.
+
+Die Archive tragen denselben Zeitstempel wie die Dumps — **nimm denselben**,
+sonst passt der Dateibestand nicht zum Datenbestand:
+
+```bash
+gpg --batch --passphrase-file ~/.miolimos-backup-pass \
+    -o /tmp/restore/miolimos-data.tar.gz -d /tmp/restore/miolimos-data-*.tar.gz.gpg
+tar -xzf /tmp/restore/miolimos-data.tar.gz -C ~     # ergibt ~/miolimos/
+```
+
+Ebenso für `immoos-data` (→ `~/immoos_data`) und `stocker-data`
+(→ `~/stocker_data`).
+
+**Reihenfolge bei `~/miolimos` beachten.** Dieses Archiv enthält *kein*
+`.git` — die Historie liegt auf GitHub. Erst klonen, dann das Archiv
+darüberpacken, sonst überschreibt der Klon die untracked Anhänge nicht,
+sondern das Archiv fehlt:
+
+```bash
+git clone git@github.com:Rabisnah/miolimos.git ~/miolimos
+tar -xzf /tmp/restore/miolimos-data.tar.gz -C ~     # legt die Anhänge dazu
+```
+
+`~/stocker_data` bringt sein `.git` dagegen mit (es gibt dort kein Remote, und
+die Anwendung bietet die Versionshistorie einer Notiz aktiv an) — dort genügt
+das Auspacken. `~/immoos_data` ist eine Testinstanz und kommt ohne Historie
+zurück; das ist Absicht.
+
+**Gegenprobe, die sich lohnt:** Dateizahl im Archiv gegen Dateizahl auf der
+Platte — und zwar die *Listen*, nicht nur die Anzahl. Gleich viele Dateien ist
+nicht dasselbe wie dieselben Dateien.
+
+```bash
+tar -tzf /tmp/restore/miolimos-data.tar.gz | grep -v '/$' | sed 's|^miolimos/||' | sort > /tmp/a
+cd ~/miolimos && find . -type f -not -path "./.git/*" | sed 's|^\./||' | sort > /tmp/b
+diff /tmp/a /tmp/b && echo "deckungsgleich"
+```
+
 ### 8. App-Konfig + Start
 - Rails-Credentials/Master-Key und `~/.pgpass` (DB-Passwörter) aus dem
   Passwortmanager wiederherstellen.

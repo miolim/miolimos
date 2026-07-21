@@ -125,6 +125,33 @@ BACKUP_DIR="$d5" LOG="$l5" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone"   S
 grep -q "FAILED verschwunden-data" "$l5"; check "fehlendes Verzeichnis wird gemeldet" "$?"
 grep -q "backup done (errors=1)" "$l5"; check "errors=1" "$?"
 
+echo "Fall 6: eigene Ausschlussliste je Eintrag (.git soll MITgesichert werden)"
+d6="$tmp/eigene-ausschluesse"; l6="$tmp/eigene-ausschluesse.log"; mkdir -p "$d6"
+export RCLONE_SPY="$tmp/hochgeladen6.txt"; : > "$RCLONE_SPY"
+export RCLONE_SPY_DIR="$tmp/hochgeladen6"; mkdir -p "$RCLONE_SPY_DIR"
+BACKUP_DIR="$d6" LOG="$l6" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone" \
+  SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="mithistorie|$tmp/daten|_test-artifacts" \
+  PATH="$tmp/bin:$PATH" bash "$target"
+gpg --batch --yes --quiet --passphrase-file "$tmp/pass" -d \
+    "$RCLONE_SPY_DIR"/mithistorie-data-*.tar.gz.gpg > "$tmp/e6.tar.gz" 2>/dev/null
+inhalt6="$(tar -tzf "$tmp/e6.tar.gz" 2>/dev/null)"
+grep -q "\.git/HEAD" <<< "$inhalt6"; check ".git ist bei eigener Liste DRIN" "$?"
+! grep -q "_test-artifacts" <<< "$inhalt6"; check "_test-artifacts bleibt draussen" "$?"
+grep -q "anhaenge/rechnung.pdf" <<< "$inhalt6"; check "der Beleg ist weiterhin drin" "$?"
+
+echo "Fall 7: ohne drittes Feld gelten die Vorgabe-Ausschluesse"
+d7="$tmp/vorgabe"; l7="$tmp/vorgabe.log"; mkdir -p "$d7"
+export RCLONE_SPY="$tmp/hochgeladen7.txt"; : > "$RCLONE_SPY"
+export RCLONE_SPY_DIR="$tmp/hochgeladen7"; mkdir -p "$RCLONE_SPY_DIR"
+BACKUP_DIR="$d7" LOG="$l7" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone" \
+  SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="ohnefeld|$tmp/daten" \
+  PATH="$tmp/bin:$PATH" bash "$target"
+gpg --batch --yes --quiet --passphrase-file "$tmp/pass" -d \
+    "$RCLONE_SPY_DIR"/ohnefeld-data-*.tar.gz.gpg > "$tmp/e7.tar.gz" 2>/dev/null
+inhalt7="$(tar -tzf "$tmp/e7.tar.gz" 2>/dev/null)"
+! grep -q "\.git/" <<< "$inhalt7"; check "fehlendes drittes Feld schliesst .git aus" "$?"
+grep -q "anhaenge/rechnung.pdf" <<< "$inhalt7"; check "der Beleg ist drin" "$?"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "alle Pruefungen gruen"

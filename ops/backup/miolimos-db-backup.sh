@@ -75,25 +75,46 @@ declare -A DB_HOST=(
 # `miolimos_monica` fehlt hier nicht: die Instanz setzt kein
 # MIOLIMOS_DATA_PATH und schreibt darum in den Default ~/miolimos, ist ueber
 # den ersten Eintrag also mit abgedeckt.
-# Ueberschreibbar fuer den Selbsttest (Zeilen "name|pfad"), im Cron-Betrieb
-# greift ausnahmslos die Vorgabe darunter.
+# Zeilen: "name|pfad|ausschluss,ausschluss" — das dritte Feld ist optional.
+# Ueberschreibbar fuer den Selbsttest, im Cron-Betrieb greift die Vorgabe.
+#
+# Ohne drittes Feld gelten DEFAULT_EXCLUDES. Diese Richtung ist Absicht: Ein
+# vergessener Eintrag sichert dann WENIGER als gedacht, nicht mehr — und das
+# faellt beim naechsten Blick auf die Archivgroesse auf, waehrend ein
+# stillschweigend zu grosses Archiv niemandem auffiele.
+#
+# `.git` je Verzeichnis verschieden (2026-07-21, nach Gegenrede von
+# immoos_builder — ich hatte es global ausgeschlossen):
+#
+#   miolimos  — ausgeschlossen. Die Historie liegt vollstaendig auf GitHub
+#               (Rabisnah/miolimos); ein Restore holt sie mit `git clone` und
+#               packt das Archiv darueber. Waeren rund 530 MB taeglich fuer
+#               etwas, das schon zweimal woanders liegt.
+#   immoos    — ausgeschlossen. 99 der 231 MB sind die Historie eines
+#               Demo-Bestands aus synth:docs-Laeufen und einem gut gefuellten
+#               Papierkorb; ihr Verlust ist folgenlos.
+#   stocker   — MITGESICHERT. Kein Remote, und die Historie ist dort ein
+#               benutztes Feature, kein Nebenprodukt: KnowledgeVersionsController
+#               (…/history, …/version, …/restore_version) liest sie ueber
+#               KiHistory per `git log` aus dem Daten-Repo. Ohne sie waere ein
+#               Restore zwar datenvollstaendig, aber die Versionsansicht leer
+#               und der Wiederherstellen-Knopf funktionslos — ein Verlust, den
+#               man erst bemerkt, wenn jemand wissen will, was vorher in einer
+#               Notiz stand. Kostet heute nichts (ein leerer Root-Commit) und
+#               waechst mit genau dem Bestand, den man sichern will.
+DEFAULT_EXCLUDES=".git,_test-artifacts"
+
 DEFAULT_DATA_DIRS="\
-miolimos|/home/hans/miolimos
-immoos|/home/hans/immoos_data
-stocker|/home/hans/stocker_data"
+miolimos|/home/hans/miolimos|
+immoos|/home/hans/immoos_data|
+stocker|/home/hans/stocker_data|_test-artifacts"
 
-declare -A DATA_DIRS=()
-while IFS='|' read -r _name _path; do
-  [[ -n "${_name:-}" ]] && DATA_DIRS[$_name]="$_path"
+declare -A DATA_DIRS=() DATA_EXCLUDES=()
+while IFS='|' read -r _name _path _excl; do
+  [[ -n "${_name:-}" ]] || continue
+  DATA_DIRS[$_name]="$_path"
+  DATA_EXCLUDES[$_name]="${_excl:-$DEFAULT_EXCLUDES}"
 done <<< "${BACKUP_DATA_DIRS:-$DEFAULT_DATA_DIRS}"
-
-# Was aus dem Archiv fliegt:
-#   .git            — die Historie der getrackten Dateien; fuer miolimos liegt
-#                     sie ohnehin auf GitHub, und fuer die Wiederherstellung
-#                     zaehlt der aktuelle Stand, nicht der Weg dorthin. Spart
-#                     bei miolimos rund die Haelfte.
-#   _test-artifacts — Muell aus Testlaeufen, kein Nutzinhalt.
-TAR_EXCLUDES=(--exclude=.git --exclude=_test-artifacts)
 
 echo "[$(stamp)] backup start" >> "$LOG"
 
@@ -200,7 +221,10 @@ offsite() {
       continue
     fi
     dtar="$BACKUP_DIR/${inst}-data-${ts}.tar.gz"
-    if tar -czf "$dtar" "${TAR_EXCLUDES[@]}" -C "$(dirname "$dir")" "$(basename "$dir")" 2>>"$LOG" \
+    local -a ex=(); local _p
+    IFS=',' read -ra _parts <<< "${DATA_EXCLUDES[$inst]}"
+    for _p in "${_parts[@]}"; do [[ -n "$_p" ]] && ex+=(--exclude="$_p"); done
+    if tar -czf "$dtar" "${ex[@]}" -C "$(dirname "$dir")" "$(basename "$dir")" 2>>"$LOG" \
        && gpg --batch --yes --symmetric --cipher-algo AES256 \
               --passphrase-file "$BACKUP_PASSPHRASE_FILE" -o "$dtar.gpg" "$dtar" 2>>"$LOG"; then
       echo "[$(stamp)] ok $inst-data ($(stat -c%s "$dtar.gpg") bytes verschluesselt)" >>"$LOG"

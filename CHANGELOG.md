@@ -74,6 +74,15 @@ release is cut, this section is renamed to the new version and a fresh
   table, which only knew a few special cases, so those rows never turned red.
   Both paths now read the one routing table (#1067).
 
+### Added
+
+- `ops/fresh-clone-check.sh` runs the suite in a throwaway clone. The deploy
+  gate runs in the working checkout — with the gitignored key files, a grown
+  `tmp/`, and the calling shell's environment — so a test that silently
+  depends on any of those is green there and red for anyone who clones the
+  repository. Two such tests were found on the same morning; both would have
+  shown up here (#1076).
+
 ### Fixed
 
 - The test suite no longer depends on `MIOLIMOS_HOST` from the calling shell.

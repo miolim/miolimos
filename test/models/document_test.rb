@@ -39,6 +39,26 @@ class DocumentTest < ActiveSupport::TestCase
     assert_equal "Hallo Erika", Document.new(kind: :brief, salutation: "Hallo Erika").salutation_line
   end
 
+  # #1090 (Hans): ohne Dokument-Override kommt die Anrede jetzt aus dem
+  # Empfänger — abgeleitet aus Geschlecht + Nachname bzw. dessen Freitext.
+  test "#1090 salutation_line leitet aus dem Empfänger ab" do
+    rec = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Erika Mustermann",
+                                item_type: :person, last_name: "Mustermann", gender: "female",
+                                file_path: "kb/#{SecureRandom.hex(4)}.md", content_hash: SecureRandom.hex(8))
+    doc = Document.create!(kind: :brief, recipient_uuid: rec.uuid)
+    assert_equal "Sehr geehrte Frau Mustermann", doc.salutation_line
+    assert_equal "Sehr geehrte Frau Mustermann", doc.merge_context["anrede"]
+
+    # Der Dokument-Override bleibt stärker als die Ableitung.
+    doc.update!(salutation: "Liebe Erika")
+    assert_equal "Liebe Erika", doc.salutation_line
+
+    # Empfänger ohne Geschlecht → weiterhin neutral.
+    doc.update!(salutation: nil)
+    rec.update!(gender: nil)
+    assert_equal "Sehr geehrte Damen und Herren", doc.reload.salutation_line
+  end
+
   test "referenziert Aussteller/Empfänger/Body als KIs ohne Doppelpflege" do
     hans = HumanActor.create!(name: "H", email: "d-#{SecureRandom.hex(3)}@t.local", password: "secretsecret")
     grant(hans, "KnowledgeItem", %w[read create update])

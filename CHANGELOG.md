@@ -17,6 +17,16 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Gender and salutation on people. A person carries an optional gender
+  (female / male / diverse, blank means not stated) and an optional free-text
+  salutation. A letter that has no salutation of its own now derives one from
+  its recipient — "Sehr geehrte Frau Mustermann" instead of the blanket
+  "Sehr geehrte Damen und Herren" that every letter used to open with. The
+  free-text field always wins, because a catalogue cannot spell "Liebe Anna"
+  or "Frau Prof. Dr. Meier"; where nothing is stated, the neutral form stays.
+  Both fields travel in the Markdown front matter like the rest of the master
+  data.
+
 - Operations monitoring for self-hosted installs. `ops/watchdog/` carries a
   cron-driven watchdog that probes every known instance on `127.0.0.1/up` and
   reports the *transition*: a service that once answered and stopped is loud,

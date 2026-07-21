@@ -151,6 +151,7 @@ class FileProxy
                contact_points: nil,
                first_name: nil, last_name: nil, orcid: nil,
                legal_form: nil,
+               gender: nil, salutation: nil,
                issuer: nil)
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
 
@@ -182,6 +183,8 @@ class FileProxy
         last_name:      last_name,
         orcid:          orcid,
         legal_form:     legal_form,
+        gender:         gender,
+        salutation:     salutation,
         issuer:         issuer
       )
 
@@ -240,6 +243,8 @@ class FileProxy
         last_name:       fm["last_name"],
         orcid:           fm["orcid"],
         legal_form:      fm["legal_form"],
+        gender:          fm["gender"],
+        salutation:      fm["salutation"],
         issuer:          ActiveModel::Type::Boolean.new.cast(fm["issuer"]) ? true : false,
         parent_org_uuid: KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
         file_path:       new_relative_path,

@@ -31,11 +31,12 @@ class Document < ApplicationRecord
     chosen || issuer&.bank_accounts&.ordered&.first
   end
 
-  # Anrede: Override-Feld, sonst ein konservativer Default (Geschlecht/Titel
-  # führen wir am KI noch nicht, daher neutral + pro Dokument überschreibbar).
+  # Anrede: Override-Feld pro Dokument, sonst die Anrede des Empfängers
+  # (#1090: Freitext am KI, sonst aus Geschlecht + Nachname abgeleitet;
+  # ohne Angabe bleibt es beim neutralen „Sehr geehrte Damen und Herren").
   def salutation_line
     return salutation if salutation.present?
-    "Sehr geehrte Damen und Herren"
+    Salutations.line_for(recipient)
   end
 
   # #562 (Hans): Dokument-ID für die NDA-Fußzeile: [YYYY-MM-DD-hh-mm]_[Kunde]_NDA.

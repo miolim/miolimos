@@ -1263,4 +1263,51 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
       assert_nil org.reload.legal_form
     end
   end
+
+  # #1090 (Hans): Geschlecht (Katalog) + Anrede (Freitext) an Personen.
+  test "#1090 Create mit gender/salutation setzt Spalten + Frontmatter" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { title: "Erika Mustermann", item_type: "person", content: "",
+                     gender: "female", salutation: "Liebe Erika" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      p = KnowledgeItem.find_by(title: "Erika Mustermann")
+      assert_equal "female",      p.gender
+      assert_equal "Liebe Erika", p.salutation
+      fm = FileProxy::Reader.build_frontmatter_hash(p)
+      assert_equal "female",      fm["gender"]
+      assert_equal "Liebe Erika", fm["salutation"]
+    end
+  end
+
+  test "#1090 Inline-PATCH setzt Geschlecht/Anrede, leerer Wert räumt ab" do
+    with_isolated_miolimos_base do
+      p = FileProxy.create(actor: @hans, title: "Max Muster", item_type: :person,
+                           content: "", topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{p.uuid}",
+            params: { gender: "male", salutation: "Hallo Max", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :no_content
+      assert_equal "male",      p.reload.gender
+      assert_equal "Hallo Max", p.salutation
+
+      patch "/knowledge_items/#{p.uuid}",
+            params: { gender: "", salutation: "", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      p.reload
+      assert_nil p.gender
+      assert_nil p.salutation
+    end
+  end
+
+  test "#1090 Nicht-Katalog-Geschlecht wird nicht übernommen" do
+    with_isolated_miolimos_base do
+      p = FileProxy.create(actor: @hans, title: "Quatsch Person", item_type: :person,
+                           content: "", topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{p.uuid}",
+            params: { gender: "quatsch", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_nil p.reload.gender
+    end
+  end
 end

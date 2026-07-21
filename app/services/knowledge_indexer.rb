@@ -170,6 +170,9 @@ class KnowledgeIndexer
     item.last_name       = frontmatter["last_name"]
     # #1057 (aus immoos #1031): nur Katalogwerte indexieren, Fremdes wird nil.
     item.legal_form      = (frontmatter["legal_form"] if LegalForms.valid?(frontmatter["legal_form"]))
+    # #1090: Geschlecht ebenfalls nur als Katalogwert; die Anrede ist Freitext.
+    item.gender          = (frontmatter["gender"] if Salutations.valid_gender?(frontmatter["gender"]))
+    item.salutation      = frontmatter["salutation"].presence
     item.parent_org_uuid = References.resolve_parent_org_uuid(frontmatter["parent_org"])
     item.file_path       = relative_path
     item.content_hash    = hash

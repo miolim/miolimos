@@ -19,6 +19,7 @@ class FileProxy
               affiliations:, relationships:, contact_points:,
               first_name:, last_name:, orcid: nil,
               legal_form: nil,
+              gender: nil, salutation: nil,
               issuer: nil)
       fm = old_fm.merge("updated_at" => Time.current.iso8601)
       fm["topics"]   = Array(topics)   if topics
@@ -41,6 +42,10 @@ class FileProxy
       # #1057 (aus immoos #1031): Rechtsform — nur Katalogwerte, alles andere
       # (auch "") räumt den Key ab (fm.compact unten).
       fm["legal_form"]     = (legal_form if LegalForms.valid?(legal_form)) unless legal_form.nil?
+      # #1090: Geschlecht nur als Katalogwert, alles andere (auch "") raeumt
+      # den Key ab. Die Anrede ist bewusst Freitext (Titel, „Liebe Anna").
+      fm["gender"]         = (gender if Salutations.valid_gender?(gender)) unless gender.nil?
+      fm["salutation"]     = salutation.presence                           unless salutation.nil?
       # #761: vat_id-Spalte entfernt — USt-IdNr lebt als Identifier (#544).
       # Alt-Frontmatter-Key aktiv löschen, damit er nicht zurückwandert.
       fm.delete("vat_id")

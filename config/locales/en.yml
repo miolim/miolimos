@@ -525,6 +525,17 @@ en:
       ev:                 "e. V. (registered association)"
       einzelunternehmen:  "Sole proprietorship"
       sonstige:           "Other"
+    # #1090: gender + letter salutation of a person (both optional).
+    salutations:
+      gender_label:          "Gender"
+      gender_none:           "— not specified —"
+      genders:
+        female:   "female"
+        male:     "male"
+        diverse:  "diverse"
+      salutation_label:       "Salutation"
+      salutation_placeholder: "empty = derived from gender"
+      derived_hint:           "empty = %{line}"
     detail:
       original_chat_title: "Original chat title: %{title}"
       duplicate_card: "Duplicate card"

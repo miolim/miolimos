@@ -16,6 +16,24 @@
   </label>
 </div>
 
+<%# #1090: Geschlecht (Katalog) + Anrede (Freitext-Override). Beides
+    fakultativ; leer = neutrale Anrede im Brief. %>
+<div class="grid grid-cols-2 gap-2 text-xs">
+  <label class="block">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.gender_label") %></span>
+    <%= f.select :gender,
+          Salutations::GENDERS.map { |v| [t("knowledge.salutations.genders.#{v}"), v] },
+          { include_blank: t("knowledge.salutations.gender_none") },
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white" %>
+  </label>
+  <label class="block">
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.salutation_label") %></span>
+    <%= f.text_field :salutation,
+          placeholder: t("knowledge.salutations.salutation_placeholder"),
+          class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+  </label>
+</div>
+
 <label class="block text-xs">
   <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.aliases_comma") %></span>
   <%= f.text_field :aliases,

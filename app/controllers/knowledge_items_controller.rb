@@ -739,6 +739,10 @@ class KnowledgeItemsController < ApplicationController
       fields[:legal_form] = params[:legal_form]
     end
     if item.person?
+      # #1090: Geschlecht/Anrede nur für Personen; Nicht-Katalogwerte beim
+      # Geschlecht filtert Frontmatter.build.
+      fields[:gender]     = params[:gender]     if params[:gender].present?
+      fields[:salutation] = params[:salutation] if params[:salutation].present?
       if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
         parts = item.title.split(/\s+/)
         fields[:first_name] = parts[0..-2].join(" ").presence

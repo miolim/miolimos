@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Taeglich pg_dump fuer beide miolimOS-Prod-DBs + verschluesselte Off-Site-Kopie.
+# Taeglich pg_dump fuer alle miolimOS-Prod-DBs + verschluesselte Off-Site-Kopie,
+# dazu die Datenverzeichnisse (Anhaenge!) im selben Lauf und Zeitstempel.
 # Cron: 30 4 * * * /home/hans/bin/miolimos-db-backup.sh
 #
 # - Lokal: /home/hans/miolimos-backups/auto/<db>-YYYYMMDD-HHMMSS.dump
@@ -56,6 +57,43 @@ declare -A DB_HOST=(
   [immoos_production]=/var/run/postgresql
   [stocker_production]=/var/run/postgresql
 )
+
+# Datenverzeichnisse je Instanz (#1076, Hinweis von immoos_builder).
+#
+# WARUM DAS HIERHER GEHOERT UND NICHT IN EIN EIGENES SKRIPT: Die Datenbank
+# kennt von einem Anhang nur den Pfad, die Datei liegt im Dateisystem. Werden
+# beide zu verschiedenen Zeitpunkten gesichert, passt der wiederhergestellte
+# Dateibestand nicht zum wiederhergestellten Datenbestand — und der Fehler
+# faellt beim Restore nicht auf, weil aus Sicht der DB alles vollstaendig ist.
+# Deshalb: derselbe Lauf, derselbe Zeitstempel.
+#
+# Bis 21.07.2026 war dieser Teil GAR NICHT gesichert. Die DB ging
+# verschluesselt nach B2 und Drive, die zugehoerigen Belege nirgendwohin —
+# ein Restore haette eine Datenbank voller Verweise auf Dateien ergeben, die
+# es nicht mehr gibt.
+#
+# `miolimos_monica` fehlt hier nicht: die Instanz setzt kein
+# MIOLIMOS_DATA_PATH und schreibt darum in den Default ~/miolimos, ist ueber
+# den ersten Eintrag also mit abgedeckt.
+# Ueberschreibbar fuer den Selbsttest (Zeilen "name|pfad"), im Cron-Betrieb
+# greift ausnahmslos die Vorgabe darunter.
+DEFAULT_DATA_DIRS="\
+miolimos|/home/hans/miolimos
+immoos|/home/hans/immoos_data
+stocker|/home/hans/stocker_data"
+
+declare -A DATA_DIRS=()
+while IFS='|' read -r _name _path; do
+  [[ -n "${_name:-}" ]] && DATA_DIRS[$_name]="$_path"
+done <<< "${BACKUP_DATA_DIRS:-$DEFAULT_DATA_DIRS}"
+
+# Was aus dem Archiv fliegt:
+#   .git            — die Historie der getrackten Dateien; fuer miolimos liegt
+#                     sie ohnehin auf GitHub, und fuer die Wiederherstellung
+#                     zaehlt der aktuelle Stand, nicht der Weg dorthin. Spart
+#                     bei miolimos rund die Haelfte.
+#   _test-artifacts — Muell aus Testlaeufen, kein Nutzinhalt.
+TAR_EXCLUDES=(--exclude=.git --exclude=_test-artifacts)
 
 echo "[$(stamp)] backup start" >> "$LOG"
 
@@ -145,6 +183,34 @@ offsite() {
   if [[ -z "${RCLONE_REMOTES:-}" ]]; then echo "[$(stamp)] offsite: RCLONE_REMOTES leer — uebersprungen" >>"$LOG"; return 0; fi
 
   local enc_files=() enc src sigtar
+  # 0) Datenverzeichnisse einpacken (#1076). Bewusst NUR off-site: die
+  #    Dateien liegen ja schon lokal, eine zweite lokale Kopie schuetzt vor
+  #    gar nichts und kostet nur Platz. Das fertige .gpg wird nach dem Upload
+  #    wieder entfernt, genau wie beim Signierschluessel.
+  local dtar
+  for inst in "${!DATA_DIRS[@]}"; do
+    dir="${DATA_DIRS[$inst]}"
+    if [[ ! -d "$dir" ]]; then
+      # Anders als bei den DBs gilt hier: eingetragen = muss existieren. Ein
+      # Datenverzeichnis legt der Betreiber beim Einrichten der Instanz an,
+      # es entsteht nicht von selbst beim ersten Start. Ein Eintrag ohne
+      # Verzeichnis ist deshalb immer ein Fehler und nie ein Vorgriff.
+      echo "[$(stamp)] FAILED $inst-data (Verzeichnis $dir fehlt)" >>"$LOG"
+      had_error=1
+      continue
+    fi
+    dtar="$BACKUP_DIR/${inst}-data-${ts}.tar.gz"
+    if tar -czf "$dtar" "${TAR_EXCLUDES[@]}" -C "$(dirname "$dir")" "$(basename "$dir")" 2>>"$LOG" \
+       && gpg --batch --yes --symmetric --cipher-algo AES256 \
+              --passphrase-file "$BACKUP_PASSPHRASE_FILE" -o "$dtar.gpg" "$dtar" 2>>"$LOG"; then
+      echo "[$(stamp)] ok $inst-data ($(stat -c%s "$dtar.gpg") bytes verschluesselt)" >>"$LOG"
+      enc_files+=("$dtar.gpg")
+    else
+      echo "[$(stamp)] FAILED $inst-data (tar/gpg)" >>"$LOG"; had_error=1
+    fi
+    rm -f "$dtar"
+  done
+
   # 1) heutige Dumps verschluesseln
   for db in "${!DBS[@]}"; do
     src="$BACKUP_DIR/${db}-${ts}.dump"

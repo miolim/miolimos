@@ -73,6 +73,58 @@ d3="$tmp/fremder-dump"; l3="$tmp/fremder-dump.log"; mkdir -p "$d3"
 run_backup "$d3" "$l3"
 ! grep -q "MISSING" "$l3"; check "kein MISSING durch fremden Dump" "$?"
 
+# ── Fall 4/5: Datenverzeichnisse (#1076) ───────────────────────────────────
+# Der Off-Site-Teil laeuft nur mit Konfig, Passphrase und rclone. gpg und tar
+# sind echt, rclone wird gestubbt (kein Netz im Test).
+cat > "$tmp/bin/rclone" <<'STUB'
+#!/usr/bin/env bash
+# Nimmt copy/delete entgegen und legt bei copy eine Marke ab, damit der Test
+# sieht, WAS hochgeladen worden waere.
+if [[ "${1:-}" == "copy" ]]; then
+  echo "$(basename "$2")" >> "$RCLONE_SPY"
+  [[ -n "${RCLONE_SPY_DIR:-}" ]] && cp "$2" "$RCLONE_SPY_DIR/"
+fi
+exit 0
+STUB
+chmod +x "$tmp/bin/rclone"
+
+echo "$tmp/passphrase" > /dev/null
+echo "testpassphrase" > "$tmp/pass"
+cat > "$tmp/offsite.conf" <<CONF
+RCLONE_REMOTES="testremote:eimer"
+BACKUP_PASSPHRASE_FILE=$tmp/pass
+CONF
+
+echo "Fall 4: Datenverzeichnis wird verschluesselt hochgeladen"
+d4="$tmp/mit-daten"; l4="$tmp/mit-daten.log"; mkdir -p "$d4"
+mkdir -p "$tmp/daten/anhaenge" "$tmp/daten/.git" "$tmp/daten/_test-artifacts"
+echo "ein wichtiger Beleg" > "$tmp/daten/anhaenge/rechnung.pdf"
+echo "historie" > "$tmp/daten/.git/HEAD"
+echo "muell" > "$tmp/daten/_test-artifacts/x.md"
+export RCLONE_SPY="$tmp/hochgeladen.txt"; : > "$RCLONE_SPY"
+export RCLONE_SPY_DIR="$tmp/hochgeladen"; mkdir -p "$RCLONE_SPY_DIR"
+BACKUP_DIR="$d4" LOG="$l4" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone"   SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="testinstanz|$tmp/daten"   PATH="$tmp/bin:$PATH" bash "$target"
+grep -q "ok testinstanz-data" "$l4"; check "Datenverzeichnis wird gesichert" "$?"
+grep -q "testinstanz-data-.*\.tar\.gz\.gpg" "$RCLONE_SPY"; check "verschluesseltes Archiv wird hochgeladen" "$?"
+[[ -z "$(ls "$d4"/*.tar.gz 2>/dev/null)" ]]; check "kein unverschluesseltes Archiv bleibt liegen" "$?"
+[[ -z "$(ls "$d4"/*.gpg 2>/dev/null)" ]]; check "kein .gpg bleibt lokal liegen" "$?"
+
+# Inhaltsprobe: entschluesseln und nachsehen, WAS drin ist. Ohne das prueft
+# der Test nur, dass irgendein Archiv entstanden ist -- nicht, dass der
+# Beleg drin und der Ballast draussen ist.
+gpg --batch --yes --quiet --passphrase-file "$tmp/pass" -d \
+    "$RCLONE_SPY_DIR"/testinstanz-data-*.tar.gz.gpg > "$tmp/entschluesselt.tar.gz" 2>/dev/null
+inhalt="$(tar -tzf "$tmp/entschluesselt.tar.gz" 2>/dev/null)"
+grep -q "anhaenge/rechnung.pdf" <<< "$inhalt"; check "der Beleg ist im Archiv" "$?"
+! grep -q "\.git/" <<< "$inhalt"; check ".git ist ausgeschlossen" "$?"
+! grep -q "_test-artifacts" <<< "$inhalt"; check "_test-artifacts ist ausgeschlossen" "$?"
+
+echo "Fall 5: eingetragenes, aber fehlendes Datenverzeichnis ist ein Fehler"
+d5="$tmp/fehlende-daten"; l5="$tmp/fehlende-daten.log"; mkdir -p "$d5"
+BACKUP_DIR="$d5" LOG="$l5" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone"   SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="verschwunden|$tmp/niemals"   PATH="$tmp/bin:$PATH" bash "$target"
+grep -q "FAILED verschwunden-data" "$l5"; check "fehlendes Verzeichnis wird gemeldet" "$?"
+grep -q "backup done (errors=1)" "$l5"; check "errors=1" "$?"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "alle Pruefungen gruen"

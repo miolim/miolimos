@@ -29,6 +29,16 @@ release is cut, this section is renamed to the new version and a fresh
   silently disables *all* outgoing mail, including portal magic links — and
   falls back to filing itself as a knowledge item when the mail cannot be
   sent (#1076).
+- The nightly backup now includes the instance data directories, not just the
+  databases. Attachments (invoices, settlement documents, meter photos,
+  profile images) live in the file system with only their path in the
+  database, so a database-only backup restored into a fresh machine would
+  have produced a complete-looking database full of references to files that
+  no longer exist. They are archived in the same run and under the same
+  timestamp as the dump — a restore from two different points in time is
+  worse than one known to be inconsistent — encrypted before upload and kept
+  off-site only, since a second local copy of local files protects nothing
+  (#1076).
 - Postal addresses can carry a validity period (`valid from` / `until`, either
   side optional). A person who moves keeps the former address on record while
   letters go to the one valid today — `mailing_address` and `primary_address`

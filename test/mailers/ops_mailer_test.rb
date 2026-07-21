@@ -33,6 +33,11 @@ class OpsMailerTest < ActionMailer::TestCase
                          backup_log: log.path, repos: {},
                          key_files: { "Master-Key" => key.path },
                          key_state_file: keystate.path,
+                         # Auch die Datenbank-Abfrage ausdruecklich setzen: der
+                         # Vorgabewert fragt die echte Maschine, und dann haengt
+                         # der "gruene" Fall daran, welche DBs zufaellig
+                         # existieren. Dritter Anlauf derselben Lektion.
+                         database_probe: -> { [] },
                          now: Time.zone.parse("2026-07-21 09:00"))
   end
 

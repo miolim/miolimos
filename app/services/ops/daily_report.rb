@@ -32,6 +32,8 @@ module Ops
       key_files: { "Master-Key" => Rails.root.join("config/master.key").to_s,
                    "Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
       key_state_file: "/home/hans/.local/state/miolimos-watch/keys",
+      database_probe: method(:production_databases),
+      ignored_databases: [],
       event_log:  "/home/hans/log/miolimos-service-watch.log",
       backup_log: "/home/hans/log/miolimos-db-backup.log",
       repos:      { "App-Code" => "/home/hans/miolimos_src",
@@ -42,6 +44,8 @@ module Ops
       @state_file = state_file
       @key_files      = key_files
       @key_state_file = key_state_file
+      @database_probe    = database_probe
+      @ignored_databases = ignored_databases
       @event_log  = event_log
       @backup_log = backup_log
       @repos      = repos
@@ -73,7 +77,8 @@ module Ops
           backup_section(alerts),
           push_section(alerts),
           mail_section(alerts),
-          keys_section(alerts)
+          keys_section(alerts),
+          coverage_section(alerts)
         ]
         [ alerts, sections ]
       end
@@ -325,6 +330,71 @@ module Ops
       File.write(@key_state_file, map.map { |k, v| "#{k}\t#{v}" }.join("\n"))
     rescue StandardError
       nil # Ein nicht schreibbarer Zustand darf den Bericht nicht verhindern.
+    end
+
+
+    # ── Abdeckung ────────────────────────────────────────────────────────
+    # Das Gegenstueck zur MISSING-Meldung aus #1064.
+    #
+    # Dort geht es um „stand in der Liste und ist weg". Hier um den
+    # Spiegelfall, der bis heute gar nicht geprueft wurde: „existiert auf der
+    # Maschine und stand nie in der Liste". Eine neu angelegte Produktivdaten-
+    # bank wird schlicht nie gesichert, ohne dass irgendetwas auffiele — kein
+    # Fehler, keine Zeile im Log, denn das Backup weiss ja nichts von ihr.
+    # Genau so lief die immoOS-Instanz von Juli an ausserhalb jeder Sicherung.
+    #
+    # Abgeglichen wird gegen das, was der letzte Lauf TATSAECHLICH angefasst
+    # hat (die ok/skip/MISSING-Zeilen im Protokoll) — nicht gegen die Liste im
+    # Skript. Eine Liste sagt, was gemeint war; das Protokoll sagt, was
+    # geschehen ist.
+    #
+    # GRENZE, ausdruecklich: geprueft werden nur Datenbanken. Ein
+    # Datenverzeichnis einer neuen Instanz faellt hier nicht auf.
+    def coverage_section(alerts)
+      lines = []
+      vorhanden = Array(@database_probe.call)
+      if vorhanden.empty?
+        return Section.new(title: "Abdeckung", lines: [ "keine Datenbanken feststellbar" ])
+      end
+
+      abgedeckt = covered_databases
+
+      vorhanden.sort.each do |db|
+        if abgedeckt.include?(db)
+          lines << "#{db}: gesichert"
+        elsif @ignored_databases.include?(db)
+          lines << "#{db}: bewusst nicht gesichert"
+        else
+          alerts << "#{db} existiert, wird aber von keiner Sicherung erfasst."
+          lines << "#{db}: NICHT GESICHERT"
+        end
+      end
+
+      Section.new(title: "Abdeckung", lines: lines)
+    rescue StandardError => e
+      Section.new(title: "Abdeckung", lines: [ "nicht feststellbar (#{e.class})" ])
+    end
+
+    # Was der letzte Lauf angefasst hat. Die Datei-Archive (…-data) gehoeren
+    # nicht dazu — hier geht es um Datenbanken.
+    def covered_databases
+      return [] unless File.exist?(@backup_log)
+      zeilen = tail(@backup_log, 400)
+      start  = zeilen.rindex { |l| l.include?("backup start") }
+      lauf   = start ? zeilen[start..] : zeilen
+      lauf.filter_map { |l|
+        m = l.match(/\]\s+(?:ok|skip|MISSING)\s+(\S+)/)
+        name = m && m[1]
+        name unless name.nil? || name.end_with?("-data")
+      }.uniq
+    end
+
+    def production_databases
+      ActiveRecord::Base.connection
+        .select_values("SELECT datname FROM pg_database WHERE datistemplate = false")
+        .select { |d| d.end_with?("_production") }
+    rescue StandardError
+      []
     end
 
     # Zustand eines Arbeitsverzeichnisses gegenueber seiner Fernkopie.

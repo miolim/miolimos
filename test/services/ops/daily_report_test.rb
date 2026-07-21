@@ -31,7 +31,8 @@ module Ops
       path
     end
 
-    def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil)
+    def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil,
+               dbs: nil, ignoriert: [])
       DailyReport.new(
         state_file: state || File.join(@dir, "fehlt-state"),
         event_log:  events || File.join(@dir, "fehlt-events"),
@@ -40,6 +41,8 @@ module Ops
         repo_probe: probe || ->(_path) { { status: :synced } },
         key_files:      keys.nil? ? { "Master-Key" => @key_path } : keys,
         key_state_file: File.join(@dir, "keystate"),
+        database_probe: dbs || -> { [] },
+        ignored_databases: ignoriert,
         now:        @now
       )
     end
@@ -213,6 +216,55 @@ module Ops
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
       refute_includes section(r, "Schluessel"), "0" * 32
       refute_includes File.read(File.join(@dir, "keystate")), "0" * 32
+    end
+
+
+    # ── Abdeckung ─────────────────────────────────────────────────────────
+    # Der Spiegelfall zu MISSING: nicht „stand in der Liste und ist weg",
+    # sondern „existiert und stand nie drin". pan_rp_production war genau das.
+
+    test "eine Datenbank, die nirgends gesichert wird, ist ein Alarm" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
+                 dbs: -> { %w[miolimos_production pan_rp_production] })
+      assert(r.alerts.any? { |a| a.include?("pan_rp_production") && a.include?("keiner Sicherung") })
+      refute(r.alerts.any? { |a| a.include?("miolimos_production") },
+             "eine gesicherte DB darf nicht gemeldet werden")
+    end
+
+    test "eine bewusst ausgenommene Datenbank bleibt still" do
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
+                 dbs: -> { %w[miolimos_production pan_rp_production] },
+                 ignoriert: %w[pan_rp_production])
+      assert_empty r.alerts
+      assert_includes section(r, "Abdeckung"), "bewusst nicht gesichert"
+    end
+
+    test "die Abdeckung kommt aus dem Protokoll des letzten Laufs, nicht aus einer Liste" do
+      # Eine DB, die frueher einmal gesichert wurde, im letzten Lauf aber nicht
+      # mehr vorkam, gilt als nicht abgedeckt.
+      log = write("backup.log", <<~LOG)
+        [2026-07-20 04:30:01] backup start
+        [2026-07-20 04:30:06] ok altbestand_production (1 bytes)
+        [2026-07-20 04:30:44] backup done (errors=0)
+        [2026-07-21 04:30:01] backup start
+        [2026-07-21 04:30:06] ok miolimos_production (1 bytes)
+        [2026-07-21 04:30:44] backup done (errors=0)
+      LOG
+      r = report(state: write("state", "miolimos up 1\n"), backup: log,
+                 dbs: -> { %w[miolimos_production altbestand_production] })
+      assert(r.alerts.any? { |a| a.include?("altbestand_production") })
+    end
+
+    test "Datei-Archive zaehlen nicht als Datenbank-Abdeckung" do
+      log = write("backup.log", <<~LOG)
+        [2026-07-21 04:30:01] backup start
+        [2026-07-21 04:30:06] ok stocker-data (10093 bytes verschluesselt)
+        [2026-07-21 04:30:44] backup done (errors=0)
+      LOG
+      r = report(state: write("state", "miolimos up 1\n"), backup: log,
+                 dbs: -> { %w[stocker_production] })
+      assert(r.alerts.any? { |a| a.include?("stocker_production") },
+             "ein -data-Archiv darf die gleichnamige DB nicht als gesichert ausweisen")
     end
 
     # ── Code-Sicherung ────────────────────────────────────────────────────

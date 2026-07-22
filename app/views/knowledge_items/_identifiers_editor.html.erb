@@ -86,7 +86,11 @@
         </div>
 
         <datalist id="id-type-suggestions">
-          <% ["USt-IdNr", "Steuernummer", "Steuer-IdNr", "Gläubiger-Identifikationsnummer", "Kundennummer", "Vertragsnummer", "Versichertennummer", "Mitgliedsnummer", "Personalnummer", "ORCID", "IBAN"].each do |t| %><option value="<%= t %>"></option><% end %>
+          <%# #1094 (Hans, 2026-07-22): Handelsregister als ZWEI Typen —
+              eine HRB-Nummer ist nur zusammen mit ihrem Gericht eindeutig,
+              und im Impressum/Briefkopf stehen beide Angaben getrennt.
+              ContactEnrichment legt sie ebenso getrennt an. %>
+          <% Identifier::TYPE_SUGGESTIONS.each do |t| %><option value="<%= t %>"></option><% end %>
         </datalist>
         <datalist id="id-counterparty-suggestions-<%= item.uuid %>">
           <% KnowledgeItem.persons_and_orgs.order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |t| %><% next if t == item.title %><option value="<%= t %>"></option><% end %>

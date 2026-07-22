@@ -54,9 +54,49 @@ class ContactEnrichmentTest < ActiveSupport::TestCase
 
       added = ContactEnrichment.new(item: person, actor: @hans)
                                .apply({ vat_id: "DE999", register: "HRB 123" })
-      assert_equal ["Handelsregister"], added
+      assert_equal ["Handelsregisternummer"], added
       assert_equal "DE111", person.reload.identifiers.find_by(label: "USt-IdNr").value
-      assert person.identifiers.exists?(label: "Handelsregister", value: "HRB 123")
+      assert person.identifiers.exists?(label: "Handelsregisternummer", value: "HRB 123")
+    end
+  end
+
+  # #1094 (Hans, 2026-07-22): Gericht und Nummer sind zwei Felder.
+  test "apply splits a register statement into court and number" do
+    with_isolated_miolimos_base do
+      person = create_person
+      added  = ContactEnrichment.new(item: person, actor: @hans)
+                                .apply({ register: "Amtsgericht Lübeck HRB 12345" })
+      assert_equal ["Registergericht", "Handelsregisternummer"], added
+      ids = person.reload.identifiers.to_h { |i| [i.label, i.value] }
+      assert_equal "Amtsgericht Lübeck", ids["Registergericht"]
+      assert_equal "HRB 12345",          ids["Handelsregisternummer"]
+    end
+  end
+
+  test "apply keeps an unparsable register statement as one field" do
+    with_isolated_miolimos_base do
+      person = create_person
+      added  = ContactEnrichment.new(item: person, actor: @hans)
+                                .apply({ register: "Registernummer 4711-XY, Kammer Hamburg" })
+      assert_equal ["Handelsregister"], added
+      assert person.reload.identifiers.exists?(label: "Handelsregister",
+                                               value: "Registernummer 4711-XY, Kammer Hamburg")
+    end
+  end
+
+  test "split_register understands the usual Impressum spellings" do
+    {
+      "Amtsgericht Lübeck HRB 12345"                     => ["Amtsgericht Lübeck", "HRB 12345"],
+      "HRB 12345 B, Amtsgericht Charlottenburg"          => ["Amtsgericht Charlottenburg", "HRB 12345 B"],
+      "Registergericht: Amtsgericht München, HRB 123456" => ["Amtsgericht München", "HRB 123456"],
+      "eingetragen im Handelsregister des Amtsgerichts Köln unter HRA 987" =>
+        ["Amtsgerichts Köln", "HRA 987"],
+      "VR 4711 (Amtsgericht Kiel)"                       => ["Amtsgericht Kiel", "VR 4711"],
+      "HRB 123"                                          => [nil, "HRB 123"],
+      ""                                                 => [nil, nil],
+      "Kammer Hamburg"                                   => [nil, nil]
+    }.each do |raw, expected|
+      assert_equal expected, ContactEnrichment.split_register(raw), "split_register(#{raw.inspect})"
     end
   end
 

@@ -9,6 +9,16 @@ class Identifier < ApplicationRecord
   belongs_to :counterparty, class_name: "KnowledgeItem",
              foreign_key: :counterparty_uuid, primary_key: :uuid, optional: true
 
+  # #1094 (Hans, 2026-07-22): Vorschlagsliste der ID-Typen. Sie ist reine
+  # Bequemlichkeit (das Label bleibt Freitext) — aber sie gehört an EINE
+  # Stelle, damit der Editor und ContactEnrichment dieselben Typen kennen.
+  TYPE_SUGGESTIONS = [
+    "USt-IdNr", "Steuernummer", "Steuer-IdNr",
+    "Registergericht", "Handelsregisternummer",
+    "Gläubiger-Identifikationsnummer", "Kundennummer", "Vertragsnummer",
+    "Versichertennummer", "Mitgliedsnummer", "Personalnummer", "ORCID", "IBAN"
+  ].freeze
+
   validates :label, presence: true
   validates :value, presence: true
 

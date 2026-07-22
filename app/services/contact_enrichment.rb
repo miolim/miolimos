@@ -49,8 +49,19 @@ class ContactEnrichment
     # #761-Folge (Hans): USt-IdNr + Handelsregister gehören als IDENTIFIER in
     # den IDs-Bereich (#544) — nicht in die deprecated vat_id-Spalte, die in
     # der Detail-Ansicht gar nicht angezeigt wird.
-    added << "USt-IdNr"        if add_identifier_if_absent("USt-IdNr", data[:vat_id])
-    added << "Handelsregister" if add_identifier_if_absent("Handelsregister", data[:register])
+    added << "USt-IdNr" if add_identifier_if_absent("USt-IdNr", data[:vat_id])
+    # #1094 (Hans, 2026-07-22): Gericht und Nummer werden getrennt abgelegt —
+    # eine HRB-Nummer ist nur zusammen mit ihrem Gericht eindeutig, und beide
+    # Angaben werden einzeln gebraucht (Briefkopf, Rechnung, Suche). Nur wenn
+    # sich aus dem Impressum keine Nummer herauslesen lässt, bleibt der Rohtext
+    # wie bisher als ein Feld „Handelsregister" stehen.
+    court, number = self.class.split_register(data[:register])
+    if number
+      added << "Registergericht"        if add_identifier_if_absent("Registergericht", court)
+      added << "Handelsregisternummer"  if add_identifier_if_absent("Handelsregisternummer", number)
+    else
+      added << "Handelsregister" if add_identifier_if_absent("Handelsregister", data[:register])
+    end
 
     if (addr = data[:address]).is_a?(Hash) && @item.postal_addresses.empty?
       rec = @item.postal_addresses.new(
@@ -59,6 +70,31 @@ class ContactEnrichment
       added << I18n.t("knowledge.detail.complete_address_field") if rec.lines.any? && rec.save
     end
     added.uniq
+  end
+
+  # #1094: Zerlegt eine Handelsregister-Angabe („Amtsgericht Lübeck HRB 12345",
+  # „HRB 12345 B, Amtsgericht Charlottenburg", „Registergericht: AG München,
+  # HRB 123456") in [Gericht, Nummer]. Ohne erkennbare Registernummer kommt
+  # [nil, nil] zurück — der Aufrufer legt den Rohtext dann ungeteilt ab, damit
+  # eine ungewohnte Schreibweise nichts verschluckt.
+  REGISTER_NUMBER = /\b(HRA|HRB|GnR|PR|VR)\b\s*\.?\s*(\d+)\s*([A-Za-z]\b)?/i
+  # Wörter, die nur die Angabe einleiten und nicht zum Gerichtsnamen gehören.
+  REGISTER_NOISE  = /\b(Registergericht|Register|Handelsregister|Genossenschaftsregister|Vereinsregister|Partnerschaftsregister|eingetragen(e[rs]?)?|beim|im|am|Nummer|Nr\.?)\b/i
+
+  def self.split_register(raw)
+    s = raw.to_s.strip
+    return [nil, nil] if s.blank?
+    m = s.match(REGISTER_NUMBER)
+    return [nil, nil] unless m
+    number = [m[1].upcase, m[2], m[3]&.upcase].compact.join(" ").squish
+    court  = s.sub(m[0], " ").gsub(REGISTER_NOISE, " ").gsub(/[,;·|()\/]+/, " ").squish
+    court  = court.sub(/\A[-–:]+\s*/, "").sub(/[-–:,;]+\z/, "").strip
+    # Führende Artikel/Präpositionen und angehängte Bindewörter gehören zum
+    # Satz („eingetragen im … des Amtsgerichts Köln unter HRA 987"), nicht
+    # zum Gerichtsnamen.
+    court  = court.sub(/\A(des|der|dem|den|bei|beim|von|vom)\s+/i, "")
+                  .sub(/\s+(unter|mit)\z/i, "").strip
+    [court.presence, number]
   end
 
   private

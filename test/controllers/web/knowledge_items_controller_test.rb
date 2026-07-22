@@ -1127,7 +1127,9 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     # der vat_id-Spalte), damit sie im IDs-Bereich der Detailansicht erscheinen.
     ids = person.identifiers.to_h { |i| [i.label, i.value] }
     assert_equal "DE123456789", ids["USt-IdNr"]
-    assert_equal "Amtsgericht Lübeck HRB 12345", ids["Handelsregister"]
+    # #1094: Gericht und Nummer landen als zwei IDs.
+    assert_equal "Amtsgericht Lübeck", ids["Registergericht"]
+    assert_equal "HRB 12345",          ids["Handelsregisternummer"]
     assert_includes person.contact_points.map(&:value), "info@test.io"
     assert_includes person.contact_points.map(&:value), "0177 1234567"
     assert_equal 1, person.postal_addresses.count

@@ -27,6 +27,14 @@ release is cut, this section is renamed to the new version and a fresh
   Both fields travel in the Markdown front matter like the rest of the master
   data.
 
+- Register court and commercial-register number as their own ID types on people
+  and organisations. They are two fields, not one: an HRB number is only
+  unique together with the court that keeps it, and letterheads and invoices
+  quote the two separately. Completing contact data from an imprint now splits
+  the register line accordingly ("Amtsgericht Lübeck HRB 12345" becomes a
+  *Registergericht* and a *Handelsregisternummer*); a wording it cannot parse
+  is still kept whole, so nothing is lost (#1094).
+
 - Operations monitoring for self-hosted installs. `ops/watchdog/` carries a
   cron-driven watchdog that probes every known instance on `127.0.0.1/up` and
   reports the *transition*: a service that once answered and stopped is loud,

@@ -33,9 +33,15 @@ class PersonOrgSync
   end
 
   def sync
-    sync_affiliations   if @item.item_type == "person"
-    sync_relationships  if @item.item_type.in?(%w[person organization])
-    sync_contact_points if @item.item_type.in?(%w[person organization])
+    # #1075: Nur Blöcke synchen, deren Key im Frontmatter tatsächlich
+    # vorhanden ist. Die Sync-Semantik ist ERSETZEND (nicht Deklariertes
+    # wird gelöscht) — ohne den Guard räumte jedes FileProxy.update ohne
+    # den jeweiligen Parameter (z.B. Supersede, Merge, Titel-Rename) den
+    # kompletten Bestand weg. „Explizit leeres Array" = alles löschen
+    # bleibt möglich (Frontmatter.build behält leere Arrays im fm).
+    sync_affiliations   if @item.item_type == "person" && @fm.key?("affiliations")
+    sync_relationships  if @item.item_type.in?(%w[person organization]) && @fm.key?("relationships")
+    sync_contact_points if @item.item_type.in?(%w[person organization]) && @fm.key?("contact_points")
     # Org-Affiliations werden nicht von der Org-Seite erfasst — sie
     # ergeben sich aus den Person-Affiliations, die per `org:` auf die
     # Org zeigen. Relationships können aber auch auf Org-Seite stehen

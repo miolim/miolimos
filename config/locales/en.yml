@@ -627,6 +627,8 @@ en:
       create_tag: "Create tag"
       superseded_by_label: "Superseded by"
       successor_placeholder: "Search successor KI …"
+      merge_label: "Merge into …"
+      merge_placeholder: "Search target person/org — picking merges immediately"
       version_history: "Version history"
       history_loading: "Loading history …"
       frontmatter_yaml: "Frontmatter (YAML)"

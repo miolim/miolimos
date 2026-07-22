@@ -33,9 +33,14 @@ class FileProxy
       fm.delete("source_url")
       fm.delete("chat_title")
       fm["parent_org"]     = parent_org.presence     unless parent_org.nil?
-      fm["affiliations"]   = affiliations.presence   unless affiliations.nil?
-      fm["relationships"]  = relationships.presence  unless relationships.nil?
-      fm["contact_points"] = contact_points.presence unless contact_points.nil?
+      # #1075: leere Arrays BEHALTEN (kein .presence) — PersonOrgSync
+      # unterscheidet jetzt „Key fehlt" (Bestand nicht anfassen) von
+      # „explizit leer" (alles ersetzen/leeren). Mit .presence fiel beides
+      # zusammen, und ein nacktes FileProxy.update (z.B. Supersede) räumte
+      # einer Person sämtliche Kontaktpunkte/Affiliations/Beziehungen weg.
+      fm["affiliations"]   = affiliations   unless affiliations.nil?
+      fm["relationships"]  = relationships  unless relationships.nil?
+      fm["contact_points"] = contact_points unless contact_points.nil?
       fm["first_name"]     = first_name.presence     unless first_name.nil?
       fm["last_name"]      = last_name.presence      unless last_name.nil?
       fm["orcid"]          = orcid.presence          unless orcid.nil?   # #516

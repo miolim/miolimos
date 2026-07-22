@@ -630,6 +630,8 @@ de:
       create_tag: "Tag anlegen"
       superseded_by_label: "Abgelöst durch"
       successor_placeholder: "Nachfolger-KI suchen …"
+      merge_label: "Zusammenführen in …"
+      merge_placeholder: "Ziel-Person/-Org suchen — Auswahl führt sofort zusammen"
       version_history: "Versionshistorie"
       history_loading: "Verlauf wird geladen …"
       frontmatter_yaml: "Frontmatter (YAML)"

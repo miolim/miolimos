@@ -44,7 +44,9 @@ class Api::V1::PersonIdentificationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "POST merge_into reassigns authorship, supersedes the duplicate, adds alias" do
+  # #1075: merge_into nutzt jetzt den vollen EntityMerge — die Dublette
+  # geht in den Papierkorb (statt Supersession), Antwort ist das Ziel.
+  test "POST merge_into reassigns authorship, trashes the duplicate, adds alias" do
     with_isolated_miolimos_base do
       slug, sc = create_source_with_author("S3", "Max Müller")
       dup = sc.knowledge_item
@@ -53,10 +55,13 @@ class Api::V1::PersonIdentificationTest < ActionDispatch::IntegrationTest
 
       post "/api/v1/knowledge_items/#{dup.uuid}/merge_into", params: { target_uuid: target_uuid }, headers: @headers
       assert_response :success
+      body = JSON.parse(response.body)
+      assert_equal target_uuid, body["data"]["uuid"]
+      assert body.key?("report")
 
       assert_equal 1, SourceCreator.where(knowledge_item_uuid: target_uuid).count
       assert_equal 0, SourceCreator.where(knowledge_item_uuid: dup.uuid).count
-      assert_equal target_uuid, dup.reload.superseded_by_uuid
+      assert KnowledgeItem.with_discarded.find(dup.uuid).discarded?
       assert_includes KnowledgeItem.find(target_uuid).aliases.to_a, "Max Müller"
     end
   end

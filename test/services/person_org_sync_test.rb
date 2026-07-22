@@ -213,4 +213,37 @@ class PersonOrgSyncTest < ActiveSupport::TestCase
       assert_nothing_raised { PersonOrgSync.sync(person, { "affiliations" => [] }) }
     end
   end
+
+  # #1075: fehlender Key = Bestand nicht anfassen; explizit leeres Array =
+  # alles löschen. Vorher fiel beides zusammen — ein FileProxy.update ohne
+  # contact_points (z.B. Supersede) räumte einer Person alle Kontakte weg.
+  test "fehlender Key laesst Bestand stehen, leeres Array loescht" do
+    with_isolated_miolimos_base do
+      person = FileProxy.create(actor: @hans, title: "Erika Muster",
+                                item_type: :person, content: "")
+      person.contact_points.create!(kind: "email", value: "erika@example.com")
+      other = FileProxy.create(actor: @hans, title: "Otto Muster",
+                               item_type: :person, content: "")
+      Relationship.create!(from_uuid: person.uuid, to_uuid: other.uuid, kind: "kennt")
+
+      PersonOrgSync.sync(person, {})
+      assert_equal 1, person.contact_points.reload.count
+      assert_equal 1, person.outgoing_relationships.reload.count
+
+      PersonOrgSync.sync(person, { "contact_points" => [] })
+      assert_equal 0, person.contact_points.reload.count
+      assert_equal 1, person.outgoing_relationships.reload.count, "anderer Block bleibt unberuehrt"
+    end
+  end
+
+  test "nacktes FileProxy.update erhaelt Kontaktpunkte einer Person (Regression)" do
+    with_isolated_miolimos_base do
+      person = FileProxy.create(actor: @hans, title: "Erika Muster",
+                                item_type: :person, content: "")
+      person.contact_points.create!(kind: "email", value: "erika@example.com")
+
+      FileProxy.update(actor: @hans, knowledge_item: person.reload)
+      assert_equal ["erika@example.com"], person.contact_points.reload.pluck(:value)
+    end
+  end
 end

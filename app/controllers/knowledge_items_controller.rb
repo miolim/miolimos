@@ -4,7 +4,7 @@ class KnowledgeItemsController < ApplicationController
 
   before_action :set_item,     only: [:show, :edit, :update, :destroy,
                                       :file, :quote_from_clipboard,
-                                      :supersede, :unsupersede, :identifiers, :addresses, :bank_accounts, :vat_exempt,
+                                      :supersede, :unsupersede, :merge, :identifiers, :addresses, :bank_accounts, :vat_exempt,
                                       :complete_from_url,
                                       :toggle_personally_known, :toggle_render_mode]
   before_action :set_any_item, only: [:restore]
@@ -333,6 +333,31 @@ class KnowledgeItemsController < ApplicationController
     @item.clear_supersession!
     FileProxy.update(actor: current_actor, knowledge_item: @item)
     render_update_detail_stream
+  end
+
+  # #1075: dieses (Dubletten-)KI in ein anderes Person/Org-KI mergen.
+  # @item ist die Quelle und verschwindet in den Papierkorb; alle Daten
+  # und Verweise wandern zum Ziel. Response räumt die Quell-Card aus dem
+  # Stack und der Liste (analog destroy) und meldet das Ergebnis.
+  def merge
+    target = KnowledgeItem.visible_to(current_actor).find_by(uuid: params[:target_uuid].to_s)
+    if target.nil?
+      return render turbo_stream: helpers.toast_stream(message: "Ziel-KI nicht gefunden"),
+                    status: :unprocessable_entity
+    end
+    source_title = @item.title
+    source_uuid  = @item.uuid
+    report = EntityMerge.merge!(source: @item, target: target, actor: current_actor)
+    moved = report.values.sum
+    render turbo_stream: [
+      turbo_stream.remove("stack_card_#{source_uuid}"),
+      turbo_stream.remove("knowledge_row_#{source_uuid}"),
+      helpers.toast_stream(
+        message: "'#{source_title.truncate(40)}' in '#{target.title.truncate(40)}' aufgegangen (#{moved} Verknüpfungen umgezogen)"
+      )
+    ]
+  rescue EntityMerge::Error => e
+    render turbo_stream: helpers.toast_stream(message: e.message), status: :unprocessable_entity
   end
 
   def trash

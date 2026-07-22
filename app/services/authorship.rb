@@ -42,26 +42,9 @@ class Authorship
     ki
   end
 
-  # #516: Zwei Personen-KIs zusammenführen (Merge). Quellen-Autorschaft der
-  # Dublette auf die Zielperson umhängen (Dubletten je Source+Rolle vermeiden),
-  # den Namen der Dublette als Alias an die Zielperson, und die Dublette als
-  # abgelöst markieren (Supersession). Quellen-Verknüpfungen sind der Kern;
-  # tiefere Repointings (Relations/Mentions) sind eine spätere Erweiterung.
-  def self.merge_persons(duplicate, target, actor:)
-    raise ArgumentError, "Eine Person kann nicht in sich selbst gemergt werden" if duplicate.uuid == target.uuid
-
-    SourceCreator.where(knowledge_item_uuid: duplicate.uuid).find_each do |sc|
-      if SourceCreator.where(source_id: sc.source_id, knowledge_item_uuid: target.uuid, role: sc.role).exists?
-        sc.destroy
-      else
-        sc.update!(knowledge_item_uuid: target.uuid)
-      end
-    end
-
-    target.update!(aliases: (Array(target.aliases) + [duplicate.title]).map { |a| a.to_s.strip }.uniq.reject(&:blank?))
-    duplicate.mark_superseded_by!(target, actor: actor)
-    target
-  end
+  # #516: merge_persons lebte hier als flacher Merge (nur Quellen-
+  # Autorschaft + Alias + Supersession). #1075: durch den vollen
+  # EntityMerge ersetzt — siehe app/services/entity_merge.rb.
 
   # #516 (Hans, 2026-06-05): Best-Effort-Split Vorname/Nachname. Der volle
   # Name bleibt die kanonische Identität (`title`); first/last sind eine

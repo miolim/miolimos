@@ -126,15 +126,18 @@ module Api
         render_one(item.reload, serializer: ITEM_SERIALIZER)
       end
 
-      # #516 (Hans, 2026-06-05): Personen-KIs zusammenführen — Dublette in
-      # target mergen (Quellen-Autorschaft umhängen + Dublette ablösen).
+      # #516 (Hans, 2026-06-05): Personen-KIs zusammenführen. #1075: vom
+      # flachen Autorschafts-Merge auf den vollen EntityMerge umgestellt —
+      # alle Daten und Verweise wandern, die Dublette geht in den Papier-
+      # korb (statt Supersession). Antwort: das ZIEL (vorher: die Dublette)
+      # plus `report` mit den umgezogenen Datensätzen je Kategorie.
       def merge_into
         duplicate = KnowledgeItem.find(params[:uuid])
         target    = KnowledgeItem.find_by(uuid: params.require(:target_uuid).to_s)
         raise ActiveRecord::RecordNotFound, "target not found" unless target
-        Authorship.merge_persons(duplicate, target, actor: current_actor)
-        render_one(duplicate.reload, serializer: ITEM_SERIALIZER)
-      rescue ArgumentError => e
+        report = EntityMerge.merge!(source: duplicate, target: target, actor: current_actor)
+        render json: { data: ITEM_SERIALIZER.call(target.reload), report: report }
+      rescue EntityMerge::Error => e
         render json: { error: e.message, code: "invalid" }, status: :unprocessable_entity
       end
 

@@ -314,6 +314,28 @@
             allow_create:  false %>
       </div>
 
+      <%# #1075: Merge-Picker — dieses (Dubletten-)KI in ein anderes
+          Person/Org-KI aufgehen lassen. Ziel wählen führt den Merge
+          sofort aus: alle Daten + Verweise wandern, diese Card
+          verschwindet, die Quelle geht in den Papierkorb. %>
+      <% if item.item_type.in?(%w[person organization]) %>
+        <div data-empty="true">
+        <%= render "shared/entity_picker",
+              icon:          "merge",
+              chips_id:      "knowledge_merge_chip_#{item.uuid}",
+              chips_partial: "knowledge_items/merge_chip",
+              chips_locals:  { item: item },
+              suggest_url:   suggest_knowledge_items_path(id_as_uuid: 1, exclude: item.uuid,
+                                                          item_type: "person,organization"),
+              add_url:       merge_knowledge_item_path(item.uuid),
+              param_name:    "target_uuid",
+              label:         t("knowledge.detail.merge_label"),
+              placeholder:   t("knowledge.detail.merge_placeholder"),
+              create_label:  "—",
+              allow_create:  false %>
+        </div>
+      <% end %>
+
       <%# Versionshistorie — Lazy-Load via Turbo-Frame. #581-Folge:
           Werkzeug-Subsections (Historie/Frontmatter) erscheinen nur in
           der Stufe „alle Felder" — data-empty=true ist hier bewusst. %>

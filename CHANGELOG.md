@@ -17,6 +17,18 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Merging duplicate people and organizations. When the same real person got
+  recorded twice — typically because the mail sync auto-created a contact for
+  an address that had been removed from the "real" entry — the duplicate's
+  card now offers "Zusammenführen in …". Picking the target moves everything
+  the duplicate holds (contact points, addresses, bank accounts, identifiers,
+  communications, mentions, relations, affiliations, source authorship, notes
+  body) onto the target, keeps the duplicate's name as an alias so existing
+  `[[wiki links]]` keep resolving, and puts the emptied duplicate into the
+  trash. The API endpoint `POST /knowledge_items/:uuid/merge_into` performs
+  the same full merge (it used to move source authorship only) and returns a
+  per-category report of what moved (#1075).
+
 - Gender and salutation on people. A person carries an optional gender
   (female / male / diverse, blank means not stated) and an optional free-text
   salutation. A letter that has no salutation of its own now derives one from
@@ -102,6 +114,12 @@ release is cut, this section is renamed to the new version and a fresh
   itself no longer focuses the card it is about to remove (#1091).
 
 ### Fixed
+
+- Saving a person without touching their contact data no longer wipes it.
+  Internal saves that did not carry contact points, affiliations, or
+  relationships — marking a person as superseded, for instance — silently
+  deleted all three from the person. Absent data is now left untouched;
+  explicitly clearing the last entry in the editor still deletes it (#1075).
 
 - The red marking now also reaches entry types whose stack prefix differs from
   their kind (`inbox_item`, `tree_focus`, `topic_props`, `tag_list`): the

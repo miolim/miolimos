@@ -10,6 +10,7 @@ import { BladeStackRoutes } from "lib/blade_stack_routes"
 import { BladeStackEditModeMixin } from "lib/blade_stack_edit_mode"
 import { BladeStackMobileMixin } from "lib/blade_stack_mobile"
 import { BladeStackResizeMixin } from "lib/blade_stack_resize"
+import { focusTargetAfterClose } from "lib/blade_stack_close"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -151,6 +152,13 @@ class BladeStackController extends Controller {
       // Reibung mit dem nativen Touch-Drag, was sich als Swipe-Delay
       // aeussert. focusin-Pfad bleibt aktiv fuer Cursor-in-Textfeld.
       if (e.type === "pointerdown" && this._mediaMobile?.matches) return
+      // #1091 (Hans): „Durch das blosse Schliessen einer Card soll diese
+      // nicht den Fokus bekommen." Der pointerdown auf einem Schliessen-
+      // Control (Spine-Kreuz, Spine-Top-Hover-X, Toolbar-X, Close-Menue)
+      // hat sonst die Card erst aktiviert und _closeCardElements sah sie
+      // als „hatte Focus" — der Focus wanderte dann weg vom eigentlich
+      // fokussierten Blade.
+      if (e.target.closest?.('[data-action*="blade-stack#closeCard"]')) return
       this.setActiveCard(card)
       if (e.type !== "pointerdown") return
       const onInteractive = e.target.closest(
@@ -784,8 +792,13 @@ class BladeStackController extends Controller {
   // #358 (Hans, 2026-05-25): nach Close bekommt die linke Nachbarcard
   // den Focus; existiert keine links, dann die rechte.
   // #1032: auf mehrere Cards verallgemeinert (Menü „Diese Card und alle
-  // rechts davon schließen") — EIN Entwurfs-Confirm über alle Cards,
-  // Focus landet auf dem linken Nachbarn der ersten geschlossenen Card.
+  // rechts davon schließen") — EIN Entwurfs-Confirm über alle Cards.
+  // #1091 (Hans, 2026-07-22): Focus wandert NUR, wenn die geschlossene
+  // Card ihn hatte — dann bevorzugt nach RECHTS (Regel aus #358 gedreht),
+  // sonst nach links. Schliesst man eine Hintergrund-Card, bleibt der
+  // Focus wo er ist. Ausserdem bleibt die Scrollposition erhalten: die
+  // Cards links der geschlossenen ruecken nicht nach, die rechten fuellen
+  // den Platz nach rechts auf (Flex-Reflow erledigt das von selbst).
   _closeCardElement(card) {
     this._closeCardElements([card])
   }
@@ -794,17 +807,14 @@ class BladeStackController extends Controller {
     cards = cards.filter(c => c && !c.classList.contains("is-closing"))  // Doppelklick-Schutz
     if (!cards.length) return
     if (!this._confirmDiscardDrafts(cards)) return
-    // Nachbar vorab bestimmen — `previousElementSibling` der ersten Card
-    // ist die Card links davon. Falls keine da (= Card war erste im
-    // Stack), nehmen wir die rechts von der letzten geschlossenen.
-    const first = cards[0]
-    const last  = cards[cards.length - 1]
-    const focusNext = (first.previousElementSibling?.classList?.contains("stack-card")
-                        ? first.previousElementSibling
-                        : null)
-                       || (last.nextElementSibling?.classList?.contains("stack-card")
-                            ? last.nextElementSibling
-                            : null)
+    // #1091: Nachfolger vorab bestimmen — null heisst „Focus bleibt".
+    const allCards  = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
+    const active    = this.containerTarget.querySelector('.stack-card[data-active="true"]')
+    const focusNext = focusTargetAfterClose(allCards, cards, active)
+    // #1091: Scrollposition festhalten. Waehrend die Cards auf Breite 0
+    // gleiten schrumpft scrollWidth; der Browser klemmt scrollLeft dabei
+    // nach und alles links wuerde nach rechts rutschen.
+    const keepScrollLeft = this.containerTarget.scrollLeft
 
     // #256: Smooth-Close. Auf Mobile (scroll-snap-Layout) wuerde eine
     // Breiten-Animation nicht passen — dort sofort entfernen. Auf Desktop
@@ -822,10 +832,14 @@ class BladeStackController extends Controller {
     }
     let pending = cards.length
     const finishAll = () => {
-      // #358: Focus auf Nachbar setzen nachdem die alten Cards weg sind.
+      this.containerTarget.scrollLeft = keepScrollLeft
       if (focusNext && focusNext.isConnected) {
         this.setActiveCard(focusNext)
-        this._scrollCardIntoFocus(focusNext)
+        // #1091: nur nachscrollen, wenn der neue Focus sonst nicht
+        // sichtbar waere. „nearest" laesst die Scrollposition in Ruhe,
+        // solange die Card im Viewport liegt — _scrollCardIntoFocus
+        // haette sie stattdessen immer neu ausgerichtet.
+        this.scrollCardIntoView(focusNext)
       }
       this.pushTrailState()
     }

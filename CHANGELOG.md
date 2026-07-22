@@ -79,6 +79,13 @@ release is cut, this section is renamed to the new version and a fresh
   list blade, so rows shown inside a normal card (invoices on a person, for
   instance) opened a duplicate every time. The plus icon still adds another
   copy on purpose (#1067).
+- Closing a card leaves the rest of the stack where it is. The cards to the
+  left keep their scroll position instead of sliding along, and only the cards
+  to the right move up to fill the gap. The focus follows only when the closed
+  card actually held it — then to the card on its right, or, if there is none,
+  to the one on its left. Closing a background card no longer pulls the focus
+  away from the card you were working in, and the click on the closing cross
+  itself no longer focuses the card it is about to remove (#1091).
 
 ### Fixed
 

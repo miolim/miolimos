@@ -33,10 +33,12 @@ export default class extends Controller {
     // input (capture): Fehler-Markierung verschwindet, sobald der User
     // den Wert wieder anfasst — der naechste Save entscheidet neu.
     this._clearError = (e) => {
-      const el = e.target
-      if (el?.classList?.contains("autosave-error")) {
+      // Die Markierung kann am Feld selbst ODER an seiner sichtbaren
+      // Vertretung (Picker-Zeile) haengen — closest deckt beide ab.
+      const marked = e.target?.closest?.(".autosave-error")
+      if (marked) {
         this._activeError = null
-        this._unmarkError(el)
+        this._unmarkError(marked)
       }
     }
     // Turbo-Page-Morphs (Live-Broadcasts — ein Task-Save loest selbst
@@ -63,8 +65,9 @@ export default class extends Controller {
     if (this._activeFlash) {
       const remaining = this._activeFlash.until - Date.now()
       if (remaining > 60) {
-        const field = refindField(document, this._activeFlash.desc)
-        if (field && !field.classList.contains("autosave-saved")) {
+        const field  = refindField(document, this._activeFlash.desc)
+        const target = field && this._visibleTargetFor(field)
+        if (target && !target.classList.contains("autosave-saved")) {
           this._showFlash(field, remaining)
         }
       } else {
@@ -72,9 +75,24 @@ export default class extends Controller {
       }
     }
     if (this._activeError) {
-      const field = refindField(document, this._activeError.desc)
-      if (field && !field.classList.contains("autosave-error")) this._markErrorStyles(field)
+      const field  = refindField(document, this._activeError.desc)
+      const target = field && this._visibleTargetFor(field)
+      if (target && !target.classList.contains("autosave-error")) this._markErrorStyles(field)
     }
+  }
+
+  // #1114 v3: Manche Autosave-Felder sind nach dem Save wieder
+  // unsichtbar — z.B. die Picker-Zeilen der Task-Card (Input lebt in
+  // einer hidden Box, der Server ersetzt den Block nach dem PATCH).
+  // Die Rueckmeldung gehoert dann an die sichtbare Vertretung des
+  // Feldes: die Picker-Zeile, sonst den naechsten sichtbaren Vorfahren.
+  _visibleTargetFor(field) {
+    const visible = el => !!el && typeof el.getBoundingClientRect === "function" &&
+                          el.getBoundingClientRect().width > 0
+    if (visible(field)) return field
+    let el = field.closest?.('[data-controller~="picker-toggle"]') || field.form || field
+    while (el && !visible(el)) el = el.parentElement
+    return el
   }
 
   _feedback(event) {
@@ -98,9 +116,11 @@ export default class extends Controller {
   _flashSuccess(field) {
     // Nur aufraeumen, wenn WIR den Fehler-Zustand gesetzt hatten — sonst
     // wuerde ein regulaerer title (z.B. Tooltip eines Datumsfelds) beim
-    // ersten erfolgreichen Save verschwinden.
+    // ersten erfolgreichen Save verschwinden. Die Markierung kann am
+    // Feld oder an seiner sichtbaren Vertretung haengen.
     this._activeError = null
-    if (field.classList.contains("autosave-error")) this._unmarkError(field)
+    const marked = field.closest?.(".autosave-error") || (this._visibleTargetFor(field)?.classList.contains("autosave-error") ? this._visibleTargetFor(field) : null)
+    if (marked) this._unmarkError(marked)
     this._activeFlash = {
       desc:  fieldDescriptor(field.form, field),
       until: Date.now() + this.constructor.FLASH_MS
@@ -110,11 +130,15 @@ export default class extends Controller {
 
   // Klasse + Badge fuer `ms` Millisekunden anzeigen — auch fuer die
   // RESTZEIT nach einem Morph (_reapplyAfterRender) wiederverwendet.
+  // Ziel ist das Feld selbst oder, wenn es (wieder) unsichtbar ist,
+  // seine sichtbare Vertretung (_visibleTargetFor).
   _showFlash(field, ms) {
-    field.classList.add("autosave-saved")
-    setTimeout(() => { if (field.isConnected) field.classList.remove("autosave-saved") }, ms)
-    const r = field.getBoundingClientRect()
-    if (!r.width) return   // display:none (z.B. hidden field) — kein Badge
+    const target = this._visibleTargetFor(field)
+    if (!target) return
+    target.classList.add("autosave-saved")
+    setTimeout(() => { if (target.isConnected) target.classList.remove("autosave-saved") }, ms)
+    const r = target.getBoundingClientRect()
+    if (!r.width) return
     const badge = document.createElement("div")
     badge.className = "autosave-check-badge"
     badge.setAttribute("aria-hidden", "true")
@@ -131,13 +155,15 @@ export default class extends Controller {
   }
 
   _markErrorStyles(field) {
-    field.classList.add("autosave-error")
+    const target = this._visibleTargetFor(field)
+    if (!target) return
+    target.classList.add("autosave-error")
     // Tooltip erklaert den roten Rahmen; Original-title (falls einer da
     // war) merken und beim Aufraeumen zuruecksetzen.
-    if (field.title && !field.dataset.autosavePrevTitle) {
-      field.dataset.autosavePrevTitle = field.title
+    if (target.title && !target.dataset.autosavePrevTitle) {
+      target.dataset.autosavePrevTitle = target.title
     }
-    field.title = window.t ? window.t("js.autosave.failed") : "Speichern fehlgeschlagen"
+    target.title = window.t ? window.t("js.autosave.failed") : "Speichern fehlgeschlagen"
   }
 
   _unmarkError(field) {

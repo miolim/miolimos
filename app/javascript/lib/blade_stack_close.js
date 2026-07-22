@@ -45,3 +45,31 @@ export function focusTargetAfterClose(cards, closing, active) {
 export function endSpacerWidth({ scrollLeft, clientWidth, contentWidth }) {
   return Math.max(0, scrollLeft + clientWidth - contentWidth)
 }
+
+// #1091 v4 (Hans, 2026-07-22): Der Freiraum entsteht auch durch REINES
+// Scrollen, nicht nur durchs Schliessen. Der Stack erlaubt stehenden
+// Overscroll bis zur „Voll-Regal"-Position: alle Cards links als Spines
+// eingestapelt, nur die aeusserste rechte Card offen, rechts davon Leere.
+// Der stehende Spacer misst genau die Breite, die dieser Endposition zum
+// natuerlichen Content-Ende fehlt.
+//   fullShelfScroll = X_last - stickyLeft_last (letzte Card exakt am
+//   Pin-Platz), Spacer = fullShelfScroll + clientWidth - contentWidth.
+export function standingSpacerWidth({ clientWidth, contentWidth, lastCardX, lastStickyLeft }) {
+  return Math.max(0, lastCardX - lastStickyLeft + clientWidth - contentWidth)
+}
+
+// Wheel-Gesten sind Fokus-SCHRITTE (#224 6f-3); im Freiraum uebersetzen
+// sie sich in Regal-Schritte: pro Geste rueckt EINE weitere Card in den
+// linken Spine-Stapel (vorwaerts) bzw. wieder heraus (rueckwaerts) —
+// kontinuierlich stufig, kein Snap ueber die ganze Leere. Die Stops sind
+// die Scrollpositionen, an denen Card i genau an ihrem Sticky-Platz
+// sitzt (X_i - stickyLeft_i).
+export function nextShelfStop(stops, scrollLeft) {
+  const next = stops.filter(p => p > scrollLeft + 1)
+  return next.length ? Math.min(...next) : null
+}
+
+export function prevShelfStop(stops, scrollLeft) {
+  const prev = stops.filter(p => p < scrollLeft - 1)
+  return prev.length ? Math.max(...prev) : null
+}

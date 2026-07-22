@@ -126,7 +126,11 @@ release is cut, this section is renamed to the new version and a fresh
   That free space is a real place: you can scroll into it and back out, and
   closing cards from the left keeps growing it. It fills back up continuously
   as cards slide in front of it while scrolling left — never with a sudden
-  snap — and shrinks only when newly opened cards take its room (#1091).
+  snap — and shrinks only when newly opened cards take its room. Plain
+  scrolling creates it too: swiping left past the last card shelves one more
+  card per gesture into the spine pile on the left, growing the free space on
+  the right until only the rightmost card remains open; swiping back unshelves
+  them one by one (#1091).
 
 ### Fixed
 

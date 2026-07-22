@@ -64,3 +64,44 @@ test("endSpacerWidth: ungescrollter Stack schmaler als der Viewport → fuellt d
 // #1091 v3 (Hans): KEIN Abbau des Spacers beim Scrollen mehr — der
 // Freiraum ist begehbar (rein/raus scrollen erlaubt) und schrumpft nur,
 // wenn neue Cards ihn fuellen. spacerWidthAfterScroll ist entfernt.
+
+// ─── #1091 v4: Stehender Overscroll + Regal-Schritte ────────────────
+
+import { standingSpacerWidth, nextShelfStop, prevShelfStop } from "../../app/javascript/lib/blade_stack_close.js"
+
+test("standingSpacerWidth: breiter Viewport → Overscroll bis zur Voll-Regal-Position", () => {
+  // 4 Cards à 576, letzte bei X=1728, sticky-Pin bei 3*28=84.
+  // Voll-Regal-Scroll = 1728-84 = 1644; Content 2312 → 1644+1942-2312 = 1274.
+  assert.equal(
+    standingSpacerWidth({ clientWidth: 1942, contentWidth: 2312, lastCardX: 1728, lastStickyLeft: 84 }),
+    1274
+  )
+})
+
+test("standingSpacerWidth: schmaler Viewport → natuerliches Ende IST schon Voll-Regal", () => {
+  // Letzte Card geclampt auf cw-cardW: 706-576=130 → 1728-130+706-2312 < 0 → 0.
+  assert.equal(
+    standingSpacerWidth({ clientWidth: 706, contentWidth: 2312, lastCardX: 1728, lastStickyLeft: 130 }),
+    0
+  )
+})
+
+test("nextShelfStop: naechster Stop rechts der aktuellen Position", () => {
+  const stops = [0, 548, 1096, 1644]
+  assert.equal(nextShelfStop(stops, 0), 548)
+  assert.equal(nextShelfStop(stops, 600), 1096)
+  assert.equal(nextShelfStop(stops, 1644), null)   // Voll-Regal erreicht
+})
+
+test("prevShelfStop: naechster Stop links der aktuellen Position", () => {
+  const stops = [0, 548, 1096, 1644]
+  assert.equal(prevShelfStop(stops, 1644), 1096)
+  assert.equal(prevShelfStop(stops, 600), 548)
+  assert.equal(prevShelfStop(stops, 0), null)
+})
+
+test("Shelf-Stops sind toleranzbehaftet (±1px zaehlt nicht als eigener Stop)", () => {
+  const stops = [0, 548]
+  assert.equal(nextShelfStop(stops, 547.5), null)
+  assert.equal(prevShelfStop(stops, 0.5), null)
+})

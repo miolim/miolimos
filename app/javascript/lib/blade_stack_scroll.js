@@ -90,9 +90,10 @@ export const BladeStackScrollMixin = {
     const stickyClamped    = idx === total - 1 && stickyStackWidth > Math.max(0, cw - cardW)
     let target
     if (stickyClamped) {
-      // scrollLeftMax fuer den Container: alles soweit nach rechts wie
-      // moeglich. Card sitzt dann genau in cw-cardW (= rechter Rand).
-      target = Math.max(0, this.containerTarget.scrollWidth - cw)
+      // Ans NATUERLICHE Content-Ende: Card sitzt dann genau in cw-cardW
+      // (= rechter Rand). #1091 v4: nicht scrollWidth - cw — das laege
+      // wegen des stehenden Overscroll-Spacers mitten im Freiraum.
+      target = this._naturalEndScroll()
     } else {
       target = maxScroll >= minScroll ? maxScroll : minScroll
     }

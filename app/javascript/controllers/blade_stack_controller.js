@@ -10,7 +10,7 @@ import { BladeStackRoutes } from "lib/blade_stack_routes"
 import { BladeStackEditModeMixin } from "lib/blade_stack_edit_mode"
 import { BladeStackMobileMixin } from "lib/blade_stack_mobile"
 import { BladeStackResizeMixin } from "lib/blade_stack_resize"
-import { focusTargetAfterClose, endSpacerWidth } from "lib/blade_stack_close"
+import { focusTargetAfterClose, endSpacerWidth, standingSpacerWidth, nextShelfStop, prevShelfStop } from "lib/blade_stack_close"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -263,11 +263,10 @@ class BladeStackController extends Controller {
         this._upgradeSpineTopIcons()
         // #320: Append-Pfad — Mehrfach-Instanzen-Counter neu rechnen.
         this._refreshInstanceCounters()
+        // #1091 v4: restickify synchronisiert auch den End-Spacer — eine
+        // neue Card fuellt zuerst den End-Freiraum, BEVOR die Scroll-
+        // Logik unten zur Card scrollt.
         this.restickify()
-        // #1091 v2: eine neue Card fuellt zuerst den End-Freiraum —
-        // Spacer auf das neue Rest-Mass trimmen (oder entfernen),
-        // BEVOR die Scroll-Logik unten zur Card scrollt.
-        this._syncEndSpacer()
         this.applyHighlighting()
         this.syncUrl({ pushHistory: false })
         if (lastAdded) {
@@ -335,8 +334,11 @@ class BladeStackController extends Controller {
       this.restickify()
       this.applyHighlighting()
       // #1091 v3b: Spacer VOR dem Scroll-Restore wiederherstellen.
+      // v4: restickify oben hat ihn schon auf max(stehend, aktuell)
+      // gesetzt — aber mit dem u.U. schon geklemmten scrollLeft; die
+      // gemerkte Vor-Morph-Breite gewinnt, wenn sie groesser ist.
       if (this._morphSpacerW > 0 && this.hasContainerTarget && !this._mediaMobile?.matches) {
-        this._setEndSpacerWidth(this._morphSpacerW)
+        this._setEndSpacerWidth(Math.max(this._morphSpacerW, this._endSpacerWidthNow()))
       }
       // Scroll-Position nach dem Restickify wiederherstellen.
       if (this._morphScrollLeft != null && this.hasContainerTarget) {
@@ -689,8 +691,11 @@ class BladeStackController extends Controller {
     // Direkt auf scrollWidth scrollen klappt zuverlaessig, weil das den
     // Container ans rechte Ende schiebt (= neue Card).
     requestAnimationFrame(() => {
+      // #1091 v4: NATUERLICHES Content-Ende, nicht scrollWidth — das
+      // enthaelt jetzt den stehenden Overscroll-Spacer; scrollWidth
+      // wuerde die neue Card links gepinnt in der Leere abstellen.
       if (wasEmpty) this.containerTarget.scrollLeft = 0
-      else this.containerTarget.scrollTo({ left: this.containerTarget.scrollWidth, behavior: "smooth" })
+      else this.containerTarget.scrollTo({ left: this._naturalEndScroll(), behavior: "smooth" })
       card.querySelector("input[name='title']")?.focus()
     })
   }
@@ -954,24 +959,66 @@ class BladeStackController extends Controller {
     sp.style.width = `${Math.round(width)}px`
   }
 
-  // Spacer exakt auf das noetige Mass bringen (oder entfernen):
-  // genau die Breite, die fehlt, damit die aktuelle Scrollposition
-  // gueltig bleibt. Laeuft NUR nach Appends (neue Cards fuellen den
-  // Freiraum zuerst) und raeumt bei leerem Stack/Mobile auf — beim
-  // Schliessen und Scrollen wird der Freiraum nie verkleinert (v3).
+  // #1091 v4: Spacer auf das noetige Mass bringen — das Maximum aus
+  //   (a) STEHENDEM Overscroll bis zur Voll-Regal-Position (alle Cards
+  //       links eingestapelt, nur die rechte Card offen) — so schafft
+  //       schon reines Links-Scrollen rechts Freiraum, und
+  //   (b) dem Erhalt der AKTUELLEN Scrollposition (nach Closes darf
+  //       nichts nachklemmen).
+  // Laeuft zentral aus restickify() (= nach jeder Layout-Aenderung:
+  // Connect, Append, Close-Removal, Morph, Collapse, Card-Resize) und
+  // raeumt bei leerem Stack/Mobile auf.
   _syncEndSpacer() {
     const c  = this.containerTarget
     const sp = this._endSpacer()
-    if (this._mediaMobile?.matches || !c.querySelector(".stack-card")) {
+    const cards = Array.from(c.querySelectorAll(".stack-card"))
+    if (this._mediaMobile?.matches || !cards.length) {
       sp?.remove()
       return
     }
     const spacerW = sp ? (parseFloat(sp.style.width) || 0) : 0
-    this._setEndSpacerWidth(endSpacerWidth({
+    const natural = c.scrollWidth - spacerW
+    let lastCardX = 0
+    for (let i = 0; i < cards.length - 1; i++) lastCardX += cards[i].getBoundingClientRect().width
+    const standing = standingSpacerWidth({
+      clientWidth:    c.clientWidth,
+      contentWidth:   natural,
+      lastCardX,
+      lastStickyLeft: parseFloat(cards[cards.length - 1].style.left) || 0
+    })
+    const preserve = endSpacerWidth({
       scrollLeft:   c.scrollLeft,
       clientWidth:  c.clientWidth,
-      contentWidth: c.scrollWidth - spacerW
-    }))
+      contentWidth: natural
+    })
+    this._setEndSpacerWidth(Math.max(standing, preserve))
+  }
+
+  // #1091 v4: Regal-Schritt — eine Wheel-/Tastatur-Geste im Freiraum.
+  // Vorwaerts (dir>0): naechste Card rueckt in den linken Spine-Stapel.
+  // Rueckwaerts (dir<0): die zuletzt eingestapelte faehrt wieder aus.
+  // Stops = Scrollpositionen, an denen Card i exakt an ihrem Sticky-
+  // Platz sitzt (restickify hat style.left geschrieben).
+  _shelfStep(dir, cards) {
+    const c = this.containerTarget
+    const stops = []
+    let x = 0
+    cards.forEach(card => {
+      stops.push(Math.max(0, x - (parseFloat(card.style.left) || 0)))
+      x += card.getBoundingClientRect().width
+    })
+    const target = dir > 0 ? nextShelfStop(stops, c.scrollLeft) : prevShelfStop(stops, c.scrollLeft)
+    if (target == null) return
+    c.scrollTo({ left: target, behavior: "smooth" })
+  }
+
+  // Steht der Viewport rechts vom natuerlichen Content-Ende (= im
+  // Freiraum)? Dann uebersetzen sich Rueckwaerts-Gesten in Regal-
+  // Schritte statt in Fokus-Wechsel.
+  _inOverscroll() {
+    const c = this.containerTarget
+    const naturalMax = Math.max(0, (c.scrollWidth - this._endSpacerWidthNow()) - c.clientWidth)
+    return c.scrollLeft > naturalMax + 1
   }
 
   // Klick auf einen Spine: Card aus dem Stapel zurück in den Mittel-
@@ -1151,6 +1198,14 @@ class BladeStackController extends Controller {
       return
     }
     const idx = Math.max(0, cards.findIndex(c => c.dataset.active === "true"))
+    // #1091 v4 (Hans): Am Stack-Ende ist ein Vorwaerts-Schritt kein No-Op
+    // mehr — er scrollt weiter ins Regal: pro Geste rueckt eine weitere
+    // Card in den linken Spine-Stapel, rechts waechst der Freiraum, bis
+    // nur noch die aeusserste rechte Card offen ist. Rueckwaerts im
+    // Freiraum: Regal-Schritt zurueck (Card faehrt wieder aus), erst
+    // danach normale Fokus-Navigation.
+    if (delta > 0 && idx === cards.length - 1) { this._shelfStep(+1, cards); return }
+    if (delta < 0 && this._inOverscroll())     { this._shelfStep(-1, cards); return }
     const targetIdx = Math.min(cards.length - 1, Math.max(0, idx + delta))
     const next = cards[targetIdx]
     if (!next || next === cards[idx]) return
@@ -1605,14 +1660,22 @@ class BladeStackController extends Controller {
     requestAnimationFrame(() => {
       // Erste Card: links anlegen (scrollLeft=0). Folge-Cards: ganz
       // rechts ans Ende scrollen — #202: scrollIntoView trifft wegen
-      // Sticky-Positioning oft daneben, direkt scrollWidth ist
-      // zuverlaessig.
+      // Sticky-Positioning oft daneben. #1091 v4: „Ende" = natuerliches
+      // Content-Ende OHNE den stehenden Overscroll-Spacer.
       if (wasEmpty) {
         this.containerTarget.scrollLeft = 0
       } else {
-        this.containerTarget.scrollTo({ left: this.containerTarget.scrollWidth, behavior: "smooth" })
+        this.containerTarget.scrollTo({ left: this._naturalEndScroll(), behavior: "smooth" })
       }
     })
+  }
+
+  // #1091 v4: Ziel-scrollLeft fuer „ans Content-Ende scrollen" — die
+  // letzte Card rechtsbuendig, der stehende Overscroll-Spacer zaehlt
+  // nicht als Content.
+  _naturalEndScroll() {
+    const c = this.containerTarget
+    return Math.max(0, c.scrollWidth - this._endSpacerWidthNow() - c.clientWidth)
   }
 
   syncUrl({ pushHistory }) {
@@ -1766,6 +1829,9 @@ class BladeStackController extends Controller {
       card.style.right    = `${(total - i) * step - cardWidth}px`
       card.style.zIndex   = String(i)
     })
+    // #1091 v4: Der End-Spacer haengt vom Layout ab (Voll-Regal-Position
+    // braucht die frischen sticky-left-Werte) — hier zentral nachziehen.
+    this._syncEndSpacer()
   }
 
   // #803: _applyMobileLayout -> BladeStackMobileMixin (lib/blade_stack_mobile.js)

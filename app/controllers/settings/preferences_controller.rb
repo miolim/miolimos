@@ -12,7 +12,7 @@ class Settings::PreferencesController < Settings::BaseController
     permitted = params.require(:preferences).permit(
       :locale, :wheel_preset, :sidebar_click_mode, :mail_compose,
       :sidebar_recent_topics_count, :person_ki_title, card_widths: {},
-      sidebar_layout: {}
+      sidebar_layout: {}, topbar_layout: {}
     )
     # #768 (Hans): "Das bin ich" — Selbst-KI ist eine DB-Spalte, keine
     # Preference. Titel → Person-KI auflösen (leer = Verknüpfung lösen).

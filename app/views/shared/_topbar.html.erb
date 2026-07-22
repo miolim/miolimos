@@ -1,5 +1,14 @@
+<%# #1109 (Hans, 2026-07-22): Die Icon-Reihe ist pro Nutzer anpassbar
+    (Vorlieben → Kopfleiste): Auswahl UND Reihenfolge kommen aus
+    pref_topbar_layout, gerendert ueber shared/_topbar_item. Fest bleiben
+    Grundfunktionen: Mobile-Nav, Suche, Name, Abmelden, Blade-Zaehler.
+    Der quick-create-Controller sitzt deshalb hier auf dem <header>
+    (nicht mehr auf der Quick-Create-Leiste) — die quick_*-Icons koennen
+    in beiden Zonen stehen, die Slots (fixed, zentriert) liegen weiter
+    in shared/_quick_create_bar. %>
+<% topbar_layout = current_actor&.pref_topbar_layout || ActorPreferences.default_topbar_layout %>
 <header class="focus-chrome-hide border-b border-slate-200 bg-white h-12 flex items-center px-4 gap-3 shrink-0"
-        data-controller="keyboard blade-counts"
+        data-controller="keyboard blade-counts quick-create"
         data-ui-label="Topbar (Kopfleiste)">
   <%# #262: Mobile-Indikator — Anzahl Blades LINKS der sichtbaren Card.
       #262 follow-up: Platz ist immer reserviert (min-w-4), Pfeile sind
@@ -38,66 +47,23 @@
     </div>
   </div>
 
-  <%# #301: Quick-Create-Icon-Leiste — neue Entitaet direkt in den Stack. %>
+  <%# #301/#1109: Linke Icon-Zone (Quick-Create & Co.) — Inhalt und
+      Reihenfolge aus den Vorlieben. %>
+  <div class="flex items-center gap-0.5" data-ui-label="Topbar-Icons links">
+    <% topbar_layout["left"].each do |item_id| %>
+      <%= render "shared/topbar_item", item_id: item_id %>
+    <% end %>
+  </div>
+  <%# Die Quick-Create-Eingabeslots (fixed + zentriert) — immer gerendert,
+      damit auch die g-Praefix-Shortcuts funktionieren, egal welche Icons
+      sichtbar sind. %>
   <%= render "shared/quick_create_bar" %>
 
-  <%# #533 Phase 1b: Zeit-Timer (laufende Uhr + Start/Nachtragen-Popup).
-      #857 (Hans, 2026-07-06): auf Mobil ausgeblendet — Toolbar war zu voll;
-      md:contents lässt das Desktop-Flex-Layout unverändert. %>
-  <div class="hidden md:contents"><%= render "shared/time_timer" %></div>
-
   <div class="ml-auto flex items-center gap-3 text-slate-600">
-    <%# #772 (Hans, 2026-06-27): Dark-Mode-Umschalter. Mond im Hell-Modus
-        (Klick → dunkel), Sonne im Dunkel-Modus (Klick → hell); per CSS
-        umgeschaltet (html.dark), kein JS-Icon-Tausch nötig. %>
-    <button type="button"
-            data-controller="theme"
-            data-action="click->theme#toggle"
-            data-ui-label="Dark-Mode-Umschalter"
-            title="<%= t("shared.topbar.theme_title") %>"
-            aria-label="<%= t("shared.topbar.theme_label") %>"
-            aria-pressed="<%= cookies[:theme] == "dark" %>"
-            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
-      <span class="theme-icon-moon flex [&_svg]:w-4 [&_svg]:h-4"><%= icon "moon" %></span>
-      <span class="theme-icon-sun hidden [&_svg]:w-4 [&_svg]:h-4"><%= icon "sun" %></span>
-    </button>
-    <%# #759 (Hans, 2026-06-23): Tastatur-Shortcut-Übersicht. Öffnet dasselbe
-        Modal wie die Taste „?" — der shortcut-help-Controller fängt das vom
-        Blade-Stack dispatchte Event ab, daher funktioniert der Trigger auch
-        hier in der Topbar (außerhalb des Stack-Scopes). %>
-    <button type="button"
-            data-controller="shortcut-help"
-            data-action="click->shortcut-help#open"
-            data-ui-label="Tastatur-Shortcuts (Hilfe)"
-            title="<%= t("shared.topbar.shortcuts_title") %>"
-            aria-label="<%= t("shared.topbar.shortcuts_label") %>"
-            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
-      <%= icon "keyboard", size: "w-4 h-4" %>
-    </button>
-    <%# #704 (Hans): Beschriftungs-Modus — Labels per Hover anzeigen, per
-        Klick kopieren. Erleichtert das eindeutige Beschreiben von UI-
-        Elementen. Shortcut: Cmd/Ctrl + . %>
-    <button type="button"
-            data-controller="ui-inspector"
-            data-action="click->ui-inspector#toggle"
-            data-ui-label="Beschriftungs-Modus (Schalter)"
-            title="<%= t("shared.topbar.inspector_title") %>"
-            aria-label="<%= t("shared.topbar.inspector_label") %>"
-            aria-pressed="false"
-            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
-      <%= icon "locate", size: "w-4 h-4" %>
-    </button>
-    <%# #339 (Hans): Diagnose-Knopf — schreibt einen JSON-Snapshot des
-        aktuellen Blade-Stack-Zustands in ein Overlay. Hilft, wenn ein
-        Bug im Stack ohne DevTools-Zugriff reproduziert werden soll. %>
-    <button type="button"
-            data-controller="diagnostic-snapshot"
-            data-action="click->diagnostic-snapshot#snapshot"
-            title="<%= t("shared.topbar.diagnostic_title") %>"
-            aria-label="<%= t("shared.topbar.diagnostic_label") %>"
-            class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
-      <%= icon "info", size: "w-4 h-4" %>
-    </button>
+    <%# #1109: Rechte Icon-Zone — Inhalt und Reihenfolge aus den Vorlieben. %>
+    <% topbar_layout["right"].each do |item_id| %>
+      <%= render "shared/topbar_item", item_id: item_id %>
+    <% end %>
     <span class="hidden sm:inline text-[13px]"><%= current_actor&.name %></span>
     <%# #302 follow-up (Hans): Abmelden als On/Off-Icon — auf Mobile
         sparen wir die Textbreite, Desktop bleibt's konsistent. %>

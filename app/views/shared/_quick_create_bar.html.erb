@@ -1,45 +1,16 @@
-<%# #301: Quick-Create-Leiste in der Topbar. Icon-Reihe + aufklappbare
-    Eingabeslots (fixed + zentriert). Aufgabe / Wartepunkt / KI / Person.
+<%# #301: Quick-Create-Eingabeslots (fixed + zentriert). Aufgabe /
+    Wartepunkt / KI / Person / Inbox-Import.
+
+    #1109: Die Icon-Reihe lebt nicht mehr hier — die Icons sind anpassbare
+    Topbar-Elemente (shared/_topbar_item, gesteuert von pref_topbar_layout)
+    und der quick-create-Stimulus-Controller sitzt auf dem <header>. Hier
+    liegen nur noch die Slots, als Targets in dessen Scope.
 
     Neu erstellte Entitaet wird vom jeweiligen Controller-Create-Pfad
     (quick_create=1) per turbo_stream an `blade_stack_container`
     appended — d.h. auf einer Stack-Seite landet sie direkt rechts im
     Stack. %>
-<div data-controller="quick-create" class="relative flex items-center gap-0.5">
-  <%# ─── Icon-Reihe ─────────────────────────────────────────────── %>
-  <button type="button" data-action="quick-create#toggle"
-          data-quick-create-slot-param="task"
-          title="<%= t("shared.quick_create.task_title") %>" aria-label="<%= t("shared.quick_create.task_aria") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-    <%= icon "tasks", size: "w-4 h-4" %>
-  </button>
-  <button type="button" data-action="quick-create#toggle"
-          data-quick-create-slot-param="awaiting"
-          title="<%= t("shared.quick_create.awaiting_title") %>" aria-label="<%= t("shared.quick_create.awaiting_aria") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-    <%= icon "waiting", size: "w-4 h-4" %>
-  </button>
-  <button type="button" data-action="quick-create#toggle"
-          data-quick-create-slot-param="ki"
-          title="<%= t("shared.quick_create.ki_title") %>" aria-label="<%= t("shared.quick_create.ki_aria") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-    <%= icon "knowledge", size: "w-4 h-4" %>
-  </button>
-  <button type="button" data-action="quick-create#toggle"
-          data-quick-create-slot-param="person"
-          title="<%= t("shared.quick_create.person_title") %>" aria-label="<%= t("shared.quick_create.person_aria") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-    <%= icon "user", size: "w-4 h-4" %>
-  </button>
-  <%# #302: Inbox-Import als 5. Icon. Slot uebernimmt URL oder Freitext —
-      InboxItem.create errechnet source_kind aus dem Input. %>
-  <button type="button" data-action="quick-create#toggle"
-          data-quick-create-slot-param="inbox"
-          title="<%= t("shared.quick_create.inbox_title") %>" aria-label="<%= t("shared.quick_create.inbox_aria") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-    <%= icon "inbox", size: "w-4 h-4" %>
-  </button>
-
+<div class="contents">
   <%# ─── Slot: Aufgabe ──────────────────────────────────────────── %>
   <%# #355 (Hans, 2026-05-25): Voreinstellungen fuer Topic + Zugewiesen,
       sitzungsuebergreifend persistent ueber localStorage (controller

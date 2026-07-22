@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- The top bar is now customizable per user (Settings → Preferences → Top bar):
+  every icon — the quick-create row, the time timer, dark mode, keyboard
+  shortcuts, labeling mode, and the diagnostic snapshot — can be placed in the
+  left zone (after the search field) or the right zone in any order, or hidden
+  entirely. Search, your name, and logout always stay. Works exactly like the
+  sidebar editor: drag between the columns, reorder within, reset to default
+  (#1109).
 - Merging duplicate people and organizations. When the same real person got
   recorded twice — typically because the mail sync auto-created a contact for
   an address that had been removed from the "real" entry — the duplicate's

@@ -1408,6 +1408,21 @@ de:
     sidebar_layout_scroll: "Scrollbereich"
     sidebar_layout_hidden: "Ausgeblendet"
     sidebar_layout_reset:  "Auf Standard zurücksetzen"
+    topbar_layout_title: "Kopfleiste"
+    topbar_layout_help:  "Welche Icons in welcher Zone der Kopfleiste erscheinen und in welcher Reihenfolge. Per Ziehen zwischen den Spalten verschieben und innerhalb sortieren. „Ausgeblendet“ erscheint gar nicht. Suche, Name und Abmelden bleiben immer sichtbar."
+    topbar_layout_left:  "Links (nach der Suche)"
+    topbar_layout_right: "Rechts"
+    topbar_items:
+      quick_task:     "Neue Aufgabe"
+      quick_awaiting: "Neuer Wartepunkt"
+      quick_ki:       "Neues Wissen"
+      quick_person:   "Neue Person"
+      quick_inbox:    "Inbox-Import"
+      timer:          "Zeit-Timer"
+      theme:          "Dunkel-Modus"
+      shortcuts:      "Tastatur-Shortcuts"
+      inspector:      "Beschriftungs-Modus"
+      diagnostic:     "Diagnose-Snapshot"
     save:              "Speichern"
 
   languages:

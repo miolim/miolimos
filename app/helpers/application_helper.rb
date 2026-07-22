@@ -174,6 +174,52 @@ module ApplicationHelper
     SIDEBAR_ITEM_ICONS.keys.index_with { |id| icon(sidebar_item_icon(id), size: "w-4 h-4") }
   end
 
+  # #1109: Label + Icon je anpassbarem Topbar-Element — gleiche Rolle wie
+  # die SIDEBAR_ITEM_*-Konstanten oben (einzige Quelle fuer Topbar-Render
+  # und Vorlieben-Editor).
+  TOPBAR_ITEM_LABEL_KEYS = {
+    "quick_task"     => "preferences.topbar_items.quick_task",
+    "quick_awaiting" => "preferences.topbar_items.quick_awaiting",
+    "quick_ki"       => "preferences.topbar_items.quick_ki",
+    "quick_person"   => "preferences.topbar_items.quick_person",
+    "quick_inbox"    => "preferences.topbar_items.quick_inbox",
+    "timer"          => "preferences.topbar_items.timer",
+    "theme"          => "preferences.topbar_items.theme",
+    "shortcuts"      => "preferences.topbar_items.shortcuts",
+    "inspector"      => "preferences.topbar_items.inspector",
+    "diagnostic"     => "preferences.topbar_items.diagnostic"
+  }.freeze
+
+  TOPBAR_ITEM_ICONS = {
+    "quick_task"     => "tasks",
+    "quick_awaiting" => "waiting",
+    "quick_ki"       => "knowledge",
+    "quick_person"   => "user",
+    "quick_inbox"    => "inbox",
+    "timer"          => "timer",
+    "theme"          => "moon",
+    "shortcuts"      => "keyboard",
+    "inspector"      => "locate",
+    "diagnostic"     => "info"
+  }.freeze
+
+  def topbar_item_label(id)
+    key = TOPBAR_ITEM_LABEL_KEYS[id.to_s]
+    key ? t(key) : id.to_s
+  end
+
+  def topbar_item_labels
+    TOPBAR_ITEM_LABEL_KEYS.keys.index_with { |id| topbar_item_label(id) }
+  end
+
+  def topbar_item_icon(id)
+    TOPBAR_ITEM_ICONS[id.to_s]
+  end
+
+  def topbar_item_icons_svg
+    TOPBAR_ITEM_ICONS.keys.index_with { |id| icon(topbar_item_icon(id), size: "w-4 h-4") }
+  end
+
   # #846: Einen Sidebar-Eintrag nach seiner ID rendern. Zentrale Registry,
   # damit Bereichszuordnung + Reihenfolge aus den Vorlieben (pref_sidebar_layout)
   # getrieben werden koennen. Unbekannte IDs => "" (robust gegen alte Layouts).

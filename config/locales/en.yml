@@ -1404,6 +1404,21 @@ en:
     sidebar_layout_scroll: "Scroll area"
     sidebar_layout_hidden: "Hidden"
     sidebar_layout_reset:  "Reset to default"
+    topbar_layout_title: "Top bar"
+    topbar_layout_help:  "Which icons appear in which zone of the top bar and in what order. Drag between the columns to move, and reorder within a column. “Hidden” is not shown at all. Search, name, and logout always stay visible."
+    topbar_layout_left:  "Left (after search)"
+    topbar_layout_right: "Right"
+    topbar_items:
+      quick_task:     "New task"
+      quick_awaiting: "New waiting item"
+      quick_ki:       "New knowledge"
+      quick_person:   "New person"
+      quick_inbox:    "Inbox import"
+      timer:          "Time timer"
+      theme:          "Dark mode"
+      shortcuts:      "Keyboard shortcuts"
+      inspector:      "Labeling mode"
+      diagnostic:     "Diagnostic snapshot"
     save:              "Save"
 
   languages:

@@ -7,9 +7,17 @@ import Sortable from "sortablejs"
 // werden koennen. Nach jeder Aenderung werden die drei Hidden-Inputs
 // (komma-separierte IDs je Bereich) aktualisiert — die Vorlieben-Form
 // schickt sie beim Speichern mit.
+//
+// #1109: Sections/Namen kommen komplett aus dem Markup (data-section,
+// input-name) — derselbe Controller treibt darum auch den Topbar-Layout-
+// Editor. Nur die Sortable-Gruppe muss sich unterscheiden (group-Value),
+// sonst koennte man Eintraege zwischen den beiden Editoren ziehen.
 export default class extends Controller {
   static targets = ["list", "input"]
-  static values  = { default: Object, labels: Object, icons: Object }
+  static values  = {
+    default: Object, labels: Object, icons: Object,
+    group:   { type: String, default: "sidebar-layout" }
+  }
 
   connect() {
     // Sortable.js (Touch + Maus), gleiche Optionen wie commitment_sortable:
@@ -17,7 +25,7 @@ export default class extends Controller {
     // Bewegungen bleiben Klicks.
     this.sortables = this.listTargets.map((list) =>
       Sortable.create(list, {
-        group:               "sidebar-layout",
+        group:               this.groupValue,
         draggable:           "[data-item-id]",
         animation:           150,
         ghostClass:          "opacity-40",

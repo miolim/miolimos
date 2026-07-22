@@ -178,6 +178,66 @@ module ActorPreferences
     result
   end
 
+  # #1109 (Hans, 2026-07-22): Konfigurierbare Topbar pro Actor — gleiches
+  # Muster wie das Sidebar-Layout (#846). Jedes anpassbare Topbar-Element
+  # hat eine feste ID; das Layout ordnet die IDs den Bereichen zu und legt
+  # die Reihenfolge fest:
+  #   - "left"   = links nach dem Suchfeld (Quick-Create-Zone)
+  #   - "right"  = rechte Icon-Gruppe (vor Name/Abmelden)
+  #   - "hidden" = gar nicht angezeigt
+  # NICHT konfigurierbar (Grundfunktionen): Mobile-Navigation, Suche,
+  # Actor-Name, Abmelden, die Mobile-Blade-Zaehler.
+  TOPBAR_SECTIONS = %w[left right hidden].freeze
+
+  # Default-Reihenfolge = die bisher hartcodierte Topbar. Neue Elemente HIER
+  # ergaenzen — Default-Bereich nie "hidden" (siehe SIDEBAR_ITEM_DEFAULTS).
+  TOPBAR_ITEM_DEFAULTS = [
+    ["quick_task",     "left"],
+    ["quick_awaiting", "left"],
+    ["quick_ki",       "left"],
+    ["quick_person",   "left"],
+    ["quick_inbox",    "left"],
+    ["timer",          "left"],
+    ["theme",          "right"],
+    ["shortcuts",      "right"],
+    ["inspector",      "right"],
+    ["diagnostic",     "right"]
+  ].freeze
+
+  TOPBAR_ITEM_IDS = TOPBAR_ITEM_DEFAULTS.map(&:first).freeze
+
+  def self.default_topbar_layout
+    layout = { "left" => [], "right" => [], "hidden" => [] }
+    TOPBAR_ITEM_DEFAULTS.each { |id, sec| layout[sec] << id }
+    layout
+  end
+
+  # Effektives Layout: gespeicherter Wert + fehlende (neue) IDs am Default-
+  # Platz, unbekannte IDs fliegen raus — identische Semantik wie
+  # pref_sidebar_layout.
+  def pref_topbar_layout
+    saved  = preferences["topbar_layout"]
+    placed = {}
+    result = { "left" => [], "right" => [], "hidden" => [] }
+    if saved.is_a?(Hash)
+      TOPBAR_SECTIONS.each do |sec|
+        Array(saved[sec]).each do |raw_id|
+          id = raw_id.to_s
+          next unless TOPBAR_ITEM_IDS.include?(id)
+          next if placed[id]
+          result[sec] << id
+          placed[id] = true
+        end
+      end
+    end
+    TOPBAR_ITEM_DEFAULTS.each do |id, default_sec|
+      next if placed[id]
+      result[TOPBAR_SECTIONS.include?(default_sec) ? default_sec : "left"] << id
+      placed[id] = true
+    end
+    result
+  end
+
   def update_preferences(updates)
     new_prefs = preferences.deep_dup
     updates.each do |key, value|
@@ -196,6 +256,8 @@ module ActorPreferences
         new_prefs["sidebar_recent_topics_count"] = value.to_i.clamp(0, SIDEBAR_RECENT_TOPICS_MAX)
       when "sidebar_layout"
         new_prefs["sidebar_layout"] = sanitize_sidebar_layout(value)
+      when "topbar_layout"
+        new_prefs["topbar_layout"] = sanitize_topbar_layout(value)
       when "locale"
         new_prefs["locale"] = value.to_s if LOCALES.include?(value.to_s)
       when "mail_compose"
@@ -222,6 +284,25 @@ module ActorPreferences
       ids.each do |raw_id|
         id = raw_id.to_s.strip
         next unless SIDEBAR_ITEM_IDS.include?(id)
+        next if seen[id]
+        layout[sec] << id
+        seen[id] = true
+      end
+    end
+    layout
+  end
+
+  # #1109: identische Saeuberung fuers Topbar-Layout (Bereiche/IDs andere).
+  def sanitize_topbar_layout(value)
+    src    = value.respond_to?(:to_h) ? value.to_h : {}
+    seen   = {}
+    layout = { "left" => [], "right" => [], "hidden" => [] }
+    TOPBAR_SECTIONS.each do |sec|
+      raw = src[sec] || src[sec.to_sym]
+      ids = raw.is_a?(String) ? raw.split(",") : Array(raw)
+      ids.each do |raw_id|
+        id = raw_id.to_s.strip
+        next unless TOPBAR_ITEM_IDS.include?(id)
         next if seen[id]
         layout[sec] << id
         seen[id] = true

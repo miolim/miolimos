@@ -1,0 +1,78 @@
+<%# #1109 (Hans, 2026-07-22): Ein anpassbares Topbar-Element nach seiner ID
+    rendern — zentrale Registry, damit Bereich (links/rechts/ausgeblendet)
+    und Reihenfolge aus den Vorlieben (pref_topbar_layout) getrieben werden
+    koennen. Gegenstueck zu sidebar_item (#846). Unbekannte IDs => nichts
+    (robust gegen alte gespeicherte Layouts).
+
+    Die quick_*-Icons brauchen den quick-create-Stimulus-Scope: der
+    Controller sitzt seit #1109 auf dem <header>, die Eingabeslots liegen
+    in shared/_quick_create_bar — Icons duerfen daher in beiden Zonen
+    stehen. Locals: item_id (String). %>
+<% case item_id.to_s %>
+<% when "quick_task", "quick_awaiting", "quick_ki", "quick_person", "quick_inbox" %>
+  <% slot = item_id.to_s.delete_prefix("quick_") %>
+  <button type="button" data-action="quick-create#toggle"
+          data-quick-create-slot-param="<%= slot %>"
+          title="<%= t("shared.quick_create.#{slot}_title") %>"
+          aria-label="<%= t("shared.quick_create.#{slot}_aria") %>"
+          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
+    <%= icon topbar_item_icon(item_id), size: "w-4 h-4" %>
+  </button>
+<% when "timer" %>
+  <%# #533 Phase 1b: Zeit-Timer. #857: auf Mobil ausgeblendet — Toolbar war
+      zu voll; md:contents laesst das Desktop-Flex-Layout unveraendert. %>
+  <div class="hidden md:contents"><%= render "shared/time_timer" %></div>
+<% when "theme" %>
+  <%# #772 (Hans, 2026-06-27): Dark-Mode-Umschalter. Mond im Hell-Modus
+      (Klick → dunkel), Sonne im Dunkel-Modus (Klick → hell); per CSS
+      umgeschaltet (html.dark), kein JS-Icon-Tausch noetig. %>
+  <button type="button"
+          data-controller="theme"
+          data-action="click->theme#toggle"
+          data-ui-label="Dark-Mode-Umschalter"
+          title="<%= t("shared.topbar.theme_title") %>"
+          aria-label="<%= t("shared.topbar.theme_label") %>"
+          aria-pressed="<%= cookies[:theme] == "dark" %>"
+          class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+    <span class="theme-icon-moon flex [&_svg]:w-4 [&_svg]:h-4"><%= icon "moon" %></span>
+    <span class="theme-icon-sun hidden [&_svg]:w-4 [&_svg]:h-4"><%= icon "sun" %></span>
+  </button>
+<% when "shortcuts" %>
+  <%# #759 (Hans, 2026-06-23): Tastatur-Shortcut-Uebersicht. Oeffnet dasselbe
+      Modal wie die Taste „?" — der shortcut-help-Controller faengt das vom
+      Blade-Stack dispatchte Event ab, daher funktioniert der Trigger auch
+      hier in der Topbar (ausserhalb des Stack-Scopes). %>
+  <button type="button"
+          data-controller="shortcut-help"
+          data-action="click->shortcut-help#open"
+          data-ui-label="Tastatur-Shortcuts (Hilfe)"
+          title="<%= t("shared.topbar.shortcuts_title") %>"
+          aria-label="<%= t("shared.topbar.shortcuts_label") %>"
+          class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+    <%= icon "keyboard", size: "w-4 h-4" %>
+  </button>
+<% when "inspector" %>
+  <%# #704 (Hans): Beschriftungs-Modus — Labels per Hover anzeigen, per
+      Klick kopieren. Shortcut: Cmd/Ctrl + . %>
+  <button type="button"
+          data-controller="ui-inspector"
+          data-action="click->ui-inspector#toggle"
+          data-ui-label="Beschriftungs-Modus (Schalter)"
+          title="<%= t("shared.topbar.inspector_title") %>"
+          aria-label="<%= t("shared.topbar.inspector_label") %>"
+          aria-pressed="false"
+          class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+    <%= icon "locate", size: "w-4 h-4" %>
+  </button>
+<% when "diagnostic" %>
+  <%# #339 (Hans): Diagnose-Knopf — schreibt einen JSON-Snapshot des
+      aktuellen Blade-Stack-Zustands in ein Overlay. %>
+  <button type="button"
+          data-controller="diagnostic-snapshot"
+          data-action="click->diagnostic-snapshot#snapshot"
+          title="<%= t("shared.topbar.diagnostic_title") %>"
+          aria-label="<%= t("shared.topbar.diagnostic_label") %>"
+          class="hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+    <%= icon "info", size: "w-4 h-4" %>
+  </button>
+<% end %>

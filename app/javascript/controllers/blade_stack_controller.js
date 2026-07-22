@@ -318,6 +318,13 @@ class BladeStackController extends Controller {
       // turbo-refresh-scroll also nicht; ohne das springt der Stack beim
       // Morph zurueck ("Ansicht zurueckgesetzt").
       this._morphScrollLeft = this.containerTarget?.scrollLeft ?? null
+      // #1091 v3b: Der End-Spacer ist ein reines Client-Element — idiomorph
+      // wirft ihn beim Page-Morph raus, weil er im Server-HTML nicht
+      // vorkommt. Breite merken und unten wieder aufbauen, sonst klemmt
+      // der scrollLeft-Restore (scrollWidth ist ohne Spacer kleiner) und
+      // der Stack rutscht bei jedem Live-Update nach rechts — genau der
+      // Effekt, den der Spacer verhindern soll.
+      this._morphSpacerW = this._endSpacerWidthNow()
     }
     this._onAfterRender  = () => {
       if (!this._morphing) return
@@ -327,6 +334,10 @@ class BladeStackController extends Controller {
       // koennen sich geaendert haben).
       this.restickify()
       this.applyHighlighting()
+      // #1091 v3b: Spacer VOR dem Scroll-Restore wiederherstellen.
+      if (this._morphSpacerW > 0 && this.hasContainerTarget && !this._mediaMobile?.matches) {
+        this._setEndSpacerWidth(this._morphSpacerW)
+      }
       // Scroll-Position nach dem Restickify wiederherstellen.
       if (this._morphScrollLeft != null && this.hasContainerTarget) {
         this.containerTarget.scrollLeft = this._morphScrollLeft

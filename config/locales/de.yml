@@ -1505,6 +1505,8 @@ de:
   # #619 Stufe 3: Strings für die JS-Schicht (Stimulus). Bereitgestellt als
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) liest hier.
   js:
+    autosave:
+      failed: "Nicht gespeichert — bitte Wert erneut ändern oder Seite neu laden."
     mail_compose:
       copied: "Text kopiert."
       copied_overflow: "Text ist zu lang für den mailto-Link — er liegt in der Zwischenablage, im Entwurf einfügen."

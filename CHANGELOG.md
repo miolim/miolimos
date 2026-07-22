@@ -17,6 +17,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Autosave fields now confirm what they do. Fields that save on leaving them —
+  invoice amounts, task fields, document metadata, and the like — briefly show
+  a green check mark at the field once saving succeeded, and keep a red border
+  (with an explanatory tooltip) when it failed, until the value is changed
+  again. One mechanism covers every autosave field in the app (#1114).
+
 - The top bar is now customizable per user (Settings → Preferences → Top bar):
   every icon — the quick-create row, the time timer, dark mode, keyboard
   shortcuts, labeling mode, and the diagnostic snapshot — can be placed in the

@@ -834,3 +834,39 @@ html.dark .theme-icon-sun  { display: flex; }
 .dark .cm-editor .cm-activeLineGutter { background-color: rgb(148 163 184 / 0.1); }
 .dark .cm-editor .cm-selectionBackground,
 .dark .cm-editor .cm-content ::selection { background-color: rgb(52 211 153 / 0.25) !important; }
+
+/* #1114: Rueckmeldung fuer Autosave-Felder (autosave_feedback_controller).
+   Erfolg: kurzer emerald-Rahmen am Feld + Haekchen-Badge (600 ms, siehe
+   FLASH_MS im Controller). Fehler: roter Rahmen bleibt stehen, bis der
+   Wert erneut geaendert wird. outline statt border — verschiebt kein
+   Layout und uebersteuert die border-Klassen der Felder ohne !important-
+   Kaskade am Feld selbst. Farben funktionieren in Hell und Dunkel. */
+.autosave-saved {
+  outline: 2px solid #10b981;   /* emerald-500 */
+  outline-offset: -1px;
+}
+.autosave-error {
+  outline: 2px solid #f43f5e;   /* rose-500 */
+  outline-offset: -1px;
+}
+.autosave-check-badge {
+  position: fixed;
+  z-index: 60;
+  width: 1.125rem;
+  height: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #10b981;
+  color: #fff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+  animation: autosave-pop 600ms ease-out forwards;
+}
+@keyframes autosave-pop {
+  0%   { opacity: 0; transform: scale(0.6); }
+  15%  { opacity: 1; transform: scale(1); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.9); }
+}

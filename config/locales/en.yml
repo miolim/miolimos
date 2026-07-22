@@ -1501,6 +1501,8 @@ en:
   # #619 Stufe 3: strings for the JS layer (Stimulus). Provided as
   # window.MIO_I18N via js_i18n_tag; window.t(key, vars) reads here.
   js:
+    autosave:
+      failed: "Not saved — please change the value again or reload the page."
     mail_compose:
       copied: "Text copied."
       copied_overflow: "Text is too long for the mailto link — it is in your clipboard, paste it into the draft."

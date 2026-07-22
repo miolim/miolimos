@@ -34,15 +34,14 @@ export function focusTargetAfterClose(cards, closing, active) {
 // wieder aus. Ein unsichtbarer Platzhalter am Stack-Ende haelt die
 // Scrollbreite; sein Mass ist genau die Breite, die fehlt, damit die
 // aktuelle Scrollposition gueltig bleibt.
+//
+// #1091 v3 (Hans, 2026-07-22): Der Freiraum ist ein ECHTER Ort — man kann
+// nach rechts hinein- und wieder herausscrollen (v2 baute den Spacer beim
+// Links-Scrollen ab; das ist raus). Beim Links-Scrollen fuellt er sich
+// rein visuell, weil die Cards sich vor ihn schieben; schrumpfen tut er
+// nur, wenn neue Cards angehaengt werden (Sync auf das aktuelle Mass)
+// oder der Stack leer/mobil wird. Beim Schliessen waechst er hoechstens
+// (grow-only), damit ein bestehender Freiraum nie kollabiert.
 export function endSpacerWidth({ scrollLeft, clientWidth, contentWidth }) {
   return Math.max(0, scrollLeft + clientWidth - contentWidth)
-}
-
-// Der Freiraum wird beim Links-Scrollen kontinuierlich aufgefuellt,
-// nicht per Snap: pro Scroll-Schritt schrumpft der Spacer um genau die
-// nach links gescrollte Distanz (Rechts-Scrollen laesst ihn in Ruhe).
-// So bleibt waehrend des Scrollens alles Sichtbare an Ort und Stelle,
-// aber zurueck nach rechts in die Leere scrollen kann man nicht mehr.
-export function spacerWidthAfterScroll(width, prevScrollLeft, scrollLeft) {
-  return Math.max(0, width - Math.max(0, prevScrollLeft - scrollLeft))
 }

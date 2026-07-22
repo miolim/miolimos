@@ -10,7 +10,7 @@ import { BladeStackRoutes } from "lib/blade_stack_routes"
 import { BladeStackEditModeMixin } from "lib/blade_stack_edit_mode"
 import { BladeStackMobileMixin } from "lib/blade_stack_mobile"
 import { BladeStackResizeMixin } from "lib/blade_stack_resize"
-import { focusTargetAfterClose, endSpacerWidth, spacerWidthAfterScroll } from "lib/blade_stack_close"
+import { focusTargetAfterClose, endSpacerWidth } from "lib/blade_stack_close"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -209,14 +209,6 @@ class BladeStackController extends Controller {
     this._wheelLockedUntil = 0
     this._onWheel = (e) => this._handleWheel(e)
     this.containerTarget.addEventListener("wheel", this._onWheel, { passive: false })
-
-    // #1091 v2 (Hans, 2026-07-22): Der End-Spacer (haelt nach einem Close
-    // die Scrollbreite, damit links nichts nachrueckt) wird beim Links-
-    // Scrollen kontinuierlich abgebaut — pro Scroll-Schritt um genau die
-    // gescrollte Distanz, kein Snap. Siehe _consumeEndSpacerOnScroll.
-    this._spacerScrollLeft = this.containerTarget.scrollLeft
-    this._onSpacerScroll = () => this._consumeEndSpacerOnScroll()
-    this.containerTarget.addEventListener("scroll", this._onSpacerScroll)
 
     // #224 6f-4 v2 (first principles, 2026-05-18): Mobile-Stack ist
     // jetzt native CSS scroll-snap. Browser uebernimmt Swipe-Mechanik —
@@ -453,9 +445,6 @@ class BladeStackController extends Controller {
     }
     if (this._onWheel) {
       this.containerTarget.removeEventListener("wheel", this._onWheel)
-    }
-    if (this._onSpacerScroll) {
-      this.containerTarget.removeEventListener("scroll", this._onSpacerScroll)
     }
     if (this._mediaMobile && this._onMobileChange) {
       this._mediaMobile.removeEventListener("change", this._onMobileChange)
@@ -853,8 +842,10 @@ class BladeStackController extends Controller {
     // klemmen und die links gestapelten Spines fuehren wieder aus. Mit
     // dem Platzhalter bleibt die Scrollbreite waehrend der gesamten
     // Transition gueltig: links steht alles fest, die rechten Cards
-    // ruecken nach links auf, rechts bleibt Freiraum (den der User dann
-    // beim Links-Scrollen kontinuierlich aufbraucht).
+    // ruecken nach links auf, rechts entsteht Freiraum. #1091 v3: der
+    // Freiraum bleibt begehbar (rein/raus scrollen); beim Schliessen
+    // waechst er nur (grow-only) — schliesst man Cards von links weg,
+    // nimmt er kontinuierlich zu, bis neue Cards ihn wieder fuellen.
     const remaining = allCards.filter(c => !cards.includes(c))
     if (remaining.length) {
       const closingW = cards.reduce((sum, c) => sum + c.getBoundingClientRect().width, 0)
@@ -871,11 +862,18 @@ class BladeStackController extends Controller {
     let pending = cards.length
     const finishAll = () => {
       this.containerTarget.scrollLeft = keepScrollLeft
-      // Der Restore ist kein User-Scroll — Referenzpunkt nachziehen,
-      // sonst wuerde _consumeEndSpacerOnScroll ihn als Links-Scroll
-      // deuten und den Spacer faelschlich abbauen.
-      this._spacerScrollLeft = keepScrollLeft
-      this._syncEndSpacer()
+      // #1091 v3: Spacer exakt nachmessen, aber NUR wachsen lassen. Die
+      // Vor-Animation-Schaetzung kann um Pixel danebenliegen (Margins,
+      // Rundung) — zu klein hiesse Nachklemmen. Ein bestehender
+      // groesserer Freiraum bleibt unangetastet; getrimmt wird er nur,
+      // wenn neue Cards ihn fuellen (MutationObserver → _syncEndSpacer).
+      const spacerW = this._endSpacerWidthNow()
+      const needed  = endSpacerWidth({
+        scrollLeft:   keepScrollLeft,
+        clientWidth:  this.containerTarget.clientWidth,
+        contentWidth: this.containerTarget.scrollWidth - spacerW
+      })
+      if (needed > spacerW) this._setEndSpacerWidth(needed)
       if (focusNext && focusNext.isConnected) {
         this.setActiveCard(focusNext)
         // #1091: nur nachscrollen, wenn der neue Focus sonst nicht
@@ -910,15 +908,18 @@ class BladeStackController extends Controller {
     })
   }
 
-  // ─── #1091 v2: End-Spacer (Freiraum rechts nach dem Schliessen) ──
+  // ─── #1091 v2/v3: End-Spacer (Freiraum rechts nach dem Schliessen) ──
   //
   // Ein unsichtbares Flex-Kind am visuellen Stack-Ende (order:9999,
   // damit spaetere appendChild-Cards im DOM dahinter, visuell aber
   // davor landen). Es haelt die Scrollbreite, damit der Browser nach
   // einem Close scrollLeft nicht nachklemmt — alles links der
-  // geschlossenen Card bleibt dadurch stehen. Die Mathematik liegt als
-  // reine Funktionen in lib/blade_stack_close.js (endSpacerWidth,
-  // spacerWidthAfterScroll) und ist dort unit-getestet.
+  // geschlossenen Card bleibt dadurch stehen. #1091 v3 (Hans): der
+  // Freiraum ist begehbar — nach rechts hinein- und herausscrollen ist
+  // ausdruecklich erlaubt, es gibt KEINEN Abbau beim Scrollen. Er
+  // schrumpft nur, wenn neue Cards angehaengt werden. Die Mathematik
+  // liegt als reine Funktion in lib/blade_stack_close.js
+  // (endSpacerWidth) und ist dort unit-getestet.
 
   _endSpacer() {
     return this.containerTarget.querySelector(":scope > .stack-end-spacer")
@@ -944,8 +945,9 @@ class BladeStackController extends Controller {
 
   // Spacer exakt auf das noetige Mass bringen (oder entfernen):
   // genau die Breite, die fehlt, damit die aktuelle Scrollposition
-  // gueltig bleibt. Laeuft nach dem Close-Finish und nach Appends
-  // (neue Cards fuellen den Freiraum zuerst).
+  // gueltig bleibt. Laeuft NUR nach Appends (neue Cards fuellen den
+  // Freiraum zuerst) und raeumt bei leerem Stack/Mobile auf — beim
+  // Schliessen und Scrollen wird der Freiraum nie verkleinert (v3).
   _syncEndSpacer() {
     const c  = this.containerTarget
     const sp = this._endSpacer()
@@ -959,17 +961,6 @@ class BladeStackController extends Controller {
       clientWidth:  c.clientWidth,
       contentWidth: c.scrollWidth - spacerW
     }))
-  }
-
-  // Container-Scroll-Listener: Links-Scrollen baut den Freiraum
-  // kontinuierlich ab (kein Snap), Rechts-Scrollen laesst ihn stehen.
-  _consumeEndSpacerOnScroll() {
-    const x    = this.containerTarget.scrollLeft
-    const prev = this._spacerScrollLeft ?? x
-    this._spacerScrollLeft = x
-    const sp = this._endSpacer()
-    if (!sp) return
-    this._setEndSpacerWidth(spacerWidthAfterScroll(parseFloat(sp.style.width) || 0, prev, x))
   }
 
   // Klick auf einen Spine: Card aus dem Stapel zurück in den Mittel-

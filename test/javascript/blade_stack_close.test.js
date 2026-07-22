@@ -41,7 +41,7 @@ test("letzte Card des Stacks geschlossen → kein Ziel", () => {
 
 // ─── #1091 v2: End-Spacer-Mathematik ────────────────────────────────
 
-import { endSpacerWidth, spacerWidthAfterScroll } from "../../app/javascript/lib/blade_stack_close.js"
+import { endSpacerWidth } from "../../app/javascript/lib/blade_stack_close.js"
 
 test("endSpacerWidth: fehlende Breite bis zum rechten Viewport-Rand", () => {
   // Viewport 1000px, gescrollt auf 500 → Content muss bis 1500 reichen.
@@ -61,15 +61,6 @@ test("endSpacerWidth: ungescrollter Stack schmaler als der Viewport → fuellt d
   assert.equal(endSpacerWidth({ scrollLeft: 0, clientWidth: 1000, contentWidth: 800 }), 200)
 })
 
-test("spacerWidthAfterScroll: Links-Scrollen baut den Freiraum kontinuierlich ab", () => {
-  assert.equal(spacerWidthAfterScroll(300, 500, 400), 200)   // 100 nach links → -100
-  assert.equal(spacerWidthAfterScroll(200, 400, 390), 190)   // kleine Schritte, kein Snap
-})
-
-test("spacerWidthAfterScroll: Rechts-Scrollen laesst den Spacer stehen", () => {
-  assert.equal(spacerWidthAfterScroll(300, 400, 500), 300)
-})
-
-test("spacerWidthAfterScroll: schrumpft nie unter 0", () => {
-  assert.equal(spacerWidthAfterScroll(50, 500, 300), 0)
-})
+// #1091 v3 (Hans): KEIN Abbau des Spacers beim Scrollen mehr — der
+// Freiraum ist begehbar (rein/raus scrollen erlaubt) und schrumpft nur,
+// wenn neue Cards ihn fuellen. spacerWidthAfterScroll ist entfernt.

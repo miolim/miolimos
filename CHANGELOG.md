@@ -123,8 +123,10 @@ release is cut, this section is renamed to the new version and a fresh
   not wide enough to fill the viewport — or the closed card was the rightmost —
   an invisible placeholder at the end of the stack keeps the scroll width, so
   the cards on the left stay put and free space simply opens up on the right.
-  Scrolling left then consumes that free space continuously instead of
-  snapping it away (#1091).
+  That free space is a real place: you can scroll into it and back out, and
+  closing cards from the left keeps growing it. It fills back up continuously
+  as cards slide in front of it while scrolling left — never with a sudden
+  snap — and shrinks only when newly opened cards take its room (#1091).
 
 ### Fixed
 

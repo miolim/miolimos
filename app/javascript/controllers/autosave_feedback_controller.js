@@ -22,6 +22,8 @@ export default class extends Controller {
 
   connect() {
     this._pending = new Map()   // form → { desc, el, at }
+    this._activeFlash = null    // { desc, until } — laufendes Erfolgs-Haekchen
+    this._activeError = null    // { desc } — stehender Fehler-Rahmen
     this._remember = (e) => {
       const el = e.target
       if (!isAutosaveTrigger(el) || !el.form) return
@@ -32,12 +34,21 @@ export default class extends Controller {
     // den Wert wieder anfasst — der naechste Save entscheidet neu.
     this._clearError = (e) => {
       const el = e.target
-      if (el?.classList?.contains("autosave-error")) this._unmarkError(el)
+      if (el?.classList?.contains("autosave-error")) {
+        this._activeError = null
+        this._unmarkError(el)
+      }
     }
+    // Turbo-Page-Morphs (Live-Broadcasts — ein Task-Save loest selbst
+    // einen aus!) ersetzen Feld und Badge mitten in der Anzeige. Nach
+    // jedem Render laufende Markierungen am (neu gefundenen) Feld
+    // wiederherstellen — Haekchen fuer die Restzeit, Fehler dauerhaft.
+    this._onRender = () => this._reapplyAfterRender()
     document.addEventListener("change",   this._remember, true)
     document.addEventListener("focusout", this._remember, true)
     document.addEventListener("input",    this._clearError, true)
     document.addEventListener("turbo:submit-end", this._onSubmitEnd)
+    document.addEventListener("turbo:render", this._onRender)
   }
 
   disconnect() {
@@ -45,6 +56,25 @@ export default class extends Controller {
     document.removeEventListener("focusout", this._remember, true)
     document.removeEventListener("input",    this._clearError, true)
     document.removeEventListener("turbo:submit-end", this._onSubmitEnd)
+    document.removeEventListener("turbo:render", this._onRender)
+  }
+
+  _reapplyAfterRender() {
+    if (this._activeFlash) {
+      const remaining = this._activeFlash.until - Date.now()
+      if (remaining > 60) {
+        const field = refindField(document, this._activeFlash.desc)
+        if (field && !field.classList.contains("autosave-saved")) {
+          this._showFlash(field, remaining)
+        }
+      } else {
+        this._activeFlash = null
+      }
+    }
+    if (this._activeError) {
+      const field = refindField(document, this._activeError.desc)
+      if (field && !field.classList.contains("autosave-error")) this._markErrorStyles(field)
+    }
   }
 
   _feedback(event) {
@@ -69,9 +99,20 @@ export default class extends Controller {
     // Nur aufraeumen, wenn WIR den Fehler-Zustand gesetzt hatten — sonst
     // wuerde ein regulaerer title (z.B. Tooltip eines Datumsfelds) beim
     // ersten erfolgreichen Save verschwinden.
+    this._activeError = null
     if (field.classList.contains("autosave-error")) this._unmarkError(field)
+    this._activeFlash = {
+      desc:  fieldDescriptor(field.form, field),
+      until: Date.now() + this.constructor.FLASH_MS
+    }
+    this._showFlash(field, this.constructor.FLASH_MS)
+  }
+
+  // Klasse + Badge fuer `ms` Millisekunden anzeigen — auch fuer die
+  // RESTZEIT nach einem Morph (_reapplyAfterRender) wiederverwendet.
+  _showFlash(field, ms) {
     field.classList.add("autosave-saved")
-    setTimeout(() => field.classList.remove("autosave-saved"), this.constructor.FLASH_MS)
+    setTimeout(() => { if (field.isConnected) field.classList.remove("autosave-saved") }, ms)
     const r = field.getBoundingClientRect()
     if (!r.width) return   // display:none (z.B. hidden field) — kein Badge
     const badge = document.createElement("div")
@@ -81,10 +122,15 @@ export default class extends Controller {
     badge.style.left = `${Math.round(Math.max(r.left, r.right - 22))}px`
     badge.style.top  = `${Math.round(r.top + r.height / 2 - 9)}px`
     document.body.appendChild(badge)
-    setTimeout(() => badge.remove(), this.constructor.FLASH_MS + 60)
+    setTimeout(() => badge.remove(), ms + 60)
   }
 
   _markError(field) {
+    this._activeError = { desc: fieldDescriptor(field.form, field) }
+    this._markErrorStyles(field)
+  }
+
+  _markErrorStyles(field) {
     field.classList.add("autosave-error")
     // Tooltip erklaert den roten Rahmen; Original-title (falls einer da
     // war) merken und beim Aufraeumen zuruecksetzen.

@@ -19,7 +19,7 @@ class FileProxy
               affiliations:, relationships:, contact_points:,
               first_name:, last_name:, orcid: nil,
               legal_form: nil,
-              gender: nil, salutation: nil,
+              gender: nil, salutation: nil, academic_title: nil,
               issuer: nil)
       fm = old_fm.merge("updated_at" => Time.current.iso8601)
       fm["topics"]   = Array(topics)   if topics
@@ -46,6 +46,8 @@ class FileProxy
       # den Key ab. Die Anrede ist bewusst Freitext (Titel, „Liebe Anna").
       fm["gender"]         = (gender if Salutations.valid_gender?(gender)) unless gender.nil?
       fm["salutation"]     = salutation.presence                           unless salutation.nil?
+      # #1090 Nachtrag: akademischer Titel ist Freitext wie die Anrede.
+      fm["academic_title"] = academic_title.presence                       unless academic_title.nil?
       # #761: vat_id-Spalte entfernt — USt-IdNr lebt als Identifier (#544).
       # Alt-Frontmatter-Key aktiv löschen, damit er nicht zurückwandert.
       fm.delete("vat_id")

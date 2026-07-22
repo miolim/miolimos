@@ -16,8 +16,8 @@
   </label>
 </div>
 
-<%# #1090: Geschlecht (Katalog) + Anrede (Freitext-Override). Beides
-    fakultativ; leer = neutrale Anrede im Brief. %>
+<%# #1090: Geschlecht (Katalog) + akademischer Titel (Freitext, Nachtrag) +
+    Anrede (Freitext-Override). Alles fakultativ; leer = neutrale Anrede. %>
 <div class="grid grid-cols-2 gap-2 text-xs">
   <label class="block">
     <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.gender_label") %></span>
@@ -27,12 +27,19 @@
           class: "w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white" %>
   </label>
   <label class="block">
-    <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.salutation_label") %></span>
-    <%= f.text_field :salutation,
-          placeholder: t("knowledge.salutations.salutation_placeholder"),
+    <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.academic_title_label") %></span>
+    <%= f.text_field :academic_title,
+          placeholder: t("knowledge.salutations.academic_title_placeholder"),
           class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
   </label>
 </div>
+
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.salutations.salutation_label") %></span>
+  <%= f.text_field :salutation,
+        placeholder: t("knowledge.salutations.salutation_placeholder"),
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+</label>
 
 <label class="block text-xs">
   <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.aliases_comma") %></span>

@@ -37,9 +37,12 @@ module DocumentsHelper
   # #532: Empfänger-Adresszeilen fürs Anschriftfeld (Name + Adresse).
   # Strukturierte Postadresse (#532), Fallback auf alten Adress-ContactPoint.
   # #694: optionale override-Postadresse (pro Dokument gewählt) durchreichen.
+  # #1090 Nachtrag: akademischer Titel vor dem Namen („Prof. Dr. Erika
+  # Meier") — DIN 5008 führt den Titel in der Namenszeile.
   def document_recipient_lines(ki, override: nil)
     return ["Empfänger — kein KI gewählt"] unless ki
-    [ki.title] + document_address_lines(ki, override: override)
+    name = [ki.academic_title.presence, ki.title].compact.join(" ")
+    [name] + document_address_lines(ki, override: override)
   end
 
   # Strukturierte Adresszeilen eines KI (primäre Postadresse), Fallback auf

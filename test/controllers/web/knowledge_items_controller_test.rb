@@ -1332,4 +1332,34 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
       assert_nil p.reload.gender
     end
   end
+
+  # #1090 Nachtrag (Hans): akademischer Titel als eigenes Feld.
+  test "#1090 Inline-PATCH setzt akademischen Titel, leerer Wert räumt ab, Frontmatter zieht mit" do
+    with_isolated_miolimos_base do
+      p = FileProxy.create(actor: @hans, title: "Erika Meier", item_type: :person,
+                           content: "", topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{p.uuid}",
+            params: { academic_title: "Prof. Dr.", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :no_content
+      assert_equal "Prof. Dr.", p.reload.academic_title
+      assert_equal "Prof. Dr.", FileProxy::Reader.build_frontmatter_hash(p)["academic_title"]
+
+      patch "/knowledge_items/#{p.uuid}",
+            params: { academic_title: "", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_nil p.reload.academic_title
+    end
+  end
+
+  test "#1090 Create mit akademischem Titel setzt die Spalte" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { title: "Anna Beispiel", item_type: "person", content: "",
+                     academic_title: "Dr." },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      p = KnowledgeItem.find_by(title: "Anna Beispiel")
+      assert_equal "Dr.", p.academic_title
+    end
+  end
 end

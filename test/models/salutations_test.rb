@@ -19,6 +19,25 @@ class SalutationsTest < ActiveSupport::TestCase
                  Salutations.line_for(person(gender: "diverse", first_name: "Alex", last_name: "Kim"))
   end
 
+  # #1090 Nachtrag (Hans): akademischer Titel als eigenes Feld.
+  test "akademischer Titel steht zwischen Frau/Herr und Nachname" do
+    assert_equal "Sehr geehrte Frau Prof. Dr. Meier",
+                 Salutations.line_for(person(gender: "female", last_name: "Meier", academic_title: "Prof. Dr."))
+    assert_equal "Sehr geehrter Herr Dr. Muster",
+                 Salutations.line_for(person(gender: "male", last_name: "Muster", academic_title: "Dr."))
+  end
+
+  test "divers gruesst mit Titel + vollem Namen" do
+    assert_equal "Guten Tag Dr. Alex Kim",
+                 Salutations.line_for(person(gender: "diverse", first_name: "Alex", last_name: "Kim",
+                                             academic_title: "Dr."))
+  end
+
+  test "Titel ohne Nachname bleibt neutral" do
+    assert_equal Salutations::NEUTRAL,
+                 Salutations.line_for(person(gender: "female", academic_title: "Dr."))
+  end
+
   test "Freitext am KI schlaegt die Ableitung" do
     p = person(gender: "female", last_name: "Mustermann", salutation: "Liebe Erika")
     assert_equal "Liebe Erika", Salutations.line_for(p)

@@ -27,6 +27,12 @@ release is cut, this section is renamed to the new version and a fresh
   Both fields travel in the Markdown front matter like the rest of the master
   data.
 
+- Academic title on people. A person carries an optional free-text academic
+  title ("Dr.", "Prof. Dr.") as its own master-data field. It appears in the
+  derived letter salutation ("Sehr geehrte Frau Prof. Dr. Meier") and in the
+  name line of the DIN address window ("Prof. Dr. Erika Meier"). Like gender
+  and salutation it travels in the Markdown front matter.
+
 - Register court and commercial-register number as their own ID types on people
   and organisations. They are two fields, not one: an HRB number is only
   unique together with the court that keeps it, and letterheads and invoices

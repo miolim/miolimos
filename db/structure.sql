@@ -1208,7 +1208,8 @@ CREATE TABLE public.knowledge_items (
     render_mode character varying DEFAULT 'markdown'::character varying NOT NULL,
     legal_form character varying,
     gender character varying,
-    salutation character varying
+    salutation character varying,
+    academic_title character varying
 );
 
 
@@ -5977,6 +5978,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260722080000'),
 ('20260721230000'),
 ('20260720190500'),
 ('20260718090000'),

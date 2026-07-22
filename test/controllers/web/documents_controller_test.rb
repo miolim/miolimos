@@ -383,6 +383,17 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     refute_includes lines, "Werksstraße 1"
   end
 
+  # #1090 Nachtrag: akademischer Titel gehört in die Namenszeile des
+  # DIN-Anschriftfelds („Prof. Dr. Erika Meier").
+  test "DIN-Fenster führt den akademischen Titel vor dem Namen (#1090)" do
+    empf = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Erika Meier", item_type: :person,
+                                 academic_title: "Prof. Dr.",
+                                 file_path: "x/meier.md", content_hash: "h", body: "", creator: @hans,
+                                 published_at: Time.current)
+    assert_equal "Prof. Dr. Erika Meier",
+                 ApplicationController.helpers.document_recipient_lines(empf).first
+  end
+
   # #623: Betreff-Feld nur beim Brief.
   test "Brief-Card zeigt Betreff-Feld, NDA nicht (#623)" do
     brief = Document.create!(kind: :brief, status: :entwurf, creator: @hans)

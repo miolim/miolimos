@@ -743,6 +743,7 @@ class KnowledgeItemsController < ApplicationController
       # Geschlecht filtert Frontmatter.build.
       fields[:gender]     = params[:gender]     if params[:gender].present?
       fields[:salutation] = params[:salutation] if params[:salutation].present?
+      fields[:academic_title] = params[:academic_title] if params[:academic_title].present?
       if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
         parts = item.title.split(/\s+/)
         fields[:first_name] = parts[0..-2].join(" ").presence

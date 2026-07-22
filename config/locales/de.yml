@@ -539,6 +539,8 @@ de:
       salutation_label:       "Anrede"
       salutation_placeholder: "leer = aus Geschlecht"
       derived_hint:           "leer = %{line}"
+      academic_title_label:       "Akademischer Titel"
+      academic_title_placeholder: "z. B. Dr., Prof. Dr."
     detail:
       original_chat_title: "Original-Chat-Titel: %{title}"
       duplicate_card: "Card duplizieren"

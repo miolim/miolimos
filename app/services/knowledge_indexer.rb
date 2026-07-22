@@ -173,6 +173,8 @@ class KnowledgeIndexer
     # #1090: Geschlecht ebenfalls nur als Katalogwert; die Anrede ist Freitext.
     item.gender          = (frontmatter["gender"] if Salutations.valid_gender?(frontmatter["gender"]))
     item.salutation      = frontmatter["salutation"].presence
+    item.academic_title  = frontmatter["academic_title"].presence
+
     item.parent_org_uuid = References.resolve_parent_org_uuid(frontmatter["parent_org"])
     item.file_path       = relative_path
     item.content_hash    = hash

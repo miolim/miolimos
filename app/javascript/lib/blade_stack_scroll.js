@@ -95,7 +95,12 @@ export const BladeStackScrollMixin = {
       // wegen des stehenden Overscroll-Spacers mitten im Freiraum.
       target = this._naturalEndScroll()
     } else {
-      target = maxScroll >= minScroll ? maxScroll : minScroll
+      // #1091 v4: maxScroll der LETZTEN Card ist die Voll-Regal-Position.
+      // Vor dem stehenden Overscroll-Spacer hat der Browser diesen Wert
+      // stillschweigend auf das Content-Ende geklemmt — jetzt gibt es
+      // den Scrollraum wirklich, also selbst klemmen, sonst laedt die
+      // Seite mitten in der Leere.
+      target = Math.min(maxScroll >= minScroll ? maxScroll : minScroll, this._naturalEndScroll())
     }
     if (this.containerTarget.scrollLeft !== target) {
       this.containerTarget.scrollLeft = target

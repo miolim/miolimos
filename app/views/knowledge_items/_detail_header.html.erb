@@ -101,15 +101,25 @@
         <%= icon "book_open" %>
       </button>
       <%# #761 (Hans, 2026-06-23): Kontaktdaten aus einer URL ergänzen —
-          nur an Personen/Organisationen. Natives <details> als Popover
-          (kein JS-Controller); das Formular postet per Turbo-Stream und
-          ersetzt danach das Detail. %>
+          nur an Personen/Organisationen. Das Formular postet per
+          Turbo-Stream und ersetzt danach das Detail. %>
+      <%# #1093 (Hans, 2026-07-22): war ein natives <details> mit
+          absolut positioniertem Panel (z-20). Das steckte im
+          overflow-Container der Blade-Card fest: das Panel wurde
+          abgeschnitten bzw. von der darüberliegenden Card verdeckt, und
+          der Absenden-Button ließ sich nicht treffen. Jetzt derselbe
+          fixed-Popover wie alle anderen Card-Werkzeuge (#260) — der
+          hängt sein Panel per position:fixed an den Trigger und wird von
+          keinem overflow beschnitten. %>
       <% if item.item_type.in?(%w[person organization]) %>
-        <details class="relative inline-block">
-          <summary class="list-none cursor-pointer p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 [&::-webkit-details-marker]:hidden [&_svg]:w-4 [&_svg]:h-4"
-                   title="<%= t("knowledge.detail.complete_from_url") %>"
-                   aria-label="<%= t("knowledge.detail.complete_from_url") %>"><%= icon "user-search" %></summary>
-          <div class="absolute right-0 mt-1 z-20 w-80 bg-white border border-slate-200 rounded shadow-lg p-2">
+        <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
+          <button type="button"
+                  data-action="click->popover#toggle"
+                  title="<%= t("knowledge.detail.complete_from_url") %>"
+                  aria-label="<%= t("knowledge.detail.complete_from_url") %>"
+                  class="p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer [&_svg]:w-4 [&_svg]:h-4"><%= icon "user-search" %></button>
+          <div data-popover-target="content"
+               class="hidden absolute right-0 top-full mt-1 z-50 w-80 bg-white border border-slate-200 rounded shadow-lg p-2">
             <%= form_with url: complete_from_url_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
                   method: :post, data: { turbo: true }, class: "flex items-center gap-1" do %>
               <input type="url" name="url" required
@@ -118,7 +128,7 @@
               <button type="submit" class="shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_url_go") %></button>
             <% end %>
           </div>
-        </details>
+        </div>
       <% end %>
       <%= link_to edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
             title: t("actions.edit"), "aria-label": t("actions.edit"),

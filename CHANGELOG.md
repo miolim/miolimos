@@ -94,6 +94,11 @@ release is cut, this section is renamed to the new version and a fresh
   highlight derived the id from its own second copy of the kind-to-stack-id
   table, which only knew a few special cases, so those rows never turned red.
   Both paths now read the one routing table (#1067).
+- "Complete contact data from a URL" in the card toolbar is usable again. Its
+  form was a plain `<details>` panel that stayed inside the card's scroll box,
+  so it was cut off or covered by the card next to it and the submit button
+  could not be hit. It now uses the same detached popover as the other card
+  tools (#1093).
 
 ### Added
 

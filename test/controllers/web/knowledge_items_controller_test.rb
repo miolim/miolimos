@@ -1156,6 +1156,26 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_includes org.reload.contact_points.where(kind: "url").pluck(:value), "https://www.domain.de"
   end
 
+  # #1093 (Hans, 2026-07-22): Das Formular hing als natives <details> im
+  # overflow-Container der Blade-Card — Panel abgeschnitten/verdeckt, der
+  # Absenden-Button nicht treffbar. Es muss am fixed-Popover (#260) haengen,
+  # der sein Panel per position:fixed aus dem overflow herausholt.
+  test "Kontaktdaten-aus-URL: Werkzeug oeffnet einen fixed-Popover, kein <details>" do
+    person = FileProxy.create(actor: @hans, title: "Popover-Test", item_type: :person, content: "",
+                              topics: [], contacts: [], tags: [])
+    get "/knowledge_items/#{person.uuid}/detail_pane",
+        headers: { "Accept" => "text/html, text/vnd.turbo-stream.html",
+                   "Turbo-Frame" => "knowledge_detail" }
+    assert_response :success
+    body = @response.body
+    title = I18n.t("knowledge.detail.complete_from_url")
+    # Trigger ist ein popover#toggle-Button, kein <summary>
+    assert_match(/data-action="click->popover#toggle"[^>]*title="#{Regexp.escape(title)}"/, body)
+    refute_match(/<summary[^>]*#{Regexp.escape(title)}/, body)
+    # und das Panel ist der Popover-Content mit dem Formular darin
+    assert_match(%r{data-popover-target="content"[^>]*>\s*<form[^>]*complete_from_url}, body)
+  end
+
   # #761 (Hans, 2026-06-23): optionale URL im Person-Quick-Add — ist sie
   # gesetzt, zieht der Create-Pfad gleich die Kontaktdaten aus der Quelle.
   test "Person-Quick-Add mit enrich_url füllt Kontaktdaten beim Anlegen" do

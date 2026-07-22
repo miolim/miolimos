@@ -112,6 +112,12 @@ release is cut, this section is renamed to the new version and a fresh
   to the one on its left. Closing a background card no longer pulls the focus
   away from the card you were working in, and the click on the closing cross
   itself no longer focuses the card it is about to remove (#1091).
+- This now holds in every situation: when the remaining cards to the right are
+  not wide enough to fill the viewport — or the closed card was the rightmost —
+  an invisible placeholder at the end of the stack keeps the scroll width, so
+  the cards on the left stay put and free space simply opens up on the right.
+  Scrolling left then consumes that free space continuously instead of
+  snapping it away (#1091).
 
 ### Fixed
 

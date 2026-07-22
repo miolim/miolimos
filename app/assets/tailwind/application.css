@@ -375,7 +375,10 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
    Greift nur auf Desktop; auf Mobile uebernimmt scroll-snap die
    Card-Positionierung. */
 @media (min-width: 768px) {
-  #blade_stack_container > .stack-card:last-child {
+  /* #1091 v2: :last-of-type statt :last-child — der End-Spacer (div)
+     kann als letztes Container-Kind stehen; der Atemraum gehoert
+     weiter an die letzte CARD (article). */
+  #blade_stack_container > .stack-card:last-of-type {
     margin-right: 0.5rem;
   }
 }

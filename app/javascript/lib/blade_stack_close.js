@@ -25,3 +25,24 @@ export function focusTargetAfterClose(cards, closing, active) {
   const left = remaining.filter(c => cards.indexOf(c) < firstIdx)
   return left.length ? left[left.length - 1] : null
 }
+
+// #1091 v2 (Hans, 2026-07-22): End-Spacer-Mathematik. Alles links der
+// geschlossenen Card soll IMMER stehen bleiben — auch wenn rechts nicht
+// genug Cards nachruecken, um den Platz zu fuellen, und auch beim
+// Schliessen der letzten Card. Sonst klemmt der Browser scrollLeft an
+// die geschrumpfte Scrollbreite und die links gestapelten Spines fahren
+// wieder aus. Ein unsichtbarer Platzhalter am Stack-Ende haelt die
+// Scrollbreite; sein Mass ist genau die Breite, die fehlt, damit die
+// aktuelle Scrollposition gueltig bleibt.
+export function endSpacerWidth({ scrollLeft, clientWidth, contentWidth }) {
+  return Math.max(0, scrollLeft + clientWidth - contentWidth)
+}
+
+// Der Freiraum wird beim Links-Scrollen kontinuierlich aufgefuellt,
+// nicht per Snap: pro Scroll-Schritt schrumpft der Spacer um genau die
+// nach links gescrollte Distanz (Rechts-Scrollen laesst ihn in Ruhe).
+// So bleibt waehrend des Scrollens alles Sichtbare an Ort und Stelle,
+// aber zurueck nach rechts in die Leere scrollen kann man nicht mehr.
+export function spacerWidthAfterScroll(width, prevScrollLeft, scrollLeft) {
+  return Math.max(0, width - Math.max(0, prevScrollLeft - scrollLeft))
+}

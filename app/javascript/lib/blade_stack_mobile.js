@@ -13,6 +13,10 @@ _applyMobileLayout() {
   if (cards.length === 0) return
   const isMobile = this._mediaMobile?.matches
   this.containerTarget.dataset.mobile = isMobile ? "true" : "false"
+  // #1091 v2: der End-Spacer ist ein reines Desktop-Konstrukt — auf
+  // Mobile uebernimmt scroll-snap, ein Platzhalter waere dort nur ein
+  // leeres Snap-Ziel am Stack-Ende.
+  if (isMobile) this._endSpacer()?.remove()
   if (!isMobile) {
     // Saved-Width pro Card aus localStorage wiederherstellen.
     // #408 follow-up (Hans, 2026-05-30): Reihenfolge muss zur

@@ -173,13 +173,13 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
                             topics: [], contacts: [], tags: [])
     get "/knowledge_items/#{item.uuid}"
     assert_response :success
-    assert_includes @response.body, "rot: 1 Highlight"
-    assert_includes @response.body, "blau: 1 Highlight"
+    assert_includes @response.body, "rot: 1 Hervorhebung"
+    assert_includes @response.body, "blau: 1 Hervorhebung"
 
     get "/knowledge_items/#{item.uuid}?hl=rot"
     assert_response :success
-    assert_includes @response.body, "rot: 1 Highlight"
-    assert_includes @response.body, "blau: 1 Highlight",
+    assert_includes @response.body, "rot: 1 Hervorhebung"
+    assert_includes @response.body, "blau: 1 Hervorhebung",
                     "andere Farb-Chips muessen bei aktivem Filter erhalten bleiben (#450)"
   end
 

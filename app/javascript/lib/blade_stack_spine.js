@@ -51,7 +51,7 @@ export const BladeStackSpineMixin = {
         badge.type = "button"
         badge.className = "stack-instance-counter"
         badge.textContent = label
-        badge.title = `Dieses Item ist ${group.length}× im Stack — Klick: naechste Instanz`
+        badge.title = window.t("blade_stack.multi_instance_title", { count: group.length })
         // Klick rotiert zur naechsten Instanz (Hans-Spec #320).
         // stopPropagation, damit der Spine-Click-Handler nicht zusaetzlich
         // diese Card fokussiert.
@@ -116,7 +116,7 @@ export const BladeStackSpineMixin = {
       const wrapper = document.createElement("button")
       wrapper.type = "button"
       wrapper.className = "spine-top-close group/spine-top relative shrink-0 p-0 bg-transparent border-0 cursor-pointer"
-      wrapper.title = "Card schliessen"
+      wrapper.title = window.t("blade_stack.close_card")
       wrapper.setAttribute("aria-label", "Schliessen")
       wrapper.setAttribute("data-action", "click->blade-stack#closeCard")
       first.parentNode.insertBefore(wrapper, first)

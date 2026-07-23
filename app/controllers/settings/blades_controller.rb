@@ -18,7 +18,7 @@ class Settings::BladesController < Settings::BaseController
     "teams"            => { label: "Teams",            resource: "Team",            icon: "users" },
     "templates"        => { label: "Themen-Vorlagen",  resource: "Topic",           icon: "folder" },
     "task_templates"   => { label: "Aufgabenvorlagen", resource: "Actor",           icon: "check" },
-    "ki_templates"     => { label: "KI-Vorlagen",      resource: "Actor",           icon: "knowledge" },
+    "ki_templates"     => { label: "Eintrags-Vorlagen", resource: "Actor",          icon: "knowledge" },
     "prompt_templates" => { label: "Prompt-Vorlagen",  resource: "PromptTemplate",  icon: "sparkles" },
     "document_templates" => { label: "Dokumentvorlagen", resource: "KnowledgeItem",  icon: "file_text" },
     "llm_activities"   => { label: "LLM-Aktivität",    resource: "Actor",           icon: "activity" },

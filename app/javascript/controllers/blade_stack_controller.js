@@ -745,8 +745,8 @@ class BladeStackController extends Controller {
       })
       menu.appendChild(b)
     }
-    addItem("Diese Card schließen", true, () => this._closeCardElement(card))
-    addItem("Diese Card und alle rechts davon schließen", hasRight, () => this._closeCardsFrom(card))
+    addItem(window.t("blade_stack.close_menu_this"), true, () => this._closeCardElement(card))
+    addItem(window.t("blade_stack.close_menu_right_of"), hasRight, () => this._closeCardsFrom(card))
     document.body.appendChild(menu)
     // Über dem Trigger positionieren (das X sitzt am Card-Boden), links-
     // bündig zum Trigger, in den Viewport geclampt.

@@ -473,13 +473,13 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "trash listet gelöschte Dokumente" do
-    live = Document.create!(kind: :brief, subject: "Aktiv")
+    live = Document.create!(kind: :brief, subject: "Lebendig-Betreff")
     gone = Document.create!(kind: :brief, subject: "Gelöscht-Betreff")
     gone.discard!
     get "/documents/trash"
     assert_response :success
     assert_includes @response.body, "Gelöscht-Betreff"
-    refute_includes @response.body, "Aktiv"
+    refute_includes @response.body, "Lebendig-Betreff"
   end
 
   # ── #786 Inkr.2: SEPA-Mandat aus Stammdaten auto-befüllen ───────────────

@@ -36,7 +36,7 @@ export default class extends Controller {
   setActive(active) {
     if (this.hasExpandIconTarget) this.expandIconTarget.classList.toggle("hidden", active)
     if (this.hasReduceIconTarget) this.reduceIconTarget.classList.toggle("hidden", !active)
-    this.element.title = active ? "Zurück zur normalen Ansicht" : "PDF in der ganzen Card anzeigen"
+    this.element.title = active ? window.t("pdf.back_to_normal") : window.t("pdf.fullblade_title")
     this.element.setAttribute("aria-label", this.element.title)
   }
 }

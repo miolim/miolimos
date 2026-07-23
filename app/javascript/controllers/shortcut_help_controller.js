@@ -8,24 +8,25 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Alle bislang vergebenen Shortcuts. Format (Hans): Pluszeichen mit Leerzeichen
 // davor/dahinter; Tasten-Spalte umbruchfrei (whitespace-nowrap), Modal breit.
+// #1115: Beschreibungen kommen aus der Sprachdatei (js.shortcut_help.*).
 const SHORTCUTS = [
-  ["Cmd/Ctrl + K", "Suche fokussieren"],
-  ["Cmd/Ctrl + .", "Beschriftungs-Modus an/aus"],
-  ["Cmd/Ctrl + E", "Bearbeiten ↔ Vorschau"],
-  ["Cmd/Ctrl + S", "Speichern (im Bearbeiten bleiben)"],
-  ["Cmd/Ctrl + Enter", "Speichern, zurück zur Vorschau"],
-  ["Cmd/Ctrl + Shift + Enter", "Entwurf veröffentlichen"],
-  ["Esc", "Bearbeiten verlassen ohne Speichern"],
-  ["Cmd/Ctrl + Alt + ← / →", "Card-Fokus im Stack wechseln"],
-  ["Cmd/Ctrl + Shift + ← / →", "Aktive Card im Stack verschieben"],
-  ["Cmd/Ctrl + Alt + ↑", "Eingeklappt → ausklappen, sonst Card schließen"],
-  ["Cmd/Ctrl + Alt + ↓", "Aktive Card einklappen"],
-  ["Alt + ← / →", "Verlauf-Schritt zurück / vor"],
-  ["Alt + C", "Aktive Card schließen"],
-  ["g  c", "Fokussierte Card schließen"],
-  ["g  d", "Aufgabe erledigt / nicht erledigt"],
-  ["Tab / Shift + Tab", "Zeile ein- / ausrücken (im Textfeld)"],
-  ["?", "Diese Hilfe"],
+  ["Cmd/Ctrl + K", "shortcut_help.search"],
+  ["Cmd/Ctrl + .", "shortcut_help.inspector"],
+  ["Cmd/Ctrl + E", "shortcut_help.edit_toggle"],
+  ["Cmd/Ctrl + S", "shortcut_help.save_stay"],
+  ["Cmd/Ctrl + Enter", "shortcut_help.save_preview"],
+  ["Cmd/Ctrl + Shift + Enter", "shortcut_help.publish"],
+  ["Esc", "shortcut_help.esc_edit"],
+  ["Cmd/Ctrl + Alt + ← / →", "shortcut_help.focus_move"],
+  ["Cmd/Ctrl + Shift + ← / →", "shortcut_help.card_move"],
+  ["Cmd/Ctrl + Alt + ↑", "shortcut_help.expand_or_close"],
+  ["Cmd/Ctrl + Alt + ↓", "shortcut_help.collapse"],
+  ["Alt + ← / →", "shortcut_help.trail"],
+  ["Alt + C", "shortcut_help.close_active"],
+  ["g  c", "shortcut_help.close_focused"],
+  ["g  d", "shortcut_help.task_done"],
+  ["Tab / Shift + Tab", "shortcut_help.indent"],
+  ["?", "shortcut_help.this_help"],
 ]
 
 export default class extends Controller {
@@ -41,10 +42,10 @@ export default class extends Controller {
   open() {
     if (document.getElementById("shortcut_help_modal")) return
 
-    const rows = SHORTCUTS.map(([key, desc]) =>
+    const rows = SHORTCUTS.map(([key, descKey]) =>
       `<tr>
          <td class="py-1.5 pr-8 font-mono text-xs text-slate-700 whitespace-nowrap">${key}</td>
-         <td class="py-1.5 text-slate-600">${desc}</td>
+         <td class="py-1.5 text-slate-600">${window.t(descKey)}</td>
        </tr>`
     ).join("")
 
@@ -54,7 +55,7 @@ export default class extends Controller {
     overlay.innerHTML = `
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-5 space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="font-semibold">Tastatur-Shortcuts</h2>
+          <h2 class="font-semibold">${window.t("shortcut_help.title")}</h2>
           <button type="button" data-close class="text-slate-500 hover:text-slate-900 text-xl leading-none cursor-pointer">×</button>
         </div>
         <table class="w-full text-sm">

@@ -15,6 +15,22 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Changed
+
+- All user-visible texts now speak plain language instead of internal
+  component names (#1115): the dashboard panel "Prozess-Edge" is now "Nächste
+  Schritte & Wartepunkte"; "Card"/"Blade" became "Karte", "Stack" became
+  "Arbeitsfläche", "Spine" "Kartenrücken", "Trail" "Schritt", "Work-Tree"
+  "Gliederung", the render modes are now "Dokument-Ansicht"/"Zweck-Mittel-
+  Ansicht"/"Leseansicht"; "KI"/"Item" is now "Eintrag", "Wikilink"
+  "Verknüpfung", "Highlight" "Hervorhebung", "Topic" "Thema", "Pin"
+  "anheften"; admin terms like "Capabilities" ("Berechtigungen"), "Owner
+  (Actor)" ("Gehört zu (Konto)"), "Diagnose-Snapshot" ("Diagnose-Bericht")
+  and "Quickadd-Picker" ("Schnellanlage-Auswahl") follow suit. Internal
+  names in code and IDs are unchanged, and previously hardcoded texts
+  (card close menu, keyboard-shortcut help, history panel title, multi-
+  instance badge, PDF tooltip) moved into the locale files.
+
 ### Added
 
 - Autosave fields now confirm what they do. Fields that save on leaving them —

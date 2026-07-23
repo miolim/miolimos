@@ -107,9 +107,7 @@
 
   <% if roots.empty? %>
     <p class="px-4 py-6 text-sm text-slate-400 italic">
-      Noch kein Work-Tree. Oeffne im Stack zusaetzlich diese Topic-Blade
-      mit dem „Wissen\"-Tab — beim Hover ueber einer KI-Zeile erscheint
-      ein Icon, das die KI als Top-Level-Heading hier aufnimmt.
+      <%= t("topics.no_work_tree_hint") %>
     </p>
   <% else %>
     <%= render "topics/work_tree_subtree", nodes: roots, depth: 1, topic: topic %>

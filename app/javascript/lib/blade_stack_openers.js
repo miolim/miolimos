@@ -15,7 +15,10 @@ export const BladeStackOpenersMixin = {
   // lagerten Sub-Stack (alles zwischen dieser List-Card und dem
   // naechsten list:*-Blade) durch die neue Card. Plus-Klick (separate
   // Action) wuerde stattdessen appenden.
+  // #1151: STRG-Klick (Mac: Cmd) = Plus-Klick — Card anhaengen statt
+  // ersetzen. preventDefault unterdrueckt dabei den Browser-Neuer-Tab.
   async openFromList(event) {
+    if (event.ctrlKey || event.metaKey) return this.appendFromList(event)
     event.preventDefault()
     const uuid = event.currentTarget.dataset.targetUuid
     if (!uuid) return
@@ -138,13 +141,15 @@ export const BladeStackOpenersMixin = {
 
   // #532: Dokument als Detail-Blade öffnen. data-document-id. Klick aus der
   // Liste ersetzt den Sub-Stack (wie openFromList), sonst Append.
+  // #1151: STRG-Klick (Mac: Cmd) haengt an statt zu ersetzen (wie Plus).
   async openDocument(event) {
     event.preventDefault()
     event.stopPropagation()
     const id = event.currentTarget.dataset.documentId
     if (!id) return
+    const append = event.ctrlKey || event.metaKey
     const existing = this.cardForUuid(`document:${id}`)
-    if (existing) {
+    if (existing && !append) {
       this._expandCard(existing)
       existing.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
       this.setActiveCard(existing)
@@ -152,7 +157,13 @@ export const BladeStackOpenersMixin = {
     }
     const sourceListCard = event.target?.closest?.("article.stack-card[data-uuid^='list:']")
     const opts = { stackId: `document:${id}`, url: `/documents/${encodeURIComponent(id)}/card` }
-    if (sourceListCard) { opts.sourceListCard = sourceListCard; opts.mode = "replace_substack" }
+    if (append) opts.forceNew = true
+    if (sourceListCard) {
+      opts.sourceListCard = sourceListCard
+      opts.mode = append ? "append_to_substack" : "replace_substack"
+    } else if (append) {
+      opts.mode = "append_to_stack"
+    }
     await this._appendBladeAtUrl(opts)
     this.syncUrl({ pushHistory: true })
   },

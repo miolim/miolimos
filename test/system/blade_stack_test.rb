@@ -192,6 +192,42 @@ class BladeStackTest < ApplicationSystemTestCase
            "Beta-Card muss durch Sub-Stack-Ersatz weg sein"
   end
 
+  # #1151: STRG-Klick (bzw. Cmd auf dem Mac) auf ein Listen-Item haengt
+  # die Card an den Stack an (wie das Plus-Icon), statt den Sub-Stack
+  # zu ersetzen.
+  test "openFromList mit STRG-Taste appendet statt zu ersetzen" do
+    visit "/knowledge_items"
+    list_card_sel = "article.stack-card[data-uuid='list:knowledge_items']"
+    assert page.has_css?(list_card_sel)
+
+    # Erst beta normal oeffnen (replace-Semantik).
+    page.execute_script(<<~JS, @beta.uuid, list_card_sel)
+      const el = document.querySelector("[data-controller~='blade-stack']")
+      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
+      const fake = document.createElement("a")
+      fake.dataset.targetUuid = arguments[0]
+      const sourceList = document.querySelector(arguments[1])
+      sourceList.appendChild(fake)
+      ctrl.openFromList({ preventDefault() {}, currentTarget: fake, target: fake })
+    JS
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+
+    # Dann gamma mit gedrueckter STRG-Taste: beta bleibt, gamma kommt dazu.
+    page.execute_script(<<~JS, @gamma.uuid, list_card_sel)
+      const el = document.querySelector("[data-controller~='blade-stack']")
+      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
+      const fake = document.createElement("a")
+      fake.dataset.targetUuid = arguments[0]
+      const sourceList = document.querySelector(arguments[1])
+      sourceList.appendChild(fake)
+      ctrl.openFromList({ ctrlKey: true, preventDefault() {}, stopPropagation() {},
+                          currentTarget: fake, target: fake })
+    JS
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
+           "Beta-Card muss bei STRG-Klick erhalten bleiben (Append statt Ersatz)"
+  end
+
   test "openTask appended eine Task-Card als Blade im bestehenden Stack" do
     grant(@hans, "Task", %w[read create])
     task = Task.create!(title: "Blade-Test-Aufgabe", creator: @hans, assignee: @hans,

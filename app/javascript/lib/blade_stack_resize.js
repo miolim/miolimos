@@ -3,7 +3,7 @@
 // Prototype gemixt (Muster #378/#529), damit `this` weiterhin den
 // Stack-Controller meint (Targets, Values, Helpers). Reines Code-Move.
 //
-// Enthaltene Methoden: _isDesktop · _cardKind · _applySavedWidth · _setWidthInstant · _setupResizeForCard · _startResize · _resizeMove · _resizeUp · _resetResize
+// Enthaltene Methoden: _isDesktop · _cardKind · _applySavedWidth · _setWidthInstant · _setupResizeForCard · _startResize · _resizeMove · _resizeUp · _resetResize · _adoptWidthAsDefault
 
 export const BladeStackResizeMixin = {
 // ─── #163 Phase 6e: Card-Resize ─────────────────────────────────────
@@ -92,9 +92,14 @@ _setupResizeForCard(card) {
   // Handle injecten.
   const handle = document.createElement("div")
   handle.className = "blade-resize-handle"
-  handle.title     = "Breite ziehen — Doppelklick = Default"
+  handle.title     = window.t("js.blade_stack.resize_handle_title")
   handle.addEventListener("pointerdown", (e) => this._startResize(e, card))
-  handle.addEventListener("dblclick",    () => this._resetResize(card))
+  // #1152: STRG-Doppelklick (Mac: Cmd) uebernimmt die aktuelle Breite als
+  // neue Standard-Breite; normaler Doppelklick setzt auf den Standard zurueck.
+  handle.addEventListener("dblclick", (e) => {
+    if (e.ctrlKey || e.metaKey) this._adoptWidthAsDefault(card)
+    else this._resetResize(card)
+  })
   card.appendChild(handle)
 },
 
@@ -104,8 +109,8 @@ _startResize(event, card) {
   const rect = card.getBoundingClientRect()
   this._resizeState = {
     card,
-    startX: event.clientX,
-    startWidth: rect.width,
+    lastX: event.clientX,
+    width: rect.width,
     kind: this._cardKind(card)
   }
   document.body.style.cursor    = "col-resize"
@@ -116,12 +121,19 @@ _startResize(event, card) {
   window.addEventListener("pointerup",   this._onResizeUp)
 },
 
+// #1154: Mit gedrueckter STRG-Taste (Mac: Cmd) invertiert die Mausbewegung —
+// nach links ziehen macht die Card BREITER. Noetig fuer die aeusserst rechte
+// Card, wo rechts vom Handle kein Platz mehr ist. Inkrementell akkumuliert
+// (statt Abstand zum Startpunkt), damit STRG mitten im Zug gedrueckt/
+// losgelassen werden kann, ohne dass die Breite springt.
 _resizeMove(event) {
   const s = this._resizeState
   if (!s) return
-  const delta    = event.clientX - s.startX
+  const dx = event.clientX - s.lastX
+  s.lastX  = event.clientX
+  s.width += (event.ctrlKey || event.metaKey) ? -dx : dx
   const maxWidth = window.innerWidth - 80
-  const newWidth = Math.max(280, Math.min(maxWidth, s.startWidth + delta))
+  const newWidth = Math.max(280, Math.min(maxWidth, s.width))
   s.card.style.width    = `${newWidth}px`
   s.card.style.maxWidth = "none"
 },
@@ -144,6 +156,46 @@ _resetResize(card) {
   localStorage.removeItem(`blade.width.${kind}`)
   card.style.width    = ""
   card.style.maxWidth = ""
+  // #1152: „Standardeinstellung" ist die User-Pref (Settings → Vorlieben,
+  // bzw. per STRG-Doppelklick uebernommen), erst danach der CSS-Default.
+  if (this.cardWidthsValue && this.cardWidthsValue[kind]) {
+    const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const px    = Math.round(this.cardWidthsValue[kind] * remPx)
+    if (px >= 280) this._setWidthInstant(card, px)
+  }
   this.restickify()
+},
+
+// #1152: STRG-Doppelklick auf das Handle — die aktuelle Breite dieser Card
+// wird die neue Standard-Breite ihres Kinds: serverseitig in der User-Pref
+// card_widths gespeichert (in rem, wie in Settings → Vorlieben editierbar).
+// Der localStorage-Override wird geloescht — Standard und aktuelle Breite
+// sind jetzt identisch, und der Doppelklick-Reset landet kuenftig hier.
+async _adoptWidthAsDefault(card) {
+  const kind  = this._cardKind(card)
+  const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  const rem   = Math.round(card.getBoundingClientRect().width / remPx)
+  const body  = new URLSearchParams()
+  body.append(`preferences[card_widths][${kind}]`, String(rem))
+  let ok = false
+  try {
+    const resp = await fetch("/settings/preferences", {
+      method: "PATCH",
+      headers: {
+        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content,
+        "Accept":       "application/json"
+      },
+      body
+    })
+    ok = resp.ok
+  } catch { /* Netzfehler → Toast unten */ }
+  if (!ok) {
+    this._flashToast(window.t("js.blade_stack.width_default_failed"))
+    return
+  }
+  this.cardWidthsValue = { ...this.cardWidthsValue, [kind]: rem }
+  localStorage.removeItem(`blade.width.${kind}`)
+  this._setWidthInstant(card, Math.round(rem * remPx))
+  this._flashToast(window.t("js.blade_stack.width_default_saved"))
 }
 }

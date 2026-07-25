@@ -1512,6 +1512,9 @@ en:
       close_menu_this: "Close this card"
       close_menu_right_of: "Close this card and all to its right"
       multi_instance_title: "This entry is open %{count}× — click: jump to next occurrence"
+      resize_handle_title: "Drag to resize (Ctrl: invert direction) — double-click: default width, Ctrl+double-click: adopt width as default"
+      width_default_saved: "Width adopted as default for this card kind"
+      width_default_failed: "Default width could not be saved"
     pdf:
       fullblade_title: "Show PDF in the whole card"
       back_to_normal: "Back to normal view"

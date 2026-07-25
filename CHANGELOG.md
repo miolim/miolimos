@@ -37,6 +37,14 @@ release is cut, this section is renamed to the new version and a fresh
   workspace — same as the plus icon — instead of replacing the current card
   (#1151).
 
+- Ctrl+double-click on a card's resize handle adopts the card's current
+  width as the new default width for that card kind (saved to Settings →
+  Preferences); a plain double-click resets to that default (#1152).
+
+- Holding Ctrl while dragging a card's resize handle inverts the direction:
+  moving the mouse left makes the card wider. Useful for the rightmost card,
+  where the window edge leaves no room to drag right (#1154).
+
 - Autosave fields now confirm what they do. Fields that save on leaving them —
   invoice amounts, task fields, document metadata, and the like — briefly show
   a green check mark at the field once saving succeeded, and keep a red border

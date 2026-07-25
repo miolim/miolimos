@@ -1516,6 +1516,9 @@ de:
       close_menu_this: "Diese Karte schließen"
       close_menu_right_of: "Diese Karte und alle rechts davon schließen"
       multi_instance_title: "Dieser Eintrag ist %{count}× geöffnet — Klick: zur nächsten Stelle"
+      resize_handle_title: "Breite ziehen (STRG: Richtung umkehren) — Doppelklick: Standardbreite, STRG-Doppelklick: Breite als Standard übernehmen"
+      width_default_saved: "Breite als Standard für diese Kartenart übernommen"
+      width_default_failed: "Standardbreite konnte nicht gespeichert werden"
     pdf:
       fullblade_title: "PDF in der ganzen Karte anzeigen"
       back_to_normal: "Zurück zur normalen Ansicht"

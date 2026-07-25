@@ -23,7 +23,12 @@ class Settings::PreferencesController < Settings::BaseController
       current_actor.update!(person_ki_uuid: ki&.uuid)
     end
     current_actor.update_preferences(permitted.to_h)
-    redirect_to settings_preferences_path, notice: t("preferences.saved")
+    # #1152: der Blade-Stack speichert die Standard-Kartenbreite per fetch —
+    # der braucht eine schlanke Antwort statt der Redirect-Kette.
+    respond_to do |format|
+      format.json { head :ok }
+      format.html { redirect_to settings_preferences_path, notice: t("preferences.saved") }
+    end
   end
 
   private

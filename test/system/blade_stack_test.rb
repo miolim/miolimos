@@ -228,6 +228,69 @@ class BladeStackTest < ApplicationSystemTestCase
            "Beta-Card muss bei STRG-Klick erhalten bleiben (Append statt Ersatz)"
   end
 
+  # #1154: STRG beim Resize-Ziehen invertiert die Zugrichtung — Maus nach
+  # links macht die Card BREITER (fuer die aeusserst rechte Card, wo rechts
+  # kein Platz mehr ist).
+  test "STRG beim Resize-Ziehen invertiert die Richtung" do
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?(".stack-card[data-uuid='#{@alpha.uuid}']")
+    widths = page.evaluate_script(<<~JS)
+      (() => {
+        const card = document.querySelector(".stack-card[data-uuid='#{@alpha.uuid}']")
+        // width-Transition (220ms) aussetzen, sonst misst der Test den
+        // animierenden Zwischenwert statt der Zielbreite.
+        card.style.transition = "none"
+        const ctrl = window.Stimulus.getControllerForElementAndIdentifier(
+          document.querySelector("[data-controller~='blade-stack']"), "blade-stack")
+        const before = card.getBoundingClientRect().width
+        ctrl._startResize({ preventDefault() {}, stopPropagation() {}, clientX: 500 }, card)
+        ctrl._resizeMove({ clientX: 400, ctrlKey: true })
+        ctrl._resizeUp({})
+        return [before, card.getBoundingClientRect().width]
+      })()
+    JS
+    before, after = widths
+    assert_in_delta before + 100, after, 2,
+                    "100px nach links mit STRG muss die Card um 100px verbreitern"
+  end
+
+  # #1152: STRG-Doppelklick am Resize-Handle uebernimmt die aktuelle Breite
+  # als neue Standard-Breite (User-Pref card_widths, in rem); der normale
+  # Doppelklick-Reset landet danach auf genau dieser Breite.
+  test "STRG-Doppelklick uebernimmt die Breite als Standard" do
+    grant(@hans, "Actor", %w[read update])
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?(".stack-card[data-uuid='#{@alpha.uuid}']")
+    page.execute_script(<<~JS)
+      const card = document.querySelector(".stack-card[data-uuid='#{@alpha.uuid}']")
+      // Transition aussetzen + Reflow, damit die 640px sofort gelten und
+      // _adoptWidthAsDefault nicht den animierenden Zwischenwert misst.
+      card.style.transition = "none"
+      card.style.width = "640px"; card.style.maxWidth = "none"
+      card.getBoundingClientRect()
+      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(
+        document.querySelector("[data-controller~='blade-stack']"), "blade-stack")
+      ctrl._adoptWidthAsDefault(card)
+    JS
+    # Erfolgs-Toast abwarten — synchronisiert den async fetch.
+    assert page.has_text?(I18n.t("js.blade_stack.width_default_saved"))
+    saved = @hans.reload.preferences.dig("card_widths", "ki")
+    assert_in_delta 40.0, saved.to_f, 1.0, "640px muessen als ~40rem gespeichert sein"
+
+    # Reset (normaler Doppelklick) faellt jetzt auf die neue Standardbreite.
+    width_after_reset = page.evaluate_script(<<~JS)
+      (() => {
+        const card = document.querySelector(".stack-card[data-uuid='#{@alpha.uuid}']")
+        const ctrl = window.Stimulus.getControllerForElementAndIdentifier(
+          document.querySelector("[data-controller~='blade-stack']"), "blade-stack")
+        ctrl._resetResize(card)
+        return card.getBoundingClientRect().width
+      })()
+    JS
+    assert_in_delta 640, width_after_reset, 2,
+                    "Doppelklick-Reset muss auf der uebernommenen Standardbreite landen"
+  end
+
   test "openTask appended eine Task-Card als Blade im bestehenden Stack" do
     grant(@hans, "Task", %w[read create])
     task = Task.create!(title: "Blade-Test-Aufgabe", creator: @hans, assignee: @hans,

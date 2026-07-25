@@ -23,8 +23,6 @@ module ActorPreferences
     "list_default"  => 26
   }.freeze
 
-  CARD_KINDS = CARD_WIDTH_DEFAULTS.keys.freeze
-
   # Wheel-Speed in {threshold, lock_ms}. Niedriger = empfindlicher.
   WHEEL_PRESETS = {
     "slow"   => { "threshold" => 60, "lock_ms" => 200 },
@@ -67,11 +65,13 @@ module ActorPreferences
      CARD_WIDTH_DEFAULTS["list_default"]).to_f
   end
 
+  # #1152: neben den festen Default-Kinds auch dynamisch gespeicherte Kinds
+  # (per STRG-Doppelklick auf das Resize-Handle, z.B. "list:knowledge_items"
+  # oder "document") mit ausliefern — der Client kennt mehr Kinds als die
+  # Default-Tabelle, und Settings → Vorlieben zeigt sie so ebenfalls an.
   def pref_card_widths
-    saved   = preferences["card_widths"] || {}
-    CARD_WIDTH_DEFAULTS.each_with_object({}) do |(k, default), h|
-      h[k] = (saved[k] || default).to_f
-    end
+    saved = preferences["card_widths"] || {}
+    CARD_WIDTH_DEFAULTS.merge(saved).transform_values(&:to_f)
   end
 
   def pref_wheel_preset
@@ -243,9 +243,16 @@ module ActorPreferences
     updates.each do |key, value|
       case key.to_s
       when "card_widths"
-        new_prefs["card_widths"] = (new_prefs["card_widths"] || {}).merge(
-          value.to_h.transform_values { |v| v.to_f }.select { |k, _| CARD_KINDS.include?(k.to_s) }
-        )
+        # #1152: auch dynamische Client-Kinds ("list:knowledge_items",
+        # "document", …) zulassen — sanitisiert statt Whitelist, weil der
+        # Blade-Stack seine Kinds aus den Stack-IDs ableitet und die Liste
+        # clientseitig waechst. Wertebereich wie das Settings-Formular.
+        cleaned = value.to_h.each_with_object({}) do |(k, v), h|
+          key = k.to_s
+          next unless key.match?(/\A[a-z0-9_:.-]{1,64}\z/i)
+          h[key] = v.to_f.clamp(16.0, 120.0)
+        end
+        new_prefs["card_widths"] = (new_prefs["card_widths"] || {}).merge(cleaned)
       when "wheel_preset"
         new_prefs["wheel_preset"] = value.to_s if WHEEL_PRESETS.key?(value.to_s)
       when "sidebar_click_mode"

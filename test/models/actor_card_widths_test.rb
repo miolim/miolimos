@@ -31,4 +31,27 @@ class ActorCardWidthsTest < ActiveSupport::TestCase
     assert_equal 120.0, @actor.reload.preferences.dig("card_widths", "ki")
     assert_equal 16.0,  @actor.preferences.dig("card_widths", "task")
   end
+
+  # #1152-Aufraeumen: die Default-Tabelle traegt die Kind-Namen, unter denen
+  # der Blade-Stack die Breiten tatsaechlich nachschlaegt.
+  test "Default-Tabelle nutzt die Frontend-Kind-Namen" do
+    keys = ActorPreferences::CARD_WIDTH_DEFAULTS.keys
+    %w[src list:tasks list:topic].each { |k| assert_includes keys, k }
+    %w[source list_tasks topic_list list_default].each { |k| refute_includes keys, k }
+  end
+
+  test "Migration benennt gespeicherte Alt-Keys um" do
+    require Rails.root.join("db/migrate/20260725231000_rename_card_width_pref_keys.rb").to_s
+    @actor.update_columns(preferences: { "card_widths" => {
+      "source" => 40, "src" => 38, "list_tasks" => 50, "list_default" => 26, "ki" => 44
+    } })
+    migration = RenameCardWidthPrefKeys.new
+    migration.instance_variable_set(:@_verbose, false)
+    ActiveRecord::Migration.suppress_messages { migration.up }
+    cw = @actor.reload.preferences["card_widths"]
+    assert_equal 38, cw["src"], "bestehender neuer Key gewinnt gegen den alten"
+    assert_equal 50, cw["list:tasks"], "Alt-Key ohne neuen Gegenpart wird umbenannt"
+    assert_equal 44, cw["ki"], "unbeteiligte Kinds bleiben unangetastet"
+    %w[source list_tasks list_default].each { |k| refute cw.key?(k), "#{k} muss weg sein" }
+  end
 end

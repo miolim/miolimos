@@ -31,6 +31,12 @@ release is cut, this section is renamed to the new version and a fresh
   (card close menu, keyboard-shortcut help, history panel title, multi-
   instance badge, PDF tooltip) moved into the locale files.
 
+- The card-width preferences (Settings → Preferences) now use the same kind
+  names the workspace actually looks widths up under: "source" became "src",
+  "list_tasks" "list:tasks", "topic_list" "list:topic" — under the old names
+  these settings never had any effect. Saved preferences are migrated
+  automatically; the never-used "list_default" entry was dropped (#1152).
+
 ### Added
 
 - Ctrl+click (Cmd+click on the Mac) on a list item appends its card to the

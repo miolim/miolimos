@@ -8,19 +8,25 @@ module ActorPreferences
 
   # Card-Breiten in rem pro Card-Kind. Aktuelle Defaults entsprechen den
   # bisher hartcodierten Werten in den *_blade_card-Partials.
+  # #1152-Aufraeumen: die Keys sind die Kind-Namen, die der Blade-Stack aus
+  # den Stack-IDs ableitet (_cardKind in blade_stack_resize.js) — nur unter
+  # diesen Namen wirkt eine Breite auch. Die frueheren Keys "source",
+  # "list_tasks", "topic_list" passten nicht ("src", "list:tasks",
+  # "list:topic") und waren dadurch wirkungslos; "list_default" hatte
+  # clientseitig nie einen Abnehmer. Migration 20260725231000 benennt
+  # gespeicherte Vorlieben entsprechend um.
   CARD_WIDTH_DEFAULTS = {
     "task"          => 36,
     "topic"         => 36,
-    "topic_list"    => 60,   # die Multi-Tab-Topic-Listen-Card ist breiter
+    "list:topic"    => 60,   # die Multi-Tab-Topic-Listen-Card ist breiter
     "topic_render"  => 60,   # #357: Rendering-Blade (Work-Tree-Render)
     "ki"            => 36,
     "ki_refs"       => 44,   # #343: Reference-Blade (KI)
     "topic_refs"    => 44,   # #352-follow: Reference-Blade (Topic-Work-Tree)
-    "source"        => 36,
+    "src"           => 36,
     "awaiting"      => 36,
     "communication" => 36,
-    "list_tasks"    => 42,
-    "list_default"  => 26
+    "list:tasks"    => 42
   }.freeze
 
   # Wheel-Speed in {threshold, lock_ms}. Niedriger = empfindlicher.
@@ -57,12 +63,6 @@ module ActorPreferences
 
   def google_account_connected?
     OauthCredential.active.where(provider: "google", actor_id: id).exists?
-  end
-
-  def pref_card_width(kind)
-    (preferences.dig("card_widths", kind.to_s) ||
-     CARD_WIDTH_DEFAULTS[kind.to_s] ||
-     CARD_WIDTH_DEFAULTS["list_default"]).to_f
   end
 
   # #1152: neben den festen Default-Kinds auch dynamisch gespeicherte Kinds

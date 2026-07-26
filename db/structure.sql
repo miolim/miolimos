@@ -668,7 +668,8 @@ CREATE TABLE public.documents (
     shown_identifier_ids integer[] DEFAULT '{}'::integer[] NOT NULL,
     recipient_address_id bigint,
     deleted_at timestamp(6) without time zone,
-    debtor_bank_account_id bigint
+    debtor_bank_account_id bigint,
+    recipient_label character varying
 );
 
 
@@ -5979,6 +5980,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260727013000'),
 ('20260726193000'),
 ('20260725231000'),
 ('20260722080000'),

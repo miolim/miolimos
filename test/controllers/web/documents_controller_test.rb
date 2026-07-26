@@ -81,6 +81,20 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Jetzt änderbar", doc.reload.subject
   end
 
+  # #1171 (aus immoOS #1069): Kurzform fürs Anschriftfeld per PATCH, leer räumt ab.
+  test "recipient_label ist per PATCH setz- und leerbar" do
+    empf = FileProxy.create(actor: @hans, title: "Max Mustermann", item_type: :person, content: "")
+    doc = Document.create!(kind: :brief, recipient_uuid: empf.uuid)
+
+    patch "/documents/#{doc.id}", params: { recipient_label: "Eheleute Mustermann" }
+    assert_equal "Eheleute Mustermann", doc.reload.recipient_label
+    assert_equal ["Eheleute Mustermann"], doc.recipient_name_lines
+
+    patch "/documents/#{doc.id}", params: { recipient_label: "" }
+    assert_equal "", doc.reload.recipient_label.to_s
+    assert_equal ["Max Mustermann"], doc.recipient_name_lines
+  end
+
   # #556: Status-Wechsel schaltet den Editor live um (ohne Browser-Refresh).
   test "Status-Wechsel ersetzt den ganzen Editor-Bereich per Turbo-Stream (#556)" do
     doc = Document.create!(kind: :brief, subject: "X", status: :final)

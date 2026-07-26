@@ -60,6 +60,17 @@ module DocumentsHelper
     [name] + document_address_lines(ki, override: override)
   end
 
+  # #1171 (aus immoOS #1069): Anschriftfeld eines Belegs — kann MEHRERE
+  # Namenszeilen haben; eine hinterlegte Kurzform („Eheleute Mustermann")
+  # ersetzt die Namenszeilen. Die Adresse kommt weiterhin vom `recipient` —
+  # die gemeinsame Wohnung ist dieselbe, ein zweiter Adressblock wäre falsch.
+  def printable_recipient_lines(printable)
+    ki = printable.recipient
+    return ["Empfänger — kein KI gewählt"] unless ki
+    names = printable.recipient_name_lines.presence || [ki.title]
+    names + document_address_lines(ki, override: printable.chosen_recipient_address)
+  end
+
   # Strukturierte Adresszeilen eines KI (primäre Postadresse), Fallback auf
   # den alten Adress-ContactPoint (einzeilig).
   # #694: optionale override-Postadresse (pro Dokument gewählt) hat Vorrang.
@@ -100,6 +111,32 @@ module DocumentsHelper
     ).html_safe
   rescue GiroCode::Error => e
     Rails.logger.warn("GiroCode: #{e.message} (Invoice #{invoice.id})")
+    nil
+  end
+
+  # #1171 (aus immoOS #1157 E4): GiroCode auf dem ANSCHREIBEN — daten-
+  # getrieben über die Infoblock-Felder „Zahlbetrag" (+ optional
+  # „Verwendungszweck"). IBAN/BIC: Identifier des Ausstellers (wie
+  # Rechnung), sonst dessen erste Bankverbindung. Betrag komma-bewusst
+  # via Dezimalbetrag (immoOS #1170).
+  def document_giro_code_brief(document, module_size: 3)
+    return nil unless document.brief?
+    fields = document.document_fields.index_by { |f| TemplateMerge.normalize_key(f.label) }
+    amount = Dezimalbetrag.parse(fields["zahlbetrag"]&.value)
+    return nil unless amount&.positive?
+    account = document.issuer&.bank_accounts&.ordered&.first
+    iban = document.issuer_iban.presence || account&.iban
+    return nil if iban.blank?
+    GiroCode.svg(
+      name:       document.issuer&.title,
+      iban:       iban,
+      bic:        document.issuer_bic.presence || account&.bic,
+      amount:     amount,
+      remittance: fields["verwendungszweck"]&.value,
+      module_size: module_size
+    ).html_safe
+  rescue GiroCode::Error => e
+    Rails.logger.warn("GiroCode: #{e.message} (Document #{document.id})")
     nil
   end
 

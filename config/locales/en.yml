@@ -1837,6 +1837,9 @@ en:
       status: "Status"
       issuer_placeholder: "Issuer (person/org) …"
       recipient_placeholder: "Recipient (person/org) …"
+      # #1171 (adopted from immoOS #1069): short form for the address window.
+      recipient_label: "Addressee in the address window"
+      recipient_label_placeholder: "blank = %{name}"
       address: "Address"
       address_auto: "Automatic (%{address})"
       address_auto_none: "Automatic (no address valid on that date)"  # #1073

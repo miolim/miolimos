@@ -1847,6 +1847,9 @@ de:
       status: "Status"
       issuer_placeholder: "Aussteller (Person/Org) …"
       recipient_placeholder: "Empfänger (Person/Org) …"
+      # #1171 (aus immoOS #1069): Kurzform fürs Anschriftfeld.
+      recipient_label: "Adressat im Anschriftfeld"
+      recipient_label_placeholder: "leer = %{name}"
       address: "Anschrift"
       address_auto: "Automatisch (%{address})"
       address_auto_none: "Automatisch (keine am Stichtag gültige Anschrift)"  # #1073

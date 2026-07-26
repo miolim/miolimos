@@ -109,6 +109,8 @@ class DocumentsController < ApplicationController
     attrs = {}
     attrs[:subject]       = params[:subject]                if params.key?(:subject)
     attrs[:salutation]    = params[:salutation]             if params.key?(:salutation)
+    # #1171 (aus immoOS #1069): Kurzform fürs Anschriftfeld.
+    attrs[:recipient_label] = params[:recipient_label]      if params.key?(:recipient_label)
     attrs[:document_date] = params[:document_date].presence if params.key?(:document_date)
     attrs[:your_ref]      = params[:your_ref]               if params.key?(:your_ref)
     attrs[:our_ref]       = params[:our_ref]                if params.key?(:our_ref)

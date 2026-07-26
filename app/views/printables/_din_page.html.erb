@@ -16,8 +16,17 @@
         die Post erlaubt die Marke im Sichtfenster, oberhalb der Anschrift. %>
     <div class="din-zvz"><% if (pv = printable.postage_voucher) %><img class="din-franking" src="<%= pv.image %>" alt="Frankierung"><% else %>&nbsp;<% end %></div>
     <div class="din-recipient">
-      <% lines = document_recipient_lines(printable.recipient, override: printable.chosen_recipient_address) %>
-      <strong><%= lines.first %></strong><% lines.drop(1).each do |l| %><br><%= l %><% end %>
+      <%# #1171 (aus immoOS #1069): mehrere Namenszeilen möglich (z. B.
+          Eheleute) — alle Namen hervorgehoben, erst die Adresse normal. %>
+      <% names = printable.recipient ? (printable.recipient_name_lines.presence || [printable.recipient.title]) : [] %>
+      <% lines = printable_recipient_lines(printable) %>
+      <% lines.each_with_index do |l, i| %>
+        <% if i < names.size %>
+          <%= tag.strong(l) %><br>
+        <% else %>
+          <%= l %><%= tag.br unless i == lines.size - 1 %>
+        <% end %>
+      <% end %>
     </div>
   </div>
 

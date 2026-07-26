@@ -39,6 +39,19 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Letters can name their addressee freely (#1171, adopted from immoOS #1069):
+  an optional "addressee in the address window" field on the letter replaces
+  the recipient's registered name in the DIN address window — "Eheleute
+  Mustermann" instead of the single person the letter is technically linked
+  to. The address still comes from the linked recipient. Deliberately no
+  derivation from matching surnames: that guesses wrong for siblings, flat
+  shares, and double names — on the envelope of all places.
+
+- Letters with a "Zahlbetrag" info-block field now render a GiroCode
+  (EPC payment QR) below the letter text, with IBAN/BIC taken from the
+  issuer's identifiers or first bank account — same mechanics as on
+  invoices (#1171, adopted from immoOS #1157).
+
 - People and organizations can now carry a logo (#1168): upload it in the
   card's master-data section (stored as a regular image entry, removable
   without deleting the image). The letterhead of generated documents shows
@@ -178,6 +191,12 @@ release is cut, this section is renamed to the new version and a fresh
   them one by one (#1091).
 
 ### Fixed
+
+- Amount inputs now understand both decimal conventions (#1171, adopted from
+  immoOS #1170). All amount parsing goes through one comma-aware parser:
+  "1.234,56" used to become a payment QR code over 1.23 € (the GiroCode
+  field), and silently fell back to 0 in invoice lines and printable
+  amounts; "1.234" without decimals is still read as a thousands separator.
 
 - With very many cards on the workspace, shelving now works all the way to the
   end: card spines pack tighter as soon as the spine piles plus the widest card

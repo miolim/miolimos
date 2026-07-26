@@ -32,6 +32,14 @@
             KI-Renderer — unaufgelöste Platzhalter bleiben sichtbar stehen. %>
         <div class="markdown-body"><%= KnowledgeMarkdown.render(TemplateMerge.merge(document.body_ki.body.to_s, document.merge_context)).html_safe %></div>
       <% end %>
+      <%# #1171 (aus immoOS #1157 E4): Überweisungs-QR (GiroCode), wenn das
+          Anschreiben ein „Zahlbetrag"-Infoblock-Feld trägt. %>
+      <% if (giro = document_giro_code_brief(document)) %>
+        <div style="margin-top:4mm; display:flex; align-items:center; gap:7mm;">
+          <div style="width:26mm; height:26mm; flex:none;"><%= giro %></div>
+          <div style="font-size:8pt; color:#000; line-height:1.4;"><%= t("documents.render.giro_scan_html") %></div>
+        </div>
+      <% end %>
       <p class="din-greeting"><%= t("documents.render.greeting") %></p>
       <div class="din-signature <%= 'din-signed' if @signed %>">
         <%# #547: bei der signierten Ausgabe ein sichtbarer Vermerk über der

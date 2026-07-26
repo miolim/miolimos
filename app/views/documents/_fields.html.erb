@@ -56,6 +56,20 @@
           param_name: "value", create_label: "", allow_create: false %>
   </div>
 
+  <%# #1171 (aus immoOS #1069): optionale Kurzform fürs Anschriftfeld
+      („Eheleute Mustermann") — ersetzt die Namenszeile, Adresse bleibt
+      die des Empfänger-KIs. %>
+  <% if document.recipient %>
+    <div class="<%= rowcls %>">
+      <span class="text-slate-500"><%= t("documents.fields.recipient_label") %></span>
+      <%= form_with url: document_path(document), method: :patch, local: false, class: "contents" do %>
+        <%= text_field_tag :recipient_label, document.recipient_label,
+              placeholder: t("documents.fields.recipient_label_placeholder", name: document.recipient.title),
+              onblur: "if (this.value !== this.defaultValue) this.form.requestSubmit()", class: inputcls %>
+      <% end %>
+    </div>
+  <% end %>
+
   <%# #694 (Hans): Anschrift wählen, wenn der Empfänger MEHRERE Postadressen
       hat (z.B. Krankenkasse mit Postfach + Hausanschrift). Leer = automatisch
       (mailing_address). Bei 0/1 Adressen erscheint die Zeile nicht. %>

@@ -103,6 +103,18 @@ module Printable
   # schränken weiter ein (Document: nicht NDA, Invoice: nur ausgehend).
   def frankable? = !print_paged?
 
+  # #1171 (aus immoOS #1069): Namenszeilen fürs DIN-Anschriftfeld. Der
+  # Empfänger ist als Assoziation strikt EIN KnowledgeItem — das reicht
+  # nicht, wenn mehrere Personen gemeinsam adressiert werden („Eheleute
+  # Mustermann"). Deshalb mehrere Zeilen statt eines Titels; Entitäten
+  # können überschreiben. `recipient_label` (falls die Entität es führt)
+  # gewinnt immer: Es ist die bewusst gewählte Anschrift-Bezeichnung.
+  def recipient_name_lines
+    label = respond_to?(:recipient_label) ? recipient_label : nil
+    return [ label ] if label.present?
+    [ recipient&.title ].compact
+  end
+
   # ── Verfahren-Hooks (DocumentRenderer / Output-Actions) ──────────────────
   # Mehrseitiger Render mit Fußzeile pro Seite (Ferrum/CDP)? Default: nein.
   def print_paged? = false

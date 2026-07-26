@@ -174,6 +174,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The topbar search field no longer erases itself while typing. Since the
+  quick-create controller moved onto the whole header (#1109), its
+  after-submit cleanup also caught the search form: every debounced search
+  request reset the field mid-typing while the results kept showing the hits
+  for the text typed so far. The cleanup now only targets forms inside the
+  quick-create slots (#1161).
+
 - Saving a person without touching their contact data no longer wipes it.
   Internal saves that did not carry contact points, affiliations, or
   relationships — marking a person as superseded, for instance — silently

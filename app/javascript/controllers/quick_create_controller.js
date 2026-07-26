@@ -23,8 +23,13 @@ export default class extends Controller {
     // Nach erfolgreichem Submit eines Slot-Forms: Form-Felder leeren
     // (#318: sonst sieht der User beim naechsten Oeffnen den alten
     // Text) und Slot schliessen.
+    // #1161: NUR Forms aus den Slot-Popovers. Seit #1109 sitzt der
+    // Controller auf dem ganzen <header> — ein contains(e.target) traf
+    // damit auch das Topbar-Suchformular und leerte das Suchfeld nach
+    // jeder debounced Such-Submission mitten im Tippen.
     this._onSubmitEnd = (e) => {
-      if (this.element.contains(e.target) && e.detail?.success) {
+      const inSlot = this.slotTargets.some(s => s.contains(e.target))
+      if (inSlot && e.detail?.success) {
         if (e.target.tagName === "FORM") this._resetForm(e.target)
         this.closeAll()
       }

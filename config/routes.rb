@@ -362,7 +362,7 @@ Rails.application.routes.draw do
       delete :supersede, action: :unsupersede
       # #1075: dieses Person/Org-KI in ein anderes mergen (target_uuid).
       post   :merge
-      get  :file           # Binär-Datei (PDF etc.) inline streamen
+      get    :file         # Binär-Datei (PDF etc.) inline streamen
       # #1168: Logo an Person/Org (Upload legt Bild-KI an, DELETE löst
       # nur die Verknüpfung).
       post   :logo, action: :upload_logo

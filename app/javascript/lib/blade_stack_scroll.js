@@ -34,7 +34,12 @@ export const BladeStackScrollMixin = {
     let cardX = 0
     for (let i = 0; i < idx; i++) cardX += allCards[i].getBoundingClientRect().width
     const cardW      = card.getBoundingClientRect().width
-    const minScroll  = Math.max(0, cardX + cardW - cw + (total - idx - 1) * step)
+    // #1167 v2: die aeusserste rechte Card hat im rechten Stapel einen
+    // vollen SPINE_STEP-Slot, nur die tieferen Plaetze nutzen stepEff.
+    const rightPile  = idx >= total - 1
+      ? 0
+      : this.constructor.SPINE_STEP + (total - 2 - idx) * step
+    const minScroll  = Math.max(0, cardX + cardW - cw + rightPile)
     const maxScroll  = Math.max(0, cardX - idx * step)
     const current   = this.containerTarget.scrollLeft
     let target = current

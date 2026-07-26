@@ -17,12 +17,14 @@ test("wenige Cards: unveraenderte 28px-Schritte, Rights wie bisher", () => {
 })
 
 test("letzte Card wird geklemmt, wenn ihr Pin-Platz sie aus dem Viewport schieben wuerde (#281)", () => {
-  // 10 Cards à 576 in 700px: naturalLeft der letzten = 9*step > 700-576.
-  const widths = Array(10).fill(576)
+  // 33 Cards à 576 in 700px: selbst mit minStep (4px) liegt der
+  // natuerliche Pin-Platz der letzten Card (32*4=128) rechts von
+  // 700-576=124 → Klemmung greift.
+  const widths = Array(33).fill(576)
   const { offsets } = stickyOffsets({ widths, clientWidth: 700, step: STEP })
-  assert.equal(offsets[9].left, 700 - 576)
-  // Vorletzte behaelt ihren (ggf. geschrumpften) Stapel-Platz.
-  assert.ok(offsets[8].left <= offsets[9].left + STEP)
+  assert.equal(offsets[32].left, 700 - 576)
+  // Vorletzte behaelt ihren (geschrumpften) Stapel-Platz.
+  assert.ok(offsets[31].left <= offsets[32].left + STEP)
 })
 
 test("viele Cards: Schritt schrumpft, damit Stapel + breiteste Card in den Container passen", () => {
@@ -41,6 +43,18 @@ test("viele Cards: Schritt schrumpft, damit Stapel + breiteste Card in den Conta
     assert.ok(offsets[i].left <= lastLeft + 1,
       `Card ${i} pint bei ${offsets[i].left}px, letzte Card bei ${lastLeft}px`)
   }
+})
+
+test("aeusserste rechte Card dockt mit vollem step-Slot an, tiefere Plaetze schrumpfen (#1167 v2)", () => {
+  const widths = Array(33).fill(576)
+  const cw = 706
+  const { step, offsets } = stickyOffsets({ widths, clientWidth: cw, step: STEP })
+  // Letzte Card: Andock-Platz = voller SPINE_STEP → 28px Ruecken sichtbar.
+  assert.equal(offsets[32].right, STEP - 576)
+  const pinLeftEdge = (i) => cw - (offsets[i].right + 576)
+  assert.equal(pinLeftEdge(32), cw - STEP)
+  // Vorletzte dockt einen (geschrumpften) Schritt links davon an.
+  assert.equal(Math.round(pinLeftEdge(31)), Math.round(cw - STEP - step))
 })
 
 test("Schritt faellt nie unter minStep", () => {

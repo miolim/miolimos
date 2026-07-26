@@ -180,8 +180,11 @@ release is cut, this section is renamed to the new version and a fresh
   its spine and no spines disappear behind an open card any more. Previously
   the fixed 28px spine offsets grew wider than the viewport, leaving part of
   the rightmost card's content standing and hiding newly shelved spines behind
-  it. Card layout is also re-synced after each card finishes loading — the
-  initial layout used to measure cards before their content arrived (#1167).
+  it. The outermost card always keeps a full-width spine slot when it docks on
+  the right, so it reads as a proper spine rather than a few-pixel sliver of
+  content — only the deeper pile slots shrink. Card layout is also re-synced
+  after each card finishes loading — the initial layout used to measure cards
+  before their content arrived (#1167).
 
 - The topbar search field no longer erases itself while typing. Since the
   quick-create controller moved onto the whole header (#1109), its

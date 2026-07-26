@@ -17,22 +17,34 @@
 //
 // Die letzte Card wird wie bisher (#281 follow-up) links so geklemmt,
 // dass sie vollstaendig ins Viewport passt.
+//
+// #1167 v2 (Hans): Die AEUSSERSTE rechte Card behaelt beim Andocken am
+// rechten Rand immer einen vollen step-Slot — ihr Ruecken muss als
+// Ruecken lesbar bleiben, wenn sie beim Links-Scrollen einklappt. Mit
+// dem geschrumpften Schritt dockte sie sonst als schmale Inhaltskante
+// (~4px) an und wirkte „nicht ganz ausgeblendet". Nur die tieferen
+// Stapel-Plaetze schrumpfen; bei stepEff == step ist die Formel
+// identisch zur bisherigen ((total-i)*step - w).
 export const SPINE_STEP_MIN = 4
 
 export function stickyOffsets({ widths, clientWidth, step, minStep = SPINE_STEP_MIN }) {
   const total = widths.length
   if (total === 0) return { step: step, offsets: [] }
   const maxW    = Math.max(...widths)
-  const budget  = Math.max(0, clientWidth - maxW)
-  const stepEff = total > 1
-    ? Math.min(step, Math.max(minStep, budget / (total - 1)))
+  const budget  = Math.max(0, clientWidth - maxW - (total > 1 ? step : 0))
+  const stepEff = total > 2
+    ? Math.min(step, Math.max(minStep, budget / (total - 2)))
     : step
   const offsets = widths.map((w, i) => {
+    const isLast = i === total - 1
     const naturalLeft = i * stepEff
-    const left = i === total - 1
+    const left = isLast
       ? Math.min(naturalLeft, Math.max(0, clientWidth - w))
       : naturalLeft
-    return { left, right: (total - i) * stepEff - w, zIndex: i }
+    const right = isLast
+      ? step - w
+      : step + (total - 1 - i) * stepEff - w
+    return { left, right, zIndex: i }
   })
   return { step: stepEff, offsets }
 }

@@ -152,7 +152,7 @@ class FileProxy
                first_name: nil, last_name: nil, orcid: nil,
                legal_form: nil,
                gender: nil, salutation: nil, academic_title: nil,
-               issuer: nil)
+               issuer: nil, logo: nil)
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
 
       # #241 Plan B: existing body kommt aus DB, Frontmatter wird aus
@@ -186,7 +186,8 @@ class FileProxy
         gender:         gender,
         salutation:     salutation,
         academic_title: academic_title,
-        issuer:         issuer
+        issuer:         issuer,
+        logo:           logo
       )
 
       # #650 (Hans, 2026-06-12): Binär-Datei-KIs (Bild/PDF — alles ohne
@@ -249,6 +250,7 @@ class FileProxy
         academic_title:  fm["academic_title"],
         issuer:          ActiveModel::Type::Boolean.new.cast(fm["issuer"]) ? true : false,
         parent_org_uuid: KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
+        logo_uuid:       KnowledgeIndexer.resolve_ki_uuid(fm["logo"]),
         file_path:       new_relative_path,
         content_hash:    Digest::SHA256.hexdigest(full_content),
         file_updated_at: Time.current,

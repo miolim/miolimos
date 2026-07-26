@@ -75,6 +75,10 @@ class KnowledgeItem < ApplicationRecord
   has_many :sub_organizations, class_name: "KnowledgeItem",
     foreign_key: :parent_org_uuid, primary_key: :uuid
 
+  # #1168: Logo einer Person/Org — Referenz auf ein Bild-KI (Briefkopf).
+  belongs_to :logo, class_name: "KnowledgeItem",
+    foreign_key: :logo_uuid, primary_key: :uuid, optional: true
+
   # Kontaktdaten für Person/Org-KIs: N E-Mails/Telefone/Adressen,
   # jeweils mit Label. Schema.org-`contactPoint`-inspiriert.
   has_many :contact_points,

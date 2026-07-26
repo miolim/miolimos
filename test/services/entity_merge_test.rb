@@ -137,6 +137,21 @@ class EntityMergeTest < ActiveSupport::TestCase
     end
   end
 
+  # #1168: Logo wandert mit, wenn das Ziel selbst keines hat.
+  test "Logo-Referenz wandert bei Merge zum Ziel" do
+    with_isolated_miolimos_base do
+      source = create_person("Stocker")
+      target = create_person("Angela Stocker")
+      logo   = create_bare_ki("Logo Stocker", item_type: :image)
+      source.update!(logo_uuid: logo.uuid)
+
+      EntityMerge.merge!(source: source, target: target, actor: @hans)
+
+      assert_equal logo.uuid, target.reload.logo_uuid
+      assert_equal "Logo Stocker", FileProxy::Reader.build_frontmatter_hash(target)["logo"]
+    end
+  end
+
   test "Kinder-Verweise (Replies, parent_org) folgen zum Ziel" do
     with_isolated_miolimos_base do
       source = create_person("Alt GmbH")

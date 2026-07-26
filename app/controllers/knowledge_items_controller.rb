@@ -6,7 +6,8 @@ class KnowledgeItemsController < ApplicationController
                                       :file, :quote_from_clipboard,
                                       :supersede, :unsupersede, :merge, :identifiers, :addresses, :bank_accounts, :vat_exempt,
                                       :complete_from_url,
-                                      :toggle_personally_known, :toggle_render_mode]
+                                      :toggle_personally_known, :toggle_render_mode,
+                                      :upload_logo, :remove_logo]
   before_action :set_any_item, only: [:restore]
 
   # JS-getriggerte Endpoints, die kein Form rendern können (Stimulus-
@@ -198,6 +199,34 @@ class KnowledgeItemsController < ApplicationController
     item = FileProxy.create_with_file(actor: current_actor, title: title,
                                       uploaded_io: file, item_type: :image)   # #609 v3
     render json: { title: item.title, uuid: item.uuid }
+  end
+
+  # #1168 (Hans): Logo an Person/Org erfassen. Die Datei wird als normales
+  # Bild-KI („Logo <Name>") abgelegt; die Person/Org referenziert es per
+  # Frontmatter-Key `logo` (Titel-Referenz wie parent_org). Antwort ersetzt
+  # nur das Logo-Widget — kein Full-Detail-Replace (#827-Lektion).
+  def upload_logo
+    file = params.require(:file)
+    unless file.content_type.to_s.start_with?("image/")
+      return head :unsupported_media_type
+    end
+    base  = "Logo #{@item.title}"
+    title = base
+    n = 2
+    while KnowledgeItem.by_title_ci(title).exists?
+      title = "#{base} (#{n})"
+      n += 1
+    end
+    image = FileProxy.create_with_file(actor: current_actor, title: title,
+                                       uploaded_io: file, item_type: :image)
+    FileProxy.update(actor: current_actor, knowledge_item: @item, logo: image.title)
+    render_logo_field_stream
+  end
+
+  # #1168: Logo-Verknüpfung lösen — das Bild-KI selbst bleibt erhalten.
+  def remove_logo
+    FileProxy.update(actor: current_actor, knowledge_item: @item, logo: "")
+    render_logo_field_stream
   end
 
   # #608/#840: Bekanntheit manuell togglen — grünes Icon übersteuert das
@@ -679,6 +708,14 @@ class KnowledgeItemsController < ApplicationController
           }), status: :unprocessable_entity
       end
     end
+  end
+
+  # #1168: nach Logo-Upload/-Entfernen nur das Logo-Widget ersetzen.
+  def render_logo_field_stream
+    @item.reload
+    render turbo_stream: turbo_stream.replace("ki_logo_#{@item.uuid}",
+      partial: "knowledge_items/logo_field",
+      locals: { item: @item, in_stack: params[:in_stack].present? })
   end
 
   def render_update_detail_stream

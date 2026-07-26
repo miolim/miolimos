@@ -39,6 +39,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- People and organizations can now carry a logo (#1168): upload it in the
+  card's master-data section (stored as a regular image entry, removable
+  without deleting the image). The letterhead of generated documents shows
+  the issuer's logo instead of the plain name when one is set.
+
 - Ctrl+click (Cmd+click on the Mac) on a list item appends its card to the
   workspace — same as the plus icon — instead of replacing the current card
   (#1151).

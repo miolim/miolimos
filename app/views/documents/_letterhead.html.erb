@@ -5,7 +5,9 @@
     unten bleibt als Editor-Erinnerung. Genutzt von _sample_invoice/_sample_nda. %>
 <% issuer = local_assigns.fetch(:issuer, @issuer) %>
 <header class="doc-letterhead">
-  <div class="doc-logo"><%= issuer&.title.presence %></div>
+  <%# #1168: hinterlegtes Logo des Ausstellers (Data-URI, PDF-tauglich);
+      ohne Logo wie bisher der Ausstellername als Text. %>
+  <div class="doc-logo"><%= document_logo_tag(issuer) || issuer&.title.presence %></div>
   <div class="doc-sender">
     <% if issuer %>
       <%= document_sender_html(issuer) %>

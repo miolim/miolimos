@@ -363,6 +363,10 @@ Rails.application.routes.draw do
       # #1075: dieses Person/Org-KI in ein anderes mergen (target_uuid).
       post   :merge
       get  :file           # Binär-Datei (PDF etc.) inline streamen
+      # #1168: Logo an Person/Org (Upload legt Bild-KI an, DELETE löst
+      # nur die Verknüpfung).
+      post   :logo, action: :upload_logo
+      delete :logo, action: :remove_logo
       post :quote_from_clipboard  # Markierten Text aus PDF in Quotes-Sammlung legen
       # #155: Bulk-Trigger für Entity-Import; legt einen Task für den
       # Researcher-Agent an mit Liste der fehlenden [[Title|URL]]-

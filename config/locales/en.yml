@@ -619,6 +619,11 @@ en:
       parent_org_label_html: 'Parent organization <span class="text-slate-400 font-normal">(title or UUID, empty = top-level)</span>'
       parent_org_placeholder: "e.g. BigCorp"
       issuer_label_html: 'Issuer <span class="text-slate-400 font-normal">(own legal entity)</span>'
+      # #1168: person/org logo (letterhead/documents).
+      logo_label:   "Logo"
+      logo_upload:  "Upload logo"
+      logo_replace: "Replace"
+      logo_remove:  "Remove logo"
       vat_exempt_label_html: 'VAT exempt <span class="text-slate-400 font-normal">(e.g. § 19 UStG)</span>'
       change_source: "Change source"
       source_picker_placeholder: "Slug or full-text search — empty = decouple"

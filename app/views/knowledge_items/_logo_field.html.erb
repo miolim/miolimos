@@ -1,0 +1,24 @@
+<%# #1168: Logo einer Person/Organisation — Upload legt ein Bild-KI an
+    („Logo <Name>", unter knowledge/images), hier lebt nur die Referenz.
+    Antwort des Upload-/Remove-Endpoints ersetzt genau dieses Widget. %>
+<div id="ki_logo_<%= item.uuid %>" class="flex flex-col gap-0.5" data-empty="<%= item.logo_uuid.blank? %>">
+  <span class="text-slate-500"><%= t("knowledge.detail.logo_label") %></span>
+  <div class="flex items-center gap-2">
+    <% if item.logo %>
+      <img src="<%= file_knowledge_item_path(item.logo.uuid) %>" alt="<%= item.logo.title %>"
+           class="h-10 max-w-[140px] object-contain border border-slate-200 rounded bg-white px-1 py-0.5">
+      <%= form_with url: logo_knowledge_item_path(item.uuid), method: :delete, local: false, class: "contents" do %>
+        <% if in_stack %><%= hidden_field_tag :in_stack, "1" %><% end %>
+        <button type="submit" class="text-slate-400 hover:text-red-500" title="<%= t("knowledge.detail.logo_remove") %>">✕</button>
+      <% end %>
+    <% end %>
+    <%= form_with url: logo_knowledge_item_path(item.uuid), method: :post, local: false, class: "contents" do %>
+      <% if in_stack %><%= hidden_field_tag :in_stack, "1" %><% end %>
+      <label class="text-slate-500 hover:text-slate-700 cursor-pointer underline decoration-dotted">
+        <%= item.logo ? t("knowledge.detail.logo_replace") : t("knowledge.detail.logo_upload") %>
+        <%= file_field_tag :file, accept: "image/*", class: "hidden",
+              onchange: "this.form.requestSubmit()" %>
+      </label>
+    <% end %>
+  </div>
+</div>

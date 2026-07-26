@@ -225,6 +225,9 @@
             <span class="text-slate-600"><%= t("knowledge.detail.vat_exempt_label_html") %></span>
           <% end %>
         </label>
+        <%# #1168: Logo (für Briefkopf/Dokumente) — eigenes Widget, wird
+            vom Upload-/Remove-Endpoint gezielt ersetzt. %>
+        <%= render "knowledge_items/logo_field", item: item, in_stack: in_stack %>
       <% end %>
     </div>
 

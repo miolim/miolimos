@@ -20,7 +20,7 @@ class FileProxy
               first_name:, last_name:, orcid: nil,
               legal_form: nil,
               gender: nil, salutation: nil, academic_title: nil,
-              issuer: nil)
+              issuer: nil, logo: nil)
       fm = old_fm.merge("updated_at" => Time.current.iso8601)
       fm["topics"]   = Array(topics)   if topics
       fm["contacts"] = Array(contacts) if contacts
@@ -53,6 +53,9 @@ class FileProxy
       fm["salutation"]     = salutation.presence                           unless salutation.nil?
       # #1090 Nachtrag: akademischer Titel ist Freitext wie die Anrede.
       fm["academic_title"] = academic_title.presence                       unless academic_title.nil?
+      # #1168: Logo als Titel-Referenz auf ein Bild-KI (wie parent_org);
+      # "" räumt den Key ab (fm.compact unten).
+      fm["logo"]           = logo.presence                                 unless logo.nil?
       # #761: vat_id-Spalte entfernt — USt-IdNr lebt als Identifier (#544).
       # Alt-Frontmatter-Key aktiv löschen, damit er nicht zurückwandert.
       fm.delete("vat_id")

@@ -71,6 +71,11 @@ class FileProxy
         parent = KnowledgeItem.find_by(uuid: ki.parent_org_uuid)
         fm["parent_org"] = parent.title if parent
       end
+      # #1168: Logo-Referenz als Titel exportieren (wie parent_org).
+      if ki.respond_to?(:logo_uuid) && ki.logo_uuid.present?
+        logo = KnowledgeItem.find_by(uuid: ki.logo_uuid)
+        fm["logo"] = logo.title if logo
+      end
       fm["creator"]    = ki.creator.name              if ki.creator
       # #460: Supersession ins Export-Frontmatter, damit die Ablösung in
       # der Datei/git-Historie und im „Abgeleitet"-Inspektor sichtbar ist.

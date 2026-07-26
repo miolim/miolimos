@@ -1209,7 +1209,8 @@ CREATE TABLE public.knowledge_items (
     legal_form character varying,
     gender character varying,
     salutation character varying,
-    academic_title character varying
+    academic_title character varying,
+    logo_uuid character varying
 );
 
 
@@ -5978,6 +5979,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260726193000'),
 ('20260725231000'),
 ('20260722080000'),
 ('20260721230000'),

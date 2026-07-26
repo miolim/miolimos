@@ -27,6 +27,21 @@ module DocumentsHelper
     safe_join(lines.map { |l| ERB::Util.html_escape(l) }, tag.br)
   end
 
+  # #1168: Logo des Ausstellers als Data-URI einbetten — die Dokument-HTMLs
+  # müssen selbst-enthalten sein (Headless-Chrome-PDF ohne Asset-Server,
+  # siehe DocumentPdf). Liefert nil, wenn kein Logo hinterlegt ist oder die
+  # Datei fehlt; der Briefkopf fällt dann auf den Ausstellernamen zurück.
+  def document_logo_tag(issuer)
+    logo = issuer&.logo
+    return nil if logo&.file_path.blank?
+    full = FileProxy::BASE_PATH.join(logo.file_path)
+    return nil unless File.exist?(full)
+    mime = Mime::Type.lookup_by_extension(File.extname(full).delete(".").downcase).to_s
+    return nil unless mime.start_with?("image/")
+    data = Base64.strict_encode64(File.binread(full))
+    image_tag("data:#{mime};base64,#{data}", alt: issuer.title, class: "doc-logo-img")
+  end
+
   # #532: Einzeilige Absenderangabe für die DIN-5008-Rücksendeangabe im
   # Anschriftfeld (Name · Straße · PLZ Ort). Ohne Aussteller: Platzhalter.
   def document_sender_oneline(issuer)

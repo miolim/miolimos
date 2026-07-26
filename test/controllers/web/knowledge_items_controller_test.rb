@@ -1362,4 +1362,83 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
       assert_equal "Dr.", p.academic_title
     end
   end
+
+  # ─── #1168 Logo an Person/Org ────────────────────────────────────────
+
+  def png_upload
+    Rack::Test::UploadedFile.new(StringIO.new("\x89PNG fake"), "image/png",
+                                 original_filename: "logo.png")
+  end
+
+  test "#1168 Logo-Upload legt Bild-KI an, setzt Referenz + Frontmatter" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "Faro Immobilien",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      assert_difference -> { KnowledgeItem.where(item_type: "image").count }, 1 do
+        post "/knowledge_items/#{org.uuid}/logo", params: { file: png_upload },
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      end
+      assert_response :ok
+      logo = KnowledgeItem.find_by(title: "Logo Faro Immobilien")
+      assert_equal logo.uuid, org.reload.logo_uuid
+      assert_equal logo.title, FileProxy::Reader.build_frontmatter_hash(org)["logo"]
+      assert_includes @response.body, "ki_logo_#{org.uuid}"
+      # Das Bild ist über die file-Route abrufbar (fürs Thumbnail).
+      get "/knowledge_items/#{logo.uuid}/file"
+      assert_response :success
+      assert_equal "image/png", response.media_type
+    end
+  end
+
+  test "#1168 Logo entfernen löst nur die Verknüpfung, Bild-KI bleibt" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "Logo AG",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      post "/knowledge_items/#{org.uuid}/logo", params: { file: png_upload },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      logo_uuid = org.reload.logo_uuid
+      assert logo_uuid.present?
+
+      delete "/knowledge_items/#{org.uuid}/logo",
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :ok
+      assert_nil org.reload.logo_uuid
+      assert_nil FileProxy::Reader.build_frontmatter_hash(org)["logo"]
+      assert KnowledgeItem.exists?(uuid: logo_uuid)
+    end
+  end
+
+  test "#1168 Nicht-Bild wird abgelehnt" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "PDF GmbH",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      pdf = Rack::Test::UploadedFile.new(StringIO.new("%PDF-1.4"), "application/pdf",
+                                         original_filename: "x.pdf")
+      assert_no_difference -> { KnowledgeItem.count } do
+        post "/knowledge_items/#{org.uuid}/logo", params: { file: pdf },
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      end
+      assert_response :unsupported_media_type
+      assert_nil org.reload.logo_uuid
+    end
+  end
+
+  test "#1168 zweiter Upload benennt das Bild-KI eindeutig" do
+    with_isolated_miolimos_base do
+      org = FileProxy.create(actor: @hans, title: "Doppel GmbH",
+                             item_type: :organization, content: "",
+                             topics: [], contacts: [], tags: [])
+      post "/knowledge_items/#{org.uuid}/logo", params: { file: png_upload },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      post "/knowledge_items/#{org.uuid}/logo", params: { file: png_upload },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert KnowledgeItem.exists?(title: "Logo Doppel GmbH")
+      second = KnowledgeItem.find_by(title: "Logo Doppel GmbH (2)")
+      assert second.present?
+      assert_equal second.uuid, org.reload.logo_uuid
+    end
+  end
 end

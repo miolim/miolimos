@@ -210,7 +210,10 @@ class KnowledgeIndexer
 
     # Person-Frontmatter `parent_org:` darf UUID ODER Title sein —
     # diese Methode loest beides auf eine uuid auf.
-    def resolve_parent_org_uuid(value)
+    def resolve_parent_org_uuid(value) = resolve_ki_uuid(value)
+
+    # #1168: generische Titel-oder-UUID-Aufloesung (auch fuer `logo:`).
+    def resolve_ki_uuid(value)
       return nil if value.blank?
       s = value.to_s.strip
       return s.downcase if s =~ UUID_RE

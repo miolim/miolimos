@@ -176,6 +176,7 @@ class KnowledgeIndexer
     item.academic_title  = frontmatter["academic_title"].presence
 
     item.parent_org_uuid = References.resolve_parent_org_uuid(frontmatter["parent_org"])
+    item.logo_uuid       = References.resolve_ki_uuid(frontmatter["logo"])   # #1168
     item.file_path       = relative_path
     item.content_hash    = hash
     item.file_created_at = parse_time(frontmatter["created_at"]) || Time.current
@@ -270,6 +271,7 @@ class KnowledgeIndexer
   # References-Modul (E.9). Werden hier als One-Liner exponiert, damit
   # die externe API stabil bleibt.
   def self.resolve_parent_org_uuid(value)       = References.resolve_parent_org_uuid(value)
+  def self.resolve_ki_uuid(value)               = References.resolve_ki_uuid(value)   # #1168
   def self.index_body_references_for(item, body) = References.index_body_references_for(item, body)
   def self.resolve_dangling_references_to(t, u)  = References.resolve_dangling_references_to(t, u)
   # #953 Folge: Task-Beschreibung als Referenz-Quelle (von Task#save).

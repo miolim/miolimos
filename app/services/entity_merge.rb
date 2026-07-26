@@ -257,6 +257,10 @@ class EntityMerge
     if @target.parent_org_uuid.blank? && @source.parent_org_uuid.present?
       params[:parent_org] = @source.parent_org_uuid
     end
+    # #1168: Logo wandert mit, wenn das Ziel selbst keines hat.
+    if @target.logo_uuid.blank? && @source.logo_uuid.present?
+      params[:logo] = @source.logo_uuid
+    end
     params[:issuer] = true if @source.issuer? && !@target.issuer?
 
     if @source.body.present?

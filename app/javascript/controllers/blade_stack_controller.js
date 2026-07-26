@@ -11,6 +11,7 @@ import { BladeStackEditModeMixin } from "lib/blade_stack_edit_mode"
 import { BladeStackMobileMixin } from "lib/blade_stack_mobile"
 import { BladeStackResizeMixin } from "lib/blade_stack_resize"
 import { focusTargetAfterClose, endSpacerWidth, standingSpacerWidth, nextShelfStop, prevShelfStop } from "lib/blade_stack_close"
+import { stickyOffsets } from "lib/blade_stack_sticky"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -295,6 +296,16 @@ class BladeStackController extends Controller {
     })
     this.mutObserver.observe(this.containerTarget, { childList: true })
 
+    // #1167: Beim Initial-Load werden Cards gemessen, BEVOR ihre Turbo-
+    // Frames Inhalt haben (Breite ~0) — die Letzte-Card-Klemmung und die
+    // Sticky-Rights rechneten dann mit Phantombreiten und blieben so
+    // stehen (live beobachtet: letzte Card mit left=896px bei 706px
+    // Container). Nach jedem Frame-Load im Stack das Layout nachziehen.
+    this._onFrameLoad = (e) => {
+      if (this.containerTarget.contains(e.target)) this.restickify()
+    }
+    document.addEventListener("turbo:frame-load", this._onFrameLoad)
+
     // #190: aktueller Trail muss beim Page-Verlassen in den Verlauf
     // wandern — sonst geht der via appendCard/appendFromList aufgebaute
     // Stand verloren und der nächste Page-Load restored einen veralteten
@@ -478,6 +489,7 @@ class BladeStackController extends Controller {
       this.snapshotToHistory()
     }
     this.mutObserver?.disconnect()
+    if (this._onFrameLoad) document.removeEventListener("turbo:frame-load", this._onFrameLoad)
     this._dismissCloseMenu()
     document.body.classList.remove("has-blade-stack")
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
@@ -1799,35 +1811,32 @@ class BladeStackController extends Controller {
     }
     const cards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
     if (cards.length === 0) return
-    const step  = this.constructor.SPINE_STEP
-    const total = cards.length
     // #224 (2026-05-19): cardWidth pro Card, nicht einmal aus cards[0].
     // #277 follow-up: optional widthsHint vom Caller, damit toggleCollapse
     // die Breiten VOR dem dataset-flip einliest. Sonst kommt der forced
     // reflow nach dem CSS-State-Change, und das committet den Endwert ins
     // Layout — die Breiten-Transition fuer die kollabierende Card wird
     // dabei verschluckt.
-    // #281 follow-up (Hans, 2026-05-24): wenn das Spine-Stapel-Modell
-    // dafuer sorgt, dass die LETZTE Card nach rechts ueber den Container
-    // hinausragt, wird sie geclippt — der User sieht nur noch den Spine.
-    // Wir clampen sticky-left NUR auf der letzten Card so, dass sie
-    // noch ins Viewport passt (max 0..cw-cardWidth). Andere Cards
-    // behalten den natuerlichen i*step-Offset, damit der Spine-Stapel
-    // links sauber bleibt.
-    const cw = this.containerTarget.clientWidth
-    cards.forEach((card, i) => {
-      const cardWidth = (widthsHint && widthsHint[i] != null)
+    // #1167: Offset-Mathematik (inkl. Letzte-Card-Klemmung aus #281 und
+    // dem bei vielen Cards schrumpfenden Schritt) liegt als pure Funktion
+    // in lib/blade_stack_sticky.js. Der effektive Schritt wird fuer die
+    // Scroll-Mathematik (blade_stack_scroll.js) gemerkt.
+    const widths = cards.map((card, i) =>
+      (widthsHint && widthsHint[i] != null)
         ? widthsHint[i]
         : card.getBoundingClientRect().width
-      const isLast = i === total - 1
-      const naturalLeft = i * step
-      const stickyLeft = isLast
-        ? Math.min(naturalLeft, Math.max(0, cw - cardWidth))
-        : naturalLeft
+    )
+    const { step, offsets } = stickyOffsets({
+      widths,
+      clientWidth: this.containerTarget.clientWidth,
+      step: this.constructor.SPINE_STEP
+    })
+    this._stepEff = step
+    cards.forEach((card, i) => {
       card.style.position = "sticky"
-      card.style.left     = `${stickyLeft}px`
-      card.style.right    = `${(total - i) * step - cardWidth}px`
-      card.style.zIndex   = String(i)
+      card.style.left     = `${offsets[i].left}px`
+      card.style.right    = `${offsets[i].right}px`
+      card.style.zIndex   = String(offsets[i].zIndex)
     })
     // #1091 v4: Der End-Spacer haengt vom Layout ab (Voll-Regal-Position
     // braucht die frischen sticky-left-Werte) — hier zentral nachziehen.

@@ -5,6 +5,8 @@
 //
 // Enthaltene Methoden: _applyMobileLayout
 
+import { stickyOffsets } from "lib/blade_stack_sticky"
+
 export const BladeStackMobileMixin = {
 // ─── Mobile-Layout (#224 6f-4 v2: native scroll-snap) ──────────
 
@@ -56,14 +58,19 @@ _applyMobileLayout() {
     // Breite der List-Card (704px). Folge: stickyRight zu negativ
     // → Cards rechts vom Fokus stapeln ihre Spines ausserhalb des
     // Viewports, anstatt am rechten Rand sichtbar zu bleiben.
-    const step  = this.constructor.SPINE_STEP
-    const total = cards.length
+    // #1167: gleiche Offset-Mathematik wie restickify (inkl. Letzte-
+    // Card-Klemmung, die diesem Pfad bisher fehlte).
+    const { step, offsets } = stickyOffsets({
+      widths:      cards.map(card => card.getBoundingClientRect().width),
+      clientWidth: this.containerTarget.clientWidth,
+      step:        this.constructor.SPINE_STEP
+    })
+    this._stepEff = step
     cards.forEach((card, i) => {
-      const cardWidth = card.getBoundingClientRect().width
       card.style.position  = "sticky"
-      card.style.left      = `${i * step}px`
-      card.style.right     = `${(total - i) * step - cardWidth}px`
-      card.style.zIndex    = String(i)
+      card.style.left      = `${offsets[i].left}px`
+      card.style.right     = `${offsets[i].right}px`
+      card.style.zIndex    = String(offsets[i].zIndex)
     })
     return
   }

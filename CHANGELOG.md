@@ -174,6 +174,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- With very many cards on the workspace, shelving now works all the way to the
+  end: card spines pack tighter as soon as the spine piles plus the widest card
+  would exceed the container, so the rightmost card always collapses down to
+  its spine and no spines disappear behind an open card any more. Previously
+  the fixed 28px spine offsets grew wider than the viewport, leaving part of
+  the rightmost card's content standing and hiding newly shelved spines behind
+  it. Card layout is also re-synced after each card finishes loading — the
+  initial layout used to measure cards before their content arrived (#1167).
+
 - The topbar search field no longer erases itself while typing. Since the
   quick-create controller moved onto the whole header (#1109), its
   after-submit cleanup also caught the search form: every debounced search

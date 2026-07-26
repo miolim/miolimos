@@ -22,7 +22,9 @@ export const BladeStackScrollMixin = {
       total = allCards.length
       if (idx < 0) return
     }
-    const step  = this.constructor.SPINE_STEP
+    // #1167: der effektive Schritt kann bei vielen Cards kleiner sein als
+    // SPINE_STEP — restickify merkt ihn sich in _stepEff.
+    const step  = this._stepEff ?? this.constructor.SPINE_STEP
     const cw    = this.containerTarget.clientWidth
     // #224 (2026-05-19): Sticky-Positionierung macht `offsetLeft` und
     // `getBoundingClientRect()` unverlaesslich fuer "natuerliche
@@ -66,7 +68,7 @@ export const BladeStackScrollMixin = {
     const idx   = allCards.indexOf(card)
     const total = allCards.length
     if (idx < 0) return
-    const step  = this.constructor.SPINE_STEP
+    const step  = this._stepEff ?? this.constructor.SPINE_STEP  // #1167
     const cw    = this.containerTarget.clientWidth
     let cardX = 0
     for (let i = 0; i < idx; i++) cardX += allCards[i].getBoundingClientRect().width

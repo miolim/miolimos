@@ -338,12 +338,10 @@ module PrintableResource
   end
 
   # #541: Dezimal-Eingabe robust parsen — Komma oder Punkt, leer = default.
+  # #1171 (aus immoOS #1170): komma-bewusst via Dezimalbetrag — vorher wurde
+  # „1.234,56" per ArgumentError-Rescue still zum Default.
   def decimal_param(raw, default: 0)
-    s = raw.to_s.strip.tr(",", ".")
-    return BigDecimal(default.to_s) if s.empty?
-    BigDecimal(s)
-  rescue ArgumentError
-    BigDecimal(default.to_s)
+    Dezimalbetrag.parse(raw) || BigDecimal(default.to_s)
   end
 
   # #532: Picker-Vorschläge für KI-Verknüpfungen (uuid als slug).

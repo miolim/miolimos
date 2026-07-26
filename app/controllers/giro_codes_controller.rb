@@ -37,7 +37,9 @@ class GiroCodesController < ApplicationController
 
     return if @iban.blank? # noch keine IBAN → nur das Eingabefeld zeigen
 
-    amt = @amount.to_s.tr(",", ".").to_f
+    # #1171 (aus immoOS #1170): komma-bewusst — tr+to_f machte aus
+    # „1.234,56" einen Zahl-QR-Code über 1,23 €.
+    amt = Dezimalbetrag.parse(@amount).to_f
     begin
       @svg = GiroCode.svg(
         name:       @name,

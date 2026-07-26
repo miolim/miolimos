@@ -83,10 +83,9 @@ class InvoiceLinesController < ApplicationController
     end
   end
 
+  # #1171 (aus immoOS #1170): komma-bewusst — das naive tr(",", ".") machte
+  # aus „1.234,56" per ArgumentError-Rescue still den Default 0.
   def decimal(raw, default = 0)
-    s = raw.to_s.strip.tr(",", ".")
-    s.empty? ? BigDecimal(default.to_s) : BigDecimal(s)
-  rescue ArgumentError
-    BigDecimal(default.to_s)
+    Dezimalbetrag.parse(raw) || BigDecimal(default.to_s)
   end
 end

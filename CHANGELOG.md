@@ -15,27 +15,7 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
-### Changed
-
-- All user-visible texts now speak plain language instead of internal
-  component names (#1115): the dashboard panel "Prozess-Edge" is now "Nächste
-  Schritte & Wartepunkte"; "Card"/"Blade" became "Karte", "Stack" became
-  "Arbeitsfläche", "Spine" "Kartenrücken", "Trail" "Schritt", "Work-Tree"
-  "Gliederung", the render modes are now "Dokument-Ansicht"/"Zweck-Mittel-
-  Ansicht"/"Leseansicht"; "KI"/"Item" is now "Eintrag", "Wikilink"
-  "Verknüpfung", "Highlight" "Hervorhebung", "Topic" "Thema", "Pin"
-  "anheften"; admin terms like "Capabilities" ("Berechtigungen"), "Owner
-  (Actor)" ("Gehört zu (Konto)"), "Diagnose-Snapshot" ("Diagnose-Bericht")
-  and "Quickadd-Picker" ("Schnellanlage-Auswahl") follow suit. Internal
-  names in code and IDs are unchanged, and previously hardcoded texts
-  (card close menu, keyboard-shortcut help, history panel title, multi-
-  instance badge, PDF tooltip) moved into the locale files.
-
-- The card-width preferences (Settings → Preferences) now use the same kind
-  names the workspace actually looks widths up under: "source" became "src",
-  "list_tasks" "list:tasks", "topic_list" "list:topic" — under the old names
-  these settings never had any effect. Saved preferences are migrated
-  automatically; the never-used "list_default" entry was dropped (#1152).
+## [0.3.5] - 2026-07-27
 
 ### Added
 
@@ -125,7 +105,7 @@ release is cut, this section is renamed to the new version and a fresh
   repeat itself. `rails ops:daily_report` mails a daily operations summary
   (services, database backup, unpushed commits) — it is sent every day even
   when everything is green, so that its absence is itself the alarm.
-  `rails ops:report_preview` prints the same report without sending it. The
+  `rails ops:report_preview` prints the same report without sending it.
   It no longer warns about an access token nearing expiry — that token is
   refreshed automatically, so the warning would have fired on every healthy
   day, and a daily alarm without cause is how monitoring gets ignored. The
@@ -160,7 +140,34 @@ release is cut, this section is renamed to the new version and a fresh
   wrong. Existing addresses have no period and stay unlimited. The period is
   editable in the address editor and travels through the API (#1073).
 
+- `ops/fresh-clone-check.sh` runs the suite in a throwaway clone. The deploy
+  gate runs in the working checkout — with the gitignored key files, a grown
+  `tmp/`, and the calling shell's environment — so a test that silently
+  depends on any of those is green there and red for anyone who clones the
+  repository. Two such tests were found on the same morning; both would have
+  shown up here (#1076).
+
 ### Changed
+
+- All user-visible texts now speak plain language instead of internal
+  component names (#1115): the dashboard panel "Prozess-Edge" is now "Nächste
+  Schritte & Wartepunkte"; "Card"/"Blade" became "Karte", "Stack" became
+  "Arbeitsfläche", "Spine" "Kartenrücken", "Trail" "Schritt", "Work-Tree"
+  "Gliederung", the render modes are now "Dokument-Ansicht"/"Zweck-Mittel-
+  Ansicht"/"Leseansicht"; "KI"/"Item" is now "Eintrag", "Wikilink"
+  "Verknüpfung", "Highlight" "Hervorhebung", "Topic" "Thema", "Pin"
+  "anheften"; admin terms like "Capabilities" ("Berechtigungen"), "Owner
+  (Actor)" ("Gehört zu (Konto)"), "Diagnose-Snapshot" ("Diagnose-Bericht")
+  and "Quickadd-Picker" ("Schnellanlage-Auswahl") follow suit. Internal
+  names in code and IDs are unchanged, and previously hardcoded texts
+  (card close menu, keyboard-shortcut help, history panel title, multi-
+  instance badge, PDF tooltip) moved into the locale files.
+
+- The card-width preferences (Settings → Preferences) now use the same kind
+  names the workspace actually looks widths up under: "source" became "src",
+  "list_tasks" "list:tasks", "topic_list" "list:topic" — under the old names
+  these settings never had any effect. Saved preferences are migrated
+  automatically; the never-used "list_default" entry was dropped (#1152).
 
 - List entries that are open as a card in the stack are now marked in one way
   only — the red colouring. The older marker (bold plus a chevron button that
@@ -233,17 +240,6 @@ release is cut, this section is renamed to the new version and a fresh
   so it was cut off or covered by the card next to it and the submit button
   could not be hit. It now uses the same detached popover as the other card
   tools (#1093).
-
-### Added
-
-- `ops/fresh-clone-check.sh` runs the suite in a throwaway clone. The deploy
-  gate runs in the working checkout — with the gitignored key files, a grown
-  `tmp/`, and the calling shell's environment — so a test that silently
-  depends on any of those is green there and red for anyone who clones the
-  repository. Two such tests were found on the same morning; both would have
-  shown up here (#1076).
-
-### Fixed
 
 - Docker Compose now persists the application's files, not just its database.
   The `web` service had no volume at all, so everything written to disk lived
@@ -726,7 +722,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/miolim/miolimos/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/miolim/miolimos/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/miolim/miolimos/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/miolim/miolimos/compare/v0.3.1...v0.3.2

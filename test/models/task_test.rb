@@ -124,6 +124,9 @@ class TaskTest < ActiveSupport::TestCase
     header   = payloads.find { |p| p.include?("task_header_#{task.id}") }
     assert header, "WIP-Setzen muss den Card-Header neu broadcasten"
     assert_includes header, "border-amber-500"
+    # #1175: als Morph — ein harter Replace wirft den Fokus aus dem
+    # Titel-Feld, wenn der Nutzer beim Eintreffen gerade tippt.
+    assert_includes header, 'method="morph"'
     # #892: auch der Spine (Status-Icon) wird live ersetzt — orange bei WIP.
     # #919 (2026-07-09): WIP-Icon-Farbe von amber auf orange umgestellt.
     spine = payloads.find { |p| p.include?("task_spine_#{task.id}") }

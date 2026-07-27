@@ -99,12 +99,20 @@ class Task < ApplicationRecord
       # im TaskRepliesController gerendert — im Broadcast ist current_actor nil.)
       if saved_change_to_status? || saved_change_to_title? || saved_change_to_wip_actor_id? ||
          saved_change_to_published_at?
+        # #1175 (Hans, 2026-07-27): als MORPH statt Replace. Der harte Replace
+        # riss dem Nutzer den Fokus aus dem Titel-Textarea, während er tippte —
+        # jeder Agent-PATCH (WIP-Marker eines Inbox-Laufs, Status) traf jede
+        # offene Card; Titel-Editieren war dann praktisch unmöglich, und die
+        # #1114-Häkchen der Zwischen-Saves blinkten dazu. Idiomorph lässt das
+        # fokussierte Feld (Wert + Cursor) stehen und zieht nur den Rest nach.
         broadcast_replace_to self, targets: "#task_header_#{id}",
+          attributes: { method: :morph },
           partial: "tasks/detail_header", locals: { task: self }
         # #892 (Hans): Das Spine-Status-Icon (WIP orange / erledigt grünes
         # square-check) sitzt AUSSERHALB des Headers und wurde bisher nur beim
         # Reload aktualisiert. Hier gezielt mit-ersetzen, damit es live umspringt.
         broadcast_replace_to self, targets: "#task_spine_#{id}",
+          attributes: { method: :morph },
           partial: "tasks/spine", locals: { task: self }
       end
       # #232 (2026-06-01): Reopen/Publish/Undiscard -> Row war versteckt,

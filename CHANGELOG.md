@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Fixed
+
+- Editing a task title is no longer interrupted by live updates (#1175).
+  The card header refreshes that mirror status, WIP marker, and title
+  changes into every open card used to replace the whole header — kicking
+  the cursor out of the title field mid-typing whenever an agent's inbox
+  run touched the task (WIP marker on, comment, done, WIP marker off: four
+  kicks per run). The header now morphs instead, which leaves the focused
+  field — value and cursor — untouched and updates everything around it.
+
 ## [0.3.5] - 2026-07-27
 
 ### Added

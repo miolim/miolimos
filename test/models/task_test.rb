@@ -127,6 +127,11 @@ class TaskTest < ActiveSupport::TestCase
     # #1175: als Morph — ein harter Replace wirft den Fokus aus dem
     # Titel-Feld, wenn der Nutzer beim Eintreffen gerade tippt.
     assert_includes header, 'method="morph"'
+    # #1175 Teil 2: das Titelfeld ist zusätzlich permanent (Morph gliche
+    # sonst den getippten Wert an den Server-Stand an) — mit task-eigener
+    # id, weil Turbo permanente Elemente bei Visits per id transplantiert.
+    assert_includes header, 'data-turbo-permanent'
+    assert_includes header, "task_title_#{task.id}"
     # #892: auch der Spine (Status-Icon) wird live ersetzt — orange bei WIP.
     # #919 (2026-07-09): WIP-Icon-Farbe von amber auf orange umgestellt.
     spine = payloads.find { |p| p.include?("task_spine_#{task.id}") }

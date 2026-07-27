@@ -39,7 +39,17 @@
           Aktion auslösen (editBtn → description-toggle#edit: aufklappen, in Edit
           schalten, Editor mounten) und dann den CodeMirror (.cm-content) bzw. als
           Fallback die Textarea fokussieren. %>
+      <%# #1175 Teil 2: data-turbo-permanent — der Header-Broadcast kommt
+          seit dem Fix als Morph, aber Idiomorph gleicht auch den WERT des
+          fokussierten Feldes an den Server-Stand an (getipptes ginge
+          verloren). Permanent nimmt das Titelfeld ganz vom Morph aus —
+          wie die Beschreibung, die der Broadcast bewusst nie anfasst.
+          Eigene id je Task: Turbo transplantiert permanente Elemente bei
+          Visits per id, und das generierte `task_title` wäre über mehrere
+          offene Cards dupliziert. %>
       <%= f.text_area :title,
+            id: "task_title_#{task.id}",
+            data: { turbo_permanent: true },
             rows: 1,
             class: "w-full text-lg font-semibold bg-transparent border border-transparent rounded px-2 py-1 -mx-2
                     resize-none overflow-hidden [field-sizing:content]

@@ -31,14 +31,21 @@
       blade-stack-Controllers liegt. Klick feuert ein globales Event,
       das der Controller auf window abfängt (Muster wie blade-stack:append). %>
   <div class="topbar-trail hidden md:flex items-center shrink-0">
+    <%# #1198 v3 (Hans): Lucide-Pfeil-Icons statt Textglyphen; auf disabled
+        KEIN cursor-not-allowed (der durchgestrichene Kreis las sich wie
+        eine Fehlermeldung) — ausgegraut reicht. %>
     <button type="button" id="topbar_trail_back" disabled
             onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: -1 } }))"
             title="<%= t("knowledge.form.trail_back_title") %>" aria-label="<%= t("knowledge.form.trail_back") %>"
-            class="px-2 py-1 rounded text-base leading-none text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent">←</button>
+            class="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600">
+      <%= icon "arrow_left", size: "w-5 h-5" %>
+    </button>
     <button type="button" id="topbar_trail_forward" disabled
             onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: 1 } }))"
             title="<%= t("knowledge.form.trail_forward_title") %>" aria-label="<%= t("knowledge.form.trail_forward") %>"
-            class="px-2 py-1 rounded text-base leading-none text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent">→</button>
+            class="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600">
+      <%= icon "arrow_right", size: "w-5 h-5" %>
+    </button>
   </div>
 
   <%# #301: Suchfeld kollabiert auf Mobile zum Lupe-Icon. Desktop:

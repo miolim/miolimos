@@ -1666,7 +1666,10 @@ class BladeStackController extends Controller {
     this.refreshCard(uuid)
   }
 
-  async appendCardBare(uuid) {
+  // #1198 v4: optional beforeNode — der Trail-Diff fügt fehlende Cards
+  // an ihrer Position ein statt nur ans Ende (Back nach dem Schließen
+  // einer mittleren Card).
+  async appendCardBare(uuid, { beforeNode = null } = {}) {
     // #352 (Hans, 2026-05-25): _urlForStackId kennt alle Card-Typen
     // (task:, topic:, render:topic:, list:, …). cardUrlTemplate ist
     // nur fuer KnowledgeItem-UUIDs gedacht — fuer alles mit Prefix
@@ -1690,15 +1693,20 @@ class BladeStackController extends Controller {
     // m-auto den flex-row-Raum und schiebt die Card nach rechts.
     this.containerTarget.querySelectorAll(":scope > p").forEach(el => el.remove())
     const wasEmpty = this.openUuids().length === 0
-    nodes.forEach(n => this.containerTarget.appendChild(n))
+    nodes.forEach(n => beforeNode ? this.containerTarget.insertBefore(n, beforeNode)
+                                  : this.containerTarget.appendChild(n))
     this._applySavedWidth(card)   // #601
     requestAnimationFrame(() => {
       // Erste Card: links anlegen (scrollLeft=0). Folge-Cards: ganz
       // rechts ans Ende scrollen — #202: scrollIntoView trifft wegen
       // Sticky-Positioning oft daneben. #1091 v4: „Ende" = natuerliches
       // Content-Ende OHNE den stehenden Overscroll-Spacer.
+      // #1198 v4: bei einer Mittel-Einfügung NICHT ans Ende scrollen —
+      // die Nachbarn bleiben stehen, die neue Card kommt nearest ins Bild.
       if (wasEmpty) {
         this.containerTarget.scrollLeft = 0
+      } else if (beforeNode) {
+        card.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
       } else {
         this.containerTarget.scrollTo({ left: this._naturalEndScroll(), behavior: "smooth" })
       }

@@ -521,6 +521,36 @@ class BladeStackTest < ApplicationSystemTestCase
            "Forward muss die Card wieder schließen"
   end
 
+  # #1198 v4 (Hans): Back nach dem Schließen einer MITTLEREN Card darf den
+  # Stack nicht komplett neu aufbauen — die Nachbarn behalten ihre DOM-
+  # Knoten (data-probe überlebt), nur die fehlende Card wird an ihrer
+  # Position nachgeladen.
+  test "#1198 Back nach Mittel-Schließen lädt nur die fehlende Card nach" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid},#{@gamma.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
+
+    within("article.stack-card[data-uuid='#{@beta.uuid}']") do
+      find("[data-action~='click->blade-stack#closeCard']", match: :first).click
+    end
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+
+    page.execute_script("document.querySelectorAll('article.stack-card').forEach(c => c.dataset.probe = 'kept')")
+    find("#topbar_trail_back").click
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
+           "Back muss die mittlere Card wieder öffnen"
+
+    uuids = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
+    assert_equal [@alpha.uuid, @beta.uuid, @gamma.uuid], uuids.first(3),
+                 "Die Card muss an ihrer alten Position stehen"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}'][data-probe='kept']"),
+           "Alpha darf nicht neu aufgebaut worden sein"
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}'][data-probe='kept']"),
+           "Gamma darf nicht neu aufgebaut worden sein"
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@beta.uuid}'][data-probe]",
+                            wait: 0),
+           "Beta ist die einzige neu geladene Card"
+  end
+
   test "#1198 Back nimmt auch einen Event-Append (Sidebar-Plus-Pfad) zurück" do
     visit "/knowledge_items?stack=#{@alpha.uuid}"
     assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")

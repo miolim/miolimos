@@ -80,29 +80,33 @@ export const BladeStackTrailMixin = {
 
   async _applyTrailStateInner({ pushHistory }) {
     const target = this.trail[this.currentIndex] || []
-    const current = this.openUuids()
 
-    // Wenn target ein Prefix von current ist: nur abschneiden.
-    if (current.length > target.length &&
-        current.slice(0, target.length).join(",") === target.join(",")) {
-      const cards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
-      // #593: Entwurfs-Schutz — abgeschnittene Cards können dirty Forms tragen.
-      if (!this._confirmDiscardDrafts(cards.slice(target.length))) return
-      cards.slice(target.length).forEach(c => c.remove())
+    // #1198 v4 (Hans): minimaler Diff statt Voll-Reset. Der alte Prefix-
+    // Vergleich griff nur an den Enden — Back nach dem Schließen einer
+    // MITTLEREN Card baute den ganzen Stack neu auf (alle Cards neu
+    // gefetcht, Scroll/Edit-Zustand weg). Jetzt: gemeinsame Teilfolge
+    // behalten (greedy, duplikatfest über fortlaufenden indexOf),
+    // Überzählige entfernen, Fehlende an ihrer Position nachladen.
+    const nodes = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
+    const keep = []
+    let ti = 0
+    for (const node of nodes) {
+      const idx = target.indexOf(node.dataset.uuid, ti)
+      if (idx !== -1) { keep.push({ node, idx }); ti = idx + 1 }
     }
-    // Wenn current ein Prefix von target ist: anhängen.
-    else if (target.length > current.length &&
-             target.slice(0, current.length).join(",") === current.join(",")) {
-      for (let i = current.length; i < target.length; i++) {
-        await this.appendCardBare(target[i])
-      }
-    }
-    // Sonst: kompletter Reset (selten — z.B. bei restoreFromHistory).
-    else {
-      // #593: Reset verwirft ALLE Cards — Entwürfe schützen.
-      if (!this._confirmDiscardDrafts(Array.from(this.containerTarget.querySelectorAll(".stack-card")))) return
-      this.containerTarget.innerHTML = ""
-      for (const uuid of target) await this.appendCardBare(uuid)
+    const keptNodes = new Set(keep.map(k => k.node))
+    const toRemove  = nodes.filter(n => !keptNodes.has(n))
+    // #593: Entwurfs-Schutz — entfernte Cards können dirty Forms tragen.
+    if (toRemove.length && !this._confirmDiscardDrafts(toRemove)) return
+    toRemove.forEach(n => n.remove())
+
+    const keptIdx = new Set(keep.map(k => k.idx))
+    for (let i = 0; i < target.length; i++) {
+      if (keptIdx.has(i)) continue
+      // Referenz: der erste behaltene Knoten HINTER der Zielposition —
+      // mehrere fehlende in Folge landen der Reihe nach davor.
+      const beforeNode = keep.find(k => k.idx > i)?.node || null
+      await this.appendCardBare(target[i], { beforeNode })
     }
 
     this.restickify()

@@ -521,6 +521,23 @@ class BladeStackTest < ApplicationSystemTestCase
            "Forward muss die Card wieder schließen"
   end
 
+  test "#1198 Back nimmt auch einen Event-Append (Sidebar-Plus-Pfad) zurück" do
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
+
+    page.execute_script(<<~JS, @beta.uuid)
+      window.dispatchEvent(new CustomEvent("blade-stack:append", { detail: { kind: "ki", id: arguments[0] } }))
+    JS
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+    assert page.has_css?("#topbar_trail_back:not([disabled])"),
+           "Der Event-Append muss ein Trail-Schritt sein"
+
+    find("#topbar_trail_back").click
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
+           "Back muss den Event-Append zurücknehmen"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
+  end
+
   test "#1198 Topbar-Pfeile sind auf Seiten ohne Card-Stack ausgeblendet" do
     visit "/settings"
     assert page.has_no_css?("#topbar_trail_back", visible: true),

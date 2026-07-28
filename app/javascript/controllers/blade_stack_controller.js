@@ -269,7 +269,14 @@ class BladeStackController extends Controller {
         // Logik unten zur Card scrollt.
         this.restickify()
         this.applyHighlighting()
-        this.syncUrl({ pushHistory: false })
+        // #1198: per Turbo-Stream appendete Cards (Quick-Create, Server-
+        // Streams) als Trail-Schritt erfassen — sonst kann der Back-Pfeil
+        // sie nicht zurücknehmen. NICHT während applyTrailState pushen
+        // (Back/Forward baut Cards selbst um und würde sich sonst den
+        // eigenen Forward-Zweig zerstören); pushTrailState dedupliziert
+        // identische Kompositionen (kein Doppel-Push mit den Openern).
+        if (this._applyingTrail) this.syncUrl({ pushHistory: false })
+        else                     this.pushTrailState()
         if (lastAdded) {
           // #280 follow-up: neu angehaengte Card sofort als active markieren,
           // damit Keyboard-Shortcuts (Cmd/Ctrl+Alt+Pfeil) und visuelle
@@ -435,6 +442,12 @@ class BladeStackController extends Controller {
       // #224 6f-1: kein Auto-Collapse mehr — Listen-Blade bleibt offen,
       // siehe `_autoCollapseSourceList`. sourceListId beeinflusst nur
       // noch die Append-vs.-Focus-Heuristik oben.
+      // #1198: auch dieser Append-Pfad (Sidebar-Plus, Nav-Klick, globales
+      // Event) ist ein Trail-Schritt — sonst kann der Back-Pfeil ihn nicht
+      // zurücknehmen. pushTrailState dedupliziert, falls der Mutation-
+      // Observer denselben Stand schon erfasst hat.
+      this.pushTrailState()
+      this.syncUrl({ pushHistory: true })
     }
     window.addEventListener("blade-stack:append", this._onAppendEvent)
 

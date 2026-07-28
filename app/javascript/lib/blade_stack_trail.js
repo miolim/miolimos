@@ -67,7 +67,18 @@ export const BladeStackTrailMixin = {
 
   // Setzt das DOM gemäß trail[currentIndex] — entweder durch Card-
   // Append/Remove oder durch innerHTML-Reset bei größeren Sprüngen.
+  // #1198: _applyingTrail gated den Mutation-Observer im Controller —
+  // die hier selbst erzeugten Card-Appends sind KEINE neuen Schritte.
   async applyTrailState({ pushHistory }) {
+    this._applyingTrail = true
+    try {
+      await this._applyTrailStateInner({ pushHistory })
+    } finally {
+      this._applyingTrail = false
+    }
+  },
+
+  async _applyTrailStateInner({ pushHistory }) {
     const target = this.trail[this.currentIndex] || []
     const current = this.openUuids()
 

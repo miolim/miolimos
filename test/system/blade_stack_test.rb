@@ -495,4 +495,35 @@ class BladeStackTest < ApplicationSystemTestCase
     assert page.has_css?("article.stack-card[data-uuid='task:#{task.id}']", count: 2),
            "append_to_substack muss weiterhin eine zweite Instanz erzeugen"
   end
+
+  # ─── #1198: Topbar-Pfeile für die Schritt-Navigation ───────────────
+
+  test "#1198 Topbar-Back öffnet die geschlossene Card wieder, Forward schließt sie erneut" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+    # Kein Schritt zurück möglich → Back initial disabled.
+    assert page.has_css?("#topbar_trail_back[disabled]")
+
+    within("article.stack-card[data-uuid='#{@beta.uuid}']") do
+      find("[data-action~='click->blade-stack#closeCard']", match: :first).click
+    end
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+    assert page.has_css?("#topbar_trail_back:not([disabled])"),
+           "Nach dem Schließen muss der Back-Pfeil aktiv sein"
+
+    find("#topbar_trail_back").click
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
+           "Back muss die geschlossene Card wieder öffnen"
+    assert page.has_css?("#topbar_trail_forward:not([disabled])")
+
+    find("#topbar_trail_forward").click
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
+           "Forward muss die Card wieder schließen"
+  end
+
+  test "#1198 Topbar-Pfeile sind auf Seiten ohne Card-Stack ausgeblendet" do
+    visit "/settings"
+    assert page.has_no_css?("#topbar_trail_back", visible: true),
+           "Ohne Stack (CSS-Gate has-blade-stack) dürfen die Pfeile nicht sichtbar sein"
+  end
 end

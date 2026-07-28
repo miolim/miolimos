@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Back/forward arrows in the top bar, left of the search field (#1198):
+  they step through the workspace's history like a browser — a card just
+  closed comes back, a card that replaced several others is undone to
+  the replaced set. Only visible on pages with a card workspace; greyed
+  out when there is no step in that direction. Same mechanics as the
+  existing Alt+←/→ shortcut and the arrows on the knowledge workspace,
+  which both stay.
+
 ### Fixed
 
 - Editing a task title is no longer interrupted by live updates (#1175).

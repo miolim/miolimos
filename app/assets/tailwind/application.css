@@ -316,6 +316,12 @@ body:not(.has-blade-stack) .sidebar-blade-plus {
   display: none !important;
 }
 
+/* #1198: Stack-Schritt-Pfeile in der Topbar — gleiche Gate-Mechanik:
+   nur sichtbar, wenn die Seite einen Card-Stack mountet. */
+body:not(.has-blade-stack) .topbar-trail {
+  display: none !important;
+}
+
 /* #1057 (aus immoos #965, Hans): Einträge, die als Card im aktuellen Stack
    geöffnet sind, in roter Schrift hervorheben — seit #1067 die EINZIGE
    Kennzeichnung (Chevron und Bold sind entfernt). Die

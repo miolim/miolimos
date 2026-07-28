@@ -27,6 +27,20 @@ class TopbarLayoutRenderTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, 'data-quick-create-target="slot"'
   end
 
+  # #1198: Stack-Schritt-Pfeile links neben dem Suchfeld — immer im
+  # Markup (CSS blendet sie auf Seiten ohne Card-Stack aus), initial
+  # disabled, bis der Trail-Mixin die Zustände nachzieht.
+  test "topbar renders the stack trail arrows left of the search field" do
+    get "/dashboard"
+    assert_response :success
+    assert_includes @response.body, 'id="topbar_trail_back"'
+    assert_includes @response.body, 'id="topbar_trail_forward"'
+    assert_includes @response.body, I18n.t("knowledge.form.trail_back_title")
+    back_pos   = @response.body.index('id="topbar_trail_back"')
+    search_pos = @response.body.index('data-controller="search-collapse"')
+    assert back_pos < search_pos, "Pfeile müssen vor dem Suchfeld stehen"
+  end
+
   test "a custom saved layout drives the topbar (hidden item disappears, zones change)" do
     @hans.update_preferences(
       "topbar_layout" => { "left" => "quick_task", "right" => "theme,quick_inbox", "hidden" => "diagnostic,inspector,shortcuts,timer,quick_awaiting,quick_ki,quick_person" }

@@ -438,6 +438,15 @@ class BladeStackController extends Controller {
     }
     window.addEventListener("blade-stack:append", this._onAppendEvent)
 
+    // #1198: Topbar-Pfeile (Schritt zurück/vor) liegen außerhalb des
+    // Stimulus-Scopes — sie feuern ein globales Event (Muster wie
+    // blade-stack:append), das hier in die Trail-Mechanik routet.
+    this._onTrailNav = (e) => {
+      const delta = e.detail?.delta
+      if (delta === -1 || delta === 1) this.stepTrail(delta)
+    }
+    window.addEventListener("blade-stack:trail", this._onTrailNav)
+
     // #265: Session-Persistenz vs. Restoration sind exklusiv —
     //   - URL hat ?stack=: das ist die kanonische State, jetzt sofort
     //     persistieren (damit naechstes Mal ohne URL-Param hier landet).
@@ -493,6 +502,7 @@ class BladeStackController extends Controller {
     this._dismissCloseMenu()
     document.body.classList.remove("has-blade-stack")
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
+    if (this._onTrailNav)    window.removeEventListener("blade-stack:trail", this._onTrailNav)
   }
 
   // ─── Aktive Card ────────────────────────────────────────────────

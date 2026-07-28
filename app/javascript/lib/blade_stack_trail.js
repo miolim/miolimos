@@ -104,6 +104,12 @@ export const BladeStackTrailMixin = {
     const canFwd  = this.currentIndex < this.trail.length - 1
     if (this.hasTrailBackTarget)    this.trailBackTarget.disabled    = !canBack
     if (this.hasTrailForwardTarget) this.trailForwardTarget.disabled = !canFwd
+    // #1198: die Topbar-Pfeile liegen außerhalb des Stimulus-Scopes —
+    // per id nachziehen (auf Seiten ohne Stack per CSS ohnehin versteckt).
+    const tbBack = document.getElementById("topbar_trail_back")
+    const tbFwd  = document.getElementById("topbar_trail_forward")
+    if (tbBack) tbBack.disabled = !canBack
+    if (tbFwd)  tbFwd.disabled  = !canFwd
     if (this.hasTrailStepTarget) {
       if (this.trail.length <= 1) {
         this.trailStepTarget.classList.add("hidden")

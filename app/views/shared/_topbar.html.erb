@@ -23,6 +23,24 @@
     <%= icon "menu" %>
   </button>
 
+  <%# #1198 (Hans): Stack-Schritt-Navigation wie im Browser — Pfeile links
+      neben dem Suchfeld. Sichtbar nur, wenn die Seite einen Card-Stack
+      mountet (CSS-Gate .topbar-trail wie .sidebar-blade-plus); die
+      aktiv/ausgegraut-Zustände pflegt refreshTrailControls im Trail-Mixin
+      per id, weil die Topbar außerhalb des Stimulus-Scopes des
+      blade-stack-Controllers liegt. Klick feuert ein globales Event,
+      das der Controller auf window abfängt (Muster wie blade-stack:append). %>
+  <div class="topbar-trail hidden md:flex items-center shrink-0">
+    <button type="button" id="topbar_trail_back" disabled
+            onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: -1 } }))"
+            title="<%= t("knowledge.form.trail_back_title") %>" aria-label="<%= t("knowledge.form.trail_back") %>"
+            class="px-2 py-1 rounded text-base leading-none text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent">←</button>
+    <button type="button" id="topbar_trail_forward" disabled
+            onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: 1 } }))"
+            title="<%= t("knowledge.form.trail_forward_title") %>" aria-label="<%= t("knowledge.form.trail_forward") %>"
+            class="px-2 py-1 rounded text-base leading-none text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent">→</button>
+  </div>
+
   <%# #301: Suchfeld kollabiert auf Mobile zum Lupe-Icon. Desktop:
       Panel immer sichtbar (md:block), inline. Mobile: Lupe-Button,
       Klick klappt das Feld als fixed Full-Width-Leiste unter der

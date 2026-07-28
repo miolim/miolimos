@@ -27,6 +27,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Uploading a logo on a person or organization works again (#1211): the
+  upload form was missing its multipart encoding, so the file arrived as
+  a plain string, the server errored, and the card showed "Content
+  missing" instead. Now guarded server-side as well, and covered by a
+  browser test that uploads through the real form.
+
 - Editing a task title is no longer interrupted by live updates (#1175).
   The card header refreshes that mirror status, WIP marker, and title
   changes into every open card used to replace the whole header — kicking

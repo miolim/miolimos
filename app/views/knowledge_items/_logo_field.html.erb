@@ -12,7 +12,10 @@
         <button type="submit" class="text-slate-400 hover:text-red-500" title="<%= t("knowledge.detail.logo_remove") %>">✕</button>
       <% end %>
     <% end %>
-    <%= form_with url: logo_knowledge_item_path(item.uuid), method: :post, local: false, class: "contents" do %>
+    <%# #1211: multipart PFLICHT — form_with setzt es nur bei f.file_field
+        automatisch, nicht bei file_field_tag. Ohne enctype kam die Datei
+        als String an (file.content_type → 500 → „Content missing"). %>
+    <%= form_with url: logo_knowledge_item_path(item.uuid), method: :post, multipart: true, local: false, class: "contents" do %>
       <% if in_stack %><%= hidden_field_tag :in_stack, "1" %><% end %>
       <label class="text-slate-500 hover:text-slate-700 cursor-pointer underline decoration-dotted">
         <%= item.logo ? t("knowledge.detail.logo_replace") : t("knowledge.detail.logo_upload") %>

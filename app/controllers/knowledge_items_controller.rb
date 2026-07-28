@@ -207,7 +207,9 @@ class KnowledgeItemsController < ApplicationController
   # nur das Logo-Widget — kein Full-Detail-Replace (#827-Lektion).
   def upload_logo
     file = params.require(:file)
-    unless file.content_type.to_s.start_with?("image/")
+    # #1211: ohne multipart-Form kommt statt eines UploadedFile ein String
+    # (der Dateiname) an — sauber ablehnen statt mit NoMethodError zu 500en.
+    unless file.respond_to?(:content_type) && file.content_type.to_s.start_with?("image/")
       return head :unsupported_media_type
     end
     base  = "Logo #{@item.title}"

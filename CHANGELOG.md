@@ -25,6 +25,18 @@ release is cut, this section is renamed to the new version and a fresh
   existing Alt+←/→ shortcut and the arrows on the knowledge workspace,
   which both stay.
 
+### Added
+
+- `ops/export-instance-keys.sh` collects the keys of every instance on the
+  machine into one directory, named after the instance they belong to
+  (#1220). `config/master.key` and `config/credentials.yml.enc` are
+  deliberately kept out of git and out of the backup, so their only second
+  copy is whatever the operator puts in a password manager — this makes
+  assembling that copy a single command instead of a hunt. Instances that
+  keep their secrets in a `.env` file are included; the copies are
+  owner-readable only and the script says to delete them once they are
+  filed away.
+
 ### Fixed
 
 - Wide cards no longer peek out to the right of the front card (#1228).

@@ -27,6 +27,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The daily operations report no longer cries wolf about changed instance
+  keys (#1220). Several instances on one machine share the report's state
+  file, and they recorded their key fingerprints under the same generic
+  labels — so each run overwrote the other's entry, and since the
+  instances hold different keys, every run reported a change that had
+  never happened. Exactly the daily false alarm this report exists to
+  avoid. Entries now carry the instance name, and the alert names the
+  file's path, so it is clear which key is meant.
+
 - Uploading a logo on a person or organization works again (#1211): the
   upload form was missing its multipart encoding, so the file arrived as
   a plain string, the server errored, and the card showed "Content

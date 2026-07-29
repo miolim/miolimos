@@ -58,7 +58,7 @@ module Ops
     end
 
     def report(state: nil, events: nil, backup: nil, repos: {}, probe: nil, keys: nil,
-               dbs: nil, ignoriert: [], registry: nil)
+               dbs: nil, ignoriert: [], registry: nil, key_state: nil)
       args = neutrale_args(repos: repos, ignored_databases: ignoriert)
       args[:state_file]     = state    if state
       args[:event_log]      = events   if events
@@ -67,6 +67,8 @@ module Ops
       args[:key_files]      = keys     if keys
       args[:database_probe] = dbs      if dbs
       args[:registry_file]  = registry if registry
+      # #1220: eigene Zustandsdatei — fuer den Mehr-Instanzen-Fall.
+      args[:key_state_file] = key_state if key_state
       DailyReport.new(**args)
     end
 
@@ -244,6 +246,41 @@ module Ops
       r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
       assert_empty r.alerts
       assert_includes section(r, "Schluessel"), "unveraendert"
+    end
+
+    # #1220 (Hans): Mehrere Instanzen (miolimos_src, immoos, stocker) teilen
+    # sich EINE Zustandsdatei. Unter generischen Labels ueberschrieb jede den
+    # Fingerabdruck der anderen — und weil ihre Schluessel verschieden sind,
+    # meldete danach jeder Lauf eine Aenderung. Genau der taegliche Fehlalarm,
+    # den dieser Bericht vermeiden soll.
+    test "zwei Instanzen an einer Zustandsdatei melden keine Aenderung" do
+      key_b = File.join(@dir, "andere-instanz.key")
+      File.write(key_b, "b" * 32)                       # bewusst ANDERER Schluessel
+      state  = File.join(@dir, "gemeinsamer-keystate")
+      lauf_a = -> { report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
+                           keys: { "instanz_a Master-Key" => @key_path }, key_state: state) }
+      lauf_b = -> { report(state: write("state", "miolimos up 1\n"), backup: healthy_backup,
+                           keys: { "instanz_b Master-Key" => key_b }, key_state: state) }
+
+      lauf_a.call.alerts   # erste Laeufe: still aufzeichnen
+      lauf_b.call.alerts
+
+      assert_empty lauf_a.call.alerts, "Instanz A darf nach dem Lauf von B keine Aenderung melden"
+      assert_empty lauf_b.call.alerts, "Instanz B darf nach dem Lauf von A keine Aenderung melden"
+    end
+
+    test "die Vorgabe-Label tragen den Instanznamen, damit sie nicht kollidieren" do
+      labels = DailyReport.new.instance_variable_get(:@key_files).keys
+      assert(labels.all? { |l| l.start_with?(Rails.root.basename.to_s) },
+             "Label muessen die Instanz benennen, sonst teilen sich zwei Instanzen einen Eintrag: #{labels}")
+    end
+
+    test "der Aenderungs-Alarm nennt den Pfad der Datei" do
+      report(state: write("state", "miolimos up 1\n"), backup: healthy_backup).alerts
+      File.write(@key_path, "1" * 32)
+      r = report(state: write("state", "miolimos up 1\n"), backup: healthy_backup)
+      assert(r.alerts.any? { |a| a.include?(@key_path) },
+             "ohne Pfad ist bei mehreren Instanzen nicht erkennbar, WELCHE Datei gemeint ist")
     end
 
     test "ein fehlender Schluessel ist ein Alarm" do

@@ -29,8 +29,16 @@ module Ops
 
     def initialize(
       state_file: "/home/hans/.local/state/miolimos-watch/state",
-      key_files: { "Master-Key" => Rails.root.join("config/master.key").to_s,
-                   "Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
+      # #1220 (Hans, 2026-07-29): Label MIT Instanzname. Die Zustandsdatei
+      # unten teilen sich alle Instanzen auf dieser Maschine (miolimos_src,
+      # immoos, stocker) — unter den frueheren generischen Labels
+      # ("Master-Key"/"Credentials") ueberschrieb jede Instanz den
+      # Fingerabdruck der anderen. Da miolimOS andere Schluessel hat als
+      # immoos/stocker, meldete danach JEDER Lauf eine Aenderung, obwohl
+      # sich nie etwas geaendert hatte: der taegliche Fehlalarm, den dieser
+      # Bericht ausdruecklich vermeiden will.
+      key_files: { "#{Rails.root.basename} Master-Key"  => Rails.root.join("config/master.key").to_s,
+                   "#{Rails.root.basename} Credentials" => Rails.root.join("config/credentials.yml.enc").to_s },
       key_state_file: "/home/hans/.local/state/miolimos-watch/keys",
       registry_file: "/home/hans/.local/state/miolimos-watch/registry",
       database_probe: method(:production_databases),
@@ -319,12 +327,17 @@ module Ops
         current[label] = fp
 
         if previous[label].nil?
-          lines << "#{label}: erstmals erfasst"
+          lines << "#{label}: erstmals erfasst (#{path})"
         elsif previous[label] != fp
-          alerts << "#{label} hat sich geaendert (#{previous[label]} → #{fp}). "                     "Die Kopie im Passwortmanager ist damit veraltet und muss aufgefrischt werden — "                     "sonst startet eine Wiederherstellung nicht."
-          lines << "#{label}: GEAENDERT (#{previous[label]} → #{fp})"
+          # #1220: Der Alarm nennt den PFAD. Vorher stand nur „Master-Key hat
+          # sich geaendert" — bei mehreren Instanzen auf einer Maschine war
+          # damit nicht zu erkennen, WELCHE Datei gemeint ist (Hans' Rueckfrage).
+          alerts << "#{label} hat sich geaendert (#{previous[label]} → #{fp}): #{path}. " \
+                    "Die Kopie im Passwortmanager ist damit veraltet und muss aufgefrischt werden — " \
+                    "sonst startet eine Wiederherstellung nicht."
+          lines << "#{label}: GEAENDERT (#{previous[label]} → #{fp}) — #{path}"
         else
-          lines << "#{label}: unveraendert"
+          lines << "#{label}: unveraendert (#{path})"
         end
       end
 

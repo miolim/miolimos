@@ -27,6 +27,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Wide cards no longer peek out to the right of the front card (#1228).
+  When the workspace is scrolled all the way left so that only spines and
+  the front card remain, a card that is wider than the front one used to
+  stay visible past its right edge — stacking order decides who is on
+  top, not how far they reach. Each card is now clipped at the left edge
+  of the card in front of it, which is a no-op whenever cards sit side by
+  side without overlapping.
+
 - The daily operations report no longer cries wolf about changed instance
   keys (#1220). Several instances on one machine share the report's state
   file, and they recorded their key fingerprints under the same generic

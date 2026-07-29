@@ -496,6 +496,40 @@ class BladeStackTest < ApplicationSystemTestCase
            "append_to_substack muss weiterhin eine zweite Instanz erzeugen"
   end
 
+  # ─── #1228: Überstand breiter Cards im Regal ───────────────────────
+
+  # Hans: Ist eine hintere Card breiter als die vorderste, schaut sie im
+  # Regal-Zustand rechts an ihr vorbei. Der z-Index regelt nur, WER oben
+  # liegt — nicht, wie weit er reicht.
+  test "#1228 eine breite Card ragt im Regal nicht rechts an der vordersten vorbei" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid},#{@gamma.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
+
+    # Mittlere Card betont breit, vorderste betont schmal — der Fehlerfall.
+    ueberstand = page.evaluate_script(<<~JS)
+      (function() {
+        var cont  = document.querySelector("[data-blade-stack-target='container']");
+        var cards = Array.from(cont.querySelectorAll('.stack-card'));
+        cards[1].style.flex = '0 0 900px';
+        cards[2].style.flex = '0 0 380px';
+        var ctrl = window.Stimulus.getControllerForElementAndIdentifier(
+          document.querySelector("[data-controller~='blade-stack']"), 'blade-stack');
+        ctrl.restickify();
+        cont.scrollLeft = cont.scrollWidth;
+        ctrl._clipOverhang();
+        function sichtbar(el) {
+          var r = el.getBoundingClientRect();
+          var m = el.style.clipPath.match(/inset\\([0-9.]+p?x? ([0-9.]+)px/);
+          return r.right - (m ? parseFloat(m[1]) : 0);
+        }
+        return { breit: sichtbar(cards[1]), vorderste: sichtbar(cards[2]) };
+      })()
+    JS
+
+    assert_operator ueberstand["breit"], :<=, ueberstand["vorderste"] + 1,
+                    "die breite Card darf rechts nicht über die vorderste hinaus sichtbar sein"
+  end
+
   # ─── #1198: Topbar-Pfeile für die Schritt-Navigation ───────────────
 
   test "#1198 Topbar-Back öffnet die geschlossene Card wieder, Forward schließt sie erneut" do

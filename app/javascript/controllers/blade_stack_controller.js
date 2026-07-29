@@ -12,6 +12,7 @@ import { BladeStackMobileMixin } from "lib/blade_stack_mobile"
 import { BladeStackResizeMixin } from "lib/blade_stack_resize"
 import { focusTargetAfterClose, endSpacerWidth, standingSpacerWidth, nextShelfStop, prevShelfStop } from "lib/blade_stack_close"
 import { stickyOffsets } from "lib/blade_stack_sticky"
+import { overhangClips } from "lib/blade_stack_overhang"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -228,6 +229,18 @@ class BladeStackController extends Controller {
     // weitesten links eingerastete Card als active.
     this._onContainerScrollEnd = () => this._syncActiveCardToScroll()
     this.containerTarget.addEventListener("scrollend", this._onContainerScrollEnd)
+
+    // #1228: Welche Card wie weit ueber ihre Nachfolgerin ragt, aendert
+    // sich waehrend des Scrollens laufend (Cards kleben an und loesen
+    // sich wieder) — pro Frame einmal nachziehen, nicht pro Scroll-Event.
+    this._onContainerScroll = () => {
+      if (this._clipFrame) return
+      this._clipFrame = requestAnimationFrame(() => {
+        this._clipFrame = null
+        this._clipOverhang()
+      })
+    }
+    this.containerTarget.addEventListener("scroll", this._onContainerScroll, { passive: true })
 
     // Externe DOM-Mutationen (Turbo-Stream nach Delete eines KI):
     // Sticky/Highlight/URL aktualisieren, aber KEIN neuer Trail-Step —
@@ -497,6 +510,10 @@ class BladeStackController extends Controller {
     }
     if (this._onContainerScrollEnd) {
       this.containerTarget.removeEventListener("scrollend", this._onContainerScrollEnd)
+    }
+    if (this._onContainerScroll) {
+      this.containerTarget.removeEventListener("scroll", this._onContainerScroll)
+      if (this._clipFrame) { cancelAnimationFrame(this._clipFrame); this._clipFrame = null }
     }
     // #232 Phase 1 (B): Morph-Listener abmelden.
     if (this._onBeforeRender) document.removeEventListener("turbo:before-render", this._onBeforeRender)
@@ -1872,6 +1889,31 @@ class BladeStackController extends Controller {
     // #1091 v4: Der End-Spacer haengt vom Layout ab (Voll-Regal-Position
     // braucht die frischen sticky-left-Werte) — hier zentral nachziehen.
     this._syncEndSpacer()
+    // #1228: Breiten koennen sich geaendert haben (Resize, neue Card) —
+    // der Ueberstand haengt an ihnen.
+    this._clipOverhang()
+  }
+
+  // #1228 (Hans): Schneidet ab, was eine Card rechts ueber ihre
+  // Nachfolgerin hinausragen laesst — im Regal-Zustand „schauten" breite
+  // Cards sonst rechts an der vordersten vorbei. Rechenregel in
+  // lib/blade_stack_overhang.js; hier nur Messen und Setzen.
+  //
+  // Erst ALLE Rects lesen, dann alle Styles schreiben: gemischtes
+  // Lesen/Schreiben triebe pro Card einen Reflow, und das laeuft an
+  // jedem Scroll-Frame.
+  _clipOverhang() {
+    if (this._mediaMobile?.matches) return   // Mobile: scroll-snap, kein Stapel
+    const cards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
+    if (cards.length === 0) return
+    const rects = cards.map(c => c.getBoundingClientRect())
+    overhangClips(rects).forEach((clip, i) => {
+      const card = cards[i]
+      const wanted = clip > 0 ? `inset(0 ${Math.round(clip)}px 0 0)` : ""
+      // Nur schreiben, wenn sich etwas aendert — sonst invalidiert jeder
+      // Scroll-Frame das Painting aller Cards.
+      if (card.style.clipPath !== wanted) card.style.clipPath = wanted
+    })
   }
 
   // #803: _applyMobileLayout -> BladeStackMobileMixin (lib/blade_stack_mobile.js)

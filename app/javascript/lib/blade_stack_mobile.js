@@ -88,6 +88,7 @@ _applyMobileLayout() {
     card.style.transition = ""
     card.style.zIndex    = ""
     card.style.visibility = ""
+    card.style.clipPath  = ""   // #1228: Ueberstand-Beschnitt ist Desktop-only
     delete card.dataset.collapsed
   })
   // Aktive Card ins Viewport scrollen.

@@ -14,6 +14,12 @@ class ContactEnrichment
     new(item: item, actor: actor).apply(ContactExtractor.call(url), source_url: url)
   end
 
+  # #1250 (Hans): dasselbe aus eingefügtem Freitext (E-Mail-Signatur,
+  # Visitenkarte). Ohne Quell-URL entfällt nur die Web-Adress-Ableitung.
+  def self.from_text(item:, actor:, text:)
+    new(item: item, actor: actor).apply(ContactExtractor.from_text(text))
+  end
+
   def initialize(item:, actor:)
     @item  = item
     @actor = actor

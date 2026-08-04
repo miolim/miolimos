@@ -10,9 +10,9 @@ class ContactExtractor
   FIELDS = %w[organization email phone fax url vat_id register].freeze
   ADDRESS_FIELDS = %w[line1 line2 postal_code city country].freeze
 
-  SYSTEM = "Du extrahierst Kontaktdaten aus dem Text einer Webseite " \
-           "(z. B. einem Impressum). Antworte AUSSCHLIESSLICH mit einem " \
-           "JSON-Objekt — keine Erklärung, kein Markdown, keine Code-Fences."
+  SYSTEM = "Du extrahierst Kontaktdaten aus einem Text — einem Impressum, " \
+           "einer E-Mail-Signatur, einer Visitenkarte. Antworte AUSSCHLIESSLICH " \
+           "mit einem JSON-Objekt — keine Erklärung, kein Markdown, keine Code-Fences."
 
   # Liefert ein Hash mit Symbol-Keys: organization, email, phone, fax, url,
   # vat_id (Strings oder nil) + address (Hash line1/line2/postal_code/city/
@@ -24,7 +24,34 @@ class ContactExtractor
 
     text = (fetcher || method(:default_fetch)).call(url)
     raise Error, "Seite leer oder nicht erreichbar" if text.to_s.strip.empty?
+    # Bewusst OHNE die Wörtlichkeits-Prüfung von from_text: Impressen
+    # verschleiern Adressen gern („info(at)firma.de", „info [ät] firma punkt
+    # de"), und das Auflösen ist hier ein Gewinn, kein Erfinden.
+    extract(text, llm: llm)
+  end
 
+  # #1250 (Hans, 2026-08-04): derselbe Weg für eingefügten Freitext — eine
+  # kopierte E-Mail-Signatur, ein Visitenkarten-Text. Die Beschaffung fällt
+  # weg, das Herauslesen ist identisch.
+  #
+  # Warum überhaupt ein Modell und nicht nur Muster: E-Mail, Telefon, USt-ID
+  # und PLZ sind mit Regeln zuverlässig zu FINDEN — aber nicht zu DEUTEN.
+  # Ob „+49 4321 55" die Zentrale, das Fax oder das Mobiltelefon ist, ob eine
+  # Zeile Firma, Rolle oder Straße meint, steht nirgends im Muster, sondern
+  # nur in der Anordnung, und die hat jede Signatur anders. Genau diese
+  # Zuordnung übernimmt das Modell.
+  #
+  # Umgekehrt gilt: Was ein Muster prüfen KANN, soll es auch prüfen — siehe
+  # verify_verbatim!. Ein Modell, das eine Ziffer „glättet", liefert eine
+  # plausible und falsche Telefonnummer, und die fällt niemandem auf.
+  def self.from_text(text, llm: Llm::ChatClient)
+    raise Error, "Kein Text" if text.to_s.strip.empty?
+    quelle = text.to_s.first(8000)
+    verify_verbatim!(extract(quelle, llm: llm), quelle)
+  end
+
+  # Der gemeinsame Kern beider Wege: Text rein, Felder raus.
+  def self.extract(text, llm: Llm::ChatClient)
     raw = llm.complete(
       system: SYSTEM,
       prompt: prompt_for(text.to_s.first(8000)),
@@ -66,6 +93,52 @@ class ContactExtractor
       Seitentext:
       #{text}
     PROMPT
+  end
+
+  # #1250: Felder, die im Quelltext WÖRTLICH vorkommen müssen. Sie haben eine
+  # prüfbare Form, und bei ihnen ist eine plausible Erfindung schlimmer als
+  # eine Lücke: Eine erfundene E-Mail-Adresse sieht richtig aus und Post geht
+  # an Fremde. Was das Modell nicht belegen kann, fliegt raus — der Rest
+  # (Organisation, Adresse) darf normalisiert werden, dort ist Umschreiben
+  # gewollt („Str." → „Straße").
+  #
+  # Telefon/Fax werden auf die Ziffernfolge reduziert verglichen: „+49 4321
+  # 55-0" und „04321/55-0" sind dieselbe Nummer, unterschiedlich geschrieben —
+  # die Formatierung darf das Modell vereinheitlichen, die Ziffern nicht.
+  def self.verify_verbatim!(data, quelle)
+    haystack = quelle.to_s.downcase
+    ziffern  = haystack.gsub(/\D/, "")
+
+    # E-Mail: streng. Eine Adresse hat keine legitime Schreibvariante außer
+    # Groß-/Kleinschreibung.
+    if (mail = data[:email].to_s.strip).present?
+      data[:email] = nil unless haystack.include?(mail.downcase)
+    end
+
+    # USt-IdNr: Leerzeichen und Punkte sind Schreibweise, nicht Inhalt
+    # („DE 123 456 789" ist dieselbe Nummer wie „DE123456789").
+    if (vat = data[:vat_id].to_s.strip).present?
+      kompakt = ->(s) { s.downcase.gsub(/[\s.\-\/]/, "") }
+      data[:vat_id] = nil unless kompakt.call(haystack).include?(kompakt.call(vat))
+    end
+
+    # Die URL bleibt bewusst ungeprüft: „www.example.com" im Text und
+    # „https://www.example.com" in der Antwort sind dieselbe Adresse, nur
+    # vervollständigt — und eine falsche Webadresse richtet keinen Schaden
+    # an, der eine Verschärfung rechtfertigt (anders als eine E-Mail, an
+    # die dann Post geht).
+
+    %i[phone fax].each do |feld|
+      wert = data[feld].to_s.strip
+      next if wert.blank?
+      nur_ziffern = wert.gsub(/\D/, "")
+      # Führende Null der nationalen Schreibweise entspricht der Vorwahl mit
+      # Ländercode („+49 4321…" ↔ „04321…") — beide Lesarten zulassen.
+      varianten = [nur_ziffern, nur_ziffern.sub(/\A0/, "")].uniq.reject(&:blank?)
+      data[feld] = nil unless varianten.any? { |v| ziffern.include?(v) }
+    end
+
+    data
   end
 
   def self.parse(raw)

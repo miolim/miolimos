@@ -27,6 +27,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- "Complete contact data" now also takes pasted text (#1250): the card
+  tool that used to need an imprint URL accepts a copied email signature
+  or business card just as well, and fills the same empty fields. Values
+  with a checkable shape — email address, phone, fax, VAT ID — must
+  appear in the pasted text itself, so a smoothed-over digit or an
+  invented address cannot slip in; a differently written but identical
+  phone number still passes. Fetching a page stays lenient, because
+  imprints often obfuscate addresses and resolving that is a gain.
+
 - `ops/export-instance-keys.sh` collects the keys of every instance on the
   machine into one directory, named after the instance they belong to
   (#1220). `config/master.key` and `config/credentials.yml.enc` are

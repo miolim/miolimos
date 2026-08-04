@@ -602,8 +602,17 @@ class KnowledgeItemsController < ApplicationController
     unless @item.item_type.in?(%w[person organization])
       return render turbo_stream: helpers.toast_stream(message: t("knowledge.detail.complete_only_contacts"))
     end
+    # #1250 (Hans): Das Formular nimmt jetzt beides — eine URL (Impressum)
+    # ODER eingefügten Freitext (E-Mail-Signatur). Der Weg dahinter ist
+    # derselbe; nur die Beschaffung des Textes unterscheidet sich. Der
+    # Action-Name bleibt, damit Route und bestehende Aufrufe stabil sind.
     url   = params[:url].to_s.strip
-    added = ContactEnrichment.from_url(item: @item, actor: current_actor, url: url)
+    text  = params[:text].to_s.strip
+    if text.present?
+      added = ContactEnrichment.from_text(item: @item, actor: current_actor, text: text)
+    else
+      added = ContactEnrichment.from_url(item: @item, actor: current_actor, url: url)
+    end
     @item.reload
     render turbo_stream: [
       turbo_stream.replace("knowledge_detail_#{@item.uuid}",

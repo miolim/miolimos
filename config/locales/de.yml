@@ -564,6 +564,10 @@ de:
       complete_from_url: "Kontaktdaten aus URL ergänzen (z. B. Impressum)"
       complete_from_url_placeholder: "Impressum-/Kontakt-URL"
       complete_from_url_go: "Ergänzen"
+      # #1250: zweiter Weg — kopierten Text einfügen statt Seite holen.
+      complete_from_text_label: "… oder Text einfügen (E-Mail-Signatur, Visitenkarte)"
+      complete_from_text_placeholder: "Kopierten Text hier einfügen …"
+      complete_from_text_go: "Aus Text ergänzen"
       complete_only_contacts: "Nur für Personen und Organisationen."
       complete_added: "Ergänzt: %{fields}."
       complete_none: "Keine neuen Kontaktdaten auf der Seite gefunden."

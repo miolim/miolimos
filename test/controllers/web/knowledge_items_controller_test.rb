@@ -1105,6 +1105,52 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     ContactExtractor.define_singleton_method(:call, orig)
   end
 
+  # #1250: derselbe Stub für den Freitext-Weg.
+  def stub_text_extractor(result)
+    orig = ContactExtractor.method(:from_text)
+    ContactExtractor.define_singleton_method(:from_text) { |*, **| result }
+    yield
+  ensure
+    ContactExtractor.define_singleton_method(:from_text, orig)
+  end
+
+  # #1250 (Hans, 2026-08-04): dasselbe Formular nimmt auch eingefügten
+  # Freitext (E-Mail-Signatur) — ohne URL, ohne Seitenabruf.
+  test "#1250 complete_from_url ergänzt auch aus eingefügtem Text" do
+    org = FileProxy.create(actor: @hans, title: "Musterbau GmbH",
+                           item_type: :organization, content: "")
+    extracted = { organization: nil, email: "erika@musterbau.de",
+                  phone: "04321 55-0", fax: nil, url: nil, vat_id: nil, register: nil,
+                  address: { line1: "Schwartauer Str. 56", postal_code: "23611", city: "Sereetz" } }
+    stub_text_extractor(extracted) do
+      post "/knowledge_items/#{org.uuid}/complete_from_url",
+           params: { text: "Musterbau GmbH\nSchwartauer Str. 56\n23611 Sereetz\nerika@musterbau.de" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :success
+    org.reload
+    assert_includes org.contact_points.map(&:value), "erika@musterbau.de"
+    assert_includes org.contact_points.map(&:value), "04321 55-0"
+    assert_equal "Schwartauer Str. 56", org.postal_addresses.first&.line1
+  end
+
+  # Text hat Vorrang: Wer etwas einfügt, meint den Text — auch wenn im
+  # URL-Feld daneben noch eine alte Adresse steht.
+  test "#1250 eingefügter Text schlägt eine gleichzeitig gesendete URL" do
+    org = FileProxy.create(actor: @hans, title: "Vorrang GmbH",
+                           item_type: :organization, content: "")
+    stub_text_extractor({ email: "aus-text@example.de" }) do
+      stub_extractor({ email: "aus-url@example.de" }) do
+        post "/knowledge_items/#{org.uuid}/complete_from_url",
+             params: { text: "irgendeine Signatur", url: "https://example.de/impressum" },
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      end
+    end
+    werte = org.reload.contact_points.map(&:value)
+    assert_includes werte, "aus-text@example.de"
+    refute_includes werte, "aus-url@example.de"
+  end
+
   # #761 (Hans, 2026-06-23): complete_from_url übernimmt extrahierte
   # Kontaktdaten in die leeren Felder eines Person-KI (ContactExtractor
   # gestubbt — kein echter Fetch/LLM).

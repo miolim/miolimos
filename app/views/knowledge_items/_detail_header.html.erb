@@ -127,6 +127,21 @@
                      class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
               <button type="submit" class="shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_url_go") %></button>
             <% end %>
+
+            <%# #1250 (Hans): zweiter Weg im selben Popover — kopierten Text
+                einfügen (E-Mail-Signatur, Visitenkarte) statt eine Seite zu
+                holen. Eigenes Formular, damit das `required` der URL-Zeile
+                den Text-Weg nicht blockiert. %>
+            <div class="mt-2 pt-2 border-t border-slate-100">
+              <div class="text-[11px] text-slate-500 mb-1"><%= t("knowledge.detail.complete_from_text_label") %></div>
+              <%= form_with url: complete_from_url_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+                    method: :post, data: { turbo: true }, class: "flex flex-col gap-1" do %>
+                <textarea name="text" rows="4" required
+                          placeholder="<%= t('knowledge.detail.complete_from_text_placeholder') %>"
+                          class="w-full rounded border border-slate-200 px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
+                <button type="submit" class="self-end text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_text_go") %></button>
+              <% end %>
+            </div>
           </div>
         </div>
       <% end %>

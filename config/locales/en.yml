@@ -561,6 +561,10 @@ en:
       complete_from_url: "Fill contact data from URL (e.g. imprint)"
       complete_from_url_placeholder: "Imprint/contact URL"
       complete_from_url_go: "Fill"
+      # #1250: second route — paste copied text instead of fetching a page.
+      complete_from_text_label: "… or paste text (email signature, business card)"
+      complete_from_text_placeholder: "Paste copied text here …"
+      complete_from_text_go: "Fill from text"
       complete_only_contacts: "Only for people and organizations."
       complete_added: "Filled in: %{fields}."
       complete_none: "No new contact data found on the page."

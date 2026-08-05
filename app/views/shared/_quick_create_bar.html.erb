@@ -159,6 +159,16 @@
             placeholder: t("quick_create.fields.person_placeholder"),
             autocomplete: "off",
             class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+      <%# #1267 (Hans): Geschlecht schon bei der Schnellanlage. Der Create-Pfad
+          nimmt den Toplevel-Param `gender` seit #1090 entgegen
+          (apply_person_org!) — hier fehlte nur das Feld. Fakultativ; leer
+          bleibt „keine Angabe" und damit die neutrale Briefanrede. Direkt
+          unter dem Namen, weil beides zusammen die Anrede ergibt. %>
+      <label class="block text-[11px] text-slate-500"><%= t("knowledge.salutations.gender_label") %></label>
+      <%= f.select :gender,
+            Salutations::GENDERS.map { |v| [t("knowledge.salutations.genders.#{v}"), v] },
+            { include_blank: t("knowledge.salutations.gender_none") },
+            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
       <%# #761 (Hans): optionale URL — ausgefüllt zieht der Create-Pfad gleich
           die Kontaktdaten aus der Quelle (Kontaktdaten-Phase der
           Entitäts-Recherche). %>

@@ -1409,6 +1409,37 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # #1267 (Hans): Geschlecht schon in der Schnellanlage aus der Topbar. Der
+  # Create-Pfad konnte das seit #1090, der Weg dorthin fehlte — deshalb hier
+  # der Quick-Create-Pfad und nicht nur der Detail-Create.
+  test "#1267 Quick-Create Person übernimmt das Geschlecht und leitet die Anrede ab" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { quick_create: "1", item_type: "person",
+                     title: "Erika Schnell", gender: "female" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :success
+      p = KnowledgeItem.find_by(title: "Erika Schnell")
+      assert_equal "female", p.gender
+      assert_equal "female", FileProxy::Reader.build_frontmatter_hash(p)["gender"]
+      # Der eigentliche Zweck: der Brief grüßt richtig, ohne Nacharbeit am
+      # Personen-Eintrag (Nachname kommt aus dem Titel, #827).
+      assert_equal "Sehr geehrte Frau Schnell", Salutations.line_for(p)
+    end
+  end
+
+  test "#1267 Quick-Create ohne Geschlecht bleibt bei der neutralen Anrede" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { quick_create: "1", item_type: "person",
+                     title: "Kim Ohne", gender: "" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      p = KnowledgeItem.find_by(title: "Kim Ohne")
+      assert_nil p.gender
+      assert_equal Salutations::NEUTRAL, Salutations.line_for(p)
+    end
+  end
+
   # ─── #1168 Logo an Person/Org ────────────────────────────────────────
 
   def png_upload

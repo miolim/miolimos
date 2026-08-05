@@ -27,6 +27,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- The quick person form in the top bar now also asks for gender (#1267).
+  It is optional and empty stays "not stated", but filling it in right
+  away is what lets a letter open with "Sehr geehrte Frau Schnell"
+  instead of the neutral form — the create path already accepted the
+  value since #1090, only the field was missing.
+
 - "Complete contact data" now also takes pasted text (#1250): the card
   tool that used to need an imprint URL accepts a copied email signature
   or business card just as well, and fills the same empty fields. Values

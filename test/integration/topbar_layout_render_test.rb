@@ -56,6 +56,20 @@ class TopbarLayoutRenderTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, I18n.t("shared.quick_create.inbox_title")
   end
 
+  # #1267 (Hans): Das Geschlecht muss als TOPLEVEL-Param `gender` aus dem
+  # Person-Slot kommen — nur den liest apply_person_org!. Ein verschachtelter
+  # Name (`knowledge_item[gender]`) käme im Create-Pfad lautlos nicht an,
+  # deshalb prüft der Test das gerenderte Formular und nicht nur den POST.
+  test "the person quick-create slot offers the gender select" do
+    get "/dashboard"
+    assert_response :success
+    person_form = css_select("form").find { |f| f.css("input[name=item_type][value=person]").any? }
+    assert person_form, "Person-Slot der Schnellanlage nicht gefunden"
+    options = person_form.css("select[name=gender] option").map { |o| o["value"] }
+    assert_equal [""] + Salutations::GENDERS, options,
+                 "Katalog + leere Option (= keine Angabe) erwartet"
+  end
+
   test "preferences blade renders the topbar-layout editor" do
     get settings_blade_path("preferences")
     assert_response :success

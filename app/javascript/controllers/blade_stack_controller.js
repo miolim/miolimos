@@ -288,6 +288,11 @@ class BladeStackController extends Controller {
         // (Back/Forward baut Cards selbst um und würde sich sonst den
         // eigenen Forward-Zweig zerstören); pushTrailState dedupliziert
         // identische Kompositionen (kein Doppel-Push mit den Openern).
+        // #1283: Beim Card-Refresh ist die Komposition unveraendert — kein
+        // Trail-Schritt, kein Fokuswechsel, kein Scroll. Das Layout oben
+        // (Sticky, Counter, Resize-Handle) braucht die frische Card
+        // trotzdem, deshalb steht der Ausstieg erst hier.
+        if (this._refreshingCard) return
         if (this._applyingTrail) this.syncUrl({ pushHistory: false })
         else                     this.pushTrailState()
         if (lastAdded) {
@@ -1646,7 +1651,19 @@ class BladeStackController extends Controller {
     const html = await res.text()
     const { nodes, card: fresh } = this._parseCardHtml(html)   // #621
     if (!fresh) return
+    // #1283 (Hans): Ein Refresh ist KEINE Stack-Mutation. Das replaceWith
+    // unten ist aber eine childList-Aenderung wie jeder Append, und der
+    // MutationObserver hat sie bisher auch so behandelt — inklusive
+    // Scroll auf die Voll-Regal-Position. Wer eine Card aktualisierte,
+    // waehrend rechts Platz war, sah den Stack wegspringen. Das Flag
+    // sagt dem Observer: Layout nachziehen ja, Fokus/Scroll/Trail nein.
+    const wasActive = old.dataset.active === "true"
+    this._refreshingCard = true
     old.replaceWith(...nodes)
+    if (wasActive) fresh.dataset.active = "true"
+    // Erst im naechsten Macrotask zuruecksetzen — der Observer-Callback
+    // laeuft als Microtask noch vor dem Timeout und sieht das Flag.
+    setTimeout(() => { this._refreshingCard = false }, 0)
     this._applySavedWidth(fresh)   // #601: gemerkte Breite auch beim Refresh
     const restoreScroll = () => {
       if (savedTop == null) return

@@ -8,11 +8,33 @@
 //
 // Enthaltene Methoden:
 //   scrollCardIntoView      — Card sticky-aware ins Viewport (next/prev/nearest)
-//   _scrollLastIntoView     — letzte Card beim Reload/Append rechts positionieren
+//   _scrollLastIntoView     — letzte Card beim Reload rechts positionieren
+//   _scrollLastIntoViewIfNeeded — Append-Fall: nur bewegen, wenn noetig (#1283)
 //   _scrollCardIntoFocus    — Append-Fall: letzte Card vs. Card in der Mitte
 //   scrollToAnchorInCard    — zu einem #anker in einer Card scrollen (+ disclosure)
 //   _handleWheel            — Wheel/Shift-Wheel → horizontaler Card-Fokus-Schritt
 //   _syncActiveCardToScroll — Mobile: nach scrollend die nächste Card aktiv setzen
+
+// #1283 (Hans, 2026-08-06): Zielposition beim Anhaengen einer Card ans
+// Stack-Ende. Reine Mathematik, damit sie ohne DOM pruefbar ist.
+//
+// [minScroll..maxScroll] ist der Bereich, in dem die letzte Card
+// vollstaendig sichtbar ist: minScroll = rechtsbuendig am Container-Rand,
+// maxScroll = direkt rechts vom Sticky-Stapel der Vorgaenger. Regel:
+// innerhalb des Bereichs NICHTS tun, sonst auf die naehere Grenze
+// klemmen — also so wenig bewegen wie noetig.
+//
+// Rueckgabe: `null` = die Card passt ueberhaupt nicht neben den
+// Sticky-Stapel (stickyClamped), dann entscheidet die alte Logik.
+export function appendScrollTarget({ cardX, cardW, clientWidth, idx, step, current }) {
+  const minScroll = Math.max(0, cardX + cardW - clientWidth)
+  const maxScroll = Math.max(0, cardX - idx * step)
+  if (maxScroll < minScroll) return null
+  // 1px Toleranz: Card-Breiten sind gebrochen (getBoundingClientRect),
+  // ein Sub-Pixel-Rest ist kein Grund fuer einen sichtbaren Ruck.
+  if (current >= minScroll - 1 && current <= maxScroll + 1) return current
+  return current < minScroll ? minScroll : maxScroll
+}
 
 export const BladeStackScrollMixin = {
   scrollCardIntoView(card, idx, total, direction) {
@@ -114,20 +136,50 @@ export const BladeStackScrollMixin = {
     }
   },
 
+  // #1283 (Hans, 2026-08-06): Beim ANHAENGEN einer Card soll die
+  // Stack-Position erhalten bleiben — angepasst wird nur, wenn die neue
+  // Card sonst nicht ganz zu sehen waere. Bisher zog der Append-Pfad
+  // ueber _scrollLastIntoView immer auf die Voll-Regal-Position: stand
+  // der Stack rechts im Freiraum (Overscroll-Spacer, #1091), sprang er
+  // beim Quickadd zurueck und fuellte den Platz komplett aus.
+  //
+  // Geometrie wie _scrollLastIntoView, Zielwahl aus appendScrollTarget.
+  _scrollLastIntoViewIfNeeded(card) {
+    const allCards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
+    const idx   = allCards.indexOf(card)
+    if (idx < 0) return
+    let cardX = 0
+    for (let i = 0; i < idx; i++) cardX += allCards[i].getBoundingClientRect().width
+    const target = appendScrollTarget({
+      cardX,
+      cardW:       card.getBoundingClientRect().width,
+      clientWidth: this.containerTarget.clientWidth,
+      idx,
+      step:        this._stepEff ?? this.constructor.SPINE_STEP,   // #1167
+      current:     this.containerTarget.scrollLeft
+    })
+    // null = die Card passt nicht neben den Sticky-Stapel; dann gibt es
+    // keine „schon ganz sichtbar"-Position und die alte Logik entscheidet.
+    if (target === null) { this._scrollLastIntoView(card); return }
+    if (this.containerTarget.scrollLeft !== target) {
+      this.containerTarget.scrollLeft = target
+    }
+  },
+
   _scrollCardIntoFocus(card) {
     if (this.containerTarget.dataset.mobile === "true") {
       const left = card.offsetLeft - this.containerTarget.offsetLeft
       this.containerTarget.scrollTo({ left, behavior: "smooth" })
     } else {
       // #292: wenn's die letzte Card ist (typischer Append-Fall),
-      // gleiche sticky-aware Scroll-Math wie der Reload-Pfad —
-      // _scrollLastIntoView bevorzugt maxScroll, damit die Card
-      // rechts vom Sticky-Block sitzt mit Atemraum rechts. Bei
-      // Cards in der Mitte bleibt das alte "next"-Verhalten
+      // gleiche sticky-aware Scroll-Math wie der Reload-Pfad.
+      // #1283: dabei die Position halten, solange die Card ohnehin
+      // vollstaendig sichtbar ist (siehe _scrollLastIntoViewIfNeeded).
+      // Bei Cards in der Mitte bleibt das alte "next"-Verhalten
       // (minScroll, rechtsbuendig).
       const cards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
       if (cards[cards.length - 1] === card) {
-        this._scrollLastIntoView(card)
+        this._scrollLastIntoViewIfNeeded(card)
       } else {
         // #270 follow-up: scrollIntoView({inline:"end"}) beruecksichtigt
         // die sticky-Spines der Vorgaenger-Cards nicht — der neue Blade

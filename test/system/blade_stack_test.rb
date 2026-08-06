@@ -602,6 +602,69 @@ class BladeStackTest < ApplicationSystemTestCase
     assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
   end
 
+  # #1283 (Hans): Ein Card-Refresh ist keine Stack-Mutation. Er laeuft aber
+  # ueber replaceWith und damit durch denselben MutationObserver wie ein
+  # Append — der hat bis hierher auf die Voll-Regal-Position gescrollt.
+  # Der Test faehrt den echten Browser, weil genau das Zusammenspiel aus
+  # fetch, replaceWith und Observer der Fehler war.
+  test "#1283 Card-Refresh laesst die Scrollposition des Stacks in Ruhe" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid},#{@gamma.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
+
+    # Aktualisiert wird die LETZTE Card: nur sie lief im Observer in
+    # _scrollLastIntoView und damit immer aufs Voll-Regal. Bei einer Card
+    # in der Mitte scrollte auch der alte Pfad nur, wenn sie verdeckt war
+    # — mit ihr liefe der Test gruen, ohne etwas zu pruefen.
+    # (evaluate_script nimmt einen AUSDRUCK — Statements muessen in eine
+    # sofort aufgerufene Funktion, sonst: SyntaxError „Unexpected token".)
+    scrollbar = page.evaluate_script(<<~JS)
+      (() => {
+        const c = document.querySelector("[data-blade-stack-target='container']")
+        c.scrollLeft = 0
+        return c.scrollWidth - c.clientWidth
+      })()
+    JS
+    assert scrollbar.to_f > 0,
+           "Der Stack muss scrollbar sein, sonst prueft der Test nichts"
+
+    # Die alte Card markieren, damit wir das Ende des (asynchronen)
+    # Refresh am Verschwinden der Markierung erkennen.
+    page.execute_script(<<~JS, @gamma.uuid)
+      document.querySelector(`article.stack-card[data-uuid='${arguments[0]}']`).dataset.alt = "1"
+      const el = document.querySelector("[data-controller~='blade-stack']")
+      window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack").refreshCard(arguments[0])
+    JS
+    assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']:not([data-alt])"),
+           "Die Card muss durch eine frische ersetzt worden sein"
+
+    nachher = page.evaluate_script(
+      "document.querySelector(\"[data-blade-stack-target='container']\").scrollLeft")
+    assert_in_delta 0, nachher.to_f, 1,
+                    "Der Refresh darf den Stack nicht verschieben"
+  end
+
+  # Dieser Test war vor #1283 ebenfalls gruen (der Observer setzte die
+  # frische Card aktiv). Er sichert nicht den Fehler, sondern die
+  # Nebenwirkung des Fixes ab: mit dem Flag, aber ohne das Merken von
+  # data-active in refreshCard, ginge der Fokus beim Refresh verloren.
+  test "#1283 der Refresh behaelt die aktive Card" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+    page.execute_script(<<~JS, @beta.uuid)
+      const el = document.querySelector("[data-controller~='blade-stack']")
+      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
+      const card = document.querySelector(`article.stack-card[data-uuid='${arguments[0]}']`)
+      ctrl.setActiveCard(card)
+      card.dataset.alt = "1"
+      ctrl.refreshCard(arguments[0])
+    JS
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']:not([data-alt])")
+    # Ohne das Flag setzte der Observer die frische Card selbst aktiv —
+    # jetzt uebernimmt refreshCard das, sonst ginge der Fokus verloren.
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}'][data-active='true']"),
+           "Die aktive Card muss ueber den Refresh hinweg aktiv bleiben"
+  end
+
   test "#1198 Topbar-Pfeile sind auf Seiten ohne Card-Stack ausgeblendet" do
     visit "/settings"
     assert page.has_no_css?("#topbar_trail_back", visible: true),

@@ -25,6 +25,17 @@ release is cut, this section is renamed to the new version and a fresh
   existing Alt+←/→ shortcut and the arrows on the knowledge workspace,
   which both stay.
 
+### Fixed
+
+- Adding a card no longer drags the card shelf along (#1283). When the
+  stack was scrolled so that space was left on the right, a quick-add
+  used to scroll it back until the space was filled and the new card sat
+  flush right. The position now stays put and the card is simply
+  appended — the shelf only moves when that is what it takes to show the
+  new card, and then only as far as needed. Refreshing a card leaves the
+  position alone entirely: a refresh replaces the card in place, which
+  looked like an append to the observer that watches the stack.
+
 ### Added
 
 - The quick person form in the top bar now also asks for gender (#1267).

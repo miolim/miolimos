@@ -11,6 +11,7 @@ import { BladeStackRoutes } from "../../app/javascript/lib/blade_stack_routes.js
 const KIND_CASES = [
   ["topic_list",    "demo",        "list:topic:demo",    "/topics/demo/list_card"],
   ["tag_list",      "steuer",      "list:tag:steuer",    "/tags/steuer/list_card"],
+  ["search_list",   "bWlldGU",     "list:search:bWlldGU", "/search/list_card?p=bWlldGU"],
   ["list",          "tasks",       "list:tasks",         "/tasks/list_card"],
   ["topic",         "demo",        "topic:demo",         "/topics/demo/card"],
   ["tree_focus",    "42",          "treefocus:42",       "/tree_focus/42/card"],
@@ -59,6 +60,9 @@ test("urlFor resolves longer prefixes before shorter ones", () => {
   // list:topic: und list:tag: müssen VOR list: greifen …
   assert.equal(BladeStackRoutes.urlFor("list:topic:demo"), "/topics/demo/list_card")
   assert.equal(BladeStackRoutes.urlFor("list:tag:x"), "/tags/x/list_card")
+  // #1321: list:search: ebenso — sonst laendete es als list:<"search:…"> im
+  // generischen Listen-Zweig und liefe auf /search%3A…/list_card ins Leere.
+  assert.equal(BladeStackRoutes.urlFor("list:search:bWlldGU"), "/search/list_card?p=bWlldGU")
   // … und settingssub: vor settings:
   assert.equal(BladeStackRoutes.urlFor("settingssub:users:7"), "/settings/blade/users/sub/7")
 })
@@ -98,6 +102,7 @@ test("forKind covers the kinds whose prefix is not `${kind}:` (#1067)", () => {
     ["tree_focus",   "42",     "treefocus:42"],
     ["topic_props",  "demo",   "topicprops:demo"],
     ["tag_list",     "steuer", "list:tag:steuer"],
+    ["search_list",  "bWlldGU", "list:search:bWlldGU"],
     ["invoice_line", "7",      "invoiceline:7"],
     ["source",       "9",      "src:9"],
     ["topic_list",   "demo",   "list:topic:demo"],

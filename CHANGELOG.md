@@ -17,6 +17,21 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Full search results as their own card (#1321). The quick search in the
+  top bar stays the fast glance — it still shows the first eight rows per
+  category — but it no longer hides how much it left out: press Enter, or
+  use the new "Show all results" row at the bottom of the drop-down, and
+  the complete result set opens as a card in the workspace. It is grouped
+  by entity as before, each section carrying its true hit count in the
+  header. Sections start collapsed, so you open the one you actually
+  want; long sections load twenty rows at a time. The search term travels
+  in the card's id, so a reload or a bookmarked workspace brings the same
+  results back.
+- Search now covers documents, invoices, topics, sources, follow-ups and
+  the inbox, and it reads the body of a message, not just its subject
+  (#1321). Before, a letter was only findable through the text of its
+  body note — and then showed up as a knowledge hit rather than as the
+  document it belongs to.
 - Back/forward arrows in the top bar, left of the search field (#1198):
   they step through the workspace's history like a browser — a card just
   closed comes back, a card that replaced several others is undone to

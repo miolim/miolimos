@@ -1,0 +1,23 @@
+<%# #1321 (Hans, 2026-08-07): Inhalt EINER Sektion der Ergebnis-Card. Steckt in
+    einem Turbo-Frame mit loading="lazy" — die Sektion ist beim Öffnen der Card
+    eingeklappt (display:none), der Frame lädt also erst, wenn Hans sie
+    ausklappt. „weitere anzeigen" navigiert in denselben Frame und rendert
+    dieses Partial mit größerem limit erneut.
+
+    Locals: search (SearchQuery), payload, section (Symbol), limit %>
+<% records  = search.records(section, limit: limit) %>
+<% snippets = search.snippets(section, records) %>
+<% total    = search.count(section) %>
+<%= turbo_frame_tag search_section_frame_id(payload, section) do %>
+  <%= render "search/rows", search: search, section: section,
+        records: records, snippets: snippets %>
+  <% if total > records.size %>
+    <div class="px-4 py-2 border-t border-slate-100">
+      <%= link_to t("search.load_more", count: [SearchQuery::PAGE_SIZE, total - records.size].min),
+            search_section_path(p: payload, section: section,
+                                limit: records.size + SearchQuery::PAGE_SIZE),
+            class: "text-xs text-emerald-700 hover:underline" %>
+      <span class="text-xs text-slate-400"><%= t("search.shown_of", shown: records.size, total: total) %></span>
+    </div>
+  <% end %>
+<% end %>

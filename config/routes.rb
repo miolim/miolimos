@@ -472,6 +472,11 @@ Rails.application.routes.draw do
 
   # Globale Suche
   get "/search", to: "search#index", as: :search
+  # #1321 (Hans, 2026-08-07): vollständige Ergebnis-Card als Stack-Blade plus
+  # der Nachlade-Endpunkt einer einzelnen Sektion. p = base64url(suchbegriff).
+  # VOR der /search-Route wäre unnötig — die ist exakt, nicht greedy.
+  get "/search/list_card", to: "search#list_card", as: :search_list_card
+  get "/search/section",   to: "search#section",   as: :search_section
 
   # Einstellungen
   get "/settings", to: "settings#index", as: :settings

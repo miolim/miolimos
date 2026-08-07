@@ -22,6 +22,12 @@ const ROUTES = [
       }
       return `/topics/${encodeURIComponent(rest)}/list_card`
     } },
+  // #1321: vollständige Suchergebnisse. rest = base64url(suchbegriff), damit
+  // der Begriff Komma und Leerzeichen enthalten darf, ohne den kommaseparierten
+  // ?stack=-Param zu sprengen (wie pdfcard, #1025).
+  { kind: "search_list", prefix: "list:search:",
+    stackId: id => `list:search:${id}`,
+    url: rest => `/search/list_card?p=${encodeURIComponent(rest)}` },
   // #418: Listen-Blade aller Items mit einem Tag.
   { kind: "tag_list", prefix: "list:tag:",
     stackId: id => `list:tag:${id}`,

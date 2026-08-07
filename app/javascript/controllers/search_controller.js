@@ -26,6 +26,39 @@ export default class extends Controller {
     }, 150)
   }
 
+  // #1321 (Hans, 2026-08-07): Enter im Suchfeld öffnet die vollständige
+  // Ergebnis-Card, statt das Dropdown noch einmal zu submitten. Auf einer
+  // Stack-Seite haengt sie sich an den aktuellen Stack; sonst bauen wir den
+  // Stack auf dem Dashboard auf (gleiche Fallback-Logik wie blade-link).
+  // Das Leeren des Felds erledigt der blade-stack:append-Listener oben.
+  openAll(event) {
+    const q = this.hasInputTarget ? this.inputTarget.value.trim() : ""
+    if (q.length < 2) return
+    event.preventDefault()
+    clearTimeout(this.timeout)
+    const payload = this.constructor.payloadFor(q)
+    if (document.body.classList.contains("has-blade-stack")) {
+      window.dispatchEvent(new CustomEvent("blade-stack:append", {
+        detail: { kind: "search_list", id: payload }
+      }))
+    } else {
+      const stack = encodeURIComponent(`list:dashboard,list:search:${payload}`)
+      const url   = `/dashboard?stack=${stack}`
+      if (window.Turbo) window.Turbo.visit(url); else window.location.href = url
+    }
+  }
+
+  // base64url(suchbegriff), ohne Padding — muss zeichengleich zu
+  // SearchQuery.encode_payload (Ruby) sein, sonst findet der Server die
+  // Stack-Id nicht wieder. btoa kann nur Latin-1, deshalb der Umweg ueber
+  // die UTF-8-Bytes (Umlaute!).
+  static payloadFor(text) {
+    const bytes = new TextEncoder().encode(text)
+    let binary = ""
+    bytes.forEach(b => { binary += String.fromCharCode(b) })
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+  }
+
   clear() {
     if (this.hasInputTarget) this.inputTarget.value = ""
     const frame = document.getElementById("search_results")

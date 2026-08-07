@@ -121,4 +121,29 @@ class BladeStackLoaderTest < ActiveSupport::TestCase
     assert_equal "awaitings/blade_card",      items.first.partial
     assert_equal "communications/blade_card", items.last.partial
   end
+
+  # #1321 (Hans, 2026-08-07): Suchergebnis-Blade. Der Suchbegriff steckt
+  # base64url-kodiert in der Stack-Id — sonst zerlegte ein Komma im Begriff
+  # den kommaseparierten Param.
+  test "list:search: wird als Suchergebnis-Blade erkannt" do
+    payload = SearchQuery.encode_payload("Meier, Grundstück")
+    items   = BladeStackLoader.parse("list:search:#{payload}")
+
+    assert_equal 1, items.size
+    assert_equal :search_list, items.first.kind
+    assert_equal "list:search:#{payload}", items.first.stack_uuid
+    assert_equal "search/list_blade_card", items.first.partial
+    assert_equal "Meier, Grundstück", items.first.record.query
+    assert_equal payload, items.first.partial_locals[:payload]
+  end
+
+  test "list:search: mit kaputtem Payload faellt leise raus" do
+    assert_equal [], BladeStackLoader.parse("list:search:!!!kein-base64!!!")
+  end
+
+  test "list:search: laesst sich mit anderen Blades kombinieren" do
+    payload = SearchQuery.encode_payload("suche")
+    items   = BladeStackLoader.parse("list:dashboard,list:search:#{payload},task:#{@task.id}")
+    assert_equal [:list, :search_list, :task], items.map(&:kind)
+  end
 end

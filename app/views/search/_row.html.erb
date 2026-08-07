@@ -1,0 +1,33 @@
+<%# #1321: eine Trefferzeile. blade-link hängt die Ziel-Card an den Stack;
+    auf Seiten ohne Stack folgt der Klick dem href (blade_link_controller).
+    turbo_frame: "_top", weil der Default-Frame hier das Such-Dropdown wäre —
+    ohne _top landete die Zielseite in ihm („Content missing").
+
+    Locals: section (Symbol), record, snippet (HTML mit <mark> oder nil) %>
+<% target = search_row_target(section, record) %>
+<% title  = search_row_title(section, record) %>
+<% meta   = search_row_meta(section, record) %>
+<li class="px-4 py-1.5 hover:bg-slate-50">
+  <%= link_to target[:href],
+        data: { controller: "blade-link",
+                "blade-link-kind-value": target[:kind],
+                "blade-link-id-value": target[:id],
+                action: "click->blade-link#append",
+                turbo_frame: "_top" },
+        class: "block hover:underline" do %>
+    <div class="flex items-center gap-2">
+      <span class="text-slate-500 shrink-0"><%= search_row_icon(section, record) %></span>
+      <span class="truncate"><%= title %></span>
+      <%# #481: Aufgabennummer mitzeigen — analog zu den anderen Aufgabenlisten. %>
+      <% if section == :tasks %>
+        <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= record.id %></span>
+      <% end %>
+      <% if meta.present? %>
+        <span class="ml-auto text-xs text-slate-400 shrink-0 tabular-nums"><%= meta %></span>
+      <% end %>
+    </div>
+    <% if snippet.present? && snippet != title %>
+      <div class="text-xs text-slate-500 truncate pl-6"><%= sanitize snippet, tags: %w[mark] %></div>
+    <% end %>
+  <% end %>
+</li>

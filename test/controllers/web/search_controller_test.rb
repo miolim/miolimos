@@ -68,4 +68,121 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # ── #1321 (Hans, 2026-08-07): Ergebnis-Card ───────────────────────────
+
+  test "Dropdown bietet den Einstieg in die Ergebnis-Card an" do
+    Task.create!(creator: @hans, title: "Dropdownprobe", status: :open)
+    get "/search", params: { q: "dropdownprobe" }
+    assert_response :success
+    assert_includes response.body, I18n.t("search.show_all")
+    # Der Payload reist als blade-link-Wert mit (im href steht er
+    # URL-kodiert, deshalb hier das data-Attribut prüfen).
+    assert_includes response.body,
+      "data-blade-link-id-value=\"#{SearchQuery.encode_payload("dropdownprobe")}\""
+    assert_includes response.body, "data-blade-link-kind-value=\"search_list\""
+  end
+
+  test "Dropdown ohne Treffer bietet KEINEN Einstieg an" do
+    get "/search", params: { q: "voellig-unauffindbar-xyz" }
+    assert_response :success
+    assert_not_includes response.body, I18n.t("search.show_all")
+  end
+
+  test "list_card zeigt Sektionskopf mit Trefferzahl und laedt Zeilen NICHT mit" do
+    Task.create!(creator: @hans, title: "Cardprobe eins", status: :open)
+    Task.create!(creator: @hans, title: "Cardprobe zwei", status: :open)
+    get "/search/list_card", params: { p: SearchQuery.encode_payload("cardprobe") }
+    assert_response :success
+    assert_includes response.body, I18n.t("search.sections.tasks")
+    # Sektionen sind eingeklappt und lazy — die Titel stehen noch nicht drin.
+    assert_not_includes response.body, "Cardprobe eins"
+    assert_includes response.body, "search/section"
+    assert_includes response.body, 'loading="lazy"'
+  end
+
+  test "list_card traegt die Stack-Id der Card" do
+    payload = SearchQuery.encode_payload("cardprobe")
+    get "/search/list_card", params: { p: payload }
+    assert_includes response.body, "data-uuid=\"list:search:#{payload}\""
+  end
+
+  test "section liefert die Zeilen einer Sektion" do
+    Task.create!(creator: @hans, title: "Sektionsprobe", status: :open)
+    get "/search/section", params: { p: SearchQuery.encode_payload("sektionsprobe"), section: "tasks" }
+    assert_response :success
+    assert_includes response.body, "Sektionsprobe"
+  end
+
+  test "section bietet weitere anzeigen erst ab mehr Treffern als das Limit" do
+    (SearchQuery::PAGE_SIZE + 3).times { |i| Task.create!(creator: @hans, title: "Vieleprobe #{i}", status: :open) }
+    payload = SearchQuery.encode_payload("vieleprobe")
+    get "/search/section", params: { p: payload, section: "tasks" }
+    assert_response :success
+    assert_includes response.body, I18n.t("search.load_more", count: 3)
+
+    get "/search/section", params: { p: payload, section: "tasks", limit: 100 }
+    assert_response :success
+    assert_not_includes response.body, I18n.t("search.load_more", count: 3)
+  end
+
+  test "section mit unbekannter Sammlung ist 404" do
+    get "/search/section", params: { p: SearchQuery.encode_payload("egal"), section: "gibtsnicht" }
+    assert_response :not_found
+  end
+
+  test "kaputter payload ist 404 statt 500" do
+    get "/search/list_card", params: { p: "!!!kein base64!!!" }
+    assert_response :not_found
+  end
+
+  # Jede Sammlung einmal wirklich rendern — die Zeilen-Helfer greifen je
+  # Sammlung auf andere Felder zu (display_title, display_authors, Datums-
+  # formate). Ein Tippfehler dort fiele sonst erst Hans auf.
+  test "jede Sammlung rendert ihre Trefferzeile" do
+    term = "renderprobe"
+    Task.create!(creator: @hans, title: "#{term} Aufgabe", status: :open)
+    # #602 S1: Kommunikation hat keinen Ersteller — sichtbar wird sie über
+    # ihre Themen-Zuordnung (oder das eigene Postfach).
+    comm = Communication.create!(direction: "inbound", subject: "#{term} Mail",
+                                 external_id: "rp-#{SecureRandom.hex(4)}", sent_at: Time.current)
+    CommunicationTopic.create!(communication: comm,
+                               topic: Topic.create!(name: "Postfach", creator: @hans,
+                                                    slug: "rp-post-#{SecureRandom.hex(2)}"))
+    Document.create!(kind: :brief, subject: "#{term} Brief", creator: @hans,
+                     document_date: Date.current)
+    Invoice.create!(kind: :rechnung, subject: "#{term} Rechnung", creator: @hans,
+                    document_date: Date.current)
+    Topic.create!(name: "#{term} Thema", slug: "rp-#{SecureRandom.hex(2)}", creator: @hans)
+    Source.create!(slug: "rp-#{SecureRandom.hex(3)}", csl_type: "book",
+                   title: "#{term} Quelle", creator: @hans)
+    Awaiting.create!(title: "#{term} Wiedervorlage", follow_up_at: Date.current, creator: @hans)
+    InboxItem.create!(source_kind: "text", title: "#{term} Schnipsel", creator: @hans)
+
+    payload = SearchQuery.encode_payload(term)
+    %w[tasks communications documents invoices topics sources awaitings inbox_items].each do |section|
+      get "/search/section", params: { p: payload, section: section }
+      assert_response :success, "Sektion #{section} muss rendern"
+      assert_includes response.body, term, "Sektion #{section} muss ihren Treffer zeigen"
+    end
+  end
+
+  # Reload/Lesezeichen: die Card muss auch serverseitig aus dem ?stack=-Param
+  # entstehen, nicht nur per JS-Append.
+  test "Ergebnis-Card ueberlebt einen Stack-Restore ueber ?stack=" do
+    Task.create!(creator: @hans, title: "Restoreprobe", status: :open)
+    payload = SearchQuery.encode_payload("restoreprobe")
+    get "/dashboard", params: { stack: "list:dashboard,list:search:#{payload}" }
+    assert_response :success
+    assert_includes response.body, "data-uuid=\"list:search:#{payload}\""
+    assert_includes response.body, I18n.t("search.sections.tasks")
+  end
+
+  test "Suchbegriff mit Komma ueberlebt den kommaseparierten stack-Param" do
+    Task.create!(creator: @hans, title: "Kommaprobe, zweiter Teil", status: :open)
+    payload = SearchQuery.encode_payload("kommaprobe, zweiter")
+    assert_not_includes payload, ","
+    get "/search/section", params: { p: payload, section: "tasks" }
+    assert_response :success
+    assert_includes response.body, "Kommaprobe, zweiter Teil"
+  end
 end

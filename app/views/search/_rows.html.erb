@@ -1,0 +1,21 @@
+<%# #1321 (Hans, 2026-08-07): Die Trefferliste EINER Sammlung. Dropdown und
+    Ergebnis-Card rendern dieselben Zeilen — was sich unterscheidet, ist nur
+    die Umgebung (Dropdown-Sektionskopf vs. einklappbare Card-Sektion).
+
+    Locals: search (SearchQuery), section (Symbol), records, snippets %>
+<ul class="divide-y divide-slate-100 text-[13px]">
+  <% if section == :replies %>
+    <% parents = search.reply_parents(records) %>
+    <% records.each do |reply| %>
+      <% key    = [reply.parent_type, reply.parent_type == "Task" ? reply.parent_id_int : reply.parent_uuid] %>
+      <% parent = parents[key] %>
+      <% next unless parent %>
+      <%= render "search/reply_row", reply: reply, parent: parent, snippet: snippets[reply.uuid] %>
+    <% end %>
+  <% else %>
+    <% records.each do |record| %>
+      <%= render "search/row", section: section, record: record,
+            snippet: search_snippet(snippets, record) %>
+    <% end %>
+  <% end %>
+</ul>

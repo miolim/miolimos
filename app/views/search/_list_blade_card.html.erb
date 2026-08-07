@@ -1,0 +1,71 @@
+<%# #1321 (Hans, 2026-08-07): Die vollständige Ergebnis-Card. Das Dropdown in
+    der Topbar bleibt der schnelle Blick (8 Zeilen je Sammlung, ohne Zählung);
+    hier steht das ganze Ergebnis.
+
+    Aufbau nach Hans' Vorgabe: Gliederung nach Entitäten, je Sektion Entität +
+    Trefferzahl in der Titelzeile, alles zunächst EINGEKLAPPT — man klappt die
+    Sektion auf, die einen interessiert. Der Inhalt hängt an einem lazy
+    Turbo-Frame, es wird also nur geladen, was auch aufgeklappt wird.
+
+    Stack-Id: list:search:<payload>, payload = base64url(suchbegriff). Als
+    list:-Blade, damit die gewohnte Listen-Semantik greift (ein Klick auf einen
+    Treffer ersetzt den Sub-Stack, statt Cards aufzutürmen).
+
+    Locals: payload, search (SearchQuery) %>
+<% stack_id = "list:search:#{payload}" %>
+<% label    = t("search.card.title", query: search.query) %>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/list_blade_spine",
+        title: label,
+        icon_html: icon("search"),
+        stack_id: stack_id,
+        label: label %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-2">
+    <%= render "shared/list_blade_toolbar", stack_id: stack_id %>
+
+    <div class="sticky -top-3 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur z-20
+                border-b border-slate-100 flex items-center gap-2">
+      <span class="text-slate-500"><%= icon "search" %></span>
+      <span class="font-semibold text-sm truncate" title="<%= search.query %>"><%= search.query %></span>
+      <span class="ml-auto text-xs text-slate-400 tabular-nums shrink-0"><%= search.total %></span>
+    </div>
+
+    <% if search.blank? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= t("search.card.too_short", min: SearchQuery::MIN_LENGTH) %></p>
+    <% elsif !search.any? %>
+      <p class="text-sm text-slate-400 italic py-3"><%= t("search.no_results", query: search.query) %></p>
+    <% else %>
+      <% search.hit_sections.each do |section| %>
+        <%# Eingeklappt-per-Default = Icon OHNE rotate-90, content MIT hidden
+            (Markup-Konvention des disclosure-Controllers). Bewusst ohne
+            storage-key: jede neue Suche startet wieder eingeklappt. %>
+        <section data-controller="disclosure" class="border border-slate-200 rounded">
+          <header class="flex items-center">
+            <button type="button"
+                    data-action="click->disclosure#toggle"
+                    class="flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 rounded">
+              <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400 shrink-0">
+                <%= icon "chevron_right" %>
+              </span>
+              <span class="text-slate-500 shrink-0"><%= search_section_icon(section) %></span>
+              <span class="text-sm font-medium text-slate-700 truncate"><%= search_section_label(section) %></span>
+              <span class="ml-auto text-xs text-slate-500 tabular-nums shrink-0"><%= search.count(section) %></span>
+            </button>
+          </header>
+          <div data-disclosure-target="content" class="hidden border-t border-slate-100">
+            <%= turbo_frame_tag search_section_frame_id(payload, section),
+                  src:     search_section_path(p: payload, section: section),
+                  loading: "lazy" do %>
+              <p class="px-4 py-2 text-xs text-slate-400 italic"><%= t("search.card.loading") %></p>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+    <% end %>
+  </div>
+</article>

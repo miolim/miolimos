@@ -30,6 +30,7 @@ class BladeStackLoader
       when :topic         then { topic: record }
       when :topic_list    then { topic: record, tab: meta&.dig(:tab) }
       when :tag_list      then { tag: record }
+      when :search_list   then { payload: id, search: record }  # #1321
       when :topic_render  then { topic: record }
       when :ki_refs       then { item: record }
       when :topic_refs    then { topic: record }
@@ -67,6 +68,8 @@ class BladeStackLoader
       end
       # #418: tag_list nutzt DOM-uuid `list:tag:<name>`.
       return "list:tag:#{id}" if kind == :tag_list
+      # #1321: Suchergebnis-Blade, id = base64url(suchbegriff).
+      return "list:search:#{id}" if kind == :search_list
       # #352: topic_render hat eine eigene DOM-uuid `render:topic:<slug>`.
       return "render:topic:#{id}" if kind == :topic_render
       # #343: ki_refs hat DOM-uuid `refs:ki:<uuid>`.
@@ -107,6 +110,7 @@ class BladeStackLoader
     topic:         "topics/index_list_blade",
     topic_list:    "topics/index_list_blade",
     tag_list:      "tags/list_blade",
+    search_list:   "search/list_blade_card",              # #1321
     topic_render:  "topics/render_blade",
     topic_refs:    "topics/refs_blade",
     source:        "sources/stack_card",
@@ -184,7 +188,7 @@ class BladeStackLoader
     tokens = stack_param.to_s.split(",").map(&:strip).reject(&:blank?)
     return [] if tokens.empty?
 
-    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], list: [] }
+    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], search_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], list: [] }
     classified = tokens.map do |t|
       kind, id, meta =
         if t.start_with?("list:topic:")
@@ -200,6 +204,12 @@ class BladeStackLoader
           else
             [:topic_list, rest, nil]
           end
+        elsif t.start_with?("list:search:")
+          # #1321 (Hans, 2026-08-07): Suchergebnis-Blade. rest =
+          # base64url(suchbegriff) — der Begriff darf so Komma und
+          # Leerzeichen enthalten, ohne diesen kommaseparierten Param zu
+          # sprengen.
+          [:search_list, t.sub(/\Alist:search:/, ""), nil]
         elsif t.start_with?("list:tag:")
           # #418 (Hans, 2026-05-30): Tag-Listen-Blade.
           [:tag_list, t.sub(/\Alist:tag:/, ""), nil]
@@ -268,6 +278,16 @@ class BladeStackLoader
       elsif kind == :tag_list
         # #418: Tag hat kein DB-Model — record ist der Tag-Name selbst.
         Item.new(kind: :tag_list, id: id, record: id, meta: meta)
+      elsif kind == :search_list
+        # #1321: kein DB-Record — record ist die Suche selbst; das Partial
+        # holt sich seine Treffer daraus. Kaputter Payload fällt leise raus
+        # (wie eine nicht mehr existente Id).
+        begin
+          Item.new(kind: :search_list, id: id,
+                   record: SearchQuery.new(SearchQuery.decode_payload(id), actor: actor), meta: meta)
+        rescue SearchQuery::BadPayload
+          nil
+        end
       elsif kind == :settings_page
         # #613: kein DB-Record — gegen die Seiten-Registry validieren;
         # record traegt das Anzeige-Label.

@@ -98,6 +98,10 @@ const ROUTES = [
   { kind: "invoice", prefix: "invoice:",
     stackId: id => `invoice:${id}`,
     url: rest => `/invoices/${encodeURIComponent(rest)}/card` },
+  // #1337 Schnitt 4: Konto-Card (Bankkonto mit Umsatzliste).
+  { kind: "bank_ledger", prefix: "bankledger:",
+    stackId: id => `bankledger:${id}`,
+    url: rest => `/bank_ledgers/${encodeURIComponent(rest)}/card` },
   // #1025 (aus immoos übernommen): PDF-Viewer-Card — id ist
   // base64url("<pfad>\n<titel>") (URL-sichere Zeichen, stabil über Restore).
   { kind: "pdfcard", prefix: "pdfcard:",

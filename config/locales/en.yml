@@ -1724,9 +1724,41 @@ en:
       request_failed: "Request failed."
       error: "Error: %{message}"
 
-  # #1337 stage 3: bank statement import.
+  # #1337 stage 4: account card.
   bank:
+    ledgers:
+      title: "Bank accounts"
+      add: "+ Account"
+      new_label: "New account"
+      none: "No bank account yet."
+      as_of: "As of %{date}"
+    transactions:
+      heading: "Transactions"
+      none: "No transactions yet."
+      auto: "Match automatically"
+      assign: "Assign"
+      assign_to: "— choose a payment obligation —"
+      assign_failed: "Cannot assign — amount, direction or remainder does not fit."
+      unassign: "Remove assignment"
+      settled_on_obligation: "%{amount} towards %{label}"
+      no_assignment: "no assignment"
+      mark_no_assignment: "Deliberately unassigned — loan instalment, fee, internal transfer"
+      no_assignment_note: "Deliberately unassigned: %{note}"
+      undo: "undo"
     import:
+      heading: "Read in a statement"
+      choose_file: "Choose a statement (CAMT, CSV or PDF)"
+      format: "Format"
+      entries: "Entries"
+      ocr: "read via text recognition"
+      balance_ok: "Balances add up — opening balance plus all entries equals the closing balance."
+      balance_off: "Balances do NOT add up, difference %{diff}."
+      balance_off_hint: "At least one entry is missing or wrong. Only force the import deliberately."
+      other_account: "Careful: this statement belongs to %{label}."
+      confirm: "Import"
+      force: "Import anyway"
+      done: "%{imported} new, %{skipped} already present."
+      auto_matched: "%{count} matched automatically"
       pdf_unchecked_note: "Imported without the balance check (difference %{diff})"
       pdf_corrected_note: "Corrected by hand while reading in"
   invoices:

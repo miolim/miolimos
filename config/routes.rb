@@ -86,6 +86,25 @@ Rails.application.routes.draw do
   # Ressource statt Feldern am Beleg.
   resources :payment_obligations, only: [:update, :destroy]
 
+  # #1337 Schnitt 4: Konto-Card mit Umsatzliste, Auszugs-Import und Zuordnung.
+  resources :bank_ledgers, only: [:index, :create, :update, :destroy] do
+    member do
+      get   :card
+      post  :upload       # Stufe 1: prüfen, nichts schreiben
+      post  :import       # Stufe 2: schreiben (auf Bestätigung)
+      post  :auto_match
+    end
+    collection { get :list_card }
+  end
+
+  resources :bank_transactions, only: [] do
+    member do
+      post   :assign
+      delete :unassign
+      post   :no_assignment
+    end
+  end
+
   # #541 (Hans, 2026-06-09): Rechnungsposition als eigenes Detail-Blade —
   # Felder bearbeiten + Zeitbuchungen zuordnen/lösen.
   resources :invoice_lines, only: [] do

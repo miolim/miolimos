@@ -56,7 +56,95 @@ module Bank
         true
       end
 
+      # #1337 Schnitt 4: Nach dem Import die noch unentschiedenen Umsätze
+      # zuordnen — aber NUR bei eindeutigem, betragsexaktem Treffer. Alles
+      # andere (Teil-, Über-, Rückzahlung, Ausbuchung) bleibt Handarbeit: Eine
+      # falsch verrechnete Zahlung fällt nicht auf.
+      def auto(ledger)
+        ledger.bank_transactions.unentschieden.count do |tx|
+          o = kandidat_pflicht(tx)
+          o.present? && assign(tx, o)
+        end
+      end
+
+      # Die Gegenrichtung: Für eine gerade erfasste Zahlungspflicht den
+      # passenden, noch nicht ausgeschöpften Umsatz suchen.
+      def match_for_obligation(obligation)
+        return false if obligation.blank? || obligation.settled?
+        tx = kandidat_umsatz(obligation) or return false
+        assign(tx, obligation)
+      end
+
+      # Wege, den Gegenpart eines Umsatzes zu bestimmen — VIER, nicht einer.
+      #
+      # immoos_builder aus dem Fork-Betrieb: „Bei SEPA-Lastschriften steht im
+      # Auszug keine IBAN des Empfängers, sondern seine Gläubiger-ID. Wer den
+      # Kreditor ausschließlich über hinterlegte Bankverbindungen sucht, findet
+      # NIE etwas." Deshalb zusätzlich die Gläubiger-ID am Kontakt, der am
+      # Umsatz verknüpfte Kontakt und der exakte Name.
+      def gegenpart_uuids(tx)
+        uuids = []
+        uuids << tx.counterparty_knowledge_item_uuid if tx.counterparty_knowledge_item_uuid.present?
+        uuids += ueber_bankverbindung(tx)
+        uuids += ueber_glaeubiger_id(tx)
+        uuids += ueber_namen(tx)
+        uuids.compact.uniq
+      end
+
       private
+
+      def ueber_bankverbindung(tx)
+        iban = tx.counterparty_iban.presence or return []
+        BankAccount.where(iban: iban).distinct.pluck(:knowledge_item_uuid)
+      end
+
+      # Die Gläubiger-ID (Format DE..ZZZ…) steht im Verwendungszweck bzw. in der
+      # Mandatsreferenz. Gesucht wird umgekehrt: Welche hinterlegte ID kommt in
+      # diesem Umsatz vor? Kurze Werte bleiben außen vor — sie träfen zufällig.
+      def ueber_glaeubiger_id(tx)
+        text = [tx.purpose, tx.bank_ref, tx.counterparty_name].compact_blank.join(" ")
+        return [] if text.blank?
+
+        Identifier.where(label: "Gläubiger-Identifikationsnummer")
+                  .where("LENGTH(value) >= 8 AND ? ILIKE '%' || value || '%'", text)
+                  .distinct.pluck(:knowledge_item_uuid)
+      end
+
+      def ueber_namen(tx)
+        name = tx.counterparty_name.presence or return []
+        KnowledgeItem.persons_and_orgs.by_title_ci(name).pluck(:uuid)
+      end
+
+      # Eine eindeutige, betragsexakt passende offene Zahlungspflicht des
+      # Gegenparts. Mehrdeutig heißt: nicht automatisch — lieber liegen lassen
+      # als falsch verrechnen.
+      def kandidat_pflicht(tx)
+        uuids = gegenpart_uuids(tx)
+        return nil if uuids.empty?
+
+        # Bei einer Auszahlung ist der Gegenpart der Aussteller des fremden
+        # Belegs; bei einer Einzahlung der Empfänger unseres eigenen.
+        belege = tx.withdrawal? ? Invoice.eingehend.where(issuer_uuid: uuids)
+                                : Invoice.ausgehend.where(recipient_uuid: uuids)
+        treffer = PaymentObligation.where(bearer: belege).unsettled.to_a
+                                   .select { |o| o.open_amount.abs == tx.restbetrag }
+        treffer.length == 1 ? treffer.first : nil
+      end
+
+      def kandidat_umsatz(obligation)
+        beleg = obligation.bearer
+        return nil unless beleg.is_a?(Invoice)
+
+        uuid = beleg.eingehend? ? beleg.issuer_uuid : beleg.recipient_uuid
+        return nil if uuid.blank?
+
+        offen = obligation.open_amount
+        treffer = BankTransaction.unentschieden.to_a.select do |tx|
+          tx.restbetrag == offen.abs && tx.amount.to_d.negative? == offen.negative? &&
+            gegenpart_uuids(tx).include?(uuid)
+        end
+        treffer.length == 1 ? treffer.first : nil
+      end
 
       def to_d(v) = v.is_a?(String) ? (Dezimalbetrag.parse(v) || BigDecimal("0")) : v.to_d
     end

@@ -70,6 +70,14 @@ class Invoice < ApplicationRecord
 
   def overdue?(on = Date.current) = payment_obligations.overdue(on).exists?
 
+  # #1337 Schnitt 4: der Überfälligkeits-Hinweis, in SQL statt im Speicher.
+  # Er fragt die ZAHLUNGSPFLICHTEN — ein Beleg ohne Pflicht kann nicht
+  # überfällig sein, und genau das war der Fehler, mit dem alles anfing.
+  scope :overdue, lambda { |on = Date.current|
+    where(id: PaymentObligation.unsettled.where(bearer_type: "Invoice")
+                               .where(due_on: ...on).select(:bearer_id))
+  }
+
   def open_amount = payment_obligations.sum { |o| o.open_amount }
 
   # Nachführen der Ableitungsspalte. Kein Zahlstatus ohne Zahlungspflicht —

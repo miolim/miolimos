@@ -1,0 +1,194 @@
+<%# #1337 Schnitt 4: die Konto-Card. Saldo mit Stichtag, Auszugs-Import in zwei
+    Stufen (prüfen → bestätigen) und die Umsatzliste mit Zuordnung.
+
+    Die Liste zeigt standardmäßig, was noch eine ENTSCHEIDUNG braucht: nicht
+    „hat keine Zuordnung", sondern „ist nicht ausgeschöpft und nicht bewusst
+    ohne Zuordnung". %>
+<%
+  ledger    = local_assigns.fetch(:ledger)
+  vorschau  = local_assigns[:vorschau]
+  ergebnis  = local_assigns[:ergebnis]
+  zugeordnet = local_assigns[:zugeordnet]
+  fehler    = local_assigns[:fehler]
+  stack_id  = "bankledger:#{ledger.id}"
+  txs       = ledger.bank_transactions.ordered.limit(200).to_a
+  offene    = PaymentObligation.unsettled.where(bearer_type: "Invoice").ordered.limit(100).to_a
+%>
+<article id="stack_card_<%= stack_id %>"
+         data-uuid="<%= stack_id %>"
+         class="stack-card shrink-0 relative w-[30rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: stack_id, title: ledger.full_label,
+        icon_html: icon("file_text"), label: ledger.full_label %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <%= render "shared/blade_toolbar", uuid: stack_id, toolbar_class: "-mx-3 -mt-3 mb-3 px-3 pt-2 pb-2 bg-white" %>
+
+    <div class="flex items-baseline gap-2">
+      <span class="font-semibold text-sm truncate"><%= ledger.full_label %></span>
+      <span class="ml-auto tabular-nums font-semibold <%= "text-rose-700" if ledger.balance.negative? %>">
+        <%= document_euro(ledger.balance) %>
+      </span>
+    </div>
+    <div class="text-[11px] text-slate-400 flex gap-2">
+      <span><%= ledger.iban.presence || "—" %></span>
+      <% if ledger.balance_on %>
+        <span class="ml-auto"><%= t("bank.ledgers.as_of", date: l(ledger.balance_on, format: :long)) %></span>
+      <% end %>
+    </div>
+
+    <%# ── Auszug einlesen ────────────────────────────────────────────── %>
+    <section class="space-y-2 text-[13px] pt-3 mt-3 border-t border-slate-300">
+      <div class="text-[15px] font-semibold text-slate-600"><%= t("bank.import.heading") %></div>
+
+      <% if fehler.present? %>
+        <p class="text-rose-700 text-xs"><%= fehler %></p>
+      <% end %>
+
+      <% if ergebnis %>
+        <div class="rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900">
+          <%= t("bank.import.done", imported: ergebnis.imported, skipped: ergebnis.skipped) %>
+          <% if zugeordnet.to_i.positive? %>
+            · <%= t("bank.import.auto_matched", count: zugeordnet) %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if vorschau %>
+        <%# Die Vorschau sagt VOR dem Schreiben, was ankommt — und bei einem
+            PDF, ob der Saldo aufgeht. %>
+        <div class="rounded border border-amber-300 bg-amber-50 px-2 py-2 text-xs text-amber-950 space-y-1">
+          <div>
+            <span class="text-amber-700"><%= t("bank.import.format") %>:</span>
+            <strong><%= vorschau.format.to_s.upcase %></strong>
+            <% if vorschau.layout.present? %> · <%= vorschau.layout %><% end %>
+            <% if vorschau.ocr %> · <%= t("bank.import.ocr") %><% end %>
+          </div>
+          <div>
+            <span class="text-amber-700"><%= t("bank.import.entries") %>:</span> <%= vorschau.entry_count %>
+            <% if vorschau.account_iban.present? %>
+              · <%= vorschau.account_iban %>
+            <% end %>
+          </div>
+          <% if vorschau.pruefung %>
+            <% if vorschau.pruefung.ok? %>
+              <div class="text-emerald-800"><%= t("bank.import.balance_ok") %></div>
+            <% else %>
+              <div class="text-rose-800 font-medium">
+                <%= t("bank.import.balance_off", diff: document_euro(vorschau.pruefung.differenz || 0)) %>
+              </div>
+              <div class="text-amber-800"><%= t("bank.import.balance_off_hint") %></div>
+            <% end %>
+          <% end %>
+          <% if vorschau.ledger.present? && vorschau.ledger != ledger %>
+            <div class="text-rose-800"><%= t("bank.import.other_account", label: vorschau.ledger.full_label) %></div>
+          <% end %>
+
+          <div class="flex items-center gap-2 pt-1">
+            <%= button_to import_bank_ledger_path(ledger), method: :post,
+                  form: { class: "inline", data: { turbo_stream: true } },
+                  class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" do %><%= t("bank.import.confirm") %><% end %>
+            <% unless vorschau.sicher? %>
+              <%= button_to import_bank_ledger_path(ledger, trotz_abweichung: 1), method: :post,
+                    form: { class: "inline", data: { turbo_stream: true } },
+                    class: "text-xs px-2 py-0.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 cursor-pointer" do %><%= t("bank.import.force") %><% end %>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <%= form_with url: upload_bank_ledger_path(ledger), method: :post, local: false,
+              html: { enctype: "multipart/form-data" } do %>
+          <label class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 cursor-pointer">
+            <%= t("bank.import.choose_file") %>
+            <input type="file" name="file" accept=".xml,.csv,.pdf,application/pdf,text/csv,text/xml"
+                   class="hidden" onchange="this.form.requestSubmit()">
+          </label>
+        <% end %>
+      <% end %>
+    </section>
+
+    <%# ── Umsätze ────────────────────────────────────────────────────── %>
+    <section class="space-y-2 text-[13px] pt-3 mt-3 border-t border-slate-300">
+      <div class="flex items-center gap-2">
+        <span class="text-[15px] font-semibold text-slate-600"><%= t("bank.transactions.heading") %></span>
+        <span class="text-xs text-slate-400 tabular-nums"><%= txs.size %></span>
+        <%= button_to auto_match_bank_ledger_path(ledger), method: :post,
+              form: { class: "ml-auto inline", data: { turbo_stream: true } },
+              class: "text-xs px-2 py-0.5 rounded text-sky-700 hover:bg-sky-50 cursor-pointer" do %><%= t("bank.transactions.auto") %><% end %>
+      </div>
+
+      <% if txs.empty? %>
+        <p class="text-slate-400 italic"><%= t("bank.transactions.none") %></p>
+      <% end %>
+
+      <div class="divide-y divide-slate-50 border border-slate-100 rounded">
+        <% txs.each do |tx| %>
+          <div class="px-2 py-1.5 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-400 tabular-nums shrink-0 w-16">
+                <%= tx.booked_on ? l(tx.booked_on, format: :short) : "—" %>
+              </span>
+              <span class="truncate text-xs"><%= tx.counterparty_name.presence || tx.purpose.to_s.truncate(40).presence || "—" %></span>
+              <span class="ml-auto tabular-nums text-xs shrink-0 <%= tx.withdrawal? ? "text-rose-700" : "text-emerald-700" %>">
+                <%= document_euro(tx.amount) %>
+              </span>
+            </div>
+
+            <% if tx.purpose.present? && tx.counterparty_name.present? %>
+              <div class="text-[11px] text-slate-400 truncate pl-[4.5rem]"><%= tx.purpose %></div>
+            <% end %>
+
+            <% tx.obligation_settlements.ordered.each do |s| %>
+              <div class="flex items-center gap-2 text-[11px] pl-[4.5rem]">
+                <span class="text-emerald-700"><%= t("bank.transactions.settled_on_obligation",
+                      amount: document_euro(s.amount.abs),
+                      label: s.payment_obligation.label.presence ||
+                             s.payment_obligation.bearer.try(:display_name).presence ||
+                             t("invoices.obligations.one")) %></span>
+                <%= button_to unassign_bank_transaction_path(tx, settlement_id: s.id), method: :delete,
+                      form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+                      title: t("bank.transactions.unassign"),
+                      class: "text-slate-300 hover:text-rose-600 bg-transparent border-0 cursor-pointer" do %>×<% end %>
+              </div>
+            <% end %>
+
+            <% if tx.no_assignment? %>
+              <div class="flex items-center gap-2 text-[11px] pl-[4.5rem] text-slate-500">
+                <span><%= t("bank.transactions.no_assignment_note", note: tx.no_assignment_note.presence || "—") %></span>
+                <%= button_to no_assignment_bank_transaction_path(tx), method: :post,
+                      form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+                      class: "text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer underline" do %><%= t("bank.transactions.undo") %><% end %>
+              </div>
+            <% elsif tx.rest_offen? %>
+              <div class="flex items-center gap-1 pl-[4.5rem]">
+                <%= form_with url: assign_bank_transaction_path(tx), method: :post, local: false,
+                      class: "flex items-center gap-1 flex-1 min-w-0" do %>
+                  <select name="payment_obligation_id"
+                          class="flex-1 min-w-0 border border-slate-200 rounded px-1 py-0.5 text-[11px]">
+                    <option value=""><%= t("bank.transactions.assign_to") %></option>
+                    <% offene.each do |o| %>
+                      <option value="<%= o.id %>">
+                        <%= [o.bearer.try(:display_name).presence || o.bearer_type,
+                             o.label.presence,
+                             document_euro(o.open_amount.abs)].compact_blank.join(" · ") %>
+                      </option>
+                    <% end %>
+                  </select>
+                  <input type="text" inputmode="decimal" name="amount"
+                         placeholder="<%= number_with_precision(tx.restbetrag, precision: 2, separator: ',', delimiter: '') %>"
+                         class="w-20 border border-slate-200 rounded px-1 py-0.5 text-[11px] text-right tabular-nums">
+                  <button type="submit" class="text-[11px] px-1.5 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer"><%= t("bank.transactions.assign") %></button>
+                <% end %>
+                <%= button_to no_assignment_bank_transaction_path(tx), method: :post,
+                      form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+                      title: t("bank.transactions.mark_no_assignment"),
+                      class: "text-[11px] px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 cursor-pointer" do %><%= t("bank.transactions.no_assignment") %><% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  </div>
+</article>

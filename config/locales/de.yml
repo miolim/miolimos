@@ -1728,9 +1728,41 @@ de:
       request_failed: "Anfrage fehlgeschlagen."
       error: "Fehler: %{message}"
 
-  # #1337 Schnitt 3: Kontoauszug-Import.
+  # #1337 Schnitt 4: Konto-Card.
   bank:
+    ledgers:
+      title: "Bankkonten"
+      add: "+ Konto"
+      new_label: "Neues Konto"
+      none: "Noch kein Bankkonto angelegt."
+      as_of: "Stand %{date}"
+    transactions:
+      heading: "Umsätze"
+      none: "Noch keine Umsätze."
+      auto: "Automatisch zuordnen"
+      assign: "Zuordnen"
+      assign_to: "— Zahlungspflicht wählen —"
+      assign_failed: "Zuordnung nicht möglich — Betrag, Richtung oder Rest passen nicht."
+      unassign: "Zuordnung lösen"
+      settled_on_obligation: "%{amount} auf %{label}"
+      no_assignment: "ohne Zuordnung"
+      mark_no_assignment: "Bewusst ohne Zuordnung — Darlehensrate, Entgelt, Umbuchung"
+      no_assignment_note: "Bewusst ohne Zuordnung: %{note}"
+      undo: "zurücknehmen"
     import:
+      heading: "Kontoauszug einlesen"
+      choose_file: "Auszug wählen (CAMT, CSV oder PDF)"
+      format: "Format"
+      entries: "Buchungen"
+      ocr: "über Texterkennung gelesen"
+      balance_ok: "Saldo geht auf — Anfangssaldo plus alle Buchungen ergibt den Endsaldo."
+      balance_off: "Saldo geht NICHT auf, Abweichung %{diff}."
+      balance_off_hint: "Es fehlt oder stimmt mindestens eine Buchung. Import nur bewusst erzwingen."
+      other_account: "Achtung: Der Auszug gehört zu %{label}."
+      confirm: "Importieren"
+      force: "Trotzdem importieren"
+      done: "%{imported} neu, %{skipped} bereits vorhanden."
+      auto_matched: "%{count} automatisch zugeordnet"
       pdf_unchecked_note: "Ohne Saldo-Prüfung importiert (Abweichung %{diff})"
       pdf_corrected_note: "Beim Einlesen von Hand korrigiert"
   invoices:

@@ -39,6 +39,24 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- An account card, automatic matching and an overdue view (#1337, fourth
+  cut). Each account shows its balance together with the date that balance
+  actually holds good for — up to the most recent booking, not up to today,
+  which is exactly the answer missing when the last statement is three
+  months old. Statements are read in from the card in two steps: what was
+  recognised is shown first, and only then is anything written. Every
+  transaction can be assigned to a payment obligation, in part or in full,
+  or marked as deliberately unassigned — a loan instalment, an account fee,
+  a transfer between your own accounts — so it stops asking for a decision
+  without pretending to be settled. After an import, transactions are
+  matched automatically, but only where a single obligation of the right
+  party matches the amount exactly; anything partial or ambiguous is left
+  alone, because a wrongly allocated payment does not announce itself. The
+  party is looked for four ways, not one: the contact already linked to the
+  transaction, a bank account on file, the creditor identifier printed on
+  direct debits — where no recipient IBAN appears at all — and the exact
+  name. Overdue is now a question asked of the payment obligations, so a
+  document that establishes no claim can no longer appear as one.
 - Bank statements can be read in from CAMT, CSV and PDF (#1337, third cut).
   Each upload is examined before anything is written: which account it
   belongs to, how many entries it holds, and — for PDFs — whether the

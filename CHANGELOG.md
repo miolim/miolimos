@@ -115,6 +115,10 @@ release is cut, this section is renamed to the new version and a fresh
   item with no deadline. It is not chased for payment — that still needs a
   date — but the amount no longer sits there unclaimed, missing from the
   open items, from the account card and from matching.
+  On a document that is not an invoice, the breakdown of the amount is no
+  longer headed "invoice items". The items themselves belong there as much
+  as anywhere — they are what the amount is made of — but on an assessment
+  or an insurance policy the word was simply wrong.
 - A document can now carry any number of payment obligations — none, one or
   many (#1336). Until now a document had exactly one due date, which made a
   property tax assessment with four quarterly instalments, or an insurance

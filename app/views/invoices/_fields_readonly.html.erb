@@ -27,6 +27,8 @@
       <%= l(invoice.service_start, format: :long) %><%= " – #{l(invoice.service_end, format: :long)}" if invoice.service_end %></div>
   <% end %>
   <% if invoice.eingehend? %>
+    <%# #1336 Stufe 1: Belegart. %>
+    <% if invoice.document_type.present? %><div><span class="text-slate-500"><%= t("invoices.fields.document_type") %>:</span> <%= t("invoices.fields.document_types.#{invoice.document_type}") %></div><% end %>
     <% if invoice.due_date %><div><span class="text-slate-500"><%= t("invoices.fields.due_date") %>:</span> <%= l(invoice.due_date, format: :long) %></div><% end %>
     <div><span class="text-slate-500"><%= t("invoices.fields.payment_status") %>:</span> <%= t("invoices.fields.payment_statuses.#{invoice.payment_status}") %></div>
   <% end %>

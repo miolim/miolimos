@@ -17,6 +17,21 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- A document now records what kind of document it is (#1336). Incoming
+  documents already had their type recognised on import — invoice,
+  official notice, insurance policy, letter, contract — and then threw it
+  away: everything filed as an invoice, indistinguishable afterwards. The
+  type is now kept as a document type of its own, shown as a badge in the
+  invoice list and on the card, and correctable in the editor. It is
+  deliberately separate from the existing kind (invoice/quote), where the
+  number ranges, rendering and e-invoicing hang — a new value there would
+  quietly falsify counters and filters. Existing documents are unchanged;
+  an empty type simply means "not recorded". Notices and insurance
+  policies are also recognised as their own types on import now instead
+  of collapsing into "other"; they still file as a document record only,
+  without becoming an invoice — a document that carries no payment
+  obligation cannot be represented yet, and would show up as an open item.
+  That is what the next step opens up.
 - Full search results as their own card (#1321). The quick search in the
   top bar stays the fast glance — it still shows the first eight rows per
   category — but it no longer hides how much it left out: press Enter, or

@@ -17,6 +17,13 @@ class Invoice < ApplicationRecord
   enum :direction, { ausgehend: 0, eingehend: 1 }, default: :ausgehend
   # #934: Zahlstatus für Eingangsrechnungen (minimal, Skonto etc. später).
   enum :payment_status, { offen: 0, bezahlt: 1 }, default: :offen
+  # #1336 Stufe 1 (aus immoOS): Belegart — WAS für ein Schriftstück der Beleg
+  # ist. Getrennt von `kind` (Nummernkreis/Rendering) und von `direction`.
+  # NULL = nicht erfasst (Bestand). Prefix, weil `rechnung` sonst mit dem
+  # gleichnamigen `kind`-Wert kollidiert.
+  enum :document_type,
+       { rechnung: 0, bescheid: 1, versicherung: 2, anschreiben: 3, vertrag: 4, sonstiges: 5 },
+       prefix: :document_type
 
   has_many :invoice_lines, -> { ordered }, dependent: :destroy
 

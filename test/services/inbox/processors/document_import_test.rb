@@ -103,6 +103,7 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     invoice = Invoice.find(item.result.dig("invoice", "id"))
     assert invoice.eingehend?
     assert invoice.offen?
+    assert_equal "rechnung", invoice.document_type, "#1336: erkannte Belegart wird gespeichert, nicht verworfen"
     assert_equal "SW-2026-0815", invoice.number
     assert_equal Date.new(2026, 7, 15), invoice.due_date
     assert_equal 1, invoice.invoice_lines.count
@@ -175,6 +176,41 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     end
     assert_equal "processed", item.reload.status
     assert KnowledgeItem.exists?(title: "Behörde — Bescheid")
+  end
+
+  # ── #1336 Stufe 1: Belegart ───────────────────────────────────────────
+
+  # `bescheid` und `versicherung` sind eigene Belegarten und fallen nicht
+  # mehr auf „sonstiges" zusammen. Ein Bescheid begründet aber (noch) keinen
+  # Beleg — solange ein Beleg ohne Zahlungspflicht nicht abbildbar ist,
+  # würde er als offener Posten erscheinen. Das öffnet erst Stufe 2.
+  test "Bescheid: eigene Belegart in der Extraktion, weiterhin keine Invoice" do
+    extraction = LLM_EXTRACTION.merge("doc_type" => "bescheid", "invoice" => nil,
+                                      "title" => "Stadt — Abwasser-Festsetzungsbescheid")
+    item = make_item
+    stub_chat_client(extraction.to_json) do
+      without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    end
+    item.reload
+    assert_equal "bescheid", item.result.dig("confirmation", "extraction", "doc_type")
+
+    item.update!(payload: item.payload.merge("confirm_import" => true))
+    assert_no_difference -> { Invoice.count } do
+      without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    end
+  end
+
+  # ZUGFeRD läuft ohne Review durch — auch dort muss die Art am Beleg landen.
+  test "ZUGFeRD-Beleg bekommt die Belegart rechnung" do
+    item = make_item
+    zugferd = { "seller" => { "name" => "Elektro Meier", "vat_id" => "DE111222333", "city" => "Musterstadt" },
+                "buyer" => { "name" => "Hans Groth" }, "number" => "R-2026-7",
+                "issue_date" => "2026-07-02", "due_date" => "2026-07-16",
+                "net_total" => 50.0, "gross_total" => 59.5,
+                "lines" => [{ "description" => "Montage", "quantity" => 1, "unit_price" => 50.0, "tax_rate" => 19.0 }] }
+    with_zugferd(zugferd) { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    invoice = Invoice.find(item.reload.result.dig("invoice", "id"))
+    assert_equal "rechnung", invoice.document_type
   end
 
   # ── #934 Stufe 2 ──────────────────────────────────────────────────────

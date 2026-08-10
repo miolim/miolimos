@@ -68,6 +68,25 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal "Firma GmbH · 2026-042 · 09.07.2026", invoice.display_name
   end
 
+  # #1336 Stufe 1: Belegart als eigenes Merkmal — getrennt von `kind`.
+  test "document_type ist unabhängig von kind und darf leer bleiben" do
+    invoice = Invoice.create!(kind: :rechnung)
+    assert_nil invoice.document_type, "Bestand/Neuanlage ohne Art = nicht erfasst"
+
+    invoice.update!(document_type: :bescheid)
+    assert invoice.document_type_bescheid?
+    assert invoice.rechnung?, "kind bleibt unberührt — dort hängen Nummernkreis und Rendering"
+  end
+
+  # Der Nummernkreis darf von der Belegart nicht angefasst werden: ein
+  # eingehender Bescheid verbraucht keine eigene Rechnungsnummer.
+  test "eingehender Beleg mit Belegart verbraucht keine Rechnungsnummer" do
+    issuer = SecureRandom.uuid
+    Invoice.create!(kind: :rechnung, direction: :eingehend, document_type: :bescheid,
+                    issuer_uuid: issuer, number: "FREMD-4711")
+    assert_equal "2026-001", Invoice.next_number(issuer, Date.new(2026, 1, 1))
+  end
+
   # #926: Artefakte + Felder laufen über die polymorphe Schicht.
   test "document_fields und document_artifacts hängen polymorph an der Invoice" do
     invoice = Invoice.create!(kind: :rechnung)

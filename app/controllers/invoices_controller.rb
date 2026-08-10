@@ -199,6 +199,11 @@ class InvoicesController < ApplicationController
     if params.key?(:payment_status) && Invoice.payment_statuses.key?(params[:payment_status])
       attrs[:payment_status] = params[:payment_status]      # #934 Zahlstatus
     end
+    # #1336 Stufe 1: Belegart — leer setzt zurück auf „nicht erfasst".
+    if params.key?(:document_type)
+      dt = params[:document_type].presence
+      attrs[:document_type] = Invoice.document_types.key?(dt) ? dt : nil
+    end
     attrs[:your_ref]      = params[:your_ref]               if params.key?(:your_ref)
     attrs[:our_ref]       = params[:our_ref]                if params.key?(:our_ref)
     # #694: gewählte Empfänger-Postadresse — nur zulassen, wenn sie zum

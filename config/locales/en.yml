@@ -1731,6 +1731,15 @@ en:
       payment_statuses:
         offen: "Open"
         bezahlt: "Paid"
+      document_type: "Document type"
+      document_type_blank: "— not recorded —"
+      document_types:
+        rechnung: "Invoice"
+        bescheid: "Official notice"
+        versicherung: "Insurance"
+        anschreiben: "Letter"
+        vertrag: "Contract"
+        sonstiges: "Other"
     list:
       title: "Invoices"
       incoming: "Incoming"

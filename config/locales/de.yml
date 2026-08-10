@@ -1735,6 +1735,15 @@ de:
       payment_statuses:
         offen: "Offen"
         bezahlt: "Bezahlt"
+      document_type: "Belegart"
+      document_type_blank: "— nicht erfasst —"
+      document_types:
+        rechnung: "Rechnung"
+        bescheid: "Bescheid"
+        versicherung: "Versicherung"
+        anschreiben: "Anschreiben"
+        vertrag: "Vertrag"
+        sonstiges: "Sonstiges"
     list:
       title: "Rechnungen"
       incoming: "Eingang"

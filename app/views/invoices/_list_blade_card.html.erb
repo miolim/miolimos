@@ -144,6 +144,8 @@
             <div class="flex items-center gap-2">
               <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"><%= labels[invoice.kind] %></span>
               <% if invoice.eingehend? %><span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span><% end %>
+              <%# #1336 Stufe 1: Belegart, wenn sie vom Kind-Badge abweicht. %>
+              <% if invoice.document_type.present? && !invoice.document_type_rechnung? %><span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200"><%= t("invoices.fields.document_types.#{invoice.document_type}") %></span><% end %>
               <span class="font-medium text-slate-800 truncate"><%= invoice.display_name || t("documents.list.unnamed") %></span>
               <%# #946 (Hans): Eingangsrechnungen haben keinen Status — kein Entwurf-Badge. %>
               <% if invoice.entwurf? && invoice.ausgehend? %><span class="ml-auto shrink-0 text-[10px] text-amber-600"><%= t("documents.list.draft") %></span><% end %>

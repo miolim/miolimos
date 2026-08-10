@@ -12,6 +12,10 @@
     <% if direction_badge && inv.eingehend? %>
       <span class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span>
     <% end %>
+    <%# #1336 Stufe 1: Belegart, sofern sie mehr sagt als „Rechnung". %>
+    <% if inv.document_type.present? && !inv.document_type_rechnung? %>
+      <span class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200"><%= t("invoices.fields.document_types.#{inv.document_type}") %></span>
+    <% end %>
     <span class="truncate min-w-0 flex-1"><%= inv.display_name.presence || t("documents.list.unnamed") %></span>
     <span class="tabular-nums shrink-0 text-slate-500"><%= document_euro(inv.gross_total) %></span>
   </button>

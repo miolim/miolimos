@@ -941,7 +941,8 @@ CREATE TABLE public.invoices (
     updated_at timestamp(6) without time zone NOT NULL,
     direction integer DEFAULT 0 NOT NULL,
     due_date date,
-    payment_status integer DEFAULT 0 NOT NULL
+    payment_status integer DEFAULT 0 NOT NULL,
+    document_type integer
 );
 
 
@@ -5980,6 +5981,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260810103000'),
 ('20260727013000'),
 ('20260726193000'),
 ('20260725231000'),

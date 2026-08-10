@@ -29,7 +29,9 @@ module Inbox
         "type" => "object", "additionalProperties" => false,
         "required" => %w[doc_type title sender recipient_name invoice task_suggestions confidence],
         "properties" => {
-          "doc_type" => { "type" => "string", "enum" => %w[rechnung anschreiben vertrag sonstiges] },
+          # #1336: `bescheid` und `versicherung` sind eigene Belegarten — vorher
+          # landeten beide als „sonstiges" und die Art war nicht mehr ablesbar.
+          "doc_type" => { "type" => "string", "enum" => %w[rechnung bescheid versicherung anschreiben vertrag sonstiges] },
           "title" => { "type" => "string", "description" => "Kurzer Ablage-Titel: Absender + Gegenstand, z.B. 'Stadtwerke — Abschlagsrechnung Juli 2026'" },
           "sender" => {
             "type" => "object", "additionalProperties" => false,
@@ -262,6 +264,10 @@ module Inbox
 
         invoice = Invoice.create!(
           kind:           :rechnung,
+          # #1336 Stufe 1: die erkannte Belegart wird gespeichert statt
+          # verworfen. Unbekannte Werte fallen still auf nil zurück (die Art
+          # ist eine Beschriftung, kein Grund, den Import scheitern zu lassen).
+          document_type:  Invoice.document_types.key?(extraction["doc_type"]) ? extraction["doc_type"] : nil,
           direction:      :eingehend,
           status:         :entwurf,
           creator:        actor,

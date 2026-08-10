@@ -22,6 +22,28 @@ module Inbox
         %w[pdf_upload upload].include?(item.source_kind)
       end
 
+      # #1338 (aus immoOS #1299): Ob aus dem Dokument ein Eingangsbeleg wird,
+      # entscheidet der ZAHLBETRAG — nicht die Belegart.
+      #
+      # Vorher hing es an `doc_type == "rechnung"`. Ein Versicherungsschein mit
+      # Beitrag und ein Grunderwerbsteuerbescheid sind keine Rechnungen im
+      # engeren Sinn, begründen aber sehr wohl eine Zahlungspflicht — und genau
+      # darum geht es beim Eingangsbeleg. Eine Belegarten-Weiche hier wäre
+      # dieselbe Sorte Regel, die #1336 gerade abgeschafft hat, nur an anderer
+      # Stelle: Steht die Wirkung nicht im Typ, darf der Typ auch nicht
+      # entscheiden, ob überhaupt etwas entsteht.
+      #
+      # Vorzeichen egal — eine Gutschrift ist auch ein Zahlbetrag.
+      #
+      # EINE Quelle: das Review-Banner prüft dieselbe Bedingung, sonst zeigt die
+      # Vorschau andere Felder, als der Import danach anlegt.
+      def self.payment_relevant?(extraction)
+        inv = extraction["invoice"]
+        return false if inv.blank?
+        return true if inv["gross_total"].to_f.nonzero? || inv["net_total"].to_f.nonzero?
+        Array(inv["lines"]).any? { |l| (l["quantity"].to_f * l["unit_price"].to_f).nonzero? }
+      end
+
       # Structured-Outputs-Schema für die LLM-Extraktion. Alle Objekte mit
       # additionalProperties:false + vollständigem required (API-Anforderung);
       # optionale Werte sind nullable via type-Array.
@@ -47,7 +69,11 @@ module Inbox
             }
           },
           "recipient_name" => { "type" => %w[string null] },
+          # #1338: gefüllt, sobald das Dokument eine Zahlungspflicht begründet —
+          # unabhängig von `doc_type`. Der Zahlbetrag entscheidet, ob daraus ein
+          # Eingangsbeleg wird (siehe `payment_relevant?`).
           "invoice" => {
+            "description" => "Zahlungsdaten, falls das Dokument eine Zahlungspflicht begründet (auch Bescheid, Versicherungsschein, Mahnung, Gutschrift) — sonst null",
             "anyOf" => [
               { "type" => "null" },
               {
@@ -187,14 +213,33 @@ module Inbox
         JSON.parse(result[:output]).merge("source" => "llm")
       end
 
+      # #1338: Die Anweisung für die Rechnungsfelder hängt an der
+      # ZAHLUNGSPFLICHT, nicht am Dokumententyp. Täte sie es am Typ, hätte das
+      # neue Kriterium (Zahlbetrag statt Belegart) nichts, woran es prüfen
+      # könnte — der Versicherungsschein käme ohne Beträge zurück und würde
+      # deshalb nie zum Beleg. Die zwei Sätze zur Bemessungsgrundlage und zur
+      # Mindest-Position sind im Fork-Betrieb teuer bezahlt worden.
       def extraction_prompt
         <<~PROMPT
           Analysiere das angehängte Dokument (eingegangener Scan/Brief/Beleg).
           Erfasse: Dokumententyp, Absender (mit USt-IdNr und IBAN, falls angegeben),
-          Empfänger und — falls es eine Rechnung ist — alle Rechnungsfelder inklusive
-          der einzelnen Positionen und die Zahlungsbedingungen im Wortlaut (Skonto,
-          Zahlungsziel). Beträge als Dezimalzahlen (Punkt als Dezimaltrenner),
-          Daten als YYYY-MM-DD. Werte, die im Dokument nicht vorkommen, sind null —
+          Empfänger und — falls das Dokument eine Zahlungspflicht begründet, egal
+          welcher Art es ist (Rechnung, Bescheid, Versicherungsschein, Mahnung,
+          Gutschrift) — alle Rechnungsfelder inklusive der einzelnen Positionen
+          und die Zahlungsbedingungen im Wortlaut (Skonto, Zahlungsziel).
+
+          Maßgeblich ist der ZU ZAHLENDE Betrag, nicht die Bemessungsgrundlage:
+          Bei einem Grunderwerbsteuerbescheid ist der Kaufpreis NICHT der Betrag —
+          zu zahlen ist die festgesetzte Steuer. Nimm nicht die größte Zahl im
+          Dokument, sondern die geforderte.
+
+          Jede Zahlungspflicht braucht mindestens EINE Position mit einem Betrag,
+          sonst steht der Beleg am Ende auf 0,00 €. Setzt das Dokument mehrere
+          Zahlungen zu verschiedenen Terminen fest, nimm als due_date den ersten
+          Termin — die weiteren werden von Hand ergänzt.
+
+          Beträge als Dezimalzahlen (Punkt als Dezimaltrenner), Daten als
+          YYYY-MM-DD. Werte, die im Dokument nicht vorkommen, sind null —
           nichts raten. Schlage maximal 3 konkrete Folge-Aufgaben vor (deutsch, kurz).
         PROMPT
       end
@@ -209,7 +254,7 @@ module Inbox
         record_result(item, knowledge_item: ki)
 
         invoice = nil
-        if extraction["doc_type"] == "rechnung" && extraction["invoice"].present?
+        if self.class.payment_relevant?(extraction)
           invoice = create_incoming_invoice(item, extraction, actor: actor)
           item.update_column(:result, item.result.merge(
             "invoice" => { "id" => invoice.id, "display_name" => invoice.display_name }
@@ -292,18 +337,7 @@ module Inbox
             position:    i
           )
         end
-        # #1336 Stufe 2: die erkannte Fälligkeit wird zur Zahlungspflicht. Eine
-        # je Beleg — mehr erkennt die Extraktion heute nicht; weitere Raten
-        # trägt man an der Card nach. Ohne erkannte Fälligkeit entsteht KEINE
-        # Pflicht: der Beleg ist dann kein offener Posten, statt einen zu
-        # erfinden. Betrag mit dem Vorzeichen der Geldrichtung.
-        if (faellig = parse_date(inv["due_date"]))
-          invoice.reload.payment_obligations.create!(
-            amount:       invoice.gross_total * invoice.obligation_sign,
-            due_on:       faellig,
-            announced_by: invoice
-          )
-        end
+        build_payment_obligations(invoice.reload, inv)
         # #934 Stufe 2: Zahlungsbedingungen/Skonto als freies Infoblock-Feld —
         # strukturiert genug für Anzeige + {{merge}}, ohne verfrühtes Schema.
         if inv["payment_terms"].to_s.strip.present?
@@ -349,6 +383,32 @@ module Inbox
         n = name.to_s.strip
         return nil if n.blank?
         KnowledgeItem.persons_and_orgs.by_title_ci(n).first
+      end
+
+      # ── Erweiterungspunkt für aufsetzende Anwendungen (#1338) ───────────
+      #
+      # Hier — und nur hier — entstehen die Zahlungspflichten eines
+      # importierten Belegs. Bewusst eine benannte Methode statt einer
+      # Bedingung mitten im Importer: Der immoOS-Fork hängt an dieser Stelle
+      # eine Regel ein, die es upstream nicht geben kann — ein Bescheid, der
+      # die Vorauszahlungen eines LAUFENDEN VERTRAGS festsetzt, darf keine
+      # eigenen Pflichten bekommen, sonst wird derselbe Betrag zweimal
+      # umgelegt. miolimOS kennt keinen Versorgungsvertrag und kann das nicht
+      # entscheiden; gebraucht ist nur der Haken.
+      #
+      # Regel upstream: erkannte Fälligkeit → GENAU EINE Zahlungspflicht mit
+      # Träger = Beleg. Keine erkannte Fälligkeit → KEINE Pflicht; der Beleg
+      # ist dann kein offener Posten, statt einen zu erfinden. Mehrere Raten
+      # aus einem Dokument herauszulesen ist nicht Sache des Imports — an der
+      # Card legt man sie von Hand an (#1336 Stufe 2).
+      def build_payment_obligations(invoice, inv)
+        faellig = parse_date(inv["due_date"])
+        return unless faellig
+        invoice.payment_obligations.create!(
+          amount:       invoice.gross_total * invoice.obligation_sign,
+          due_on:       faellig,
+          announced_by: invoice
+        )
       end
 
       def create_tasks(item, extraction, ki, invoice, actor:)

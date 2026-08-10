@@ -4,7 +4,10 @@
     Korrekturen an Feldern macht man danach bequem am Rechnungs-Blade. %>
 <% invoice = extraction["invoice"] || {} %>
 <% sender  = extraction["sender"] || {} %>
-<% is_invoice = extraction["doc_type"] == "rechnung" && invoice.present? %>
+<%# #1338: dieselbe Bedingung wie der Import — sonst zeigt die Vorschau
+    andere Felder, als danach angelegt wird. Der Zahlbetrag entscheidet,
+    nicht die Belegart. %>
+<% is_invoice = Inbox::Processors::DocumentImport.payment_relevant?(extraction) %>
 <section class="rounded border border-amber-300 bg-amber-50 px-3 py-3 space-y-2">
   <div class="flex items-center gap-2">
     <div class="text-xs uppercase tracking-wider text-amber-800"><%= t("inbox_items.document_review.heading") %></div>

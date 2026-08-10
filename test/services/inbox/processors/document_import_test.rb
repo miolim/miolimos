@@ -185,10 +185,10 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
   # ── #1336 Stufe 1: Belegart ───────────────────────────────────────────
 
   # `bescheid` und `versicherung` sind eigene Belegarten und fallen nicht
-  # mehr auf „sonstiges" zusammen. Ein Bescheid begründet aber (noch) keinen
-  # Beleg — solange ein Beleg ohne Zahlungspflicht nicht abbildbar ist,
-  # würde er als offener Posten erscheinen. Das öffnet erst Stufe 2.
-  test "Bescheid: eigene Belegart in der Extraktion, weiterhin keine Invoice" do
+  # mehr auf „sonstiges" zusammen. Ohne Zahlbetrag entsteht kein Beleg —
+  # seit #1338 aber nicht mehr wegen der Belegart, sondern weil nichts zu
+  # zahlen ist (der Fall Anschreiben / Mietvertrag / Kontoauszug).
+  test "ohne Zahlbetrag entsteht keine Invoice, die Belegart bleibt erhalten" do
     extraction = LLM_EXTRACTION.merge("doc_type" => "bescheid", "invoice" => nil,
                                       "title" => "Stadt — Abwasser-Festsetzungsbescheid")
     item = make_item
@@ -202,6 +202,108 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     assert_no_difference -> { Invoice.count } do
       without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
     end
+  end
+
+  # ── #1338: der Zahlbetrag entscheidet, nicht die Belegart ─────────────
+
+  # Ein bestätigtes Dokument durch beide Phasen schicken und den erzeugten
+  # Beleg (oder nil) zurückgeben.
+  def import!(extraction)
+    item = make_item
+    stub_chat_client(extraction.to_json) do
+      without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    end
+    item.reload.update!(payload: item.payload.merge("confirm_import" => true))
+    without_zugferd { Inbox::Processors::DocumentImport.run(item, actor: @hans) }
+    id = item.reload.result.dig("invoice", "id")
+    id && Invoice.find(id)
+  end
+
+  # Der Prüffall, der vorher gar nicht ging: kein „rechnung", trotzdem ein
+  # Zahlbetrag — und damit ein Eingangsbeleg.
+  test "Versicherungsschein mit Beitrag wird zum Beleg mit einer Zahlungspflicht" do
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+                     .merge("doc_type" => "versicherung", "title" => "Allianz — Gebäudeversicherung")
+    extraction["invoice"]["number"] = "POL-4711"
+    invoice = import!(extraction)
+
+    assert invoice, "ein Beitrag ist ein Zahlbetrag — daraus entsteht ein Beleg"
+    assert_equal "versicherung", invoice.document_type, "die Art bleibt für die Ablage erhalten"
+    assert_equal 1, invoice.payment_obligations.count
+    assert_equal Date.new(2026, 7, 15), invoice.next_due_on
+  end
+
+  # Der Kern der Aufgabe: Ein Bescheid MIT Forderung wird zum Beleg — und der
+  # Betrag kommt aus den Positionen, nicht aus einer Bemessungsgrundlage.
+  test "Grunderwerbsteuerbescheid wird zum Beleg über die festgesetzte Steuer" do
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+                     .merge("doc_type" => "bescheid", "title" => "Finanzamt — Grunderwerbsteuer")
+    extraction["invoice"].merge!(
+      "number" => "GrESt-2026-77", "due_date" => "2026-09-01",
+      "net_total" => 22_750.0, "gross_total" => 22_750.0,
+      "lines" => [{ "description" => "Grunderwerbsteuer 6,5 %", "quantity" => 1,
+                    "unit" => nil, "unit_price" => 22_750.0, "tax_rate" => 0.0 }]
+    )
+    invoice = import!(extraction)
+
+    assert invoice
+    assert_equal "bescheid", invoice.document_type
+    assert_equal BigDecimal("22750"), invoice.gross_total
+    assert_equal BigDecimal("-22750"), invoice.payment_obligations.sole.amount
+  end
+
+  # Der Fall aus dem ursprünglichen Befund: Der Bescheid entsteht als Beleg,
+  # begründet aber keine eigene Forderung — und mahnt deshalb nicht.
+  test "Festsetzungsbescheid ohne Fälligkeit: Beleg ja, Zahlungspflicht nein" do
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+                     .merge("doc_type" => "bescheid", "title" => "ZVO — Abwasser-Festsetzung")
+    extraction["invoice"]["due_date"] = nil
+    invoice = import!(extraction)
+
+    assert invoice, "der Betrag steht da — der Beleg entsteht"
+    assert_empty invoice.payment_obligations
+    assert_nil   invoice.payment_status
+    assert_not   invoice.overdue?
+    assert_not   Invoice.offen.exists?(id: invoice.id), "kein offener Posten"
+  end
+
+  # Eine Gutschrift ist auch ein Zahlbetrag — das Vorzeichen darf das
+  # Kriterium nicht aushebeln.
+  test "negativer Betrag zählt als Zahlbetrag" do
+    extraction = JSON.parse(LLM_EXTRACTION.to_json)
+    extraction["invoice"].merge!("net_total" => -100.0, "gross_total" => -119.0,
+                                 "lines" => [{ "description" => "Gutschrift", "quantity" => 1,
+                                               "unit" => nil, "unit_price" => -100.0, "tax_rate" => 19.0 }])
+    assert Inbox::Processors::DocumentImport.payment_relevant?(extraction)
+  end
+
+  # Der Erweiterungspunkt für den Fork: Er hängt dort seine Regel ein
+  # (Vorauszahlungen eines laufenden Vertrags gehören dem Vertrag, nicht dem
+  # Bescheid). Überschreibt jemand die Methode, entsteht keine Pflicht — der
+  # Beleg selbst aber schon.
+  test "build_payment_obligations ist die einzige Stelle und überschreibbar" do
+    ohne_pflichten = Class.new(Inbox::Processors::DocumentImport) do
+      def build_payment_obligations(_invoice, _inv) = nil
+    end
+    item = make_item
+    stub_chat_client(LLM_EXTRACTION.to_json) do
+      without_zugferd { ohne_pflichten.run(item, actor: @hans) }
+    end
+    item.reload.update!(payload: item.payload.merge("confirm_import" => true))
+    without_zugferd { ohne_pflichten.run(item, actor: @hans) }
+
+    invoice = Invoice.find(item.reload.result.dig("invoice", "id"))
+    assert_empty invoice.payment_obligations, "der Fork kann die Erzeugung unterbinden"
+    assert_equal BigDecimal("119"), invoice.gross_total, "der Beleg entsteht trotzdem"
+  end
+
+  # Die zwei Sätze sind im Fork-Betrieb teuer bezahlt worden und dürfen nicht
+  # stillschweigend aus dem Prompt verschwinden.
+  test "der Extraktions-Prompt hängt an der Zahlungspflicht, nicht am Typ" do
+    prompt = Inbox::Processors::DocumentImport.new.send(:extraction_prompt)
+    assert_includes prompt, "Zahlungspflicht begründet"
+    assert_includes prompt, "Bemessungsgrundlage"
+    assert_includes prompt, "mindestens EINE Position"
   end
 
   # ZUGFeRD läuft ohne Review durch — auch dort muss die Art am Beleg landen.

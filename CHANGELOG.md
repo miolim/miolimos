@@ -31,7 +31,14 @@ release is cut, this section is renamed to the new version and a fresh
   of collapsing into "other"; they still file as a document record only,
   without becoming an invoice — a document that carries no payment
   obligation cannot be represented yet, and would show up as an open item.
-  That is what the next step opens up.
+  That is what the next step opens up. The list of document types is
+  deliberately open-ended: a further type is one entry plus its two
+  translations, no migration and no new code path. It is therefore stored
+  under its name rather than as a number, so the database says `bescheid`
+  instead of `1` and no numbering can drift apart between an installation
+  and a fork. Recognition and the editor's drop-down read the same list,
+  so a new type is added in one place and is immediately both recognised
+  and selectable.
 - Full search results as their own card (#1321). The quick search in the
   top bar stays the fast glance — it still shows the first eight rows per
   category — but it no longer hides how much it left out: press Enter, or

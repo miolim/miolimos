@@ -31,7 +31,10 @@ module Inbox
         "properties" => {
           # #1336: `bescheid` und `versicherung` sind eigene Belegarten — vorher
           # landeten beide als „sonstiges" und die Art war nicht mehr ablesbar.
-          "doc_type" => { "type" => "string", "enum" => %w[rechnung bescheid versicherung anschreiben vertrag sonstiges] },
+          # Die Liste kommt aus Invoice::DOCUMENT_TYPES: eine neue Belegart
+          # wird damit an einer Stelle eingetragen und ist sofort erkennbar
+          # UND wählbar — sonst driften Erkennung und Auswahlfeld auseinander.
+          "doc_type" => { "type" => "string", "enum" => Invoice::DOCUMENT_TYPES.dup },
           "title" => { "type" => "string", "description" => "Kurzer Ablage-Titel: Absender + Gegenstand, z.B. 'Stadtwerke — Abschlagsrechnung Juli 2026'" },
           "sender" => {
             "type" => "object", "additionalProperties" => false,

@@ -78,6 +78,26 @@ class InvoiceTest < ActiveSupport::TestCase
     assert invoice.rechnung?, "kind bleibt unberührt — dort hängen Nummernkreis und Rendering"
   end
 
+  # Die Belegart wird als Name gespeichert, nicht als Zahl. Das ist die
+  # Voraussetzung dafür, dass die Liste offen bleiben kann: eine weitere Art
+  # braucht keine Migration, und es gibt kein Zahlen-Mapping, das zwischen
+  # miolimOS und dem immoOS-Fork auseinanderlaufen könnte.
+  test "Belegart steht als Name in der Datenbank, nicht als Zahl" do
+    invoice = Invoice.create!(kind: :rechnung, document_type: :bescheid)
+    stored = Invoice.connection.select_value(
+      "SELECT document_type FROM invoices WHERE id = #{invoice.id}"
+    )
+    assert_equal "bescheid", stored
+  end
+
+  # Erkennung und Auswahlfeld dürfen nicht auseinanderdriften: wer eine
+  # Belegart ergänzt, soll sie an EINER Stelle ergänzen.
+  test "der Dokumenten-Import kennt genau die Belegarten des Modells" do
+    schema_types = Inbox::Processors::DocumentImport::EXTRACTION_SCHEMA
+                     .dig("properties", "doc_type", "enum")
+    assert_equal Invoice::DOCUMENT_TYPES.sort, schema_types.sort
+  end
+
   # Der Nummernkreis darf von der Belegart nicht angefasst werden: ein
   # eingehender Bescheid verbraucht keine eigene Rechnungsnummer.
   test "eingehender Beleg mit Belegart verbraucht keine Rechnungsnummer" do

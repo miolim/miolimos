@@ -21,9 +21,20 @@ class Invoice < ApplicationRecord
   # ist. Getrennt von `kind` (Nummernkreis/Rendering) und von `direction`.
   # NULL = nicht erfasst (Bestand). Prefix, weil `rechnung` sonst mit dem
   # gleichnamigen `kind`-Wert kollidiert.
-  enum :document_type,
-       { rechnung: 0, bescheid: 1, versicherung: 2, anschreiben: 3, vertrag: 4, sonstiges: 5 },
-       prefix: :document_type
+  #
+  # Die Liste ist bewusst OFFEN (Konzept „Belege, Vorgänge und ihre
+  # Benennung", Abschnitt 4): eine weitere Belegart ist ein Eintrag hier
+  # plus zwei Übersetzungen — keine Migration, kein neuer Programmpfad.
+  # Deshalb string-hinterlegt: kein Zahlen-Mapping, das zwischen miolimOS
+  # und dem immoOS-Fork auseinanderlaufen kann, und in der Datenbank steht
+  # `bescheid` statt `1`.
+  #
+  # EINE Quelle: das Extraktions-Schema des Dokumenten-Imports liest
+  # dieselbe Konstante, damit eine neue Art auch sofort erkannt wird und
+  # nicht bloß von Hand wählbar ist.
+  DOCUMENT_TYPES = %w[rechnung bescheid versicherung anschreiben vertrag sonstiges].freeze
+
+  enum :document_type, DOCUMENT_TYPES.index_by(&:itself), prefix: :document_type
 
   has_many :invoice_lines, -> { ordered }, dependent: :destroy
 

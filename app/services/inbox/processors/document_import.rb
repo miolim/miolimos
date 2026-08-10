@@ -396,17 +396,34 @@ module Inbox
       # umgelegt. miolimOS kennt keinen Versorgungsvertrag und kann das nicht
       # entscheiden; gebraucht ist nur der Haken.
       #
-      # Regel upstream: erkannte Fälligkeit → GENAU EINE Zahlungspflicht mit
-      # Träger = Beleg. Keine erkannte Fälligkeit → KEINE Pflicht; der Beleg
-      # ist dann kein offener Posten, statt einen zu erfinden. Mehrere Raten
-      # aus einem Dokument herauszulesen ist nicht Sache des Imports — an der
-      # Card legt man sie von Hand an (#1336 Stufe 2).
+      # Regel upstream: Ein Zahlbetrag ergibt GENAU EINE Zahlungspflicht mit
+      # Träger = Beleg. Die Fälligkeit darf dabei FEHLEN — dann ist es ein
+      # offener Posten ohne Frist.
+      #
+      # (2026-08-10, aus dem Fork-Merge) Zuerst stand hier „keine erkannte
+      # Fälligkeit → keine Pflicht". Das war ein Fehlschluss derselben Art, die
+      # #1338 gerade beseitigt hat: Die fehlende Fälligkeit wurde als Ersatz
+      # dafür genommen, dass der Beleg keine eigene Forderung begründet. Beim
+      # Merge hat immoos_builder nachgemessen — von 64 Eingangsbelegen tragen
+      # 31 eine Fälligkeit, 29 haben Zahlungen OHNE Fälligkeit. Die wären ohne
+      # Pflicht aus der Zuordnungsliste, den offenen Posten und dem Abgleich
+      # gefallen: Der Betrag steht da, und niemand zahlt ihn.
+      #
+      # Gemahnt wird eine Pflicht ohne Termin nicht — `overdue` setzt eine
+      # Fälligkeit voraus. Der ursprüngliche Befund bleibt also erledigt.
+      #
+      # Ob ein Beleg gar keine eigene Forderung begründet (Festsetzungsbescheid
+      # zu einem laufenden Vertrag), ist eine Frage an die aufsetzende
+      # Anwendung und wird HIER überschrieben — nicht am fehlenden Datum
+      # abgelesen. Mehrere Raten aus einem Dokument herauszulesen ist nicht
+      # Sache des Imports; an der Card legt man sie von Hand an.
       def build_payment_obligations(invoice, inv)
-        faellig = parse_date(inv["due_date"])
-        return unless faellig
+        betrag = invoice.gross_total * invoice.obligation_sign
+        return if betrag.zero?
+
         invoice.payment_obligations.create!(
-          amount:       invoice.gross_total * invoice.obligation_sign,
-          due_on:       faellig,
+          amount:       betrag,
+          due_on:       parse_date(inv["due_date"]),
           announced_by: invoice
         )
       end

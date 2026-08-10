@@ -252,19 +252,37 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     assert_equal BigDecimal("-22750"), invoice.payment_obligations.sole.amount
   end
 
-  # Der Fall aus dem ursprünglichen Befund: Der Bescheid entsteht als Beleg,
-  # begründet aber keine eigene Forderung — und mahnt deshalb nicht.
-  test "Festsetzungsbescheid ohne Fälligkeit: Beleg ja, Zahlungspflicht nein" do
+  # Ohne erkannte Fälligkeit entsteht eine Pflicht OHNE TERMIN — ein offener
+  # Posten ohne Frist, keine Lücke.
+  #
+  # Die erste Fassung dieses Tests verlangte hier gar keine Pflicht. Das war
+  # derselbe Fehlschluss, den #1338 beseitigt: Die fehlende Fälligkeit stand
+  # als Ersatz dafür, dass der Beleg keine eigene Forderung begründet. Im
+  # Fork-Bestand haben 29 von 64 Eingangsbelegen Zahlungen ohne Fälligkeit —
+  # die wären lautlos aus allen Listen gefallen.
+  test "Zahlbetrag ohne erkannte Fälligkeit ergibt eine Pflicht ohne Termin" do
     extraction = JSON.parse(LLM_EXTRACTION.to_json)
                      .merge("doc_type" => "bescheid", "title" => "ZVO — Abwasser-Festsetzung")
     extraction["invoice"]["due_date"] = nil
     invoice = import!(extraction)
 
     assert invoice, "der Betrag steht da — der Beleg entsteht"
-    assert_empty invoice.payment_obligations
-    assert_nil   invoice.payment_status
-    assert_not   invoice.overdue?
-    assert_not   Invoice.offen.exists?(id: invoice.id), "kein offener Posten"
+    pflicht = invoice.payment_obligations.sole
+    assert_nil pflicht.due_on, "ohne Frist, aber vorhanden"
+    assert_equal(-invoice.gross_total, pflicht.amount)
+    assert_equal "offen", invoice.payment_status, "ein offener Posten ohne Termin"
+    assert_not invoice.overdue?, "ohne Fälligkeit wird nicht gemahnt"
+    assert_not Invoice.overdue.exists?(id: invoice.id)
+  end
+
+  # Ein Beleg OHNE Zahlbetrag entsteht gar nicht erst als Beleg — und wenn er
+  # von Hand angelegt wird, bleibt er ohne Pflicht und damit ohne Zahlstatus.
+  test "ohne Betrag keine Zahlungspflicht" do
+    beleg = Invoice.create!(kind: :rechnung, direction: :eingehend, document_type: :bescheid)
+    @proc.send(:build_payment_obligations, beleg, { "due_date" => "2026-09-01" })
+
+    assert_empty beleg.payment_obligations
+    assert_nil   beleg.payment_status
   end
 
   # Eine Gutschrift ist auch ein Zahlbetrag — das Vorzeichen darf das

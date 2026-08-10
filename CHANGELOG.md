@@ -110,7 +110,11 @@ release is cut, this section is renamed to the new version and a fresh
   the amount demanded rather than the largest figure on the page — the tax
   assessed, not the purchase price it is calculated from — and always
   records at least one line item, so a document can no longer end up at
-  €0.00.
+  €0.00. A document carrying an amount whose due date could not be made out
+  now records an obligation without a date rather than none at all: an open
+  item with no deadline. It is not chased for payment — that still needs a
+  date — but the amount no longer sits there unclaimed, missing from the
+  open items, from the account card and from matching.
 - A document can now carry any number of payment obligations — none, one or
   many (#1336). Until now a document had exactly one due date, which made a
   property tax assessment with four quarterly instalments, or an insurance

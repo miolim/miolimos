@@ -1724,6 +1724,11 @@ en:
       request_failed: "Request failed."
       error: "Error: %{message}"
 
+  # #1337 stage 3: bank statement import.
+  bank:
+    import:
+      pdf_unchecked_note: "Imported without the balance check (difference %{diff})"
+      pdf_corrected_note: "Corrected by hand while reading in"
   invoices:
     # #1336 stage 2: payment obligations — 0..n per document.
     obligations:

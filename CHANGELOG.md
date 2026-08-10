@@ -39,6 +39,20 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- Bank statements can be read in from CAMT, CSV and PDF (#1337, third cut).
+  Each upload is examined before anything is written: which account it
+  belongs to, how many entries it holds, and — for PDFs — whether the
+  balances add up. That last check is the point of the whole thing. A
+  statement read out of a PDF, particularly a photographed one, can lose an
+  entire line without any error being raised, and nobody notices until a
+  settlement no longer balances. Opening balance plus every entry read must
+  equal the closing balance, or the import is refused; forcing it through is
+  possible but leaves a note on the statement, so a forced import never
+  later passes for a checked one. Re-importing the same file changes
+  nothing, even when periods overlap. Dates are validated rather than
+  believed: an impossible date is discarded instead of guessed, while the
+  30th of February that statements genuinely use as a value date is read as
+  the end of that month rather than dropping the entry.
 - Bank transactions can now settle payment obligations (#1337, second cut).
   A transaction settles an obligation, not a document — with four quarterly
   instalments on one assessment there would otherwise be no telling which

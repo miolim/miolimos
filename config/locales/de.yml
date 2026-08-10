@@ -1728,6 +1728,11 @@ de:
       request_failed: "Anfrage fehlgeschlagen."
       error: "Fehler: %{message}"
 
+  # #1337 Schnitt 3: Kontoauszug-Import.
+  bank:
+    import:
+      pdf_unchecked_note: "Ohne Saldo-Prüfung importiert (Abweichung %{diff})"
+      pdf_corrected_note: "Beim Einlesen von Hand korrigiert"
   invoices:
     # #1336 Stufe 2: Zahlungspflichten — 0..n je Beleg.
     obligations:

@@ -357,6 +357,130 @@ ALTER SEQUENCE public.bank_accounts_id_seq OWNED BY public.bank_accounts.id;
 
 
 --
+-- Name: bank_ledgers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bank_ledgers (
+    id bigint NOT NULL,
+    label character varying NOT NULL,
+    iban character varying,
+    bic character varying,
+    bank_name character varying,
+    holder character varying,
+    currency character varying DEFAULT 'EUR'::character varying NOT NULL,
+    subject_type character varying,
+    subject_id bigint,
+    opening_balance numeric(12,2) DEFAULT 0.0 NOT NULL,
+    opening_on date,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: bank_ledgers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bank_ledgers_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bank_ledgers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bank_ledgers_id_seq OWNED BY public.bank_ledgers.id;
+
+
+--
+-- Name: bank_statements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bank_statements (
+    id bigint NOT NULL,
+    bank_ledger_id bigint NOT NULL,
+    filename character varying,
+    format character varying,
+    entry_count integer DEFAULT 0 NOT NULL,
+    skipped_count integer DEFAULT 0 NOT NULL,
+    period_from date,
+    period_to date,
+    source_path character varying,
+    note character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: bank_statements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bank_statements_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bank_statements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bank_statements_id_seq OWNED BY public.bank_statements.id;
+
+
+--
+-- Name: bank_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bank_transactions (
+    id bigint NOT NULL,
+    bank_ledger_id bigint NOT NULL,
+    bank_statement_id bigint,
+    booked_on date,
+    value_date date,
+    amount numeric(12,2) NOT NULL,
+    currency character varying DEFAULT 'EUR'::character varying NOT NULL,
+    purpose text,
+    counterparty_name character varying,
+    counterparty_iban character varying,
+    counterparty_knowledge_item_uuid character varying,
+    bank_ref character varying,
+    fingerprint character varying NOT NULL,
+    source integer DEFAULT 2 NOT NULL,
+    no_assignment_at timestamp(6) without time zone,
+    no_assignment_note character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: bank_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bank_transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bank_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bank_transactions_id_seq OWNED BY public.bank_transactions.id;
+
+
+--
 -- Name: capabilities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2642,6 +2766,27 @@ ALTER TABLE ONLY public.bank_accounts ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: bank_ledgers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_ledgers ALTER COLUMN id SET DEFAULT nextval('public.bank_ledgers_id_seq'::regclass);
+
+
+--
+-- Name: bank_statements id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_statements ALTER COLUMN id SET DEFAULT nextval('public.bank_statements_id_seq'::regclass);
+
+
+--
+-- Name: bank_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_transactions ALTER COLUMN id SET DEFAULT nextval('public.bank_transactions_id_seq'::regclass);
+
+
+--
 -- Name: capabilities id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3124,6 +3269,30 @@ ALTER TABLE ONLY public.awaitings
 
 ALTER TABLE ONLY public.bank_accounts
     ADD CONSTRAINT bank_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bank_ledgers bank_ledgers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_ledgers
+    ADD CONSTRAINT bank_ledgers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bank_statements bank_statements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_statements
+    ADD CONSTRAINT bank_statements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bank_transactions bank_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_transactions
+    ADD CONSTRAINT bank_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -3629,6 +3798,13 @@ CREATE INDEX idx_actor_views_dedupe ON public.actor_views USING btree (actor_id,
 
 
 --
+-- Name: idx_bank_tx_counterparty_ki; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bank_tx_counterparty_ki ON public.bank_transactions USING btree (counterparty_knowledge_item_uuid);
+
+
+--
 -- Name: idx_cm_unique; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3892,6 +4068,41 @@ CREATE INDEX index_awaitings_on_task_id ON public.awaitings USING btree (task_id
 --
 
 CREATE INDEX index_bank_accounts_on_knowledge_item_uuid ON public.bank_accounts USING btree (knowledge_item_uuid);
+
+
+--
+-- Name: index_bank_ledgers_on_subject_type_and_subject_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bank_ledgers_on_subject_type_and_subject_id ON public.bank_ledgers USING btree (subject_type, subject_id);
+
+
+--
+-- Name: index_bank_statements_on_bank_ledger_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bank_statements_on_bank_ledger_id ON public.bank_statements USING btree (bank_ledger_id);
+
+
+--
+-- Name: index_bank_transactions_on_bank_ledger_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bank_transactions_on_bank_ledger_id ON public.bank_transactions USING btree (bank_ledger_id);
+
+
+--
+-- Name: index_bank_transactions_on_bank_ledger_id_and_fingerprint; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_bank_transactions_on_bank_ledger_id_and_fingerprint ON public.bank_transactions USING btree (bank_ledger_id, fingerprint);
+
+
+--
+-- Name: index_bank_transactions_on_bank_statement_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bank_transactions_on_bank_statement_id ON public.bank_transactions USING btree (bank_statement_id);
 
 
 --
@@ -5664,6 +5875,14 @@ ALTER TABLE ONLY public.topics
 
 
 --
+-- Name: bank_statements fk_rails_7b8d611565; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_statements
+    ADD CONSTRAINT fk_rails_7b8d611565 FOREIGN KEY (bank_ledger_id) REFERENCES public.bank_ledgers(id);
+
+
+--
 -- Name: task_dependencies fk_rails_7f4efd230e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5776,6 +5995,14 @@ ALTER TABLE ONLY public.inbox_item_topics
 
 
 --
+-- Name: bank_transactions fk_rails_9e276066be; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_transactions
+    ADD CONSTRAINT fk_rails_9e276066be FOREIGN KEY (bank_ledger_id) REFERENCES public.bank_ledgers(id);
+
+
+--
 -- Name: work_nodes fk_rails_9f6a294ec3; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5885,6 +6112,14 @@ ALTER TABLE ONLY public.topic_memberships
 
 ALTER TABLE ONLY public.time_entries
     ADD CONSTRAINT fk_rails_c93cd89c62 FOREIGN KEY (topic_id) REFERENCES public.topics(id);
+
+
+--
+-- Name: bank_transactions fk_rails_c9b893cf67; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bank_transactions
+    ADD CONSTRAINT fk_rails_c9b893cf67 FOREIGN KEY (bank_statement_id) REFERENCES public.bank_statements(id);
 
 
 --
@@ -6062,6 +6297,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260810123000'),
 ('20260810120100'),
 ('20260810120000'),
 ('20260810110000'),

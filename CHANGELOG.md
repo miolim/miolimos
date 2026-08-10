@@ -39,6 +39,18 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- Bank accounts, statements and transactions exist as records of their own
+  (#1337, first cut). Bookkeeping against a bank account is not specific to
+  any one trade, and it now lives here rather than only in the property
+  management fork it grew up in. This cut brings the entities alone — no
+  import formats and no matching of payments against what they settle, both
+  of which follow. Transactions carry the sign the statement shows them
+  with, remember which statement they came in on, can be marked as
+  deliberately unassigned (a loan instalment, an account fee, a transfer
+  between your own accounts) so they stop asking for a decision, and are
+  protected against being imported twice by a fingerprint unique per
+  account. A transaction can also point at the party it involves as a link
+  rather than only carrying the name printed on the statement.
 - Whether an incoming document becomes a record of a debt is now decided by
   the amount payable, not by what kind of document it is (#1338). Until now
   only something recognised as an invoice ever became one; an insurance

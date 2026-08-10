@@ -1,0 +1,85 @@
+<%# #1336 Stufe 2: die Zahlungspflichten eines Belegs. 0..n — deshalb eine
+    Liste und kein Feld. Leer ist ein gültiger Zustand und die eigentliche
+    Neuerung: ein Bescheid, ein Vertrag oder ein Kontoauszug hat keine
+    Zahlungspflicht und erscheint damit in keiner Liste offener Posten.
+    Beträge werden POSITIV eingegeben; das Vorzeichen der Geldrichtung setzt
+    der Beleg. %>
+<% invoice = local_assigns.fetch(:invoice) %>
+<% obligations = invoice.payment_obligations.ordered %>
+<% cols = "grid grid-cols-[1fr_6.5rem_6rem_2rem_1.5rem] gap-1 items-center" %>
+<section id="invoice_payment_obligations_<%= invoice.id %>" class="space-y-2 text-[13px] pt-3 mt-3 border-t border-slate-300">
+  <div class="flex items-center gap-2">
+    <span class="text-[15px] font-semibold text-slate-600"><%= t("invoices.obligations.heading") %></span>
+    <% unless invoice.locked? %>
+      <%= button_to add_payment_obligation_invoice_path(invoice), method: :post,
+            form: { class: "ml-auto inline", data: { turbo_stream: true } },
+            class: "text-xs px-2 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("invoices.obligations.add") %><% end %>
+    <% end %>
+  </div>
+
+  <% if obligations.any? %>
+    <div class="<%= cols %> text-[11px] text-slate-400 px-1">
+      <span><%= t("invoices.obligations.label") %></span>
+      <span><%= t("invoices.obligations.due_on") %></span>
+      <span class="text-right"><%= t("invoices.obligations.amount") %></span>
+      <span class="text-center" title="<%= t("invoices.obligations.settled") %>">✓</span>
+      <span></span>
+    </div>
+    <div class="divide-y divide-slate-50 border border-slate-100 rounded">
+      <% obligations.each do |o| %>
+        <% if invoice.locked? %>
+          <div class="<%= cols %> px-1 py-1 text-xs">
+            <span class="truncate"><%= o.label.presence || "—" %></span>
+            <span><%= o.due_on ? l(o.due_on, format: :short) : "—" %></span>
+            <span class="text-right tabular-nums"><%= document_euro(o.amount.abs) %></span>
+            <span class="text-center"><%= o.settled? ? "✓" : "" %></span>
+            <span></span>
+          </div>
+        <% else %>
+          <div class="<%= cols %> px-1 py-1">
+          <%= form_with url: payment_obligation_path(o), method: :patch, local: false, class: "contents" do %>
+            <input type="text" name="label" value="<%= o.label %>" placeholder="<%= t("invoices.obligations.label_placeholder") %>"
+                   onblur="if (this.value !== this.defaultValue) this.form.requestSubmit()"
+                   class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+            <input type="date" name="due_on" value="<%= o.due_on %>"
+                   onchange="this.form.requestSubmit()"
+                   class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+            <input type="text" inputmode="decimal" name="amount" value="<%= number_with_precision(o.amount.abs, precision: 2, separator: ',', delimiter: '') %>"
+                   onchange="this.form.requestSubmit()"
+                   class="border border-slate-200 rounded px-1 py-0.5 text-xs text-right tabular-nums">
+            <%# Solange es upstream keine Bankumsätze gibt, ist „bezahlt" eine
+                Handlung an der Pflicht. Mit #1337 wird der getilgte Betrag aus
+                der Tilgungstabelle nachgeführt — dasselbe Feld. %>
+            <span class="text-center">
+              <input type="hidden" name="settled" value="0">
+              <input type="checkbox" name="settled" value="1" <%= "checked" if o.settled? %>
+                     onchange="this.form.requestSubmit()" title="<%= t("invoices.obligations.settled") %>"
+                     class="cursor-pointer">
+            </span>
+          <% end %>
+          <%= button_to payment_obligation_path(o), method: :delete,
+                form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
+                title: t("invoices.obligations.remove"), "aria-label": t("invoices.obligations.remove"),
+                class: "text-slate-300 hover:text-rose-600 bg-transparent border-0 cursor-pointer px-1" do %>×<% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Der Beleg selbst hat keine Fälligkeit mehr — er hat eine nächste. %>
+    <div class="pt-2 mt-2 border-t border-slate-200 space-y-0.5 text-xs">
+      <% if invoice.next_due_on %>
+        <div class="flex justify-between">
+          <span class="text-slate-500"><%= t("invoices.obligations.next_due") %></span>
+          <span class="tabular-nums <%= "text-rose-700 font-semibold" if invoice.overdue? %>"><%= l(invoice.next_due_on, format: :long) %></span>
+        </div>
+      <% end %>
+      <div class="flex justify-between">
+        <span class="text-slate-500"><%= t("invoices.fields.payment_status") %></span>
+        <span><%= t("invoices.fields.payment_statuses.#{invoice.payment_status}") %></span>
+      </div>
+    </div>
+  <% else %>
+    <p class="text-slate-400 italic"><%= t("invoices.obligations.none") %></p>
+  <% end %>
+</section>

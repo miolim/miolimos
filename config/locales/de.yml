@@ -1729,6 +1729,24 @@ de:
       error: "Fehler: %{message}"
 
   invoices:
+    # #1336 Stufe 2: Zahlungspflichten — 0..n je Beleg.
+    obligations:
+      heading: "Zahlungspflichten"
+      add: "+ Zahlungspflicht"
+      one: "Zahlungspflicht"
+      none: "Keine Zahlungspflicht — dieser Beleg ist kein offener Posten."
+      label: "Bezeichnung"
+      label_placeholder: "z. B. Rate 2 von 4"
+      due_on: "Fällig am"
+      amount: "Betrag"
+      settled: "Getilgt"
+      remove: "Zahlungspflicht entfernen"
+      next_due: "Nächste Fälligkeit"
+      states:
+        offen: "offen"
+        teilweise: "teilweise getilgt"
+        bezahlt: "getilgt"
+        ueberzahlt: "überzahlt"
     fields:
       due_date: "Fällig am"
       payment_status: "Zahlstatus"

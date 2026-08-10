@@ -39,6 +39,30 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- A document can now carry any number of payment obligations — none, one or
+  many (#1336). Until now a document had exactly one due date, which made a
+  property tax assessment with four quarterly instalments, or an insurance
+  policy paid in instalments, impossible to record. Worse was the opposite
+  case: a document that establishes no claim at all — an assessment that
+  merely sets future prepayments, a contract, a bank statement — still
+  carried an amount and a date, and therefore appeared as an open item and
+  as overdue. A payment obligation is now its own thing, with its own
+  amount, due date and label ("instalment 2 of 4"), and a document without
+  one is simply not an open item. Nobody has to remember a rule for that to
+  hold.
+  The obligation knows who it belongs to and which document announces it,
+  which keeps the two apart: an assessment can announce instalments that
+  belong to a lasting arrangement elsewhere, without claiming them itself.
+  Amounts are signed by the direction the money moves as seen from here, so
+  a credit note settled by a refund is recognised as settled rather than
+  quietly counting as unpaid. Settlement is recorded as an amount, not a
+  flag, so an obligation can be partly settled.
+  Consequently the document's own due date is gone — with four instalments
+  there is no such thing — and the card shows the next open one instead. The
+  payment status is no longer set by hand but derived: open while anything
+  is outstanding, settled once nothing is, and empty when there is no
+  obligation at all. Existing documents migrate without loss: each one that
+  had a due date receives exactly one obligation carrying it.
 - Full search results as their own card (#1321). The quick search in the
   top bar stays the fast glance — it still shows the first eight rows per
   category — but it no longer hides how much it left out: press Enter, or

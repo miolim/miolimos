@@ -129,20 +129,11 @@
               onchange: "this.form.requestSubmit()", class: inputcls %>
       <% end %>
     </div>
-    <div class="<%= rowcls %>">
-      <span class="text-slate-500"><%= t("invoices.fields.due_date") %></span>
-      <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do %>
-        <%= date_field_tag :due_date, invoice.due_date, onchange: "this.form.requestSubmit()", class: inputcls %>
-      <% end %>
-    </div>
-    <div class="<%= rowcls %>">
-      <span class="text-slate-500"><%= t("invoices.fields.payment_status") %></span>
-      <%= form_with url: invoice_path(invoice), method: :patch, local: false, class: "contents" do |f| %>
-        <%= f.select :payment_status,
-              Invoice.payment_statuses.keys.map { |s| [t("invoices.fields.payment_statuses.#{s}"), s] },
-              { selected: invoice.payment_status },
-              onchange: "this.form.requestSubmit()", class: inputcls %>
-      <% end %>
-    </div>
+  <% end %>
+  <%# #1336 Stufe 2: Fälligkeit und Zahlstatus sind keine Felder des Belegs
+      mehr. Sie stehen an den Zahlungspflichten — 0..n, deshalb eine eigene
+      Liste unterhalb. %>
+  <% if invoice.eingehend? %>
+    <%= render "invoices/payment_obligations", invoice: invoice %>
   <% end %>
 </div>

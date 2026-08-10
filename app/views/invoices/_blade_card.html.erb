@@ -77,7 +77,10 @@
         <% if invoice.document_type.present? && !invoice.document_type_rechnung? %>
           <span class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200"><%= t("invoices.fields.document_types.#{invoice.document_type}") %></span>
         <% end %>
-        <% if invoice.offen? && invoice.due_date && invoice.due_date < Date.current %>
+        <%# #1336 Stufe 2: überfällig ist eine Aussage über die
+            Zahlungspflichten, nicht über den Beleg. Ein Beleg ohne Pflicht
+            kann nicht mehr überfällig sein — genau darum ging es. %>
+        <% if invoice.overdue? %>
           <span class="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200"><%= t("invoices.list.overdue") %></span>
         <% end %>
       <% end %>

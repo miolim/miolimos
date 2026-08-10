@@ -71,6 +71,7 @@ Rails.application.routes.draw do
       patch :invoice_lines                     # #541: Rechnungspositionen (Inline-Upsert, Legacy)
       post  :import_time_entries               # #541: Zeitbuchungen übernehmen
       post  :add_invoice_line                  # #541: neue (leere) Position anlegen
+      post  :add_payment_obligation            # #1336 S2: neue Zahlungspflicht
       post   :franking                         # #995: Internetmarke/Dummy setzen
       delete :franking, action: :destroy_franking, as: nil
     end
@@ -80,6 +81,10 @@ Rails.application.routes.draw do
       get :trash
     end
   end
+
+  # #1336 Stufe 2: Zahlungspflichten eines Belegs — 0..n, deshalb eigene
+  # Ressource statt Feldern am Beleg.
+  resources :payment_obligations, only: [:update, :destroy]
 
   # #541 (Hans, 2026-06-09): Rechnungsposition als eigenes Detail-Blade —
   # Felder bearbeiten + Zeitbuchungen zuordnen/lösen.

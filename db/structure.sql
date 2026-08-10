@@ -940,8 +940,7 @@ CREATE TABLE public.invoices (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     direction integer DEFAULT 0 NOT NULL,
-    due_date date,
-    payment_status integer DEFAULT 0 NOT NULL,
+    payment_status integer,
     document_type character varying
 );
 
@@ -1303,6 +1302,44 @@ CREATE SEQUENCE public.oauth_credentials_id_seq
 --
 
 ALTER SEQUENCE public.oauth_credentials_id_seq OWNED BY public.oauth_credentials.id;
+
+
+--
+-- Name: payment_obligations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.payment_obligations (
+    id bigint NOT NULL,
+    bearer_type character varying NOT NULL,
+    bearer_id bigint NOT NULL,
+    announced_by_id bigint,
+    amount numeric(12,2) DEFAULT 0.0 NOT NULL,
+    settled_amount numeric(12,2) DEFAULT 0.0 NOT NULL,
+    due_on date,
+    label character varying,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: payment_obligations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.payment_obligations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: payment_obligations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.payment_obligations_id_seq OWNED BY public.payment_obligations.id;
 
 
 --
@@ -2773,6 +2810,13 @@ ALTER TABLE ONLY public.oauth_credentials ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: payment_obligations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_obligations ALTER COLUMN id SET DEFAULT nextval('public.payment_obligations_id_seq'::regclass);
+
+
+--
 -- Name: portal_accesses id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3280,6 +3324,14 @@ ALTER TABLE ONLY public.llm_activities
 
 ALTER TABLE ONLY public.oauth_credentials
     ADD CONSTRAINT oauth_credentials_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: payment_obligations payment_obligations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_obligations
+    ADD CONSTRAINT payment_obligations_pkey PRIMARY KEY (id);
 
 
 --
@@ -4480,6 +4532,27 @@ CREATE INDEX index_oauth_credentials_on_provider ON public.oauth_credentials USI
 
 
 --
+-- Name: index_payment_obligations_on_announced_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_payment_obligations_on_announced_by_id ON public.payment_obligations USING btree (announced_by_id);
+
+
+--
+-- Name: index_payment_obligations_on_bearer_type_and_bearer_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_payment_obligations_on_bearer_type_and_bearer_id ON public.payment_obligations USING btree (bearer_type, bearer_id);
+
+
+--
+-- Name: index_payment_obligations_on_due_on; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_payment_obligations_on_due_on ON public.payment_obligations USING btree (due_on);
+
+
+--
 -- Name: index_portal_accesses_on_email; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5663,6 +5736,14 @@ ALTER TABLE ONLY public.actor_views
 
 
 --
+-- Name: payment_obligations fk_rails_8d4f80f269; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_obligations
+    ADD CONSTRAINT fk_rails_8d4f80f269 FOREIGN KEY (announced_by_id) REFERENCES public.invoices(id) ON DELETE SET NULL;
+
+
+--
 -- Name: time_entries fk_rails_9324bf7672; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5981,6 +6062,8 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260810120100'),
+('20260810120000'),
 ('20260810110000'),
 ('20260810103000'),
 ('20260727013000'),

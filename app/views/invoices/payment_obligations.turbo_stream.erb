@@ -1,0 +1,4 @@
+<%# #1336 Stufe 2: nach dem Anlegen den Zahlungspflichten-Bereich ersetzen. %>
+<%= turbo_stream.replace "invoice_payment_obligations_#{@invoice.id}" do %>
+  <%= render "invoices/payment_obligations", invoice: @invoice %>
+<% end %>

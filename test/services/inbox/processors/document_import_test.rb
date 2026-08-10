@@ -105,7 +105,11 @@ class Inbox::Processors::DocumentImportTest < ActiveSupport::TestCase
     assert invoice.offen?
     assert_equal "rechnung", invoice.document_type, "#1336: erkannte Belegart wird gespeichert, nicht verworfen"
     assert_equal "SW-2026-0815", invoice.number
-    assert_equal Date.new(2026, 7, 15), invoice.due_date
+    # #1336 Stufe 2: die erkannte Fälligkeit wird zur Zahlungspflicht.
+    obligation = invoice.payment_obligations.sole
+    assert_equal Date.new(2026, 7, 15), obligation.due_on
+    assert_equal Date.new(2026, 7, 15), invoice.next_due_on
+    assert_equal(-invoice.gross_total, obligation.amount, "eingehend = negativ")
     assert_equal 1, invoice.invoice_lines.count
     assert_equal BigDecimal("100"), invoice.net_total
     assert_equal 1, invoice.document_artifacts.count, "Original-PDF muss als Artefakt hängen"

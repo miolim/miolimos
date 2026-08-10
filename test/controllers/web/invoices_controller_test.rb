@@ -304,13 +304,39 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_nil invoice.reload.number, "eingehende Rechnungen bekommen KEINE Nummer aus dem Nummernkreis"
   end
 
-  test "update speichert Fälligkeit + Zahlstatus (eingehend)" do
+  # #1336 Stufe 2: Fälligkeit und Zahlstatus sind keine Felder des Belegs mehr.
+  # Sie entstehen an den Zahlungspflichten — hier über den echten Speicherweg.
+  test "Zahlungspflicht anlegen, datieren und tilgen (eingehend)" do
     invoice = Invoice.create!(kind: :rechnung, direction: :eingehend)
-    patch "/invoices/#{invoice.id}", params: { due_date: "2026-08-15" }
-    patch "/invoices/#{invoice.id}", params: { payment_status: "bezahlt" }
-    invoice.reload
-    assert_equal Date.new(2026, 8, 15), invoice.due_date
-    assert invoice.bezahlt?
+    invoice.invoice_lines.create!(description: "Strom", quantity: 1, unit_price: 100, tax_rate: 0, position: 0)
+
+    post "/invoices/#{invoice.id}/add_payment_obligation",
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    o = invoice.reload.payment_obligations.sole
+    assert_equal BigDecimal("-100"), o.amount, "eingehend = Geld fließt ab, also negativ"
+    assert_equal "offen", invoice.payment_status
+
+    patch "/payment_obligations/#{o.id}", params: { due_on: "2026-08-15", label: "Rate 1 von 2" },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal Date.new(2026, 8, 15), invoice.reload.next_due_on
+
+    patch "/payment_obligations/#{o.id}", params: { settled: "1" },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert invoice.reload.bezahlt?
+    assert_nil invoice.next_due_on, "getilgt = keine nächste Fälligkeit mehr"
+
+    delete "/payment_obligations/#{o.id}", headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_nil invoice.reload.payment_status, "ohne Zahlungspflicht kein Zahlstatus"
+  end
+
+  # Der Betrag wird positiv eingegeben — das Vorzeichen setzt der Beleg.
+  test "Betragseingabe an der Zahlungspflicht bleibt vorzeichenrichtig" do
+    invoice = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    o = invoice.payment_obligations.create!(amount: -100)
+    patch "/payment_obligations/#{o.id}", params: { amount: "909,00" },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal BigDecimal("-909"), o.reload.amount
   end
 
   test "card einer Eingangsrechnung: Eingang-Badge, keine Render-Aktionen" do
@@ -319,7 +345,10 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "Eingang"
     refute_includes @response.body, rendered_pdf_invoice_path(invoice)
-    assert_includes @response.body, "Fällig am"
+    # #1336 Stufe 2: statt eines Fälligkeitsfeldes die Zahlungspflichten —
+    # und leer ist die Aussage, um die es geht.
+    assert_includes @response.body, "Zahlungspflichten"
+    assert_includes @response.body, "kein offener Posten"
   end
 
   # ── #964: Beleg (PDF) manuell an Eingangsrechnung hängen ─────────────────

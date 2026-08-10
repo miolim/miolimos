@@ -15,8 +15,13 @@ class Invoice < ApplicationRecord
   # oder eingehend (fremder Beleg aus dem Dokumenten-Import; das Original-
   # PDF hängt als Artefakt, die Nummer kommt vom Aussteller).
   enum :direction, { ausgehend: 0, eingehend: 1 }, default: :ausgehend
-  # #934: Zahlstatus für Eingangsrechnungen (minimal, Skonto etc. später).
-  enum :payment_status, { offen: 0, bezahlt: 1 }, default: :offen
+  # #934: Zahlstatus. Seit #1336 Stufe 2 eine nachgeführte ABLEITUNG aus den
+  # Zahlungspflichten, ohne Schreibweg aus der Oberfläche — die Spalte
+  # existiert nur noch, damit „offene Eingangsbelege" in SQL filterbar bleibt.
+  # NULL = keine Zahlungspflicht, also gar kein Zahlstatus: ein Bescheid oder
+  # ein Vertrag ist weder offen noch bezahlt und darf in keiner Liste offener
+  # Posten auftauchen.
+  enum :payment_status, { offen: 0, bezahlt: 1 }
   # #1336 Stufe 1 (aus immoOS): Belegart — WAS für ein Schriftstück der Beleg
   # ist. Getrennt von `kind` (Nummernkreis/Rendering) und von `direction`.
   # NULL = nicht erfasst (Bestand). Prefix, weil `rechnung` sonst mit dem
@@ -38,10 +43,50 @@ class Invoice < ApplicationRecord
 
   has_many :invoice_lines, -> { ordered }, dependent: :destroy
 
+  # #1336 Stufe 2: die Zahlungspflichten, die dieser Beleg TRÄGT. Der Fork
+  # kann dieselbe Pflicht stattdessen an einen Vertrag hängen — dann steht sie
+  # hier nicht, sondern nur unter `announced_payment_obligations`.
+  has_many :payment_obligations, -> { ordered }, as: :bearer, dependent: :destroy
+  # …und die, die er ANKÜNDIGT, egal wem sie gehören.
+  has_many :announced_payment_obligations, -> { ordered },
+           class_name: "PaymentObligation", foreign_key: :announced_by_id,
+           inverse_of: :announced_by, dependent: :nullify
+
   validates :kind, presence: true
 
   # #995: nur eigene (ausgehende) Belege werden kuvertiert und frankiert.
   def frankable? = ausgehend?
+
+  # ── Zahlungspflichten (#1336 Stufe 2) ──────────────────────────────────
+
+  # Vorzeichen der Geldrichtung aus eigener Sicht: bei einem fremden Beleg
+  # fließt Geld ab. Ein Bruttobetrag am Beleg ist immer positiv notiert; die
+  # Umrechnung passiert genau hier, damit sie an keiner Rechenstelle steht.
+  def obligation_sign = eingehend? ? -1 : 1
+
+  # Die Fälligkeit des Belegs gibt es nicht mehr — bei vier Quartalsraten wäre
+  # sie eine Lüge. Was es gibt, ist die nächste offene.
+  def next_due_on = payment_obligations.unsettled.where.not(due_on: nil).minimum(:due_on)
+
+  def overdue?(on = Date.current) = payment_obligations.overdue(on).exists?
+
+  def open_amount = payment_obligations.sum { |o| o.open_amount }
+
+  # Nachführen der Ableitungsspalte. Kein Zahlstatus ohne Zahlungspflicht —
+  # damit verschwindet der Bescheid aus den offenen Posten, ohne dass jemand
+  # eine Regel befolgen muss.
+  def recompute_payment_status!
+    obligations = payment_obligations.reload
+    value =
+      if obligations.empty?
+        nil
+      elsif obligations.all?(&:settled?)
+        "bezahlt"
+      else
+        "offen"
+      end
+    update_column(:payment_status, value) unless payment_status == value
+  end
 
   # #972 (aus immoos übernommen, #1057): Rechnungen, an denen ein Kontakt
   # (Person/Org-KI) als Aussteller ODER Empfänger beteiligt ist — für den

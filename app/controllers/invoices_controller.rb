@@ -9,7 +9,7 @@ class InvoicesController < ApplicationController
 
   # #532: bei Status final sind Feld-Mutationen gesperrt (nur Status-Wechsel
   # zurück auf Entwurf entsperrt wieder).
-  before_action :reject_if_locked, only: [:link, :document_fields, :select_identifiers, :invoice_lines, :import_time_entries, :add_invoice_line]
+  before_action :reject_if_locked, only: [:link, :document_fields, :select_identifiers, :invoice_lines, :import_time_entries, :add_invoice_line, :add_payment_obligation]
 
   KIND_LABELS     = { "rechnung" => "Rechnung", "angebot" => "Angebot" }.freeze
   CREATABLE_KINDS = %w[rechnung angebot].freeze
@@ -88,6 +88,23 @@ class InvoicesController < ApplicationController
     @invoice.reload
     respond_to do |format|
       format.turbo_stream { render :invoice_lines }
+      format.html { redirect_to printable_stack_path(@invoice), status: :see_other }
+    end
+  end
+
+  # #1336 Stufe 2: eine neue Zahlungspflicht anlegen. Der Betrag wird mit dem
+  # noch offenen Rest des Belegs vorbelegt — bei der ersten ist das der volle
+  # Bruttobetrag, bei weiteren das, was noch nicht verteilt ist. Vorzeichen
+  # aus der Geldrichtung, nicht aus der Eingabe.
+  def add_payment_obligation
+    load_printable
+    verteilt = @invoice.payment_obligations.sum(:amount)
+    rest     = (@invoice.gross_total * @invoice.obligation_sign) - verteilt
+    pos      = @invoice.payment_obligations.maximum(:position).to_i + 1
+    @invoice.payment_obligations.create!(amount: rest, announced_by: @invoice, position: pos)
+    @invoice.reload
+    respond_to do |format|
+      format.turbo_stream { render :payment_obligations }
       format.html { redirect_to printable_stack_path(@invoice), status: :see_other }
     end
   end
@@ -195,10 +212,9 @@ class InvoicesController < ApplicationController
     attrs[:document_date] = params[:document_date].presence if params.key?(:document_date)
     attrs[:service_start] = params[:service_start].presence if params.key?(:service_start)  # #541 Leistungszeitraum
     attrs[:service_end]   = params[:service_end].presence   if params.key?(:service_end)
-    attrs[:due_date]      = params[:due_date].presence      if params.key?(:due_date)       # #934 Fälligkeit
-    if params.key?(:payment_status) && Invoice.payment_statuses.key?(params[:payment_status])
-      attrs[:payment_status] = params[:payment_status]      # #934 Zahlstatus
-    end
+    # #1336 Stufe 2: `due_date` und `payment_status` haben hier keinen
+    # Schreibweg mehr. Die Fälligkeit steht an den Zahlungspflichten (0..n),
+    # der Zahlstatus wird daraus abgeleitet.
     # #1336 Stufe 1: Belegart — leer setzt zurück auf „nicht erfasst".
     if params.key?(:document_type)
       dt = params[:document_type].presence

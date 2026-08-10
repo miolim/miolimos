@@ -1725,6 +1725,24 @@ en:
       error: "Error: %{message}"
 
   invoices:
+    # #1336 stage 2: payment obligations — 0..n per document.
+    obligations:
+      heading: "Payment obligations"
+      add: "+ Payment obligation"
+      one: "Payment obligation"
+      none: "No payment obligation — this document is not an open item."
+      label: "Label"
+      label_placeholder: "e.g. instalment 2 of 4"
+      due_on: "Due on"
+      amount: "Amount"
+      settled: "Settled"
+      remove: "Remove payment obligation"
+      next_due: "Next due"
+      states:
+        offen: "open"
+        teilweise: "partly settled"
+        bezahlt: "settled"
+        ueberzahlt: "overpaid"
     fields:
       due_date: "Due on"
       payment_status: "Payment status"

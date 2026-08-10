@@ -278,7 +278,6 @@ module Inbox
           recipient_uuid: recipient&.uuid,
           number:         inv["number"].presence,
           document_date:  parse_date(inv["issue_date"]),
-          due_date:       parse_date(inv["due_date"]),
           service_start:  parse_date(inv["service_start"]),
           service_end:    parse_date(inv["service_end"]),
           topic_id:       item.topics.first&.id
@@ -291,6 +290,18 @@ module Inbox
             unit_price:  decimal(l["unit_price"]),
             tax_rate:    decimal(l["tax_rate"], default: 19),
             position:    i
+          )
+        end
+        # #1336 Stufe 2: die erkannte Fälligkeit wird zur Zahlungspflicht. Eine
+        # je Beleg — mehr erkennt die Extraktion heute nicht; weitere Raten
+        # trägt man an der Card nach. Ohne erkannte Fälligkeit entsteht KEINE
+        # Pflicht: der Beleg ist dann kein offener Posten, statt einen zu
+        # erfinden. Betrag mit dem Vorzeichen der Geldrichtung.
+        if (faellig = parse_date(inv["due_date"]))
+          invoice.reload.payment_obligations.create!(
+            amount:       invoice.gross_total * invoice.obligation_sign,
+            due_on:       faellig,
+            announced_by: invoice
           )
         end
         # #934 Stufe 2: Zahlungsbedingungen/Skonto als freies Infoblock-Feld —
@@ -348,7 +359,9 @@ module Inbox
             description: "Beleg: [[#{ki.title}]]",
             creator:     actor,
             assignee:    actor,
-            due_date:    invoice&.due_date
+            # #1336 Stufe 2: die nächste offene Fälligkeit — der Beleg hat
+            # keine eigene mehr.
+            due_date:    invoice&.next_due_on
           )
           record_result(item, task: task)
         end

@@ -29,8 +29,16 @@
   <% if invoice.eingehend? %>
     <%# #1336 Stufe 1: Belegart. %>
     <% if invoice.document_type.present? %><div><span class="text-slate-500"><%= t("invoices.fields.document_type") %>:</span> <%= t("invoices.fields.document_types.#{invoice.document_type}") %></div><% end %>
-    <% if invoice.due_date %><div><span class="text-slate-500"><%= t("invoices.fields.due_date") %>:</span> <%= l(invoice.due_date, format: :long) %></div><% end %>
-    <div><span class="text-slate-500"><%= t("invoices.fields.payment_status") %>:</span> <%= t("invoices.fields.payment_statuses.#{invoice.payment_status}") %></div>
+    <%# #1336 Stufe 2: 0..n Zahlungspflichten statt einer Fälligkeit am Beleg.
+        Keine Pflicht = keine Zeile und kein Zahlstatus — ein Bescheid ist
+        weder offen noch bezahlt. %>
+    <% invoice.payment_obligations.ordered.each do |o| %>
+      <div><span class="text-slate-500"><%= o.label.presence || t("invoices.obligations.one") %>:</span>
+        <%= document_euro(o.amount.abs) %><%= " · #{l(o.due_on, format: :long)}" if o.due_on %><%= " · #{t("invoices.obligations.states.#{o.state}")}" %></div>
+    <% end %>
+    <% if invoice.payment_status.present? %>
+      <div><span class="text-slate-500"><%= t("invoices.fields.payment_status") %>:</span> <%= t("invoices.fields.payment_statuses.#{invoice.payment_status}") %></div>
+    <% end %>
   <% end %>
   <% if invoice.subject.present? %><div><span class="text-slate-500"><%= t("documents.fields.subject") %>:</span> <%= invoice.subject %></div><% end %>
   <% if invoice.your_ref.present? %><div><span class="text-slate-500"><%= t("documents.fields.your_ref") %>:</span> <%= invoice.your_ref %></div><% end %>

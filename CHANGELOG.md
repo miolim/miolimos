@@ -39,6 +39,21 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- Bank transactions can now settle payment obligations (#1337, second cut).
+  A transaction settles an obligation, not a document — with four quarterly
+  instalments on one assessment there would otherwise be no telling which
+  one a payment cleared. Part payments, overpayments and refunds are all
+  representable, and a transaction stays available until it is exhausted,
+  not merely until it has been used once: a single transfer paying two
+  invoices can be split across both. What cannot be represented is an
+  allocation of money that never moved — a transaction cannot be handed out
+  beyond its own amount, and a settlement must move money the same way the
+  transaction did, so a refunded credit note is recognised as settled
+  instead of quietly counting as unpaid. A remainder can also be written off
+  without a transaction when the money is simply not coming. The settled
+  amount of an obligation is no longer written anywhere by hand; it follows
+  from the settlements, and the tick on the card records one rather than
+  overriding the figure.
 - Bank accounts, statements and transactions exist as records of their own
   (#1337, first cut). Bookkeeping against a bank account is not specific to
   any one trade, and it now lives here rather than only in the property

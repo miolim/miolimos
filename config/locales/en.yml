@@ -2270,6 +2270,9 @@ en:
     errors:
       messages:
         record_invalid: "Validation failed: %{errors}"
+        # #1337 stage 2: settlement against a bank transaction.
+        ueber_umsatz:     "exceeds what is left unallocated on the transaction"
+        falsche_richtung: "must move money in the same direction as the transaction"
         restrict_dependent_destroy:
           has_one:  "Cannot be deleted because a dependent %{record} exists."
           has_many: "Cannot be deleted because dependent %{record} exist."

@@ -14,6 +14,11 @@
 class BankTransaction < ApplicationRecord
   belongs_to :bank_ledger
   belongs_to :bank_statement, optional: true
+  # #1337 Schnitt 2: die Tilgungen dieses Umsatzes. KEIN `dependent: :destroy` —
+  # das Aufräumen läuft über `before_destroy`, damit der Zahlstatus der
+  # betroffenen Pflichten NACH dem Entfernen der Zuordnungen neu berechnet wird
+  # und nicht auf einem Stand von vorher stehenbleibt.
+  has_many :obligation_settlements
 
   # Woher der Umsatz kam. Beim PDF-Weg ist das die Voraussetzung dafür,
   # überhaupt misstrauisch sein zu können (ein Handyfoto ist kein Importweg —
@@ -28,11 +33,23 @@ class BankTransaction < ApplicationRecord
 
   before_validation :set_default_fingerprint, on: :create
 
+  # Zuordnungen lösen, BEVOR die Zeilen mit dem Umsatz verschwinden — sonst
+  # bleibt der Zahlstatus der betroffenen Pflichten auf einem Stand von vorher.
+  before_destroy { Bank::ObligationMatch.unassign(self) if obligation_settlements.exists? }
+
   scope :ordered, -> { order(booked_on: :desc, id: :desc) }
 
-  # Braucht dieser Umsatz noch eine Entscheidung? Ab Schnitt 2 zählt hier
-  # zusätzlich, ob er schon ausgeschöpft ist.
-  scope :unentschieden, -> { where(no_assignment_at: nil) }
+  # Braucht dieser Umsatz noch eine Entscheidung? Maßgeblich ist NICHT „hat
+  # eine Zuordnung", sondern „ist er ausgeschöpft" — eine Sammelüberweisung
+  # zahlt mehrere Pflichten, und die zweite kam im Fork nie an ihn heran.
+  scope :unentschieden, lambda {
+    where(no_assignment_at: nil).where(<<~SQL.squish)
+      ABS(bank_transactions.amount) > COALESCE((
+        SELECT ABS(SUM(os.amount)) FROM obligation_settlements os
+        WHERE os.bank_transaction_id = bank_transactions.id
+      ), 0)
+    SQL
+  }
 
   # Ein Suchschlitz für Begriffe UND Beträge: Sieht die Eingabe wie ein Betrag
   # aus, wird zusätzlich danach gesucht — mit und ohne Vorzeichen, denn ob eine
@@ -67,9 +84,8 @@ class BankTransaction < ApplicationRecord
   #
   # Ein Umsatz ist NICHT erledigt, sobald er einmal zugeordnet ist, sondern
   # erst, wenn er ausgeschöpft ist: Eine Sammelüberweisung über 1.450,21 €
-  # zahlt zwei Rechnungen. Solange es keine Tilgungen gibt (Schnitt 2), ist der
-  # Rest der volle Betrag; dort wird die Summe der Tilgungen abgezogen.
-  def zugeordneter_betrag = BigDecimal("0")
+  # zahlt zwei Rechnungen.
+  def zugeordneter_betrag = obligation_settlements.sum(:amount).to_d.abs
 
   # Nie negativ: Ist mehr zugeordnet als da ist, bleibt nichts übrig — dann ist
   # die Zuordnung falsch, nicht der Rest.

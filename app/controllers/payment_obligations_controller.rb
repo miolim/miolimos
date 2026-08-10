@@ -13,16 +13,20 @@ class PaymentObligationsController < ApplicationController
     attrs = {}
     attrs[:due_on] = params[:due_on].presence                      if params.key?(:due_on)
     attrs[:label]  = params[:label].to_s.strip.presence            if params.key?(:label)
-    if params.key?(:amount)
-      attrs[:amount] = decimal(params[:amount]).abs * sign
-      # War sie voll getilgt, bleibt sie es auch nach einer Betragskorrektur.
-      attrs[:settled_amount] = attrs[:amount] if @obligation.settled? && !@obligation.amount.zero?
-    end
-    if params.key?(:settled)
-      full = ActiveModel::Type::Boolean.new.cast(params[:settled])
-      attrs[:settled_amount] = full ? (attrs[:amount] || @obligation.amount) : 0
-    end
+    attrs[:amount] = decimal(params[:amount]).abs * sign if params.key?(:amount)
     @obligation.update!(attrs) if attrs.any?
+
+    # #1337 Schnitt 2: `settled_amount` hat keinen direkten Schreibweg mehr —
+    # sie wird aus den Tilgungen nachgeführt. Das Häkchen legt deshalb eine
+    # Tilgung von Hand an bzw. nimmt sie zurück; Tilgungen aus Bankumsätzen
+    # bleiben davon unberührt, sie sind Tatsachen und kein Häkchen.
+    if params.key?(:settled)
+      if ActiveModel::Type::Boolean.new.cast(params[:settled])
+        @obligation.reload.settle_fully!
+      else
+        @obligation.unsettle!
+      end
+    end
     render_section
   end
 

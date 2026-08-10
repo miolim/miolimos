@@ -1429,6 +1429,42 @@ ALTER SEQUENCE public.oauth_credentials_id_seq OWNED BY public.oauth_credentials
 
 
 --
+-- Name: obligation_settlements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.obligation_settlements (
+    id bigint NOT NULL,
+    payment_obligation_id bigint NOT NULL,
+    bank_transaction_id bigint,
+    kind integer DEFAULT 0 NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    note character varying,
+    settled_on date,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: obligation_settlements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.obligation_settlements_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: obligation_settlements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.obligation_settlements_id_seq OWNED BY public.obligation_settlements.id;
+
+
+--
 -- Name: payment_obligations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2955,6 +2991,13 @@ ALTER TABLE ONLY public.oauth_credentials ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: obligation_settlements id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.obligation_settlements ALTER COLUMN id SET DEFAULT nextval('public.obligation_settlements_id_seq'::regclass);
+
+
+--
 -- Name: payment_obligations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3496,6 +3539,14 @@ ALTER TABLE ONLY public.oauth_credentials
 
 
 --
+-- Name: obligation_settlements obligation_settlements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.obligation_settlements
+    ADD CONSTRAINT obligation_settlements_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: payment_obligations payment_obligations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3830,6 +3881,13 @@ CREATE UNIQUE INDEX idx_kim_unique ON public.knowledge_item_mentions USING btree
 --
 
 CREATE INDEX idx_kis_search_vector ON public.knowledge_items USING gin (search_vector);
+
+
+--
+-- Name: idx_obligation_settlement_unique_tx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_obligation_settlement_unique_tx ON public.obligation_settlements USING btree (payment_obligation_id, bank_transaction_id) WHERE (bank_transaction_id IS NOT NULL);
 
 
 --
@@ -4740,6 +4798,20 @@ CREATE UNIQUE INDEX index_oauth_credentials_on_email_address ON public.oauth_cre
 --
 
 CREATE INDEX index_oauth_credentials_on_provider ON public.oauth_credentials USING btree (provider);
+
+
+--
+-- Name: index_obligation_settlements_on_bank_transaction_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_obligation_settlements_on_bank_transaction_id ON public.obligation_settlements USING btree (bank_transaction_id);
+
+
+--
+-- Name: index_obligation_settlements_on_payment_obligation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_obligation_settlements_on_payment_obligation_id ON public.obligation_settlements USING btree (payment_obligation_id);
 
 
 --
@@ -5723,6 +5795,14 @@ ALTER TABLE ONLY public.team_memberships
 
 
 --
+-- Name: obligation_settlements fk_rails_44e6704652; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.obligation_settlements
+    ADD CONSTRAINT fk_rails_44e6704652 FOREIGN KEY (payment_obligation_id) REFERENCES public.payment_obligations(id);
+
+
+--
 -- Name: knowledge_item_references fk_rails_4cbddb1981; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5856,6 +5936,14 @@ ALTER TABLE ONLY public.tasks
 
 ALTER TABLE ONLY public.knowledge_item_topics
     ADD CONSTRAINT fk_rails_6c0c16c97d FOREIGN KEY (knowledge_item_uuid) REFERENCES public.knowledge_items(uuid);
+
+
+--
+-- Name: obligation_settlements fk_rails_6ecc4747d8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.obligation_settlements
+    ADD CONSTRAINT fk_rails_6ecc4747d8 FOREIGN KEY (bank_transaction_id) REFERENCES public.bank_transactions(id);
 
 
 --
@@ -6297,6 +6385,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260810133000'),
 ('20260810123000'),
 ('20260810120100'),
 ('20260810120000'),

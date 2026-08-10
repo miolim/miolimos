@@ -18,6 +18,11 @@ class PaymentObligation < ApplicationRecord
   # Pflicht aus einem Verhältnis entstehen kann, ohne dass ein Beleg vorliegt.
   belongs_to :announced_by, class_name: "Invoice", optional: true
 
+  # #1337 Schnitt 2: die Tilgungen. Eigene Tabelle, kein Fremdschlüssel hier —
+  # nur so sind Teilzahlung, Überzahlung und die Sammelüberweisung abbildbar,
+  # die mehrere Pflichten tilgt.
+  has_many :obligation_settlements, -> { ordered }, dependent: :destroy
+
   validates :amount, presence: true
 
   # Der Zahlstatus des Trägers ist eine Ableitung — sie wird hier nachgeführt,
@@ -46,11 +51,28 @@ class PaymentObligation < ApplicationRecord
 
   def overdue?(on = Date.current) = !settled? && due_on.present? && due_on < on
 
-  # Solange es upstream keine Umsätze gibt, ist „bezahlt" eine Handlung an der
-  # Pflicht. Mit #1337 wird `settled_amount` aus der Tilgungstabelle
-  # nachgeführt — dieselbe Spalte, kein Umbau.
-  def settle_fully!  = update!(settled_amount: amount)
-  def unsettle!      = update!(settled_amount: 0)
+  # #1337 Schnitt 2: `settled_amount` ist jetzt eine nachgeführte ABLEITUNG aus
+  # den Tilgungen — dieselbe Spalte wie in #1336, kein Umbau, aber ohne
+  # direkten Schreibweg. Sie bleibt als Spalte, damit „offene Pflichten" in SQL
+  # filterbar sind, ohne den halben Bestand in den Speicher zu laden.
+  def recompute_settled_amount!
+    summe = obligation_settlements.sum(:amount)
+    update_column(:settled_amount, summe) unless settled_amount == summe
+    bearer&.recompute_payment_status! if bearer.respond_to?(:recompute_payment_status!)
+  end
+
+  # Von Hand als getilgt vermerken, ohne dass ein Umsatz vorliegt — der Auszug
+  # ist noch nicht importiert, die Zahlung aber geleistet. Läuft über dieselbe
+  # Tabelle wie alles andere, damit es genau EINEN Schreibweg gibt.
+  def settle_fully!
+    rest = open_amount
+    return if rest.zero?
+    obligation_settlements.create!(kind: :manuell, amount: rest, settled_on: Date.current)
+  end
+
+  # Nimmt die Vermerke von Hand zurück. Tilgungen aus Bankumsätzen bleiben —
+  # sie sind Tatsachen, kein Häkchen.
+  def unsettle! = obligation_settlements.manuell.destroy_all
 
   private
 

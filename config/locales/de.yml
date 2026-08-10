@@ -2282,6 +2282,9 @@ de:
     errors:
       messages:
         record_invalid: "Validierung fehlgeschlagen: %{errors}"
+        # #1337 Schnitt 2: Tilgung gegen Bankumsatz.
+        ueber_umsatz:     "übersteigt den noch nicht verteilten Rest des Umsatzes"
+        falsche_richtung: "muss dieselbe Geldrichtung haben wie der Umsatz"
         restrict_dependent_destroy:
           has_one:  "Konnte nicht gelöscht werden, weil ein abhängiger %{record} existiert."
           has_many: "Konnte nicht gelöscht werden, weil abhängige %{record} existieren."

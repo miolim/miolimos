@@ -39,6 +39,19 @@ release is cut, this section is renamed to the new version and a fresh
   and a fork. Recognition and the editor's drop-down read the same list,
   so a new type is added in one place and is immediately both recognised
   and selectable.
+- Whether an incoming document becomes a record of a debt is now decided by
+  the amount payable, not by what kind of document it is (#1338). Until now
+  only something recognised as an invoice ever became one; an insurance
+  policy with a premium or a land transfer tax assessment did not, although
+  both plainly oblige you to pay. Anything carrying an amount now does,
+  whatever it is called, and the kind is kept for filing as before. A
+  document that merely sets out future payments still gets no obligation and
+  so appears in no list of open items. Extraction was widened to match: it
+  now reads the payment fields whenever a document obliges payment, takes
+  the amount demanded rather than the largest figure on the page — the tax
+  assessed, not the purchase price it is calculated from — and always
+  records at least one line item, so a document can no longer end up at
+  €0.00.
 - A document can now carry any number of payment obligations — none, one or
   many (#1336). Until now a document had exactly one due date, which made a
   property tax assessment with four quarterly instalments, or an insurance

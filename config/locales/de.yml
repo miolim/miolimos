@@ -1898,6 +1898,10 @@ de:
       no_billable_times: "Keine offenen abrechenbaren Zeiten im Projekt."
       no_project_no_assign: "Dokument hat kein Projekt — keine Zeit-Zuordnung möglich."
       lines_heading: "Rechnungspositionen"
+      # #1337/#1338 (Hans): Auf einem Bescheid oder Versicherungsschein sind es
+      # keine RECHNUNGSpositionen — die Position ist die Aufschlüsselung des
+      # Betrags, unabhängig von der Belegart.
+      lines_heading_beleg: "Positionen"
       add_position: "+ Position"
       price: "Preis"
       vat_pct: "USt%"

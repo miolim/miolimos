@@ -330,6 +330,20 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_nil invoice.reload.payment_status, "ohne Zahlungspflicht kein Zahlstatus"
   end
 
+  # #1337/#1338 (Hans): Auf einem Bescheid heißt die Position nicht
+  # „Rechnungsposition" — sie gehört aber sehr wohl dorthin, sie schlüsselt den
+  # Betrag auf. Beschriftung, kein Programmpfad.
+  test "die Positions-Überschrift richtet sich nach der Belegart" do
+    rechnung = Invoice.create!(kind: :rechnung, direction: :eingehend, document_type: :rechnung)
+    get "/invoices/#{rechnung.id}/card"
+    assert_includes @response.body, "Rechnungspositionen"
+
+    bescheid = Invoice.create!(kind: :rechnung, direction: :eingehend, document_type: :bescheid)
+    get "/invoices/#{bescheid.id}/card"
+    assert_includes     @response.body, "Positionen"
+    refute_includes     @response.body, "Rechnungspositionen"
+  end
+
   # Der Betrag wird positiv eingegeben — das Vorzeichen setzt der Beleg.
   test "Betragseingabe an der Zahlungspflicht bleibt vorzeichenrichtig" do
     invoice = Invoice.create!(kind: :rechnung, direction: :eingehend)

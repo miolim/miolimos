@@ -1888,6 +1888,7 @@ en:
       no_billable_times: "No open billable times in the project."
       no_project_no_assign: "Document has no project — time assignment not possible."
       lines_heading: "Invoice items"
+      lines_heading_beleg: "Items"
       add_position: "+ Item"
       price: "Price"
       vat_pct: "VAT%"

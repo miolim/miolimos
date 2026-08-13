@@ -20,10 +20,59 @@ require "rails/test_help"
 require "fileutils"
 require "tmpdir"
 
+# ─── #1387: Tests schreiben NIEMALS in das echte Datenverzeichnis ──────────
+#
+# `FileProxy::BASE_PATH` ist per Default `~/miolimos` — in JEDER Umgebung,
+# auch im Test. Es gab zwar `with_isolated_miolimos_base`, aber das war
+# freiwillig: Jeder Test, der eine KI über FileProxy anlegte, ohne sich darin
+# einzupacken, schrieb eine echte Markdown-Datei in den Wissensbestand — und
+# committete sie, weil FileProxy das Repo mitführt.
+#
+# Was daraus wurde: ein voller Suite-Lauf hinterließ rund 500 Dateien in
+# `~/miolimos/knowledge/`. Aufgefallen ist es erst, als am 10.07.2026 ein
+# Reindex den angesammelten Bestand einlas — 14.220 Wissenselemente in acht
+# Minuten, davon 14.120 Dubletten mit Titeln wie „Notiz" oder „Tag-Test".
+#
+# Deshalb ist die Sandbox jetzt der DEFAULT und nicht die Ausnahme: Der Pfad
+# wird einmal beim Laden umgebogen, bevor der erste Test läuft. Wer echte
+# Isolation je Test braucht, nimmt weiterhin `with_isolated_miolimos_base`.
+module MiolimosTestSandbox
+  ROOT = Pathname.new(Dir.mktmpdir("miolimos-test-root-"))
+
+  def self.install!(dir = ROOT)
+    dir.mkpath
+    unless dir.join(".git").exist?
+      Dir.chdir(dir) do
+        system("git", "init", "-q", "-b", "main")
+        system("git", "-c", "user.name=test", "-c", "user.email=test@test.local",
+               "commit", "--allow-empty", "-q", "-m", "root")
+      end
+    end
+    FileProxy.send(:remove_const, :BASE_PATH) if FileProxy.const_defined?(:BASE_PATH)
+    FileProxy.const_set(:BASE_PATH, dir)
+  end
+end
+
+MiolimosTestSandbox.install!
+at_exit { FileUtils.remove_entry(MiolimosTestSandbox::ROOT, true) }
+
+# Sicherung gegen ein stilles Zurückfallen: Zeigt der Pfad nicht in die
+# Sandbox, brechen wir ab, statt in den Wissensbestand zu schreiben.
+unless FileProxy::BASE_PATH.to_s.include?("miolimos-test-root-")
+  abort "FileProxy::BASE_PATH zeigt auf #{FileProxy::BASE_PATH} statt in die Test-Sandbox — Abbruch."
+end
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors) unless ENV["DISABLE_PARALLEL_TESTS"]
+
+    # #1387: je Worker eine eigene Sandbox. Die Worker forken aus dem Parent,
+    # teilten sich sonst EIN Verzeichnis samt Git-Repo — und gleichzeitige
+    # Commits aus mehreren Prozessen in dasselbe Repo gehen schief.
+    parallelize_setup do |worker|
+      MiolimosTestSandbox.install!(MiolimosTestSandbox::ROOT.join("w#{worker}"))
+    end
 
     # SimpleCov + parallelize: Worker forken aus dem Parent, in dem
     # SimpleCov.start schon gelaufen ist. Ohne diesen Hook schreibt nur

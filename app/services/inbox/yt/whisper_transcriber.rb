@@ -32,8 +32,10 @@ module Inbox
         ) do
           duration_sec = nil
           Dir.mktmpdir("yt-audio-") do |dir|
+            # #1410: KEIN `break if audio.nil?` mehr — der Download wirft
+            # jetzt. Vorher wurde ein fehlgeschlagener Download zu einem
+            # leeren Transkript, das als Erfolg verbucht wurde.
             audio = YtDlp.download_audio(url, dir)
-            break if audio.nil?
             duration_sec = probe_duration(audio)
 
             chunks = split_if_needed(audio, dir)
@@ -56,14 +58,18 @@ module Inbox
               offset += (probe_duration(chunk_path) || CHUNK_SECONDS.to_f)
             end
             result = texts.reject(&:blank?).join(" ").strip
+            # #1410: Ein einzelner gescheiterter Chunk ist verschmerzbar — ein
+            # Transkript ohne einen einzigen brauchbaren Chunk ist kein
+            # Transkript. Das als Erfolg zu verbuchen war derselbe Fehler wie
+            # beim Download.
+            if result.blank? && chunks.any?
+              raise YtDlp::Error, "Whisper lieferte für keinen der #{chunks.size} Audio-Abschnitte Text"
+            end
           end
           # #628 W0: Whisper kostet pro Audiominute (0,006 USD) — als
           # cost_eur an die LlmActivity, Tokens gibt es hier nicht.
           { output: result, cost_eur: whisper_cost_eur(duration_sec) }
         end
-        result
-      rescue => e
-        Rails.logger.warn("Whisper-Transkription gesamt fehlgeschlagen: #{e.class} #{e.message}")
         result
       end
 

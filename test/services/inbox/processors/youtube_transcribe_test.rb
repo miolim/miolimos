@@ -232,4 +232,84 @@ class Inbox::Processors::YoutubeTranscribeTest < ActiveSupport::TestCase
       end
     end
   end
+
+  # ── #1410: ein fehlgeschlagener Download ist kein leeres Transkript ──────
+  #
+  # Der Befund aus Hans' Fall: Der Audio-Download scheiterte, `download_audio`
+  # gab `nil` zurück, beide Transkriptions-Wege machten daraus stillschweigend
+  # ein leeres Transkript — die LLM-Aktivität stand auf „erfolgreich", das
+  # Wissenselement entstand ohne Text, das Inbox-Item galt als verarbeitet.
+  # Sichtbar war: kein Transkript, kein Grund.
+
+  def with_download_failing(meldung)
+    original = Inbox::Yt::YtDlp.method(:download_audio)
+    Inbox::Yt::YtDlp.define_singleton_method(:download_audio) do |_url, _dir|
+      raise Inbox::Yt::YtDlp::Error, meldung
+    end
+    yield
+  ensure
+    Inbox::Yt::YtDlp.define_singleton_method(:download_audio, original)
+  end
+
+  test "yt-dlp meldet den Grund, statt still nil zu liefern" do
+    fehler = assert_raises(Inbox::Yt::YtDlp::Error) do
+      original = Open3.method(:capture3)
+      Open3.define_singleton_method(:capture3) do |*_args|
+        ["", "WARNUNG: irgendwas\nERROR: Sign in to confirm you are not a bot\n",
+         Struct.new(:success?).new(false)]
+      end
+      begin
+        Inbox::Yt::YtDlp.download_audio("https://www.youtube.com/watch?v=x", "/tmp")
+      ensure
+        Open3.define_singleton_method(:capture3, original)
+      end
+    end
+    assert_match(/Sign in to confirm/, fehler.message, "der Grund von yt-dlp muss mitkommen")
+  end
+
+  test "scheiternder Download laesst die diarisierte Transkription fehlschlagen" do
+    with_download_failing("yt-dlp Audio-Download fehlgeschlagen: ERROR: Video unavailable") do
+      t = Inbox::Yt::DiarizedTranscriber.new(actor: @hans)
+      assert_raises(Inbox::Yt::YtDlp::Error) { t.call("https://www.youtube.com/watch?v=x") }
+    end
+    a = LlmActivity.where(kind: "inbox_youtube_diarize").order(:created_at).last
+    assert_equal "failed", a.status, "eine gescheiterte Transkription darf nicht als Erfolg zaehlen"
+    assert_match(/Video unavailable/, a.error_message.to_s)
+  end
+
+  test "scheiternder Download laesst die Whisper-Transkription fehlschlagen" do
+    with_download_failing("yt-dlp Audio-Download fehlgeschlagen: ERROR: gesperrt") do
+      t = Inbox::Yt::WhisperTranscriber.new(actor: @hans)
+      assert_raises(Inbox::Yt::YtDlp::Error) { t.call("https://www.youtube.com/watch?v=x") }
+    end
+    a = LlmActivity.where(kind: "inbox_youtube_whisper").order(:created_at).last
+    assert_equal "failed", a.status
+    assert_match(/gesperrt/, a.error_message.to_s)
+  end
+
+  # Und das Ergebnis, das Hans sehen soll: kein stiller Erfolg mehr, sondern
+  # ein Item mit Grund, das man erneut anstossen kann.
+  test "das Inbox-Item traegt danach den Grund statt still verarbeitet zu sein" do
+    with_isolated_miolimos_base do
+      meta = { "id" => "abc123", "title" => "Video", "duration" => 6786,
+               "uploader" => "Kanal", "description" => "x", "upload_date" => "20260810" }
+      original_meta = Inbox::Yt::YtDlp.method(:fetch_metadata)
+      Inbox::Yt::YtDlp.define_singleton_method(:fetch_metadata) { |_url| meta }
+      begin
+        with_whisper_available(true) do
+          with_download_failing("yt-dlp Audio-Download fehlgeschlagen: ERROR: Sign in to confirm you are not a bot") do
+            item = InboxItem.create!(creator: @hans, source_kind: "youtube_url",
+                                     source_url: @url, title: "Video",
+                                     status: "pending", payload: { "confirm_whisper" => true })
+            Inbox::Processors::YoutubeTranscribe.run(item, actor: @hans) rescue nil
+            item.reload
+            assert_equal "failed", item.status, "nicht mehr still auf processed"
+            assert_match(/not a bot/, item.error_message.to_s, "der Grund muss am Item stehen")
+          end
+        end
+      ensure
+        Inbox::Yt::YtDlp.define_singleton_method(:fetch_metadata, original_meta)
+      end
+    end
+  end
 end

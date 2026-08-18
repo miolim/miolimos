@@ -36,6 +36,16 @@ module Inbox
       # zur Audio-Datei in `dir`. Whisper akzeptiert m4a/webm direkt —
       # kein ffmpeg-Transcode nötig (das hat bei 30-min-Audios ~5 min
       # CPU gefressen).
+      # #1410: Ein Fehlschlag WIRFT. Vorher kam `nil` zurück, und die beiden
+      # Transkriptions-Wege haben daraus stillschweigend ein leeres Transkript
+      # gemacht — die LLM-Aktivität stand auf „erfolgreich", das Wissenselement
+      # entstand ohne Text, und im Inbox-Item stand kein Wort davon. Hans sah
+      # nur: kein Transkript, kein Grund. Der Grund stand ausschließlich in
+      # einer Logzeile.
+      #
+      # Die Meldung von yt-dlp wird mitgegeben — sie sagt, ob YouTube gesperrt
+      # hat, das Format fehlt oder das Netz weg war. Ohne sie beginnt die
+      # Suche jedes Mal von vorn.
       def self.download_audio(url, dir)
         out_template = File.join(dir, "audio.%(ext)s")
         _out, err, status = Open3.capture3(
@@ -43,11 +53,18 @@ module Inbox
           "-f", "ba[ext=m4a]/ba[ext=webm]/bestaudio",
           "-o", out_template, url
         )
-        unless status.success?
-          Rails.logger.warn("yt-dlp audio-download fehlgeschlagen: #{err.lines.first}")
-          return nil
-        end
-        Dir.glob(File.join(dir, "audio.*")).find { |f| !f.end_with?(".part") }
+        raise Error, "yt-dlp Audio-Download fehlgeschlagen: #{fehlergrund(err)}" unless status.success?
+
+        Dir.glob(File.join(dir, "audio.*")).find { |f| !f.end_with?(".part") } ||
+          raise(Error, "yt-dlp meldete Erfolg, aber es liegt keine Audiodatei in #{dir}")
+      end
+
+      # Die erste Zeile von yt-dlp ist oft ein Fortschrittsbalken; die
+      # brauchbare Auskunft steht in der ERROR-Zeile.
+      def self.fehlergrund(stderr)
+        zeilen = stderr.to_s.lines.map(&:strip).reject(&:empty?)
+        (zeilen.find { |l| l.start_with?("ERROR") } || zeilen.last || "kein Grund gemeldet")
+          .truncate(300)
       end
     end
   end

@@ -8,8 +8,13 @@ module Inbox
     # daher kein Chunking wie bei Whisper). Nach `call`:
     #   - `utterances` = [{ "speaker" => "A", "start" => Float(sec),
     #                       "text" => "…" }, …] (Basis für Sprecher-Absätze)
-    # LlmActivity wird wie beim Whisper-Pfad getrackt; bei Fehler bleibt sie
-    # `failed` und der Caller bekommt "" (leeres Transkript) zurück.
+    # LlmActivity wird wie beim Whisper-Pfad getrackt.
+    #
+    # #1410: Ein Fehler wird NICHT mehr geschluckt. Vorher fing `call` alles
+    # ab und gab "" zurück — das Wissenselement entstand dann ohne Transkript,
+    # das Inbox-Item galt als verarbeitet, und nichts sagte, warum. Jetzt
+    # schlägt der Fehler bis zur ProcessorBase durch: Das Item steht auf
+    # `failed`, trägt den Grund und lässt sich erneut anstoßen.
     class DiarizedTranscriber
       attr_reader :utterances
 
@@ -29,8 +34,10 @@ module Inbox
         ) do
           duration_sec = nil
           Dir.mktmpdir("yt-audio-") do |dir|
+            # #1410: KEIN `break if audio.nil?` mehr — der Download wirft jetzt.
+            # Vorher wurde ein fehlgeschlagener Download zu einem leeren
+            # Transkript, das als Erfolg verbucht wurde.
             audio = YtDlp.download_audio(url, dir)
-            break if audio.nil?
 
             resp = Llm::DiarizationClient.transcribe(path: audio, language: language_hint)
             @utterances  = Array(resp["utterances"])
@@ -39,9 +46,6 @@ module Inbox
           end
           { output: result, cost_eur: diarize_cost_eur(duration_sec) }
         end
-        result
-      rescue => e
-        Rails.logger.warn("Diarisierte Transkription fehlgeschlagen: #{e.class} #{e.message}")
         result
       end
 

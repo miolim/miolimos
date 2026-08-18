@@ -15,6 +15,19 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Fixed
+
+- A failed audio download no longer passes for a finished transcription
+  (#1410). When a video's audio could not be fetched, both transcription
+  paths quietly turned that into an empty transcript: the work was recorded
+  as successful, the knowledge item was created with the video's details but
+  no text, and the inbox item counted as processed. What you saw was a
+  missing transcript and no reason for it — the reason existed only in a log
+  line. Now the failure carries through: the download reports what actually
+  went wrong (blocked, unavailable, no network), the inbox item shows that
+  reason and can be run again, and a transcription that produced no text at
+  all is no longer counted as one.
+
 ### Added
 
 - A document now records what kind of document it is (#1336). Incoming

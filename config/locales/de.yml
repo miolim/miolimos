@@ -2159,6 +2159,7 @@ de:
     transcribe_duration_html: "Das Video ist <strong>%{duration}</strong> lang. Verfahren wählen:"  # #776
     continue_transcribe_whisper: "Transkribieren (Whisper, ≈ %{cost} €)"  # #776
     continue_transcribe_diarize: "Mit Sprechererkennung (≈ %{cost} €)"  # #776
+    continue_transcribe_subtitles: "Aus Untertiteln (%{lang}, kostenlos)"
     error: "Fehler"
     retry: "Erneut versuchen"
     archived_as_duplicate: "Als Dublette archiviert"

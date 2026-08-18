@@ -13,24 +13,63 @@ module Inbox
       # H3-Zwischenüberschriften, leichte Versprecher-Korrektur, KEINE
       # Übersetzung/Zusammenfassung). Bei < 60 % Original-Länge wird das
       # Ergebnis als "vermutlich zusammengefasst" verworfen.
+      # #1410: Lange Transkripte werden in Stuecken strukturiert.
+      #
+      # Vorher lief der Pass immer in EINEM Aufruf mit 16.384 Ausgabe-Tokens.
+      # Ein zweistuendiges Video bringt aber gut 115.000 Zeichen — die Ausgabe
+      # kann gar nicht so lang werden, die 60-%-Pruefung schlaegt zwangslaeufig
+      # an, und der Pass verwarf sein Ergebnis STILL. Bei Whisper fiel das nie
+      # auf, weil dort der Zeitstempel-Pfad greift; ueber die Untertitel ist
+      # dieser Pass der einzige, der Absaetze einzieht.
+      MAX_STUECK = 24_000
+
       def structure(text, meta)
-        prompt = structure_prompt(text, meta)
+        stuecke = zerlegen(text, MAX_STUECK)
+        teile = stuecke.each_with_index.map do |stueck, i|
+          strukturiere_stueck(stueck, meta, i + 1, stuecke.size) or return nil
+        end
+        teile.join("\n\n").presence
+      rescue => e
+        Rails.logger.warn("YT structure-pass fehlgeschlagen: #{e.class} #{e.message}")
+        nil
+      end
+
+      # An Satzgrenzen trennen, nicht mitten im Wort — sonst beginnt jedes
+      # Stueck mit einem Bruchstueck, das die KI zu reparieren versucht.
+      def zerlegen(text, max)
+        return [text] if text.length <= max
+
+        stuecke = []
+        rest = text.strip
+        while rest.length > max
+          fenster = rest[0, max]
+          schnitt = fenster.rindex(/[.!?]\s/) || fenster.rindex(" ") || max
+          stuecke << rest[0, schnitt + 1].strip
+          rest = rest[(schnitt + 1)..].to_s.strip
+        end
+        stuecke << rest if rest.present?
+        stuecke
+      end
+
+      private
+
+      def strukturiere_stueck(text, meta, nr, gesamt)
         LlmActivity.track(
           kind: :inbox_youtube_structure, actor: @actor,
           source_kind: "url", source_id: meta["webpage_url"].to_s,
-          input_summary: "Strukturierung Whisper-Transkript (#{text.length} chars)",
+          input_summary: "Strukturierung Transkript #{nr}/#{gesamt} (#{text.length} chars)",
           model: Llm::ChatClient::DEFAULT_ANTHROPIC_MODEL
         ) do |activity|
-          out = Llm::ChatClient.complete(prompt: prompt, max_tokens: 16_384, activity: activity).to_s.strip
+          out = Llm::ChatClient.complete(prompt: structure_prompt(text, meta),
+                                         max_tokens: 16_384, activity: activity).to_s.strip
           if out.length < (text.length * 0.6)
             raise "Output zu kurz (#{out.length}/#{text.length} chars) — vermutlich Zusammenfassung statt Strukturierung"
           end
           out
         end&.presence
-      rescue => e
-        Rails.logger.warn("YT structure-pass fehlgeschlagen: #{e.class} #{e.message}")
-        nil
       end
+
+      public
 
       # #660 v2 (Hans): Gliederung OHNE die Zeitstempel anzutasten. Die KI
       # bekommt die fertig nummerierten Zeitstempel-Absätze und liefert

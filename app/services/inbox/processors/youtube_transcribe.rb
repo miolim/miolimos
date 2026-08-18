@@ -26,7 +26,7 @@ module Inbox
 
         meta = Inbox::Yt::YtDlp.fetch_metadata(url)
 
-        transcript, whisper_used, segments, utterances = transcribe(item, meta, url, actor: actor)
+        transcript, transcript_da, segments, utterances, via = transcribe(item, meta, url, actor: actor)
 
         # Post-Processing via Haiku: strukturieren (Absätze + Zwischen-
         # überschriften) und Stichpunkt-Zusammenfassung. Beide optional —
@@ -35,7 +35,7 @@ module Inbox
         timestamped = false
         diarized    = utterances.present?
         summary     = nil
-        if whisper_used
+        if transcript_da
           post = Inbox::Yt::TranscriptPostProcessor.new(actor: actor)
           # #660 (Hans): Liegen Segment-Zeitstempel vor, bauen wir die
           # Absätze deterministisch mit anklickbarem Zeitstempel-Link auf
@@ -66,7 +66,8 @@ module Inbox
         end
 
         body = Inbox::Yt::MarkdownBuilder.build(meta, transcript,
-                                                whisper_used: whisper_used,
+                                                whisper_used: transcript_da,
+                                                via:          via,
                                                 structured:   structured,
                                                 timestamped:  timestamped,
                                                 diarized:     diarized,
@@ -99,12 +100,21 @@ module Inbox
       def transcribe(item, meta, url, actor:)
         whisper_ok = Llm::WhisperClient.available?
         diarize_ok = Llm::DiarizationClient.available?
-        return ["", false, [], []] unless whisper_ok || diarize_ok
+
+        # #1410: dritter Weg — die (automatischen) Untertitel. Kein Audio,
+        # keine Kosten. Für Videos, deren Tonspur YouTube nicht herausgibt,
+        # ist das der einzige Weg; sonst der billigste.
+        subs_ok = Inbox::Yt::SubtitleTranscriber.available?(meta)
+
+        # Steht KEIN Weg offen, gibt es nichts zu bestätigen: Das Wissenselement
+        # entsteht mit Metadaten und dem Vermerk, dass es kein Transkript gibt.
+        return ["", false, [], [], nil] unless whisper_ok || diarize_ok || subs_ok
 
         want_diarize = ActiveModel::Type::Boolean.new.cast(item.payload["confirm_diarize"]) && diarize_ok
         want_whisper = ActiveModel::Type::Boolean.new.cast(item.payload["confirm_whisper"]) && whisper_ok
+        want_subs    = ActiveModel::Type::Boolean.new.cast(item.payload["confirm_subtitles"]) && subs_ok
 
-        unless want_diarize || want_whisper
+        unless want_diarize || want_whisper || want_subs
           duration = meta["duration"].to_i
           raise Inbox::ProcessorBase::NeedsConfirmation.new(
             reason:                "whisper_youtube_audio",
@@ -114,20 +124,30 @@ module Inbox
             estimated_eur:         (Llm::WhisperClient.estimated_eur(duration) if whisper_ok),
             diarize_available:     diarize_ok,
             diarize_estimated_eur: (Llm::DiarizationClient.estimated_eur(duration) if diarize_ok),
+            subtitles_available:   subs_ok,
+            subtitles_language:    Inbox::Yt::SubtitleTranscriber.language_for(meta),
             processor_kind:        self.class.kind,
             confirm_param:         "confirm_whisper"
           )
+        end
+
+        if want_subs
+          text = Inbox::Yt::SubtitleTranscriber.new(actor: actor).call(url, meta)
+          # Ohne Segmente und ohne Utterances landet die Nachbearbeitung im
+          # Struktur-Pass — und genau der zieht Satzzeichen und Absätze ein,
+          # die automatischen Untertiteln fehlen.
+          return [text, text.present?, [], [], :subtitles]
         end
 
         lang = Inbox::Yt::MarkdownBuilder.language_hint(meta)
         if want_diarize
           transcriber = Inbox::Yt::DiarizedTranscriber.new(actor: actor)
           text = transcriber.call(url, language_hint: lang)
-          [text, text.present?, [], transcriber.utterances]
+          [text, text.present?, [], transcriber.utterances, :diarize]
         else
           transcriber = Inbox::Yt::WhisperTranscriber.new(actor: actor)
           text = transcriber.call(url, language_hint: lang)
-          [text, text.present?, transcriber.segments, []]
+          [text, text.present?, transcriber.segments, [], :whisper]
         end
       end
 

@@ -59,6 +59,27 @@ module Inbox
           raise(Error, "yt-dlp meldete Erfolg, aber es liegt keine Audiodatei in #{dir}")
       end
 
+      # #1410: Untertitel holen, OHNE das Video zu laden. Der Weg für Videos,
+      # deren Tonspur YouTube nicht herausgibt (403/DRM) — und der billigste
+      # überhaupt: kein Download, keine Transkriptionskosten.
+      #
+      # `json3` statt vtt, weil das Format die Zeilen einzeln und ohne die
+      # Überblend-Duplikate liefert, mit denen die vtt-Fassung der
+      # Auto-Untertitel jede Zeile zweimal enthält.
+      def self.download_subtitles(url, dir, lang: "en")
+        out_template = File.join(dir, "sub.%(ext)s")
+        _out, err, status = Open3.capture3(
+          BIN, "--no-warnings", "--no-playlist", "--skip-download",
+          "--write-auto-subs", "--write-subs",
+          "--sub-langs", lang, "--sub-format", "json3",
+          "-o", out_template, url
+        )
+        raise Error, "yt-dlp Untertitel-Download fehlgeschlagen: #{fehlergrund(err)}" unless status.success?
+
+        Dir.glob(File.join(dir, "sub*.json3")).first ||
+          raise(Error, "Keine Untertitel-Datei für Sprache #{lang} erhalten")
+      end
+
       # Die erste Zeile von yt-dlp ist oft ein Fortschrittsbalken; die
       # brauchbare Auskunft steht in der ERROR-Zeile.
       def self.fehlergrund(stderr)

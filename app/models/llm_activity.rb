@@ -12,6 +12,7 @@ class LlmActivity < ApplicationRecord
     inbox_ai_transform
     inbox_youtube_whisper
     inbox_youtube_diarize
+    inbox_youtube_subtitles
     inbox_youtube_structure
     inbox_youtube_summary
     inbox_document_extract
@@ -108,7 +109,7 @@ class LlmActivity < ApplicationRecord
       ParagraphResearchJob.perform_later(uuid, anchor, "", actor_id)
       true
     when "inbox_ai_transform", "inbox_youtube_whisper", "inbox_youtube_diarize",
-         "inbox_youtube_structure", "inbox_youtube_summary"
+         "inbox_youtube_subtitles", "inbox_youtube_structure", "inbox_youtube_summary"
       item = InboxItem.find_by(id: source_id)
       return false unless item
       processor_kind = item.processor_kind.presence || item.suggested_processor_kind

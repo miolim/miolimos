@@ -78,6 +78,7 @@ class InboxItemsController < ApplicationController
     payload_updates["prompt_template_slug"] = params[:prompt_template_slug] if params[:prompt_template_slug].present?
     payload_updates["confirm_whisper"]      = true if ActiveModel::Type::Boolean.new.cast(params[:confirm_whisper])
     payload_updates["confirm_diarize"]      = true if ActiveModel::Type::Boolean.new.cast(params[:confirm_diarize])  # #776
+    payload_updates["confirm_subtitles"]    = true if ActiveModel::Type::Boolean.new.cast(params[:confirm_subtitles])  # #1410
     # #934: Dokument-Import-Review bestätigt — inkl. der angehakten Aufgaben.
     if ActiveModel::Type::Boolean.new.cast(params[:confirm_import])
       payload_updates["confirm_import"]        = true

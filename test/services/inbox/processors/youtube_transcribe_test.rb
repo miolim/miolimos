@@ -312,4 +312,89 @@ class Inbox::Processors::YoutubeTranscribeTest < ActiveSupport::TestCase
       end
     end
   end
+
+  # ── #1410: Transkript aus Untertiteln ───────────────────────────────────
+
+  JSON3 = {
+    "events" => [
+      { "segs" => [{ "utf8" => "so i quit" }] },
+      { "segs" => [{ "utf8" => "\n" }] },
+      { "segs" => [{ "utf8" => "and that" }, { "utf8" => " changed everything" }] }
+    ]
+  }.freeze
+
+  test "json3 wird zu Fliesstext, Leer-Events fallen weg" do
+    text = Inbox::Yt::SubtitleTranscriber.parse_json3(JSON3.to_json)
+    assert_equal "so i quit and that changed everything", text
+  end
+
+  # Originalsprache schlaegt Englisch schlaegt Irgendwas — eine automatische
+  # UEbersetzung setzt auf der automatischen Erkennung auf und verdoppelt
+  # deren Fehler.
+  test "Sprachwahl bevorzugt die Sprache des Videos" do
+    f = Inbox::Yt::SubtitleTranscriber
+    assert_equal "de", f.language_for({ "language" => "de", "automatic_captions" => { "en" => [], "de" => [] } })
+    assert_equal "en", f.language_for({ "language" => "xx", "automatic_captions" => { "en" => [], "fr" => [] } })
+    assert_equal "fr", f.language_for({ "automatic_captions" => { "fr" => [] } })
+    assert_nil   f.language_for({ "automatic_captions" => {} })
+    assert_not   f.available?({ "automatic_captions" => {} })
+  end
+
+  test "Untertitel ohne Text sind kein Transkript" do
+    original = Inbox::Yt::YtDlp.method(:download_subtitles)
+    Inbox::Yt::YtDlp.define_singleton_method(:download_subtitles) do |_url, dir, lang: nil|
+      pfad = File.join(dir, "sub.en.json3")
+      File.write(pfad, { "events" => [] }.to_json)
+      pfad
+    end
+    begin
+      t = Inbox::Yt::SubtitleTranscriber.new(actor: @hans)
+      assert_raises(Inbox::Yt::YtDlp::Error) { t.call(@url, { "language" => "en", "automatic_captions" => { "en" => [] } }) }
+      a = LlmActivity.where(kind: "inbox_youtube_subtitles").order(:created_at).last
+      assert_equal "failed", a.status
+    ensure
+      Inbox::Yt::YtDlp.define_singleton_method(:download_subtitles, original)
+    end
+  end
+
+  # Der Weg, den Hans wollte: kein Audio, keine Kosten, und der
+  # Nachbearbeitungs-Pass zieht Satzzeichen und Absaetze ein.
+  test "Untertitel-Weg erzeugt ein nachbearbeitetes Transkript ohne Audio-Download" do
+    with_isolated_miolimos_base do
+      meta = { "id" => "abc123", "title" => "Video", "duration" => 6786,
+               "uploader" => "Kanal", "description" => "x", "upload_date" => "20260810",
+               "language" => "en", "automatic_captions" => { "en" => [{ "ext" => "json3" }] } }
+      orig_meta = Inbox::Yt::YtDlp.method(:fetch_metadata)
+      orig_subs = Inbox::Yt::YtDlp.method(:download_subtitles)
+      orig_dl   = Inbox::Yt::YtDlp.method(:download_audio)
+      Inbox::Yt::YtDlp.define_singleton_method(:fetch_metadata) { |_url| meta }
+      Inbox::Yt::YtDlp.define_singleton_method(:download_subtitles) do |_url, dir, lang: nil|
+        pfad = File.join(dir, "sub.en.json3")
+        File.write(pfad, JSON3.to_json)
+        pfad
+      end
+      # Wird der Audio-Download angefasst, ist der Weg falsch gebaut.
+      Inbox::Yt::YtDlp.define_singleton_method(:download_audio) do |_url, _dir|
+        raise "Audio-Download darf beim Untertitel-Weg NICHT aufgerufen werden"
+      end
+      begin
+        strukturiert = "So I quit. And that changed everything."
+        stub_chat_client(->(**_kw) { strukturiert }) do
+          item = InboxItem.create!(creator: @hans, source_kind: "youtube_url",
+                                   source_url: @url, title: "Video", status: "pending",
+                                   payload: { "confirm_subtitles" => true })
+          Inbox::Processors::YoutubeTranscribe.run(item, actor: @hans)
+          item.reload
+          assert_equal "processed", item.status, item.error_message.to_s
+          ki = KnowledgeItem.find(item.result.dig("created", 0, "uuid"))
+          assert_match(/aus automatischen Untertiteln/, ki.body, "Herkunft gehoert in die Ueberschrift")
+          assert_match(/So I quit\./, ki.body, "der Struktur-Pass zieht Satzzeichen ein")
+        end
+      ensure
+        Inbox::Yt::YtDlp.define_singleton_method(:fetch_metadata, orig_meta)
+        Inbox::Yt::YtDlp.define_singleton_method(:download_subtitles, orig_subs)
+        Inbox::Yt::YtDlp.define_singleton_method(:download_audio, orig_dl)
+      end
+    end
+  end
 end

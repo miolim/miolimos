@@ -4,7 +4,7 @@ module Inbox
     # Transkript und Bullet-Zusammenfassung. Reine Funktion (keine
     # Side-Effects, kein I/O) — entsprechend leicht testbar.
     class MarkdownBuilder
-      def self.build(meta, transcript, whisper_used: false, structured: false, timestamped: false, diarized: false, summary: nil)
+      def self.build(meta, transcript, whisper_used: false, structured: false, timestamped: false, diarized: false, summary: nil, via: nil)
         parts = []
         if (kanal = meta["uploader"].presence || meta["channel"])
           parts << "**Kanal:** #{kanal}"
@@ -14,7 +14,7 @@ module Inbox
         parts << "## Zusammenfassung\n\n#{summary.strip}"                     if summary.present?
         parts << "**Beschreibung:**\n\n#{meta['description'].to_s.strip}"     if meta["description"].present?
         if transcript.present?
-          parts << "#{transcript_heading(whisper_used: whisper_used, structured: structured, timestamped: timestamped, diarized: diarized)}\n\n#{transcript.strip}"
+          parts << "#{transcript_heading(whisper_used: whisper_used, structured: structured, timestamped: timestamped, diarized: diarized, via: via)}\n\n#{transcript.strip}"
         else
           parts << "_Kein Transkript verfügbar (keine Untertitel)._"
         end
@@ -49,8 +49,14 @@ module Inbox
         lang.to_s.split("-").first.downcase
       end
 
-      def self.transcript_heading(whisper_used:, structured:, timestamped: false, diarized: false)
-        if diarized      then "## Transkript (mit Sprechererkennung, Zeitstempel)"
+      # #1410: Woher das Transkript stammt, gehoert in die Ueberschrift. Aus
+      # Untertiteln gelesen ist etwas anderes als aus dem Ton transkribiert —
+      # wer es spaeter liest, soll das sehen, ohne die Herkunft zu suchen.
+      def self.transcript_heading(whisper_used:, structured:, timestamped: false, diarized: false, via: nil)
+        if via == :subtitles
+          structured ? "## Transkript (aus automatischen Untertiteln, nachbearbeitet)"
+                     : "## Transkript (aus automatischen Untertiteln)"
+        elsif diarized   then "## Transkript (mit Sprechererkennung, Zeitstempel)"
         elsif timestamped   then "## Transkript (Whisper, mit Zeitstempeln)"
         elsif structured then "## Transkript (Whisper, strukturiert)"
         elsif whisper_used then "## Transkript (Whisper)"

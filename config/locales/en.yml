@@ -2144,6 +2144,7 @@ en:
     transcribe_duration_html: "The video is <strong>%{duration}</strong> long. Choose a method:"  # #776
     continue_transcribe_whisper: "Transcribe (Whisper, ≈ %{cost} €)"  # #776
     continue_transcribe_diarize: "With speaker recognition (≈ %{cost} €)"  # #776
+    continue_transcribe_subtitles: "From subtitles (%{lang}, free)"
     error: "Error"
     retry: "Try again"
     archived_as_duplicate: "Archived as duplicate"

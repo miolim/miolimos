@@ -175,6 +175,17 @@
                     method: :post,
                     class: "text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer" %>
             <% end %>
+            <%# #1410 (Hans): dritter Weg — die automatischen Untertitel.
+                Kein Audio-Download, keine Kosten; Satzzeichen und Absaetze
+                zieht der Nachbearbeitungs-Pass ein. Der einzige Weg bei
+                Videos, deren Tonspur YouTube nicht herausgibt. %>
+            <% if cf["subtitles_available"] %>
+              <%= button_to t("inbox_items.continue_transcribe_subtitles",
+                    lang: cf["subtitles_language"].to_s.upcase),
+                    process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_subtitles: true),
+                    method: :post,
+                    class: "text-sm px-3 py-1 rounded bg-slate-600 text-white hover:bg-slate-700 cursor-pointer" %>
+            <% end %>
           </div>
         </section>
       <% end %>

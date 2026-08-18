@@ -15,6 +15,25 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- A transcript can now be taken from a video's subtitles instead of its
+  audio (#1410). Where a video's sound cannot be fetched at all — some are
+  simply refused — the subtitles are usually still there, and where the
+  audio could be fetched they are the cheaper route: no download, no
+  transcription cost. The original language is preferred over an automatic
+  translation, which would only compound the recognition errors underneath
+  it. Automatic subtitles arrive as a conveyor belt of words, so the
+  existing post-processing pass runs over them and puts in the punctuation
+  and paragraphs; the heading says where the text came from, since read off
+  subtitles is not the same as transcribed from sound. Speakers are not
+  told apart on this route — that still needs the audio.
+- Long transcripts are now processed in several passes. A two-hour video
+  runs to some 115,000 characters, and in a single pass the result could
+  never come back long enough to satisfy the safeguard against silent
+  summarising — so the improvement was discarded every time, without
+  saying so.
+
 ### Fixed
 
 - A failed audio download no longer passes for a finished transcription

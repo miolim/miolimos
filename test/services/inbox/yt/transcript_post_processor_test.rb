@@ -83,4 +83,37 @@ class Inbox::Yt::TranscriptPostProcessorTest < ActiveSupport::TestCase
     end
     refute called
   end
+
+  # #1410: Ein zweistuendiges Video bringt ~115.000 Zeichen. In EINEM Aufruf
+  # kann die Ausgabe nie 60 % davon erreichen — der Pass verwarf sein Ergebnis
+  # zwangslaeufig und still. Jetzt wird in Stuecken gearbeitet.
+  test "zerlegen schneidet an Satzgrenzen, nicht mitten im Wort" do
+    p = Inbox::Yt::TranscriptPostProcessor.new(actor: nil)
+    kurz = "Ein Satz. Noch einer."
+    assert_equal [kurz], p.zerlegen(kurz, 1000)
+
+    text = (["Das ist ein vollstaendiger Satz."] * 200).join(" ")
+    stuecke = p.zerlegen(text, 500)
+    assert stuecke.size > 1, "langer Text muss zerlegt werden"
+    assert stuecke.all? { |t| t.length <= 500 }, "kein Stueck darf ueber die Grenze"
+    assert stuecke.all? { |t| t.end_with?(".") }, "an Satzgrenzen trennen"
+    assert_equal text.delete(" "), stuecke.join(" ").delete(" "), "kein Wort darf verlorengehen"
+  end
+
+  test "langes Transkript wird in mehreren Durchgaengen strukturiert" do
+    text = (["Das ist ein vollstaendiger Satz."] * 3000).join(" ")
+    assert text.length > Inbox::Yt::TranscriptPostProcessor::MAX_STUECK
+
+    aufrufe = 0
+    stub_chat_client(->(**kw) {
+      aufrufe += 1
+      # So lang wie die Eingabe, damit die 60-%-Pruefung nicht anschlaegt.
+      kw[:prompt].to_s[-3000..].to_s + ("x" * 30_000)
+    }) do
+      hans = create_human
+      out = Inbox::Yt::TranscriptPostProcessor.new(actor: hans).structure(text, { "title" => "T" })
+      assert out.present?, "das Ergebnis darf nicht still verworfen werden"
+      assert aufrufe > 1, "mehrere Durchgaenge erwartet, waren #{aufrufe}"
+    end
+  end
 end

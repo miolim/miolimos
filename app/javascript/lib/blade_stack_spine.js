@@ -17,6 +17,19 @@
 // (stack_highlight_controller.js) — der Chevron schob die Zeile ausserdem
 // sichtbar ein, was neben der Farbe als zweite Sprache gelesen wurde.
 
+// #1412 (Hans): Wo im Spine der Instanz-Zaehler sitzt — an ZWEITER Stelle,
+// unter dem Card-Icon. Als eigene Funktion, damit die Regel ohne DOM
+// pruefbar ist: Aus der Liste der Spine-Kinder (jeweils: steckt ein <svg>
+// darin?) faellt der Index, HINTER den der Zaehler gehoert.
+//
+// Anker ist das ICON, nicht die feste Position — manche Spines tragen davor
+// noch einen Themenfarb-Punkt (ein span ohne svg). Gibt es gar kein Icon,
+// kommt der Zaehler nach vorn (-1 = ganz an den Anfang).
+export function counterAnchorIndex(hasSvgFlags) {
+  const idx = hasSvgFlags.findIndex(Boolean)
+  return idx
+}
+
 export const BladeStackSpineMixin = {
   // #320 (Hans, 2026-05-24): Counter-Badge auf jedem Spine, dessen
   // data-uuid mehr als einmal im Stack vorkommt. Listen-Blades sind
@@ -60,7 +73,21 @@ export const BladeStackSpineMixin = {
           e.stopPropagation()
           this._rotateInstance(card)
         })
-        spine.insertBefore(badge, spine.firstChild)
+        // #1412 (Hans): Der Zaehler sitzt an ZWEITER Stelle, unter dem
+        // Card-Icon — nicht ganz oben. Vorher schob er das Icon und alles
+        // darunter nach unten; das Icon ist aber das, woran man die Card
+        // erkennt, und es soll dort bleiben, wo es immer sitzt.
+        //
+        // Anker ist das Icon, nicht die Position: Manche Spines tragen davor
+        // noch einen Themenfarb-Punkt (`pre_icon`, ein span OHNE svg). Das
+        // Icon ist das erste Kind, in dem ein <svg> steckt.
+        const kinder = Array.from(spine.children)
+        const idx = counterAnchorIndex(kinder.map(el => !!el.querySelector?.("svg")))
+        if (idx >= 0) {
+          kinder[idx].insertAdjacentElement("afterend", badge)
+        } else {
+          spine.insertBefore(badge, spine.firstChild)
+        }
       }
     })
   },

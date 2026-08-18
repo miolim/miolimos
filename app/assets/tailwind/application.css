@@ -50,8 +50,9 @@
   .list-search-hidden { display: none !important; }
 
   /* #320 (Hans): Counter-Badge auf jedem Spine, dessen data-uuid mehr
-     als einmal im Stack vorkommt. Sitzt ganz oben im Spine, ueber dem
-     Item-Icon. Dunkles Pillen-Layout fuer Kontrast. */
+     als einmal im Stack vorkommt. #1412 (Hans): Sitzt UNTER dem Item-Icon,
+     nicht darueber — das Icon ist das, woran man die Card erkennt, und
+     bleibt an seinem Platz. Dunkles Pillen-Layout fuer Kontrast. */
   .stack-instance-counter {
     @apply inline-flex items-center justify-center min-w-[1.5rem] h-4 px-1 mt-1 mb-0.5
            rounded-full bg-slate-700 text-white text-[10px] font-semibold leading-none shrink-0
@@ -506,6 +507,17 @@ body:not(.has-blade-stack) .topbar-trail {
 .stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600,
 .stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600 * { color: #059669; }  /* emerald-600 */
 
+/* #1412 (Hans): Der Instanz-Zaehler behaelt seine weisse Schrift, auch auf
+   der fokussierten Card. Die #913-Regel oben faerbt ALLE Spine-Inhalte
+   schwarz, damit graue Icons auf dem kraeftigen Spine lesbar bleiben — beim
+   Zaehler kippte sie schwarz auf dunkelgrau, also genau ins Gegenteil.
+   Er soll ueberall gleich aussehen; welche Card im Fokus ist, sagt die
+   Spine-Farbe. Hoehere Spezifitaet schlaegt die Schwarz-Regel. */
+.stack-card[data-active="true"] .stack-spine .stack-instance-counter,
+.stack-card[data-active="true"] .stack-spine .stack-instance-counter * {
+  color: #fff;
+}
+
 /* #914 (Hans, 2026-07-08): Stack-Verlauf-Icon nur auf dem ERSTEN Card-Spine
    im Stack — vorher auf jedem Spine (Duplikat). Jede Card mit vorausgehender
    Card-Geschwister (also alle ausser der ersten) blendet den Button aus. */
@@ -765,6 +777,8 @@ html.dark .theme-icon-sun  { display: flex; }
 .dark .hover\:bg-slate-800:hover { background-color: #273244; }
 .dark .bg-slate-900 { background-color: #1e293b; }
 .dark .stack-instance-counter { background-color: #475569; }
+.dark .stack-card[data-active="true"] .stack-spine .stack-instance-counter,
+.dark .stack-card[data-active="true"] .stack-spine .stack-instance-counter * { color: #fff; }
 .dark .stack-instance-counter:hover { background-color: #576882; }
 
 /* Rahmen, die auf dunklen Flächen sitzen → dezent statt hell. */

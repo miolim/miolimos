@@ -116,4 +116,36 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal [["Bestellnr", "B-77"]], invoice.info_fields
     assert_equal "B-77", invoice.merge_context["bestellnr"]
   end
+
+  # #1434 (aus immoos #1195): Brutto ist ein Geldbetrag. Ohne Rundung
+  # erzeugen USt-Zeilen Drittel-Cents, die Betragsspalten (scale 2) nicht —
+  # dann passt kein Umsatz je exakt und die Zahlungspflicht bleibt ewig
+  # „teilweise". Im Fork blieb so nach einer Ausbuchung ein unbuchbarer
+  # Restbetrag stehen.
+  test "gross_total rundet auf Cent" do
+    inv = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    inv.invoice_lines.create!(description: "Leistung", quantity: 1,
+                              unit_price: BigDecimal("12212.70"), tax_rate: 19, position: 0)
+    inv.reload
+
+    assert_equal BigDecimal("14533.11"), inv.gross_total
+    assert_equal 2, inv.gross_total.to_s("F").split(".").last.length
+  end
+
+  # Der Fall, der es scharf macht: Die Zahlungspflicht bekommt ihren Betrag
+  # aus gross_total, und die Tilgung vergleicht auf Gleichheit.
+  test "eine Zahlungspflicht aus dem Bruttobetrag ist exakt tilgbar" do
+    inv = Invoice.create!(kind: :rechnung, direction: :eingehend)
+    inv.invoice_lines.create!(description: "Leistung", quantity: 1,
+                              unit_price: BigDecimal("12212.70"), tax_rate: 19, position: 0)
+    inv.reload
+    pflicht = inv.payment_obligations.create!(amount: inv.gross_total * inv.obligation_sign)
+
+    konto = BankLedger.create!(label: "Konto")
+    tx = konto.bank_transactions.create!(booked_on: Date.current, amount: -inv.gross_total)
+
+    assert Bank::ObligationMatch.assign(tx, pflicht)
+    assert_equal :bezahlt, pflicht.reload.state, "kein unbuchbarer Restbetrag"
+    assert_equal BigDecimal("0"), pflicht.open_amount
+  end
 end

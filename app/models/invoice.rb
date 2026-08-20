@@ -115,7 +115,18 @@ class Invoice < ApplicationRecord
   # ── Beträge ───────────────────────────────────────────────────────────
   def net_total   = invoice_lines.sum(&:net)
   def tax_total   = vat_exempt? ? 0 : invoice_lines.sum(&:tax_amount)
-  def gross_total = net_total + tax_total
+
+  # #1434 (aus immoos #1195 übernommen): Brutto ist ein GELDBETRAG und wird
+  # auf Cent gerundet.
+  #
+  # Ohne die Rundung erzeugen USt-Zeilen Drittel-Cents (12.212,70 × 1,19 =
+  # 14.533,113), die Betragsspalten der Datenbank (scale 2) aber nicht. Seit
+  # #1337 ist das hier scharf und nicht mehr nur im Fork: Die Zahlungspflicht
+  # bekommt ihren Betrag aus `gross_total`, und die automatische Zuordnung
+  # vergleicht auf Gleichheit — 0,003 € Unterschied heißt, dass kein Umsatz je
+  # exakt passt und die Pflicht dauerhaft „teilweise" bleibt. Im Fork blieb so
+  # nach einer Ausbuchung ein unbuchbarer Restbetrag stehen.
+  def gross_total = (net_total + tax_total).round(2)
 
   # EN16931-Steueraufschlüsselung: je Steuersatz eine Gruppe mit Netto +
   # Steuerbetrag. Sortiert nach Satz. Bei USt-Befreiung leer (keine USt).

@@ -15,6 +15,21 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.4.0] - 2026-08-20
+
+### ⚠️ Upgrade notes
+
+- **`invoices.due_date` is gone.** A document no longer has one due date —
+  it has any number of payment obligations, each with its own. Anything
+  reading that column must read the obligations instead; the shipped
+  migration moves every existing due date into one obligation, losing
+  nothing.
+- **`invoices.payment_status` is now derived and may be NULL.** It is no
+  longer written by hand, and a document without a payment obligation has
+  no payment status at all — which is the point: it can then appear in no
+  list of open items. Filters written as `payment_status = 'offen'` keep
+  working; anything assuming a value is always present must cope with NULL.
+
 ### Added
 
 - A transcript can now be taken from a video's subtitles instead of its
@@ -34,20 +49,6 @@ release is cut, this section is renamed to the new version and a fresh
   summarising — so the improvement was discarded every time, without
   saying so.
 
-### Fixed
-
-- A failed audio download no longer passes for a finished transcription
-  (#1410). When a video's audio could not be fetched, both transcription
-  paths quietly turned that into an empty transcript: the work was recorded
-  as successful, the knowledge item was created with the video's details but
-  no text, and the inbox item counted as processed. What you saw was a
-  missing transcript and no reason for it — the reason existed only in a log
-  line. Now the failure carries through: the download reports what actually
-  went wrong (blocked, unavailable, no network), the inbox item shows that
-  reason and can be run again, and a transcription that produced no text at
-  all is no longer counted as one.
-
-### Added
 
 - A document now records what kind of document it is (#1336). Incoming
   documents already had their type recognised on import — invoice,
@@ -198,18 +199,6 @@ release is cut, this section is renamed to the new version and a fresh
   existing Alt+←/→ shortcut and the arrows on the knowledge workspace,
   which both stay.
 
-### Fixed
-
-- Adding a card no longer drags the card shelf along (#1283). When the
-  stack was scrolled so that space was left on the right, a quick-add
-  used to scroll it back until the space was filled and the new card sat
-  flush right. The position now stays put and the card is simply
-  appended — the shelf only moves when that is what it takes to show the
-  new card, and then only as far as needed. Refreshing a card leaves the
-  position alone entirely: a refresh replaces the card in place, which
-  looked like an append to the observer that watches the stack.
-
-### Added
 
 - The quick person form in the top bar now also asks for gender (#1267).
   It is optional and empty stays "not stated", but filling it in right
@@ -237,6 +226,28 @@ release is cut, this section is renamed to the new version and a fresh
   filed away.
 
 ### Fixed
+
+- A failed audio download no longer passes for a finished transcription
+  (#1410). When a video's audio could not be fetched, both transcription
+  paths quietly turned that into an empty transcript: the work was recorded
+  as successful, the knowledge item was created with the video's details but
+  no text, and the inbox item counted as processed. What you saw was a
+  missing transcript and no reason for it — the reason existed only in a log
+  line. Now the failure carries through: the download reports what actually
+  went wrong (blocked, unavailable, no network), the inbox item shows that
+  reason and can be run again, and a transcription that produced no text at
+  all is no longer counted as one.
+
+
+- Adding a card no longer drags the card shelf along (#1283). When the
+  stack was scrolled so that space was left on the right, a quick-add
+  used to scroll it back until the space was filled and the new card sat
+  flush right. The position now stays put and the card is simply
+  appended — the shelf only moves when that is what it takes to show the
+  new card, and then only as far as needed. Refreshing a card leaves the
+  position alone entirely: a refresh replaces the card in place, which
+  looked like an append to the observer that watches the stack.
+
 
 - Wide cards no longer peek out to the right of the front card (#1228).
   When the workspace is scrolled all the way left so that only spines and
@@ -976,7 +987,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/miolim/miolimos/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/miolim/miolimos/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/miolim/miolimos/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/miolim/miolimos/compare/v0.3.2...v0.3.3

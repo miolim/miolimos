@@ -24,6 +24,17 @@ release is cut, this section is renamed to the new version and a fresh
   on screen — highlights the one you are looking at, and jumps to any of
   them on tap.
 
+### Changed
+
+- The height of a card-stack page is now defined once instead of being
+  repeated in every template (#1453). It was written out seventeen times,
+  identically — and a number written seventeen times eventually stops
+  matching itself. In the property-management fork it already had: nine
+  pages carried a different value because they were added later and one at
+  a time, and when a mobile layout fix was measured on one of those pages,
+  that discrepancy ended up in a rule meant for all of them. A test now
+  keeps the height out of the templates.
+
 ### Fixed
 
 - On a phone, the card spine no longer slides under the top bar (#1453). The

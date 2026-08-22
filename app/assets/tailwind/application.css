@@ -44,6 +44,26 @@
 
   .markdown-body img { @apply max-w-full h-auto my-2 rounded; }
 
+  /* #1453 (Hans): Die Höhe einer Stapel-Seite steht an EINER Stelle.
+     
+     Vorher stand `h-[calc(100dvh-4rem)]` siebzehnmal wortgleich in den
+     Templates. Eine Zahl, die man siebzehnmal schreibt, läuft irgendwann
+     auseinander — im immoOS-Fork ist genau das passiert: Dort tragen neun
+     Seiten `5rem`, weil sie später und einzeln dazukamen. Als der mobile
+     Spine-Fehler dort auf einer dieser Seiten gemessen wurde, geriet die
+     Abweichung in eine Regel, die für ALLE Seiten gilt — und beim
+     Herüberholen stimmte sie hier nicht mehr.
+
+     REGEL: Jede Blade-Stack-Seite bekommt `class="stack-page"`. Die Höhe
+     wird NICHT im Template wiederholt; ein Test (stack_page_class_test.rb)
+     hält das fest. Ändert sich die Topbar-Höhe, ändert sich hier eine Zahl
+     und sonst nichts. */
+  :root { --topbar-hoehe: 4rem; }
+  .stack-page {
+    @apply flex flex-col;
+    height: calc(100dvh - var(--topbar-hoehe));
+  }
+
   /* #306 (Hans): Listen-Suchfeld — versteckt Rows ohne Match. Eigene
      Klasse, damit andere Hide-Mechanismen (z.B. CSS-Disclosure) nicht
      kollidieren. */

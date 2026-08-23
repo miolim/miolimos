@@ -567,13 +567,25 @@ body:not(.has-blade-stack) .topbar-trail {
        zu weit oben — genau der Eindruck „nicht zentriert".
        Nachgemessen statt übernommen: Der Fork gleicht hier sein eigenes p-2
        aus und braucht -0.5rem; bei uns ist die richtige Antwort 0. */
-    margin: 0;
+    /* #1453 (Hans, Nachtrag): „Zwischen der Top-Toolbar und dem Spine ist
+       ein schmaler Streifen, der ungenutzt ist." — Das ist der obere
+       Innenabstand des Layout-`<main>` (p-2, 8 px). Waagerecht ist der
+       Stapel schon bündig (er ist 100vw breit), senkrecht saß er 8 px
+       tiefer. Der negative Rand hebt genau diesen einen Abstand auf — nur
+       oben, damit links und rechts unberührt bleiben.
+       Der Fork nimmt hier -0.5rem RINGSUM; das ist auf seine eigenen,
+       1 rem höheren Seiten kalibriert (siehe .stack-page). */
+    margin: -0.5rem 0 0;
     width: 100vw;
     max-width: 100vw;
     height: calc(100dvh - 5rem);
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+    /* Und oben auch: Mobil klebt der Stapel an der Topbar, und die Haarlinie
+       dazwischen ist genau der Streifen, den man dann sieht. Links und rechts
+       ist sie aus demselben Grund schon weg. */
+    border-top: 0;
 
     overflow-x: auto;
     overflow-y: hidden;

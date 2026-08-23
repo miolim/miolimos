@@ -90,8 +90,12 @@ class SpineMobilTest < ApplicationSystemTestCase
       })()
     JS
 
-    assert_operator mass["verdeckt"], :<=, 0,
-                    "die Topbar darf den Spine nicht anschneiden (#{mass['verdeckt']} px verdeckt)"
+    # Genau null, nicht „höchstens null": Hans hat den Streifen zwischen
+    # Topbar und Spine gesehen, den die alte Fassung (`<= 0`) durchgehen
+    # ließ — sie deckte nur das Anschneiden ab, nicht die Lücke.
+    assert_equal 0, mass["verdeckt"],
+                 "der Spine grenzt direkt an die Topbar " \
+                 "(#{mass['verdeckt']} px — positiv heißt verdeckt, negativ heißt Lücke)"
     assert_equal 0, mass["links"],  "der Stapel sitzt bündig an der linken Kante"
     assert_equal 0, mass["rechts"], "und an der rechten"
   end

@@ -37,12 +37,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
-- On a phone, the card spine no longer slides under the top bar (#1453). The
+- On a phone, the card spine now sits flush against the top bar (#1453). The
   stack pulled itself upwards to sit flush against the edges, but there was
   nothing to pull against: 8 of the spine's 36 pixels ended up behind the
   top bar, and since its contents are centred in the full height, they sat
-  too high in what remained. The stack now sits below the bar and flush
-  against both side edges. The single pixel of asymmetry underneath — the
+  too high in what remained. The stack now begins exactly where the top bar
+  ends — no strip of unused space between them — and sits flush against both
+  side edges. The single pixel of asymmetry underneath — the
   spine's dividing line counts towards its height but not towards the area
   its contents are centred in — is evened out as well.
 

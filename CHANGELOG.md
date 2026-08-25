@@ -37,6 +37,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Clipped articles no longer lose whole sections (#1471). Not every site
+  marks its paragraphs as paragraphs — some wrap them in plain containers,
+  and everything set that way was dropped. On one article that cost three
+  entire sections: their bold sub-headings came through, the text under them
+  did not, which is what made the clip look torn apart. Such containers now
+  count as paragraphs when they read like one — enough text of their own,
+  nothing else nested inside, and not mostly links, which is how the
+  "more on this topic" boxes give themselves away.
 - A clipped page gets its source entry again (#1471). The identifier for the
   source is built from the page title, cut to a fixed length — and when the
   cut fell inside a word it left a trailing hyphen, which the source refused.

@@ -197,6 +197,34 @@ module Inbox
       # Text, sonst <main>, sonst <body>) und nur Inhalts-Blöcke (p/h/li/
       # blockquote) als Text ziehen. (Paywall bleibt unlösbar — bei
       # zahlungspflichtigen Artikeln kommt nur die öffentliche Vorschau.)
+      # #1471 (Hans): „Die Inhalte unter diesen Zwischenüberschriften fehlen."
+      #
+      # Nicht jede Seite setzt Absätze als <p>. Die FAZ schreibt sie als
+      # `div.p1` — die drei Abschnitte „Die Datenbremse", „Die Energiebremse"
+      # und „Der Kapitalbedarf" standen so im Artikel und fielen komplett
+      # heraus (2.980 Zeichen). Die fett gesetzten Zwischenüberschriften kamen
+      # durch, weil sie <strong> sind; der Text darunter nicht. Genau das hat
+      # den Artikel zerpflückt aussehen lassen.
+      #
+      # Aufgenommen wird deshalb ein <div>, wenn es sich wie ein Absatz
+      # verhält: genug eigener Text, KEINE weiteren Blöcke darin (sonst nähme
+      # man den Wrapper und seinen Inhalt doppelt), und nicht überwiegend
+      # Verweistext — daran erkennt man die „Mehr zum Thema"-Kästen, die
+      # sonst mitten im Text landen. Gemessen an Hans' Artikel: Fließtext
+      # 0,00 Verweisanteil, der Teaser-Kasten 0,94.
+      ABSATZ_DIV_MIN   = 120
+      ABSATZ_DIV_LINKS = 0.5
+
+      def absatz_div?(node)
+        text = node.text.to_s.strip
+        return false if text.length < ABSATZ_DIV_MIN
+        return false if node.css("p, h1, h2, h3, h4, h5, h6, li, blockquote, div")
+                            .any? { |k| k.text.to_s.strip.length >= ABSATZ_DIV_MIN }
+
+        verweise = node.css("a").sum { |a| a.text.to_s.strip.length }
+        (verweise.to_f / text.length) < ABSATZ_DIV_LINKS
+      end
+
       def extract_body(html, base_url = nil)
         doc = Nokogiri::HTML(html)
         # NUR klare Boilerplate-Container entfernen. <header>/<figcaption>
@@ -230,9 +258,17 @@ module Inbox
         # Frage und Antwort bleiben also korrekt verzahnt.
         inline_tags = %w[strong b]
         block_tags  = %w[p h1 h2 h3 h4 h5 h6 li blockquote]
-        blocks = root.css("p, h1, h2, h3, h4, h5, h6, li, blockquote, strong, b").reject do |b|
-          inline_tags.include?(b.name) &&
-            b.ancestors.any? { |a| block_tags.include?(a.name) }
+        blocks = root.css("p, h1, h2, h3, h4, h5, h6, li, blockquote, strong, b, div").reject do |b|
+          if inline_tags.include?(b.name)
+            # #1471: Auch ein Absatz-<div> zaehlt jetzt als Block. Sonst kaeme
+            # die fett gesetzte Zwischenueberschrift zweimal — einmal aus der
+            # #736-Regel und einmal im Text des Absatzes, in dem sie steht.
+            b.ancestors.any? { |a| block_tags.include?(a.name) || (a.name == "div" && absatz_div?(a)) }
+          elsif b.name == "div"
+            !absatz_div?(b)
+          else
+            false
+          end
         end
         # #693 (Hans): Boilerplate-Zeilen filtern. #758: der Filter prüft den
         # REINEN Text des Blocks — die Markdown-Marker (`#`, `**`, `>`) würden

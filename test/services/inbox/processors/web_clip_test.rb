@@ -352,4 +352,50 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
     assert_nil @proc.send(:autorname, "  ")
     assert_equal "Albrecht Ritschl", @proc.send(:autorname, " Albrecht Ritschl ")
   end
+
+  # ── #1471: Absaetze, die als <div> gesetzt sind ─────────────────────────
+  #
+  # Hans: „Die Inhalte unter diesen Zwischenueberschriften fehlen." — Die FAZ
+  # setzt Absaetze als `div.p1` statt als <p>. Drei ganze Abschnitte (2.980
+  # Zeichen) fielen deshalb heraus; die fett gesetzten Ueberschriften kamen
+  # durch, weil sie <strong> sind, der Text darunter nicht. Der Artikel sah
+  # dadurch zerpflueckt aus.
+  DIV_SEITE = <<~HTML.freeze
+    <html><body><article>
+      <p>Ein ganz normaler Absatz, lang genug, um als Inhalt zu zaehlen und nicht
+         als Beiwerk durchzufallen — hier steht Fliesstext.</p>
+      <div class="p1"><strong>1. Die Datenbremse:</strong> Es fehlt an neuen Texten
+         zur Fuetterung, und die Skalierung stoesst an Grenzen. Dieser Abschnitt ist
+         lang genug, um als Absatz zu gelten, und enthaelt keinen einzigen Verweis.</div>
+      <div class="teaser">Mehr zum Thema
+         <a href="/a">Erster Verweis mit viel Text</a>
+         <a href="/b">Zweiter Verweis mit viel Text</a>
+         <a href="/c">Dritter Verweis mit ebenfalls viel Text darin</a></div>
+      <div class="wrapper"><p>Ein Absatz in einem Wrapper-Div, lang genug fuer die
+         Schwelle — er darf genau einmal erscheinen, nicht zweimal.</p></div>
+    </article></body></html>
+  HTML
+
+  test "als div gesetzte Absaetze werden uebernommen" do
+    body = @proc.send(:extract_body, DIV_SEITE)
+    assert_includes body, "Die Datenbremse", "die Zwischenueberschrift"
+    assert_includes body, "Es fehlt an neuen Texten", "und der Text darunter"
+  end
+
+  test "die Zwischenueberschrift steht genau einmal da" do
+    body = @proc.send(:extract_body, DIV_SEITE)
+    assert_equal 1, body.scan("Die Datenbremse").size,
+                 "einmal aus dem Absatz — nicht zusaetzlich als eigenstaendiges <strong>"
+  end
+
+  test "verweislastige Kaesten bleiben draussen" do
+    body = @proc.send(:extract_body, DIV_SEITE)
+    refute_includes body, "Mehr zum Thema",
+                    "ein Kasten, der fast nur aus Verweisen besteht, ist kein Absatz"
+  end
+
+  test "ein Wrapper-Div nimmt seinen Inhalt nicht ein zweites Mal mit" do
+    body = @proc.send(:extract_body, DIV_SEITE)
+    assert_equal 1, body.scan("Ein Absatz in einem Wrapper-Div").size
+  end
 end

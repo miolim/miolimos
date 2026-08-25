@@ -319,4 +319,37 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
       assert_match(/ohne Ziel/, fehler.message)
     end
   end
+
+  # ── #1471: Quelle wurde nicht angelegt ──────────────────────────────────
+  #
+  # Hans: „Es wurde auch keine Quelle angelegt. Woran liegt das?" — Der Titel
+  # wird fuer den Slug auf 40 Zeichen gekuerzt, und wenn dort ein Wort endet,
+  # blieb ein Bindestrich stehen. Den lehnt die Slug-Pruefung der Quelle ab,
+  # `upsert_source` verschluckte den Fehler und lieferte nil: kein Quellen-
+  # Eintrag, keine Meldung, nichts.
+  test "abgeschnittener Titel erzeugt keinen Slug mit Bindestrich am Ende" do
+    slug = @proc.send(:build_slug, "https://www.faz.net/-3br9ks",
+                      "Albrecht Ritschl: Gegen Furcht vor einer KI-Superintelligenz")
+    refute slug.end_with?("-"), "ein Slug endet nicht auf einem Bindestrich (war: #{slug})"
+    assert_match(/\A[a-z0-9._-]+\z/, slug, "und besteht nur aus erlaubten Zeichen")
+    assert slug.start_with?("faz-net-"), "der Rechnername bleibt vorn"
+  end
+
+  test "die so gebaute Quelle laesst sich wirklich speichern" do
+    slug = @proc.send(:build_slug, "https://www.faz.net/-3br9ks",
+                      "Albrecht Ritschl: Gegen Furcht vor einer KI-Superintelligenz")
+    quelle = Source.new(slug: slug, csl_type: "webpage", title: "Titel",
+                        url: "https://www.faz.net/-3br9ks", creator: @hans)
+    assert quelle.valid?, "Slug wird von der Quelle akzeptiert: #{quelle.errors.full_messages}"
+  end
+
+  # Manche Seiten tragen als Autor eine Profil-Adresse ein (die FAZ ihre
+  # Facebook-Seite). Daraus darf keine Person werden.
+  test "eine Adresse ist kein Autorname" do
+    assert_nil @proc.send(:autorname, "https://www.facebook.com/faz")
+    assert_nil @proc.send(:autorname, "//example.org/x")
+    assert_nil @proc.send(:autorname, "mailto:jemand@example.org")
+    assert_nil @proc.send(:autorname, "  ")
+    assert_equal "Albrecht Ritschl", @proc.send(:autorname, " Albrecht Ritschl ")
+  end
 end

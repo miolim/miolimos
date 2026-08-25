@@ -41,6 +41,9 @@ module Inbox
                                         bib_source: src.slug)
         end
         record_result(item, knowledge_item: ki)
+        if @quellen_fehler.present?
+          item.update_column(:result, item.result.merge("source_error" => @quellen_fehler))
+        end
       end
 
       # Source als webpage anlegen, Slug aus URL-Hostname + sluggified
@@ -59,7 +62,7 @@ module Inbox
         s.assign_attributes(
           csl_type:        "webpage",
           title:           title,
-          publisher:       meta[:author].presence,
+          publisher:       autorname(meta[:author]),
           container_title: meta[:site_name].presence,
           abstract:        meta[:description].presence,
           issued_string:   meta[:published].presence,
@@ -70,16 +73,36 @@ module Inbox
           creator:         actor
         )
         s.save!
-        Inbox::SourceCreatorLink.link_person!(s, meta[:author], actor: actor)
+        Inbox::SourceCreatorLink.link_person!(s, autorname(meta[:author]), actor: actor)
         s
       rescue => e
-        Rails.logger.warn("WebClip: Source-Upsert fehlgeschlagen: #{e.class} #{e.message}")
+        # #1471: Der Fehlschlag wird GEMERKT, nicht nur ins Log geschrieben.
+        # Vorher blieb hier ein stilles nil: Das Wissenselement entstand ohne
+        # Quelle, das Item galt als verarbeitet, und warum keine Quelle da
+        # war, stand ausschliesslich in einer Logzeile. Der Clip selbst ist
+        # trotzdem etwas wert — deshalb weiter, aber mit Vermerk.
+        @quellen_fehler = "#{e.class}: #{e.message}"
+        Rails.logger.warn("WebClip: Source-Upsert fehlgeschlagen: #{@quellen_fehler}")
         nil
+      end
+
+      # #1471: Manche Seiten tragen als `article:author` eine Profil-Adresse
+      # ein (die FAZ ihre Facebook-Seite). Als Autor gespeichert, legt das
+      # eine "Person" namens `https://www.facebook.com/faz` an. Eine Adresse
+      # ist kein Name.
+      def autorname(wert)
+        w = wert.to_s.strip
+        return nil if w.empty? || w.match?(%r{\A(https?:)?//|\A[a-z][a-z0-9+.-]*:}i)
+        w
       end
 
       def build_slug(url, title)
         host = URI.parse(url).host.to_s.sub(/\Awww\./, "")
-        title_slug = title.to_s.parameterize.first(40)
+        # #1471: `first(40)` schneidet mitten im Wort ab und hinterlaesst dann
+        # einen Bindestrich am Ende — den lehnt die Slug-Pruefung der Quelle
+        # ab ("lowercase, hyphens, dots, underscores"). Genau daran ist die
+        # Quelle zum FAZ-Artikel gescheitert, ohne dass es jemand sah.
+        title_slug = title.to_s.parameterize.first(40).sub(/-+\z/, "").sub(/\A-+/, "")
         return nil if host.blank? && title_slug.blank?
         [host.tr(".", "-"), title_slug].reject(&:blank?).join("-")
       end

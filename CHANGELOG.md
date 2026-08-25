@@ -37,6 +37,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- A clipped page gets its source entry again (#1471). The identifier for the
+  source is built from the page title, cut to a fixed length — and when the
+  cut fell inside a word it left a trailing hyphen, which the source refused.
+  The failure was swallowed: the clip was saved, no source appeared, and the
+  reason existed only in a log line. The identifier is now tidied after
+  cutting, and a source that still cannot be created records why, on the
+  inbox item where it can be seen. An author given as a web address — some
+  sites name their social-media page there — is no longer stored as a
+  person's name.
 - Pages that redirect to a relative address can be clipped again (#1462).
   Many sites answer a short link with a redirect to a path rather than a
   full address — which the standard allows — and the import broke on it

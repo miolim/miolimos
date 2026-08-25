@@ -98,7 +98,24 @@ module Inbox
           when Net::HTTPSuccess
             return res.body.to_s.force_encoding("UTF-8")
           when Net::HTTPRedirection
-            uri = URI.parse(res["location"])
+            # #1462: `Location` darf laut RFC 7231 eine RELATIVE Referenz
+            # sein, und viele Seiten nutzen das — die FAZ etwa antwortet auf
+            # einen Kurzlink mit `Location: /aktuell/feuilleton/…`.
+            # `URI.parse` macht daraus ein URI::Generic ohne Host, und der
+            # naechste Aufruf starb mit „not an HTTP URI" — einer Meldung,
+            # die nach einem Protokoll-Problem klingt und keines war.
+            # `URI.join` loest relativ wie absolut gegen die aktuelle Adresse
+            # auf; ein absolutes Location ersetzt sie dabei vollstaendig.
+            ziel = res["location"].to_s
+            raise "Weiterleitung ohne Ziel (HTTP #{res.code}) fuer #{uri}" if ziel.empty?
+
+            uri = URI.join(uri, ziel)
+            # Nach der Aufloesung kann immer noch etwas stehen, das kein
+            # Web-Aufruf ist (`mailto:`, `javascript:`). Dann lieber sagen,
+            # was los ist, als es Net::HTTP kryptisch melden zu lassen.
+            unless uri.is_a?(URI::HTTP)
+              raise "Weiterleitung auf #{uri.scheme.presence || 'unbekanntes Schema'}: #{uri}"
+            end
           else
             raise "HTTP #{res.code} für #{url}"
           end

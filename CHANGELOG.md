@@ -37,6 +37,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Pages that redirect to a relative address can be clipped again (#1462).
+  Many sites answer a short link with a redirect to a path rather than a
+  full address — which the standard allows — and the import broke on it
+  with "not an HTTP URI". The message pointed at the protocol, which was
+  never the problem: HTTPS worked all along. Redirects are now resolved
+  against the address they came from, and a redirect that leads somewhere
+  unfetchable (a mail address, say) or nowhere at all says so plainly.
 - On a phone, the card spine now sits flush against the top bar (#1453). The
   stack pulled itself upwards to sit flush against the edges, but there was
   nothing to pull against: 8 of the spine's 36 pixels ended up behind the

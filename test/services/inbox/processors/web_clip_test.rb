@@ -259,4 +259,64 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
   test "upsert_source ohne brauchbaren slug liefert nil" do
     assert_nil @proc.upsert_source("garbage", "", {}, actor: @hans)
   end
+
+  # ── #1462: relative Weiterleitungen ─────────────────────────────────────
+  #
+  # Hans: „Fehler ArgumentError: not an HTTP URI. HTTPS Seiten sollten auch
+  # importiert werden koennen." — Mit HTTPS hatte es nichts zu tun. Die FAZ
+  # antwortet auf ihre Kurzlinks mit 301 und einem RELATIVEN `Location`
+  # (`/aktuell/feuilleton/…`). Das ist nach RFC 7231 erlaubt; `URI.parse`
+  # macht daraus ein URI::Generic ohne Host, und Net::HTTP lehnte das mit
+  # einer Meldung ab, die nach einem Protokoll-Problem klang.
+  #
+  # Geprueft wird gegen einen echten kleinen Server — die Weiterleitung ist
+  # genau das, was hier schiefging, und die soll wirklich stattfinden.
+  def mit_server(&block)
+    require "webrick"
+    server = WEBrick::HTTPServer.new(Port: 0, Logger: WEBrick::Log.new(File::NULL),
+                                     AccessLog: [])
+    server.mount_proc("/kurz") do |_req, res|
+      res.status = 301
+      res["Location"] = "/lang/artikel.html?x=1"   # RELATIV, wie bei der FAZ
+    end
+    server.mount_proc("/lang/artikel.html") do |_req, res|
+      res.status = 200
+      res["Content-Type"] = "text/html"
+      res.body = "<html><head><title>Angekommen</title></head><body><p>Text</p></body></html>"
+    end
+    server.mount_proc("/woanders") do |_req, res|
+      res.status = 302
+      res["Location"] = "mailto:jemand@example.org"
+    end
+    server.mount_proc("/ohne-ziel") do |_req, res|
+      res.status = 302
+    end
+    thread = Thread.new { server.start }
+    yield "http://127.0.0.1:#{server.config[:Port]}"
+  ensure
+    server&.shutdown
+    thread&.join(2)
+  end
+
+  test "relative Weiterleitung wird gegen die aktuelle Adresse aufgeloest" do
+    mit_server do |basis|
+      html = @proc.send(:fetch_html, "#{basis}/kurz")
+      assert_includes html, "Angekommen", "die Weiterleitung muss ankommen, nicht scheitern"
+    end
+  end
+
+  test "Weiterleitung auf ein fremdes Schema meldet, was los ist" do
+    mit_server do |basis|
+      fehler = assert_raises(RuntimeError) { @proc.send(:fetch_html, "#{basis}/woanders") }
+      assert_match(/mailto/, fehler.message, "der Grund gehoert in die Meldung")
+      refute_match(/not an HTTP URI/, fehler.message)
+    end
+  end
+
+  test "Weiterleitung ohne Ziel meldet, was los ist" do
+    mit_server do |basis|
+      fehler = assert_raises(RuntimeError) { @proc.send(:fetch_html, "#{basis}/ohne-ziel") }
+      assert_match(/ohne Ziel/, fehler.message)
+    end
+  end
 end

@@ -26,6 +26,15 @@ check() { # check <beschreibung> <bedingung-als-exitcode>
   fi
 }
 
+# `grep -q …; check "$?"` sieht aus wie eine Pruefung, ist aber unter
+# `set -e` keine: Schlaegt das grep fehl, bricht das Skript AB, statt FAIL
+# zu melden und weiterzulaufen. Man sieht dann nur, wo es aufhoerte, und
+# erfaehrt nichts ueber die restlichen Pruefungen. `pruefe` haelt den
+# Ausdruck in einer Bedingung fest — dort ist ein Fehlschlag erlaubt.
+pruefe() { # pruefe <beschreibung> <shell-ausdruck>
+  if eval "$2" >/dev/null 2>&1; then check "$1" 0; else check "$1" 1; fi
+}
+
 # pg_dump-Stub: meldet fuer JEDE Datenbank „does not exist" — so wie Postgres
 # es tut. Der Wortlaut stammt aus einer echten Fehlermeldung.
 mkdir -p "$tmp/bin"
@@ -83,6 +92,14 @@ cat > "$tmp/bin/rclone" <<'STUB'
 if [[ "${1:-}" == "copy" ]]; then
   echo "$(basename "$2")" >> "$RCLONE_SPY"
   [[ -n "${RCLONE_SPY_DIR:-}" ]] && cp "$2" "$RCLONE_SPY_DIR/"
+fi
+# #1472: Aufraeum-Aufrufe mitschreiben — der Test prueft, WIE lange was
+# aufgehoben wird. Die ganze Zeile, damit Filter und Alter sichtbar sind.
+if [[ "${1:-}" == "delete" ]]; then
+  [[ -n "${RCLONE_DELETE_SPY:-}" ]] && echo "$*" >> "$RCLONE_DELETE_SPY"
+  # Nur das Aufraeumen scheitern lassen, nicht den Upload — sonst pruefte
+  # der Fehlerfall zwei Dinge auf einmal.
+  [[ -n "${RCLONE_DELETE_FAIL:-}" ]] && { echo "rclone: simulierter Fehler" >&2; exit 1; }
 fi
 exit 0
 STUB
@@ -151,6 +168,61 @@ gpg --batch --yes --quiet --passphrase-file "$tmp/pass" -d \
 inhalt7="$(tar -tzf "$tmp/e7.tar.gz" 2>/dev/null)"
 ! grep -q "\.git/" <<< "$inhalt7"; check "fehlendes drittes Feld schliesst .git aus" "$?"
 grep -q "anhaenge/rechnung.pdf" <<< "$inhalt7"; check "der Beleg ist drin" "$?"
+
+# ── Fall 8/9/10: gestaffelte Aufbewahrung (#1472) ──────────────────────────
+# Hans: „Storage Cap Reached 100%." Grosse Datenarchive kurz, kleine
+# Datenbank-Abzuege lang. Geprueft wird der Aufraeum-Aufruf selbst — was
+# rclone loeschen SOLL, mit welchem Filter und ab welchem Alter.
+echo "Fall 8: Datenarchive kurz, Dumps lang"
+d8="$tmp/staffel"; l8="$tmp/staffel.log"; mkdir -p "$d8"
+export RCLONE_SPY="$tmp/hochgeladen8.txt"; : > "$RCLONE_SPY"
+export RCLONE_DELETE_SPY="$tmp/geloescht8.txt"; : > "$RCLONE_DELETE_SPY"
+BACKUP_DIR="$d8" LOG="$l8" CONF="$tmp/offsite.conf" RCLONE="$tmp/bin/rclone" \
+  SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="testinstanz|$tmp/daten" \
+  PATH="$tmp/bin:$PATH" bash "$target"
+
+pruefe "Datenarchive werden eigens aufgeraeumt" \
+       'grep -q -- "--include \*-data-\*.tar.gz.gpg" "$RCLONE_DELETE_SPY"'
+pruefe "Datenarchive: 7 Tage" \
+       'grep -qE -- "--min-age 7d .*--include" "$RCLONE_DELETE_SPY"'
+pruefe "alles andere: 60 Tage" \
+       'grep -qE -- "--min-age 60d .*--exclude \*-data-\*.tar.gz.gpg" "$RCLONE_DELETE_SPY"'
+# Die Filter muessen komplementaer sein. Faende sich derselbe Filtertyp
+# zweimal, fiele eine Gruppe durch beide Raster — und wuerde nie geloescht.
+pruefe "genau ein Einschluss und ein Ausschluss" \
+       '[ "$(grep -c -- "--include" "$RCLONE_DELETE_SPY")" = 1 ] &&
+        [ "$(grep -c -- "--exclude" "$RCLONE_DELETE_SPY")" = 1 ]'
+pruefe "Aufraeumen wird vermerkt" 'grep -q "retention ok" "'"$l8"'"'
+
+echo "Fall 9: eigene Aufbewahrungsdauern schlagen durch"
+d9="$tmp/staffel-konfig"; l9="$tmp/staffel-konfig.log"; mkdir -p "$d9"
+cat > "$tmp/offsite9.conf" <<CONF
+RCLONE_REMOTES="testremote:eimer"
+BACKUP_PASSPHRASE_FILE=$tmp/pass
+OFFSITE_RETENTION_DAYS=90
+OFFSITE_DATA_RETENTION_DAYS=3
+CONF
+export RCLONE_SPY="$tmp/hochgeladen9.txt"; : > "$RCLONE_SPY"
+export RCLONE_DELETE_SPY="$tmp/geloescht9.txt"; : > "$RCLONE_DELETE_SPY"
+BACKUP_DIR="$d9" LOG="$l9" CONF="$tmp/offsite9.conf" RCLONE="$tmp/bin/rclone" \
+  SIGNING_DIR="$tmp/gibtsnicht" BACKUP_DATA_DIRS="testinstanz|$tmp/daten" \
+  PATH="$tmp/bin:$PATH" bash "$target"
+pruefe "Datenarchive: 3 Tage" 'grep -q -- "--min-age 3d" "$RCLONE_DELETE_SPY"'
+pruefe "Dumps: 90 Tage"      'grep -q -- "--min-age 90d" "$RCLONE_DELETE_SPY"'
+
+echo "Fall 10: ein fehlgeschlagenes Aufraeumen ist ein Fehler"
+# Vorher stand am Aufraeumen ein `|| true`. Ein Backup, das nicht aufraeumt,
+# laeuft in die Speichergrenze — und gemerkt haette man es erst an der Mail
+# des Anbieters. Genau daran haengt diese Aufgabe.
+d10="$tmp/staffel-fehler"; l10="$tmp/staffel-fehler.log"; mkdir -p "$d10"
+export RCLONE_SPY="$tmp/hochgeladen10.txt"; : > "$RCLONE_SPY"
+unset RCLONE_DELETE_SPY
+RCLONE_DELETE_FAIL=1 BACKUP_DIR="$d10" LOG="$l10" CONF="$tmp/offsite.conf" \
+  RCLONE="$tmp/bin/rclone" SIGNING_DIR="$tmp/gibtsnicht" \
+  BACKUP_DATA_DIRS="testinstanz|$tmp/daten" PATH="$tmp/bin:$PATH" bash "$target"
+pruefe "Fehlschlag wird benannt"  'grep -q "retention FAILED" "'"$l10"'"'
+pruefe "und zaehlt als Fehler"    'grep -q "backup done (errors=1)" "'"$l10"'"'
+pruefe "der Upload lief trotzdem" 'grep -q "offsite ok" "'"$l10"'"'
 
 echo
 if [[ $failures -eq 0 ]]; then

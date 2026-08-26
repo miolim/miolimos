@@ -189,8 +189,48 @@ done
 # Opt-in: nur wenn die Konfig existiert. Source-bar sind:
 #   RCLONE_REMOTES="b2:miolimos-backups gdrive:miolimos-backups" (Leerz.-getrennt)
 #   BACKUP_PASSPHRASE_FILE=/home/hans/.miolimos-backup-pass        (chmod 600)
-#   OFFSITE_RETENTION_DAYS=60   (optional; Remote-Aufbewahrung)
+#   OFFSITE_RETENTION_DAYS=60        (optional; Datenbank-Abzuege, #1472)
+#   OFFSITE_DATA_RETENTION_DAYS=7    (optional; Datenarchive, #1472)
 #   HEALTHCHECK_URL=https://hc-ping.com/<uuid>  (optional)
+#
+# #1472 (Hans, 2026-08-26): „Storage Cap Reached 100%" bei Backblaze.
+# Nichts war kaputt — die Menge war rechnerisch zwingend. 481 MB pro Tag mal
+# 60 Tage Aufbewahrung sind rund 28 GB, das Dreifache der kostenlosen Grenze.
+#
+# Deshalb wird nicht mehr pauschal nach OFFSITE_RETENTION_DAYS aufgeraeumt,
+# sondern nach Wichtigkeit gestaffelt:
+#
+#   Datenbank-Abzuege (96 MB/Tag)  — 60 Tage. Klein und das eigentlich
+#                                    Kritische; hier zaehlt Tiefe.
+#   Datenarchive     (385 MB/Tag)  — 7 Tage. Gross und von Tag zu Tag fast
+#                                    unveraendert; 60 Vollkopien desselben
+#                                    Verzeichnisses sind keine 60-fache
+#                                    Sicherheit, nur 60-facher Platz.
+#
+# Beharrungszustand danach: rund 8,5 GB statt 28.
+#
+# Das Muster trifft die Archive aus der Datenverzeichnis-Schleife oben
+# (`${inst}-data-${ts}.tar.gz.gpg`). Der Signierschluessel heisst
+# `signing-…tar.gz.gpg` und faellt bewusst NICHT darunter: winzig, und ohne
+# ihn ist ein Restore wertlos.
+DATEN_MUSTER="*-data-*.tar.gz.gpg"
+
+# Aufraeumen mit Vermerk. Frueher stand hier `|| true` — ein fehlgeschlagenes
+# Aufraeumen war damit unsichtbar, und das Einzige, woran man es gemerkt
+# haette, ist genau die Mail, die diese Aufgabe ausgeloest hat. Ein Backup,
+# das nicht aufraeumt, laeuft in die Grenze und dann irgendwann ins Leere.
+# Deshalb zaehlt der Fehlschlag jetzt als Fehler und geht ueber den
+# Dead-Man-Switch hinaus in die Welt.
+verfallen() { # verfallen <remote> <was> <tage> <rclone-filter...>
+  local remote="$1" was="$2" tage="$3"; shift 3
+  if "$RCLONE" delete "$remote/" --min-age "${tage}d" "$@" 2>>"$LOG"; then
+    echo "[$(stamp)] retention ok $remote $was (aelter als ${tage}d)" >>"$LOG"
+  else
+    echo "[$(stamp)] retention FAILED $remote $was (${tage}d)" >>"$LOG"
+    had_error=1
+  fi
+}
+
 offsite() {
   [[ -f "$CONF" ]] || { echo "[$(stamp)] offsite: keine Konfig ($CONF) — uebersprungen" >>"$LOG"; return 0; }
   # shellcheck disable=SC1090
@@ -270,7 +310,11 @@ offsite() {
         echo "[$(stamp)] offsite FAILED $remote <= $(basename "$f")" >>"$LOG"; had_error=1
       fi
     done
-    "$RCLONE" delete "$remote/" --min-age "${OFFSITE_RETENTION_DAYS:-60}d" 2>>"$LOG" || true
+    # #1472: gestaffelt statt pauschal. Reihenfolge egal, die Filter sind
+    # zueinander komplementaer — was der eine Aufruf einschliesst, schliesst
+    # der andere aus. Kein Objekt faellt durch beide Raster.
+    verfallen "$remote" "Datenarchive" "${OFFSITE_DATA_RETENTION_DAYS:-7}"  --include "$DATEN_MUSTER"
+    verfallen "$remote" "Dumps"        "${OFFSITE_RETENTION_DAYS:-60}"      --exclude "$DATEN_MUSTER"
   done
 
   # 3) lokale .gpg wieder entfernen (unverschluesselte .dump bleiben lokal)

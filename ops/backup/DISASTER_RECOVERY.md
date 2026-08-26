@@ -53,6 +53,20 @@ Alle Off-Site-Dateien sind **GPG-symmetrisch (AES256)** verschlüsselt. Die
 Dumps sind Postgres-Custom-Format (`pg_restore`-fähig). Tägliches Cron-Backup:
 `30 4 * * * /home/hans/bin/miolimos-db-backup.sh`.
 
+**Wie weit zurück du kommst** (#1472, seit 26.08.2026 gestaffelt):
+
+| | Off-Site | Warum |
+|---|---|---|
+| Datenbank-Abzüge, Signierschlüssel | **60 Tage** | klein (96 MB/Tag) und das eigentlich Kritische — hier zählt Tiefe |
+| Datenverzeichnisse (`*-data-*.tar.gz.gpg`) | **7 Tage** | groß (385 MB/Tag) und von Tag zu Tag fast unverändert |
+
+Das heißt für einen Restore: Ein Datenbestand, der **älter als eine Woche**
+ist, lässt sich off-site nicht mehr vollständig herstellen — die Datenbank
+schon, die zugehörigen Anhänge nicht. Wer weiter zurück muss, braucht die
+lokale Kopie oder das KI-Repo auf GitHub. Steuerbar über
+`OFFSITE_RETENTION_DAYS` und `OFFSITE_DATA_RETENTION_DAYS` in
+`~/.config/miolimos-backup.conf`.
+
 ---
 
 ## Wiederherstellung — Schritt für Schritt

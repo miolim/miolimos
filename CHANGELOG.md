@@ -37,6 +37,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- A clipped article keeps the author note at its end (#1471). It sits in the
+  article's own footer, which is what that part of the markup is for — but
+  the same footer often holds "more on this topic" links, which is why
+  footers were dropped wholesale. Only footers belonging to the article are
+  kept now, and only the parts of them that read like prose, so the author
+  note comes through while the teasers and the sharing row do not.
 - Clipped articles no longer lose whole sections (#1471). Not every site
   marks its paragraphs as paragraphs — some wrap them in plain containers,
   and everything set that way was dropped. On one article that cost three

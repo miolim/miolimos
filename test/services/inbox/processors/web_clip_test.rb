@@ -398,4 +398,58 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
     body = @proc.send(:extract_body, DIV_SEITE)
     assert_equal 1, body.scan("Ein Absatz in einem Wrapper-Div").size
   end
+
+  # ── #1471: Autoren-Kasten aus der Artikel-Fusszeile ─────────────────────
+  #
+  # Hans: „Wenn man den Autorenkasten zuverlaessig erkennen kann, kann er
+  # meinetwegen mitkommen." — Man kann, an zwei Merkmalen zusammen: Er steht
+  # in einer Fusszeile INNERHALB des Artikels (die HTML-Norm sieht `footer`
+  # im `article` genau dafuer vor), und er liest sich wie ein Absatz.
+  #
+  # Das zweite Merkmal ist noetig, weil in derselben Fusszeile auch die
+  # "Mehr zum Thema"-Teaser stehen — die kamen beim ersten Versuch als
+  # Ueberschriften herein.
+  FOOTER_SEITE = <<~HTML.freeze
+    <html><body>
+      <article>
+        <p>Der eigentliche Artikeltext, lang genug um als Inhalt zu zaehlen und
+           nicht als Beiwerk durchzufallen. Hier steht der Gedankengang.</p>
+        <footer>
+          <p>Albrecht Ritschl lehrt seit 2007 Wirtschaftsgeschichte an der London
+             School of Economics. Auf die Insel zog es den Muenchner nach Jahren an
+             der Humboldt-Universitaet und der Universitaet Zuerich.</p>
+          <h2><a href="/x">Mehr zum Thema: Ein ganz anderer Artikel</a></h2>
+          <p><a href="/y">Teilen</a> <a href="/z">Drucken</a> Merken</p>
+        </footer>
+      </article>
+      <footer><p>Impressum Datenschutz Kontakt — die Fusszeile der ganzen Seite,
+        die mit dem Artikel nichts zu tun hat und lang genug waere.</p></footer>
+    </body></html>
+  HTML
+
+  test "der Autoren-Kasten aus der Artikel-Fusszeile kommt mit" do
+    body = @proc.send(:extract_body, FOOTER_SEITE)
+    assert_includes body, "lehrt seit 2007", "der Autoren-Kasten gehoert zum Artikel"
+  end
+
+  test "Teaser und Teilen-Leiste aus derselben Fusszeile bleiben draussen" do
+    body = @proc.send(:extract_body, FOOTER_SEITE)
+    refute_includes body, "Mehr zum Thema", "eine Teaser-Ueberschrift ist kein Absatz"
+    refute_includes body, "Drucken", "und die Teilen-Leiste erst recht nicht"
+  end
+
+  test "die Fusszeile der SEITE bleibt weiterhin draussen" do
+    body = @proc.send(:extract_body, FOOTER_SEITE)
+    refute_includes body, "Impressum Datenschutz",
+                    "nur Fusszeilen INNERHALB des Artikels zaehlen"
+  end
+
+  # Ohne erkannten <article> bleibt es beim alten Verhalten — sonst waere die
+  # ganze Seite der Wurzelknoten und die Seiten-Fusszeile kaeme mit herein.
+  test "ohne Artikel-Element bleiben Fusszeilen aussen vor" do
+    ohne = "<html><body><p>#{'Ein Text ' * 20}</p>" \
+           "<footer><p>#{'Fusszeile ' * 20}</p></footer></body></html>"
+    body = @proc.send(:extract_body, ohne)
+    refute_includes body, "Fusszeile"
+  end
 end

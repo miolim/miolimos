@@ -230,8 +230,11 @@ module Inbox
         # NUR klare Boilerplate-Container entfernen. <header>/<figcaption>
         # bleiben drin — dort steht oft der Standfirst/Untertitel (Inhalt);
         # die Seiten-Chrome hält die <article>-Präferenz unten ohnehin raus.
+        # `footer` steht bewusst NICHT in dieser Liste — siehe unten: Die
+        # Fusszeile INNERHALB eines <article> traegt oft den Autoren-Kasten,
+        # und den will man haben. Seiten-Fusszeilen fliegen gleich danach raus.
         doc.css(
-          "script, style, noscript, nav, footer, aside, form, svg, " \
+          "script, style, noscript, nav, aside, form, svg, " \
           "button, iframe, [role=navigation], [role=banner], " \
           "[role=contentinfo], [aria-hidden=true]"
         ).remove
@@ -248,6 +251,20 @@ module Inbox
                  doc.at_css("main") || doc.at_css("body") || doc
                end
 
+        # #1471 (Hans): „Wenn man den Autorenkasten zuverlaessig erkennen
+        # kann, kann er mitkommen." — Kann man, und zwar an zwei Merkmalen
+        # zusammen: Er steht in einer Fusszeile INNERHALB des Artikels (die
+        # HTML-Norm sieht `footer` im `article` genau dafuer vor: Autor,
+        # Datum, Schlagworte), und er liest sich wie ein Absatz.
+        #
+        # Die Fusszeile der SEITE fliegt weiter raus. Und ohne erkannten
+        # Artikel bleibt es beim alten Verhalten — dort waere `root` die
+        # ganze Seite, und die Seiten-Fusszeile kaeme mit herein.
+        artikel_root = articles.any? && root
+        doc.css("footer").each do |f|
+          f.remove unless artikel_root && (f == root || f.ancestors.include?(root))
+        end
+
         # #736 (Hans): Interview-Fragen stehen bei manchen Seiten (z.B.
         # FAZ) als block-eigenstaendige <strong>/<b> NEBEN den Antwort-
         # <p> — nicht in p/h/li/blockquote. Vorher fielen sie raus und das
@@ -259,7 +276,16 @@ module Inbox
         inline_tags = %w[strong b]
         block_tags  = %w[p h1 h2 h3 h4 h5 h6 li blockquote]
         blocks = root.css("p, h1, h2, h3, h4, h5, h6, li, blockquote, strong, b, div").reject do |b|
-          if inline_tags.include?(b.name)
+          if b.ancestors.any? { |a| a.name == "footer" }
+            # #1471: In einer Artikel-Fusszeile steht BEIDES — der
+            # Autoren-Kasten und die "Mehr zum Thema"-Teaser. Gemessen an
+            # faz.net kamen die Teaser als Ueberschriften herein, die den
+            # Absatz-Test gar nicht durchlaufen. Deshalb gilt er hier fuer
+            # JEDEN Block: genug eigener Text, nicht ueberwiegend Verweise.
+            # Der Autoren-Kasten (489 Zeichen Prosa) besteht ihn, eine
+            # Teaser-Zeile nicht.
+            !absatz_div?(b)
+          elsif inline_tags.include?(b.name)
             # #1471: Auch ein Absatz-<div> zaehlt jetzt als Block. Sonst kaeme
             # die fett gesetzte Zwischenueberschrift zweimal — einmal aus der
             # #736-Regel und einmal im Text des Absatzes, in dem sie steht.

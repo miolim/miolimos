@@ -215,6 +215,54 @@ module Inbox
       ABSATZ_DIV_MIN   = 120
       ABSATZ_DIV_LINKS = 0.5
 
+      # #1485: Leserkommentare gehoeren nicht zum Artikel. Bewusst eng
+      # gehalten — es sind die Bezeichner, die WordPress (und Disqus)
+      # vergeben, kein Freitext-Treffer auf „comment". Ein Wort wie
+      # „commentary" im Klassennamen soll den Artikel nicht kosten.
+      KOMMENTARE = "article.comment-body, #comments, #respond, #disqus_thread, " \
+                   ".comments-area, .comment-list, .comment-respond, " \
+                   "[id^=comment-], [id^=div-comment-]".freeze
+
+      # Anteil des Seitentextes, den ein Kandidat mindestens tragen muss, um
+      # als Artikel durchzugehen. Herleitung siehe extract_body.
+      ARTIKEL_MIN_ANTEIL = 0.25
+
+      # #1485: Wo kein <article> den Beitrag markiert, tun es oft benannte
+      # Inhalts-Container. Bewusst nur EINDEUTIGE Namen: `articleBody` ist
+      # Microdata-Standard, `entry-content` die WordPress-Konvention,
+      # `theme-post-content` der Elementor-Baustein.
+      #
+      # Das breitere `post-content` stand hier zwischendurch und ist wieder
+      # raus: Auf Substack (Clip #21) traf es einen Container, der die
+      # Dachzeile mitsamt Untertitel („Inside a marketing org with no
+      # marketers, just 40 AI agents") ausschliesst — 512 Zeichen weniger,
+      # darunter echter Inhalt. Ein Container, der den Anfang abschneidet,
+      # ist schlimmer als etwas Seiten-Beiwerk am Ende.
+      INHALTS_CONTAINER = "[itemprop=articleBody], [class*=entry-content], " \
+                          "[class*=theme-post-content], [class*=article-body], " \
+                          "[class*=articleBody]".freeze
+
+      # Die engste Wurzel, die den Beitrag noch ganz enthaelt: erst <article>,
+      # dann ein Inhalts-Container, sonst nichts (dann greift main/body).
+      # Beide muessen plausibel sein — siehe pruefe_anteil.
+      def inhalts_wurzel(doc)
+        pruefe_anteil(doc, doc.css("article").max_by { |a| a.text.to_s.strip.length }) ||
+          pruefe_anteil(doc, doc.css(INHALTS_CONTAINER).max_by { |n| n.text.to_s.strip.length })
+      end
+
+      # Ein Kandidat gilt nur, wenn er einen nennenswerten Anteil des
+      # Seitentextes traegt. `nil` heisst: Das Merkmal markiert hier etwas
+      # anderes als den Beitrag.
+      def pruefe_anteil(doc, kandidat)
+        return nil unless kandidat
+
+        rumpf  = doc.at_css("main") || doc.at_css("body") || doc
+        gesamt = rumpf.text.to_s.strip.length
+        return kandidat if gesamt.zero?
+
+        (kandidat.text.to_s.strip.length.to_f / gesamt) >= ARTIKEL_MIN_ANTEIL ? kandidat : nil
+      end
+
       def absatz_div?(node)
         text = node.text.to_s.strip
         return false if text.length < ABSATZ_DIV_MIN
@@ -243,13 +291,37 @@ module Inbox
         # ohne i-Flag — Nokogiri kennt es nicht; Klassen sind lowercase).
         doc.css("[class*=share], [class*=Share], [class*=social], " \
                 "[class*=Social], [class*=teilen], [data-ct-area*=sharing]").remove
+        # #1485: Leserkommentare sind nicht der Artikel — siehe KOMMENTARE.
+        doc.css(KOMMENTARE).remove
 
-        articles = doc.css("article")
-        root = if articles.any?
-                 articles.max_by { |a| a.text.to_s.length }
-               else
-                 doc.at_css("main") || doc.at_css("body") || doc
-               end
+        # #1485 (Hans): „Hier wurde wieder der Volltext nicht erkannt."
+        #
+        # Die Regel „nimm das <article> mit dem meisten Text" unterstellt,
+        # dass <article> den Artikel meint. Auf WordPress-Seiten stimmt das
+        # nicht: Dort ist JEDER Leserkommentar ein <article> (formal richtig
+        # — die Norm meint mit <article> ein in sich geschlossenes Stueck
+        # Inhalt, nicht den Hauptinhalt), und der Beitrag selbst steckt in
+        # divs. Bei worldbeyondwar.org gab es sieben <article>: fuenf
+        # Kommentare und zwei Teaser-Kacheln. Uebernommen wurde der laengste
+        # Kommentar (454 Zeichen) statt des Briefes (8.562).
+        #
+        # Zwei Schnitte, die zusammen wirken. Die Kommentare sind oben schon
+        # raus — das allein reicht aber nicht, dann bliebe die 32 Zeichen
+        # lange Teaser-Kachel als Wurzel. Deshalb muss ein <article> auch
+        # plausibel sein: Es traegt einen nennenswerten Anteil des
+        # Seitentextes, sonst wird es verworfen.
+        #
+        # Der Schwellwert ist an den bisherigen 14 Clips gemessen, nicht
+        # geraten: Der niedrigste Anteil eines ECHTEN Artikels lag bei 0,56
+        # (faz.net hinter der Bezahlschranke), der Kommentar bei 0,04.
+        # Dazwischen ist viel Platz; 0,25 liegt weit von beiden Seiten weg.
+        #
+        # Bleibt kein <article> uebrig, wird nicht sofort die ganze Seite
+        # genommen: Erst kommen die ueblichen Inhalts-Container dran
+        # (INHALTS_CONTAINER). Sonst haengen an einem sauber erkannten Text
+        # noch „Related Articles", Spendenkasten und Sprachauswahl.
+        artikel_root = inhalts_wurzel(doc)
+        root = artikel_root || doc.at_css("main") || doc.at_css("body") || doc
 
         # #1471 (Hans): „Wenn man den Autorenkasten zuverlaessig erkennen
         # kann, kann er mitkommen." — Kann man, und zwar an zwei Merkmalen
@@ -260,7 +332,6 @@ module Inbox
         # Die Fusszeile der SEITE fliegt weiter raus. Und ohne erkannten
         # Artikel bleibt es beim alten Verhalten — dort waere `root` die
         # ganze Seite, und die Seiten-Fusszeile kaeme mit herein.
-        artikel_root = articles.any? && root
         doc.css("footer").each do |f|
           f.remove unless artikel_root && (f == root || f.ancestors.include?(root))
         end

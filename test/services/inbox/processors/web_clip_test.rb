@@ -452,4 +452,93 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
     body = @proc.send(:extract_body, ohne)
     refute_includes body, "Fusszeile"
   end
+
+  # ── #1485: <article> heisst nicht Artikel ──────────────────────────────
+  #
+  # Hans: „Hier wurde wieder der Volltext nicht erkannt."
+  #
+  # Auf WordPress-Seiten ist JEDER Leserkommentar ein <article> — formal
+  # richtig, die Norm meint mit <article> ein in sich geschlossenes Stueck
+  # Inhalt, nicht den Hauptinhalt. Bei worldbeyondwar.org gab es sieben
+  # <article>: fuenf Kommentare und zwei Teaser-Kacheln, der Brief selbst
+  # stand in divs. Uebernommen wurde der laengste Kommentar.
+  #
+  # Die Seite hier ist danach gebaut: Kommentare als <article>, eine
+  # Teaser-Kachel als <article>, der Beitrag im Inhalts-Container.
+  WORDPRESS_SEITE = <<~HTML.freeze
+    <html><body>
+      <div class="elementor-widget-theme-post-content">
+        <p>Sie haben wiederholt von der Verantwortung Deutschlands fuer die
+           europaeische Sicherheit gesprochen. Diese Verantwortung laesst sich
+           nicht mit Schlagworten einloesen.</p>
+        <p>Seit 1990 sind die Sicherheitsbedenken wiederholt beiseitegeschoben
+           worden — oft unter deutscher Beteiligung, und stets mit derselben
+           Begruendung, die sich im Rueckblick nicht gehalten hat.</p>
+      </div>
+      <div id="comments"><ol class="comment-list">
+        <li><article id="div-comment-15864" class="comment-body">
+          <p>Ein Artikel, der mein Verstaendnis der Lage zwischen Europa und
+             Russland erweitert hat. An meiner Sicht auf den Angriff hat er
+             nichts geaendert. Putin ist nicht Russland.</p>
+        </article></li>
+      </ol></div>
+      <article class="elementor-post"><h3>Basisarbeit und Aktivismus</h3></article>
+    </body></html>
+  HTML
+
+  test "ein Leserkommentar wird nicht fuer den Artikel gehalten" do
+    body = @proc.send(:extract_body, WORDPRESS_SEITE)
+    assert_includes body, "Schlagworten einloesen", "der Beitrag gehoert herein"
+    assert_includes body, "Seit 1990", "und zwar vollstaendig"
+    refute_includes body, "Putin ist nicht Russland", "der Kommentar nicht"
+  end
+
+  test "eine Teaser-Kachel als <article> macht die Seite nicht zum Teaser" do
+    body = @proc.send(:extract_body, WORDPRESS_SEITE)
+    refute_includes body, "Basisarbeit und Aktivismus",
+                    "ein <article> mit einem Bruchteil des Seitentextes ist nicht der Artikel"
+  end
+
+  # Die Gegenprobe zur Anteils-Schwelle: Ein echtes <article> bleibt die
+  # Wurzel, auch wenn ringsherum noch Seiteninhalt steht. Ohne diesen Test
+  # koennte die Schwelle unbemerkt so hoch wandern, dass sie richtige
+  # Artikel verwirft — der Fall, der bis #1471 gut funktioniert hat.
+  test "ein echtes <article> bleibt die Wurzel" do
+    seite = "<html><body>" \
+            "<article><p>#{'Der Artikeltext traegt den Grossteil der Seite. ' * 12}</p></article>" \
+            "<div><p>#{'Beiwerk am Rand. ' * 5}</p></div>" \
+            "</body></html>"
+    body = @proc.send(:extract_body, seite)
+    assert_includes body, "traegt den Grossteil"
+    refute_includes body, "Beiwerk am Rand"
+  end
+
+  # Ohne <article> wird nicht sofort die ganze Seite genommen: Erst kommen
+  # die benannten Inhalts-Container dran. Sonst haengt an einem sauber
+  # erkannten Text noch der Spendenkasten und die Sprachauswahl.
+  test "ein benannter Inhalts-Container schlaegt die ganze Seite" do
+    seite = "<html><body>" \
+            "<div class=\"entry-content\"><p>#{'Der Beitrag selbst. ' * 12}</p></div>" \
+            "<div><h4>Related Articles</h4><p>#{'Spendenkasten und Sprachauswahl. ' * 4}</p></div>" \
+            "</body></html>"
+    body = @proc.send(:extract_body, seite)
+    assert_includes body, "Der Beitrag selbst"
+    refute_includes body, "Related Articles"
+  end
+
+  # Die Grenze der Container-Regel, an einer echten Messung festgehalten:
+  # Der breitere Name `post-content` traf auf Substack (Clip #21) einen
+  # Container OHNE Dachzeile und Untertitel — 512 Zeichen weg, darunter
+  # echter Inhalt. Ein Container, der den Anfang abschneidet, ist schlimmer
+  # als etwas Beiwerk am Ende. Deshalb steht er nicht in der Liste.
+  test "ein Container, der die Dachzeile ausschliesst, wird nicht bevorzugt" do
+    seite = "<html><body><div class=\"post\">" \
+            "<h1>Die Ueberschrift</h1>" \
+            "<h3>Der Untertitel, der den Artikel in einem Satz zusammenfasst.</h3>" \
+            "<div class=\"post-content\"><p>#{'Der Fliesstext des Beitrags. ' * 12}</p></div>" \
+            "</div></body></html>"
+    body = @proc.send(:extract_body, seite)
+    assert_includes body, "Der Untertitel", "der Untertitel ist Inhalt, kein Beiwerk"
+    assert_includes body, "Der Fliesstext"
+  end
 end

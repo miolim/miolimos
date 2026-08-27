@@ -38,8 +38,30 @@ export function stickyOffsets({ widths, clientWidth, step, minStep = SPINE_STEP_
   const offsets = widths.map((w, i) => {
     const isLast = i === total - 1
     const naturalLeft = i * stepEff
-    const left = isLast
-      ? Math.min(naturalLeft, Math.max(0, clientWidth - w))
+    // #1487 (Hans): „Die Spines der folgenden Cards verschwinden hinter
+    // dieser rechten Card, bis deren Spines den Bereich aufgefuellt haben."
+    //
+    // Die Klemmung aus #281 will, dass die letzte Card VOLLSTAENDIG ins
+    // Viewport passt. Ist sie breiter als der Arbeitsbereich, ist das
+    // unerreichbar — `Math.max(0, …)` machte daraus eine Klemmung auf 0.
+    // Dann lag JEDER andere Pin-Platz (i * stepEff > 0) rechts von ihr,
+    // und weil sie als letzte den hoechsten z-Index hat, deckte ihr
+    // Inhalt die nachrueckenden Spines zu: genau das Bild aus #1167,
+    // nur mit anderer Ursache. Bei 20 Cards und einer letzten, die
+    // breiter ist als der Bereich, lagen 18 von 19 Plaetzen darunter.
+    //
+    // Passt sie nicht, wird sie deshalb GAR NICHT geklemmt: Sie behaelt
+    // ihren normalen Stapel-Platz und laeuft nach rechts ueber — dorthin,
+    // wo ohnehin gescrollt wird. Die Reihenfolge der Plaetze bleibt
+    // monoton, und kein Spine verschwindet hinter Inhalt.
+    //
+    // Aktuell werden Cards zwischen 24rem und 60rem breit gerendert, und
+    // die Breite laesst sich bis `innerWidth - 80` ziehen (gemerkt je
+    // Card-Art im Browserspeicher). Eine Card, die breiter ist als der
+    // Arbeitsbereich, ist also keine Ausnahme, sondern Alltag.
+    const passt = clientWidth - w
+    const left = isLast && passt > 0
+      ? Math.min(naturalLeft, passt)
       : naturalLeft
     const right = isLast
       ? step - w

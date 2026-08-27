@@ -331,6 +331,39 @@ class BladeStackController extends Controller {
     }
     document.addEventListener("turbo:frame-load", this._onFrameLoad)
 
+    // #1487 (Hans): „Ein Streifen des Inhaltsbereiches bleibt rechts
+    // neben dem Spine stehen; die Spines der folgenden Cards verschwinden
+    // dahinter."
+    //
+    // Die Sticky-Rechnung merkt sich die BREITE jeder Card
+    // (`right = Stapel - Breite`). Aendert sich die Breite spaeter, ohne
+    // dass neu gerechnet wird, dockt die Card um genau die Differenz zu
+    // weit links an — und weil die letzte Card den hoechsten z-Index hat,
+    // deckt ihr sichtbarer Rest die nachrueckenden Spines zu.
+    //
+    // Genau das passiert beim Ziehen am Breiten-Griff: `.stack-card` hat
+    // eine 220ms-Transition auf `width` (#224, Collapse-Animation). Wer
+    // unmittelbar nach dem Setzen misst, bekommt die ALTE Breite. Live
+    // nachgemessen: Card auf 1126px gezogen, restickify mass 576px —
+    // 551px Inhalt blieben neben dem Spine stehen.
+    //
+    // Statt an jeder Stelle, die Breiten anfasst, den richtigen Zeitpunkt
+    // zu erraten, hoert der Beobachter zu, WANN eine Breite sich
+    // tatsaechlich geaendert hat. Das deckt Ziehen, Transition-Ende,
+    // nachgeladene Inhalte und alles ab, was spaeter dazukommt.
+    // restickify aendert keine Breiten (nur left/right/z-Index/clip),
+    // also gibt es keine Rueckkopplung.
+    if (typeof ResizeObserver !== "undefined") {
+      this._breitenBeobachter = new ResizeObserver(() => {
+        if (this._breitenRaf) return
+        this._breitenRaf = requestAnimationFrame(() => {
+          this._breitenRaf = null
+          this.restickify()
+        })
+      })
+      this._beobachteBreiten()
+    }
+
     // #190: aktueller Trail muss beim Page-Verlassen in den Verlauf
     // wandern — sonst geht der via appendCard/appendFromList aufgebaute
     // Stand verloren und der nächste Page-Load restored einen veralteten
@@ -534,6 +567,9 @@ class BladeStackController extends Controller {
     }
     this.mutObserver?.disconnect()
     if (this._onFrameLoad) document.removeEventListener("turbo:frame-load", this._onFrameLoad)
+    // #1487
+    if (this._breitenRaf) { cancelAnimationFrame(this._breitenRaf); this._breitenRaf = null }
+    this._breitenBeobachter?.disconnect()
     this._dismissCloseMenu()
     document.body.classList.remove("has-blade-stack")
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
@@ -1899,6 +1935,15 @@ class BladeStackController extends Controller {
     }
   }
 
+  // #1487: Neue Cards mit in die Breiten-Beobachtung nehmen. `observe`
+  // auf eine schon beobachtete Card ist folgenlos, deshalb reicht es,
+  // hier stumpf alle durchzugehen.
+  _beobachteBreiten() {
+    if (!this._breitenBeobachter) return
+    this.containerTarget.querySelectorAll(".stack-card")
+        .forEach(card => this._breitenBeobachter.observe(card))
+  }
+
   restickify(widthsHint = null) {
     // #224 6f-4 v2: Auf Mobile uebernimmt native CSS scroll-snap das
     // Layout — wir setzen nur data-mobile auf dem Container, CSS macht
@@ -1909,6 +1954,7 @@ class BladeStackController extends Controller {
     }
     const cards = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
     if (cards.length === 0) return
+    this._beobachteBreiten()   // #1487: frisch dazugekommene Cards mitnehmen
     // #224 (2026-05-19): cardWidth pro Card, nicht einmal aus cards[0].
     // #277 follow-up: optional widthsHint vom Caller, damit toggleCollapse
     // die Breiten VOR dem dataset-flip einliest. Sonst kommt der forced

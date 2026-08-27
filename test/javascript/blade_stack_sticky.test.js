@@ -73,7 +73,45 @@ test("leerer Stack", () => {
   assert.deepEqual(stickyOffsets({ widths: [], clientWidth: 1000, step: STEP }).offsets, [])
 })
 
-test("Card breiter als der Container: Klemmung auf 0, kein negativer Left", () => {
+// #1487: Diese Erwartung stand hier vorher als „Klemmung auf 0" — und
+// genau die war der Fehler. Sie kam aus #281 („die letzte Card soll
+// vollstaendig ins Viewport passen"); passt sie NICHT hinein, ist die
+// Klemmung unerreichbar, und `Math.max(0, …)` machte daraus eine
+// Klemmung ganz nach links. Damit lag jeder andere Pin-Platz rechts von
+// ihr, und ihr Inhalt (hoechster z-Index) deckte die nachrueckenden
+// Spines zu. Der Test hat den Fehler festgeschrieben statt ihn zu fangen.
+//
+// Richtig ist: kein negativer Left — und keine Klemmung, die die
+// Reihenfolge der Plaetze umdreht.
+test("Card breiter als der Container wird nicht nach links geklemmt (#1487)", () => {
   const { offsets } = stickyOffsets({ widths: [400, 960], clientWidth: 706, step: STEP })
-  assert.equal(offsets[1].left, 0)
+  assert.ok(offsets[1].left >= 0, "kein negativer Left")
+  assert.ok(offsets[1].left >= offsets[0].left,
+    "die letzte Card pint nicht links von ihrer Vorgaengerin")
+})
+
+test("keine Card pint rechts von der letzten — auch nicht bei einer uebergrossen letzten (#1487)", () => {
+  // Der Fall aus Hans' Meldung: viele Cards, die letzte breiter als der
+  // Arbeitsbereich (Cards werden zwischen 24rem und 60rem gerendert und
+  // lassen sich bis fast auf Fensterbreite ziehen). Vorher lagen hier 18
+  // von 19 Plaetzen rechts der geklemmten letzten Card.
+  const widths = Array(20).fill(576)
+  widths[19] = 1400
+  const cw = 1254
+  const { offsets } = stickyOffsets({ widths, clientWidth: cw, step: STEP })
+  const lastLeft = offsets[19].left
+  const dahinter = offsets.slice(0, 19).filter(o => o.left > lastLeft + 1)
+  assert.equal(dahinter.length, 0,
+    `${dahinter.length} Pin-Plaetze liegen rechts der letzten Card (${lastLeft}px)`)
+})
+
+test("Plaetze bleiben aufsteigend, egal wie breit die letzte Card ist (#1487)", () => {
+  for (const letzte of [200, 576, 1254, 1400, 3000]) {
+    const widths = Array(12).fill(576)
+    widths[11] = letzte
+    const { offsets } = stickyOffsets({ widths, clientWidth: 1254, step: STEP })
+    const lefts = offsets.map(o => o.left)
+    const sortiert = lefts.every((v, i) => i === 0 || v >= lefts[i - 1] - 0.001)
+    assert.ok(sortiert, `letzte=${letzte}px ergibt ${JSON.stringify(lefts.map(Math.round))}`)
+  }
 })

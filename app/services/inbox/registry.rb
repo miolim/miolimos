@@ -8,6 +8,7 @@ module Inbox
         Processors::ImageToKi,      # #609 v2: Bild-Upload → Bild-KI
         Processors::PdfBibImport,
         Processors::YoutubeTranscribe,
+        Processors::AudioTranscribe,  # #1492: MP3/M4A hinter einer Adresse (Podcast-Folge)
         Processors::TedTranscript,    # #778: TED-Talk → offizielles Transkript
         Processors::MarkdownUrl,      # #799: Link auf .md-Datei → formattreue KI
         Processors::WebClip,

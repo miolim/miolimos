@@ -25,9 +25,21 @@ module Inbox
         end
       end
 
+      # #1492 (Hans): YouTube liefert die Tonspur nur noch heraus, wenn
+      # yt-dlp eine JavaScript-Laufzeit hat, um die Signatur zu entschluesseln.
+      # Ohne sie faellt es auf einen Zugangsweg zurueck, dessen Adressen mit
+      # 403 abgewiesen werden — genau daran ist Folge 15 gescheitert.
+      # yt-dlp meldet dazu: Auslesen ohne JS-Laufzeit sei „deprecated".
+      #
+      # Von Haus aus sucht yt-dlp nur `deno`; wir haben `node`. Der Schalter
+      # ist ungefaehrlich, wenn node fehlt: yt-dlp meldet dann eine WARNUNG
+      # („Ignoring unsupported JavaScript runtime") und macht weiter wie
+      # bisher — nachgeprueft mit einem erfundenen Laufzeit-Namen.
+      JS_LAUFZEIT = ["--js-runtimes", "node"].freeze
+
       def self.fetch_metadata(url)
-        out, err, status = Open3.capture3(BIN, "--dump-single-json", "--no-playlist",
-                                           "--no-warnings", url)
+        out, err, status = Open3.capture3(BIN, *JS_LAUFZEIT, "--dump-single-json",
+                                           "--no-playlist", "--no-warnings", url)
         raise Error, "yt-dlp metadata failed: #{err.lines.first}" unless status.success?
         JSON.parse(out)
       end
@@ -49,7 +61,7 @@ module Inbox
       def self.download_audio(url, dir)
         out_template = File.join(dir, "audio.%(ext)s")
         _out, err, status = Open3.capture3(
-          BIN, "--no-warnings", "--no-playlist",
+          BIN, *JS_LAUFZEIT, "--no-warnings", "--no-playlist",
           "-f", "ba[ext=m4a]/ba[ext=webm]/bestaudio",
           "-o", out_template, url
         )
@@ -69,7 +81,7 @@ module Inbox
       def self.download_subtitles(url, dir, lang: "en")
         out_template = File.join(dir, "sub.%(ext)s")
         _out, err, status = Open3.capture3(
-          BIN, "--no-warnings", "--no-playlist", "--skip-download",
+          BIN, *JS_LAUFZEIT, "--no-warnings", "--no-playlist", "--skip-download",
           "--write-auto-subs", "--write-subs",
           "--sub-langs", lang, "--sub-format", "json3",
           "-o", out_template, url

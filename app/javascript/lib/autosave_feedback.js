@@ -42,3 +42,34 @@ export function refindField(root, { formAction, name }) {
   }
   return null
 }
+
+// #1496 (aus immoos #1457 R2 uebernommen). Hans dort: „Das haben wir gerade,
+// wenn man von einem Auswahlfeld zum naechsten geht und gleich weiter tippt.
+// Es ist sogar die Regel, dass das erste Feld dann noch nicht gespeichert ist
+// und man wieder rausfliegt und neu anfangen muss zu tippen."
+//
+// Gerettet wurde bisher nur der ORT des Cursors, nicht der INHALT: Nach dem
+// Austausch steht der Cursor richtig, das Getippte ist weg. Diese Funktion
+// beantwortet die eine heikle Frage dabei — darf der Wert des Nutzers den des
+// Servers ueberschreiben?
+//
+// Drei Lagen, und nur in zweien gewinnt der Nutzer:
+//
+//   1. Der Server hat das Feld NICHT angefasst (er liefert denselben Wert,
+//      mit dem er es vorher gerendert hat). Dann ist das Getippte das Neuere
+//      — es gewinnt.
+//   2. Der Nutzer hat WEITERGETIPPT: Der Serverwert ist ein Anfang des
+//      Getippten. Das ist der Fall, wenn ein Save mitten in der Eingabe lief
+//      („Mül" gespeichert, inzwischen steht „Müller" da).
+//   3. Sonst hat der Server wirklich etwas anderes gesetzt — er formatiert
+//      Betraege, fuellt abhaengige Felder, rechnet nach. Dann gewinnt ER,
+//      sonst ueberschreibt die Rettung eine Korrektur und der Nutzer sieht
+//      seinen halben Text statt der richtigen Antwort.
+export function darfWertZurueck(feld, merk) {
+  if (!feld || !merk || typeof merk.wert !== "string") return false
+  if (typeof feld.defaultValue !== "string") return false   // SELECT u. a.
+  if (feld.value === merk.wert) return false                // steht schon da
+
+  if (feld.defaultValue === merk.geliefert) return true     // Lage 1
+  return merk.wert.startsWith(feld.value)                   // Lage 2
+}

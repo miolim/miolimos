@@ -852,7 +852,23 @@ class BladeStackController extends Controller {
   }
 
   _openCloseMenu(trigger, card) {
-    const hasRight = !!(card.nextElementSibling?.classList?.contains("stack-card"))
+    // #1496 (aus immoos #1481 uebernommen). Hans dort: „Der untere Befehl soll
+    // bei der aeussersten linken Card ausgegraut sein, weil ansonsten ein
+    // leerer Stack entstuende. Tatsaechlich ist er aber nicht bei der
+    // aeussersten linken Card ausgegraut, sondern bei der darauf folgenden."
+    //
+    // Die Regel hing nur an „gibt es rechts noch etwas?" — in einem Stapel aus
+    // ZWEI Karten ist das genau die zweite, daher sein Befund. Jetzt zwei
+    // Bedingungen, und beide sagen dasselbe: Der Befehl darf nur, wenn er
+    // etwas uebrig laesst und mehr tut als der Befehl darueber.
+    //
+    //   · bei der ERSTEN Karte nicht — er schloesse den ganzen Stapel
+    //   · bei der LETZTEN nicht — rechts steht nichts, er waere „Diese Karte
+    //     schliessen" ein zweites Mal
+    const karten    = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
+    const istErste  = karten.indexOf(card) <= 0
+    const hatRechts = !!(card.nextElementSibling?.classList?.contains("stack-card"))
+    const hasRight  = hatRechts && !istErste
     const menu = document.createElement("div")
     menu.className = "fixed z-50 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-52 text-sm text-slate-700"
     const addItem = (label, enabled, onPick) => {

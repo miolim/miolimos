@@ -419,6 +419,14 @@ body:not(.has-blade-stack) .topbar-trail {
   opacity: 1;
   transition: opacity 60ms ease-in 160ms;
 }
+/* #1486: Der Inhaltsbereich bekommt beim Card-Wechsel den Fokus, damit
+   die Pfeiltasten die richtige Card scrollen. Er ist per tabindex="-1"
+   nur programmatisch erreichbar — ein Rahmen um den halben Bildschirm
+   waere hier kein Hinweis, sondern Laerm. Welche Card gemeint ist, sagt
+   ohnehin schon der eingefaerbte Spine. */
+.stack-card > .overflow-y-auto:focus {
+  outline: none;
+}
 .stack-card[data-collapsed="true"] > .overflow-y-auto {
   opacity: 0;
   pointer-events: none;

@@ -565,6 +565,37 @@ class BladeStackController extends Controller {
            this.containerTarget.querySelector(".stack-card:last-of-type")
   }
 
+  // #1486 (Hans): „Wenn ich per Tastatur zu einer anderen Card navigiere,
+  // wird der Vertikal-Scroll-Fokus nicht mitgenommen."
+  //
+  // Welche Card die Pfeiltasten scrollen, entscheidet nicht `data-active`,
+  // sondern der DOM-Fokus: Der Browser scrollt den naechsten scrollbaren
+  // Vorfahren des fokussierten Elements. Ein Mausklick setzt diesen Fokus
+  // nebenbei mit — deshalb funktionierte ↑/↓ nach dem Klicken und nach
+  // Strg+Alt+Pfeil nicht. Der Fokus blieb auf der alten Card stehen.
+  //
+  // Fokussiert wird der Inhaltsbereich SELBST, nicht das erste fokussier-
+  // bare Element darin: Sonst haengt das Scrollen davon ab, ob die Card
+  // zufaellig einen Link enthaelt, und der Sprung dorthin scrollte die
+  // Card auch noch ungefragt an eine andere Stelle.
+  //
+  // Absichtlich NICHT in setActiveCard: Das laeuft auch beim Scroll-Sync
+  // auf dem Telefon (bei jedem Wisch) und beim Nachrutschen nach einem
+  // Close. Fokus wandert nur, wenn jemand die Card ausdruecklich wechselt.
+  _focusCardBody(card) {
+    if (!card) return
+    const box = card.querySelector(":scope > .overflow-y-auto")
+    const ziel = box || card
+    // tabindex="-1": programmatisch fokussierbar, aber NICHT in der
+    // Tab-Reihenfolge — sonst laege zwischen je zwei Bedienelementen ein
+    // zusaetzlicher Halt, den vorher niemand hatte.
+    if (!ziel.hasAttribute("tabindex")) ziel.setAttribute("tabindex", "-1")
+    // preventScroll: Das Positionieren der Card macht scrollCardIntoView
+    // eine Zeile weiter. Ohne die Bremse zoege der Fokus die Card selbst
+    // noch einmal ins Bild und beide Bewegungen kaempften gegeneinander.
+    ziel.focus({ preventScroll: true })
+  }
+
   // #316 (Hans, 2026-05-24): Mobile-Swipe-end → ermitteln, welche Card
   // jetzt im Viewport eingerastet ist, und sie als active markieren.
   // Auf Desktop kein-op, weil Active dort via Klick getrackt wird.
@@ -1251,6 +1282,7 @@ class BladeStackController extends Controller {
       const next = cards[targetIdx]
       if (!next || next === cards[idx]) return
       this.setActiveCard(next)
+      this._focusCardBody(next)   // #1486
       next.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" })
       return
     }
@@ -1267,6 +1299,7 @@ class BladeStackController extends Controller {
     const next = cards[targetIdx]
     if (!next || next === cards[idx]) return
     this.setActiveCard(next)
+    this._focusCardBody(next)   // #1486
     this.scrollCardIntoView(next, targetIdx, cards.length, delta > 0 ? "next" : "prev")
   }
 

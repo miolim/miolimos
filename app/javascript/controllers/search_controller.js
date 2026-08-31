@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { stackVorhanden } from "lib/blade_stack_present"
 
 // Debounces the search input and submits the enclosing form
 // (which is a Turbo Frame that lands in #search_results).
@@ -37,7 +38,7 @@ export default class extends Controller {
     event.preventDefault()
     clearTimeout(this.timeout)
     const payload = this.constructor.payloadFor(q)
-    if (document.body.classList.contains("has-blade-stack")) {
+    if (stackVorhanden()) {   // #1496 (aus immoos #1302)
       window.dispatchEvent(new CustomEvent("blade-stack:append", {
         detail: { kind: "search_list", id: payload }
       }))

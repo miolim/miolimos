@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { stackVorhanden } from "lib/blade_stack_present"
 
 // #183: Per-Wikilink-Recherche-Trigger. Klick auf das 🔍-Icon hinter
 // einem roten [[Title|URL]]-Wikilink legt einen Researcher-Task an
@@ -46,7 +47,7 @@ export default class extends Controller {
         this.flashToast(window.t("research.task_created", { id: data.task_id }))
         // #659 (Hans): den frischen Recherche-Task direkt als Blade an
         // den aktuellen Stack anhängen (gleicher Weg wie blade-link).
-        if (document.body.classList.contains("has-blade-stack")) {
+        if (stackVorhanden()) {   // #1496 (aus immoos #1302)
           window.dispatchEvent(new CustomEvent("blade-stack:append", {
             detail: { kind: "task", id: String(data.task_id), anchor: null,
                       sourceListId: null, mode: "append_to_substack" }

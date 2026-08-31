@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { stackVorhanden } from "lib/blade_stack_present"
 
 // #163 Phase 4: Generischer „append-to-stack"-Trigger fuer Elemente
 // AUSSERHALB des blade-stack-DOM-Teilbaums (insbesondere die Sidebar).
@@ -20,7 +21,10 @@ export default class extends Controller {
     // navigiert normal, der Klick zaehlt nicht als Append-Trigger.
     // Damit kann tasks/_row.html.erb generell blade-link verwenden, und
     // auf Seiten ohne Stack faellt es auf full-page-Navigation zurueck.
-    if (!document.body.classList.contains("has-blade-stack")) return
+    // #1496 (aus immoos #1302): die TATSACHE fragen, nicht den Merker —
+    // die Body-Klasse kann eine sich trennende Alt-Instanz entfernt haben,
+    // waehrend der Stapel steht.
+    if (!stackVorhanden()) return
     event.preventDefault()
     event.stopPropagation()
     if (!this.kindValue || !this.idValue) return

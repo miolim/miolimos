@@ -571,7 +571,13 @@ class BladeStackController extends Controller {
     if (this._breitenRaf) { cancelAnimationFrame(this._breitenRaf); this._breitenRaf = null }
     this._breitenBeobachter?.disconnect()
     this._dismissCloseMenu()
-    document.body.classList.remove("has-blade-stack")
+    // #1496 (aus immoos #1302): NUR entfernen, wenn wirklich kein
+    // Container mehr dasteht. Trennt sich eine Alt-Instanz, nachdem die
+    // lebende sich verbunden hat, riss das bisher den Merker weg — und mit
+    // ihm die Klick-Pfade, die daran hingen.
+    if (!document.querySelector('[data-blade-stack-target="container"]')) {
+      document.body.classList.remove("has-blade-stack")
+    }
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
     if (this._onTrailNav)    window.removeEventListener("blade-stack:trail", this._onTrailNav)
   }

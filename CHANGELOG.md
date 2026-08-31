@@ -15,7 +15,24 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.4.1] - 2026-08-31
+
 ### Added
+
+- Podcast episodes can be transcribed straight from their audio address
+  (#1492). A podcast that would not transcribe turned out to be a YouTube
+  problem, not a podcast one — and nearly every podcast also lies in an open
+  feed as a plain audio file, the very file the streaming apps play. That
+  address can now be dropped into the inbox and takes the same route as a
+  video: cost shown first, then transcription, speaker separation,
+  timestamps, summary and a source entry. The duration for the estimate is
+  read from the file's header while it still sits on the far server, so the
+  question comes before the cost, not after it.
+- The sidebar entry belonging to the open stack is now visible at a glance
+  (#1496). It was one shade of dark grey on another — a step you had to look
+  for. It is now a light strip across the full width of the bar, in exactly
+  the colour of the surface the cards lie on, so the entry and what it opened
+  read as one surface.
 
 - On a phone, tapping the card counter in the top bar now shows which cards
   are open (#1453). The number said how many; it took swiping through the
@@ -25,6 +42,15 @@ release is cut, this section is renamed to the new version and a fresh
   them on tap.
 
 ### Changed
+
+- Off-site backups now keep database dumps and the signing key for 60 days
+  but the bulky data archives for 7 (#1472). The old rule kept everything for
+  60 days, which meant 60 full copies of a directory that barely changes —
+  about 28 GB, three times the free tier of the off-site provider, and the
+  cap was reached. ⚠️ **Upgrade note:** a data set older than a week can no
+  longer be restored *completely* from the off-site copy — the database can,
+  its attachments cannot. Both retentions are configurable
+  (`OFFSITE_RETENTION_DAYS`, `OFFSITE_DATA_RETENTION_DAYS`).
 
 - The height of a card-stack page is now defined once instead of being
   repeated in every template (#1453). It was written out seventeen times,
@@ -36,6 +62,33 @@ release is cut, this section is renamed to the new version and a fresh
   keeps the height out of the templates.
 
 ### Fixed
+
+- Arrow keys now scroll the card you just moved to (#1486). Which card they
+  scroll is decided by keyboard focus, not by which card is marked active —
+  a mouse click sets that focus in passing, the keyboard shortcut never did.
+  Moving between cards now takes the focus along.
+- The outermost card collapses fully onto its spine again (#1487). A strip of
+  its content stayed behind and covered the spines of the cards after it. Two
+  causes: the stack geometry was calculated from a width measured before the
+  card had finished resizing, and a card wider than the workspace was pinned
+  to the far left, where every other pin slot lay to its right. Widths are now
+  watched for actual change instead of guessed at, and a card that cannot fit
+  is no longer pinned at all.
+- A clipped page no longer picks up a reader comment instead of the article
+  (#1485). On many sites every comment is marked up as an article in its own
+  right — which is correct — so "the longest article on the page" found a
+  comment while the piece itself sat in plain containers. Comment sections are
+  now left out, and a marked-up article only counts as the article if it
+  carries a real share of the page's text.
+- The "close this card and all to its right" command is now correctly
+  disabled on the leftmost card (#1496). It was disabled one card too far to
+  the right, so the one case where it empties the whole stack stayed allowed.
+- The browser test suite is usable as a whole again (#1496). Run one by one
+  every file passed; run together, dozens of tests failed with timeouts, and
+  a different set each time. `driven_by` re-registers the driver and silently
+  discarded the configured timeouts, so pages that load their controllers as
+  many small files were given five seconds. Measured on the same suite: 2
+  failures and 39 errors before, none after.
 
 - A clipped article keeps the author note at its end (#1471). It sits in the
   article's own footer, which is what that part of the markup is for — but
@@ -1049,7 +1102,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/miolim/miolimos/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/miolim/miolimos/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/miolim/miolimos/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/miolim/miolimos/compare/v0.3.3...v0.3.4

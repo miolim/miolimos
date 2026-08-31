@@ -15,6 +15,26 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- On a phone, tapping the card counter in the top bar now shows which cards
+  are open (#1453). The number said how many; it took swiping through the
+  whole stack to find out which. The list carries each card's own mark and
+  spine colour — taken from the card itself, so it cannot drift from what is
+  on screen — highlights the one you are looking at, and jumps to any of
+  them on tap.
+
+### Fixed
+
+- On a phone, the card spine no longer slides under the top bar (#1453). The
+  stack pulled itself upwards to sit flush against the edges, but there was
+  nothing to pull against: 8 of the spine's 36 pixels ended up behind the
+  top bar, and since its contents are centred in the full height, they sat
+  too high in what remained. The stack now sits below the bar and flush
+  against both side edges. The single pixel of asymmetry underneath — the
+  spine's dividing line counts towards its height but not towards the area
+  its contents are centred in — is evened out as well.
+
 ## [0.4.0] - 2026-08-20
 
 ### ⚠️ Upgrade notes

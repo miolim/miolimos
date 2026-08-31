@@ -423,7 +423,12 @@ body:not(.has-blade-stack) .topbar-trail {
        Inhalt an die Oberkante gedrueckt wird. */
     height: auto !important;
     min-height: 2.25rem !important;      /* 36px, ordentlicher Touch-Target */
-    padding: 0 0.5rem !important;
+    /* #1453 (aus immoos #1451 übernommen): Der Inhalt saß optisch zu weit
+       oben. Grund ist die Trennlinie unten: Sie zählt zur HÖHE der Box, aber
+       nicht zum Inhaltsbereich, in dem `align-items: center` zentriert.
+       Gemessen (390×780): 7,5 px über dem Inhalt, 8,5 px darunter. Das eine
+       Pixel oben gleicht die Linie unten aus. */
+    padding: 1px 0.5rem 0 !important;
     gap: 0.5rem !important;
     border-right: 0 !important;
     border-bottom: 1px solid rgb(226 232 240);  /* slate-200 */
@@ -532,7 +537,17 @@ body:not(.has-blade-stack) .topbar-trail {
    pro Blade entfaellt; der Spine ist immer linke Kante der Card. */
 @media (max-width: 767px) {
   [data-blade-stack-target="container"][data-mobile="true"] {
-    margin: -1rem;
+    /* #1453 (aus immoos #1451 R2): Der negative Margin sollte den
+       Innenabstand des <main> aufheben, damit der Stapel an den Kanten
+       klebt. Hier gibt es diesen Abstand mobil aber gar nicht (`main` hat
+       0 px) — der Margin zog den Stapel deshalb aus dem Bild: 8 px unter die
+       48 px hohe Topbar, 8 px über die linke Kante hinaus und 8 px zu kurz
+       an der rechten. Vom 36 px hohen Spine blieben 29 sichtbar, und weil
+       der Inhalt in den vollen 36 zentriert ist, saß er im sichtbaren Rest
+       zu weit oben — genau der Eindruck „nicht zentriert".
+       Nachgemessen statt übernommen: Der Fork gleicht hier sein eigenes p-2
+       aus und braucht -0.5rem; bei uns ist die richtige Antwort 0. */
+    margin: 0;
     width: 100vw;
     max-width: 100vw;
     height: calc(100dvh - 5rem);

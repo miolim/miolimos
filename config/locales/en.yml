@@ -2385,6 +2385,10 @@ en:
       close: "Close"
     topbar:
       cards_left: "Cards to the left"
+      # #1453 (aus immoos #1452): Tap auf die Zaehler zeigt, WELCHE
+      # Karten offen sind — die Zahl allein sagt nur, wie viele.
+      stack_overview: "Open cards"
+      stack_here: "here"
       cards_right: "Cards to the right"
       open_nav: "Open navigation"
       search: "Search"

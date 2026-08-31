@@ -8,14 +8,21 @@
     in shared/_quick_create_bar. %>
 <% topbar_layout = current_actor&.pref_topbar_layout || ActorPreferences.default_topbar_layout %>
 <header class="focus-chrome-hide border-b border-slate-200 bg-white h-12 flex items-center px-4 gap-3 shrink-0"
-        data-controller="keyboard blade-counts quick-create"
+        data-controller="keyboard blade-counts quick-create stack-overview"
+        data-stack-overview-hier-value="<%= t("shared.topbar.stack_here") %>"
         data-ui-label="Topbar (Kopfleiste)">
   <%# #262: Mobile-Indikator — Anzahl Blades LINKS der sichtbaren Card.
       #262 follow-up: Platz ist immer reserviert (min-w-4), Pfeile sind
       raus, Zahl ist fett; bei 0 nur abgedimmt (Controller). %>
-  <span data-blade-counts-target="left"
-        class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center"
-        aria-label="<%= t("shared.topbar.cards_left") %>">0</span>
+  <%# #1453 (aus immoos #1452): „Bei Tap auf die Zahlen öffnet sich eine
+      Ansicht mit allen Spines." Die Zahl sagt, WIE VIELE — der Tap sagt,
+      WELCHE. %>
+  <button type="button" data-blade-counts-target="left"
+          data-action="click->stack-overview#oeffnen"
+          class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
+                 bg-transparent border-0 p-0 cursor-pointer"
+          title="<%= t("shared.topbar.stack_overview") %>"
+          aria-label="<%= t("shared.topbar.cards_left") %>">0</button>
   <button type="button"
           data-action="click->mobile-nav#toggle"
           aria-label="<%= t("shared.topbar.open_nav") %>"
@@ -101,9 +108,29 @@
       <%= icon "power", size: "w-4 h-4" %>
     <% end %>
     <%# #262: Mobile-Indikator — Anzahl Blades RECHTS der sichtbaren Card. %>
-    <span data-blade-counts-target="right"
-          class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center"
-          aria-label="<%= t("shared.topbar.cards_right") %>">0</span>
+    <button type="button" data-blade-counts-target="right"
+            data-action="click->stack-overview#oeffnen"
+            class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
+                   bg-transparent border-0 p-0 cursor-pointer"
+            title="<%= t("shared.topbar.stack_overview") %>"
+            aria-label="<%= t("shared.topbar.cards_right") %>">0</button>
+  </div>
+
+  <%# #1453: Die Übersicht selbst — ein Blatt über dem Stapel, nur mobil. Es
+      liegt in der Topbar, weil es von dort aufgerufen wird und mit ihr
+      verschwindet; ein eigenes Overlay im Layout wäre eine zweite Stelle,
+      die man beim nächsten Umbau übersieht. %>
+  <div data-stack-overview-target="blatt" data-action="click->stack-overview#hintergrund"
+       class="hidden md:hidden fixed inset-0 z-40 bg-slate-900/30 pt-12">
+    <div class="mx-3 mt-1 rounded-lg bg-white shadow-lg border border-slate-200 overflow-hidden max-h-[70vh] flex flex-col">
+      <div class="px-3 py-2 border-b border-slate-200 flex items-center gap-2">
+        <span class="text-[11px] uppercase tracking-wide text-slate-500 flex-1"><%= t("shared.topbar.stack_overview") %></span>
+        <button type="button" data-action="click->stack-overview#schliessen"
+                class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-transparent border-0 cursor-pointer [&_svg]:w-4 [&_svg]:h-4"
+                aria-label="<%= t("actions.cancel") %>"><%= icon "x" %></button>
+      </div>
+      <div data-stack-overview-target="liste" class="overflow-y-auto min-h-0"></div>
+    </div>
   </div>
 </header>
 

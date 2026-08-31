@@ -23,7 +23,7 @@ class TopbarLayoutRenderTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, I18n.t("shared.topbar.diagnostic_label")
     # Der quick-create-Controller sitzt auf dem Header (#1109), die Slots
     # sind weiter im Scope.
-    assert_includes @response.body, 'data-controller="keyboard blade-counts quick-create"'
+    assert_includes @response.body, 'data-controller="keyboard blade-counts quick-create stack-overview"'
     assert_includes @response.body, 'data-quick-create-target="slot"'
   end
 

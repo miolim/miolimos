@@ -66,10 +66,20 @@ class AutosaveDatumTest < ApplicationSystemTestCase
     # also gar nicht (nachgemessen: der Wert stand auf 2026-09-02, der Merker
     # der Bremse auf 1, und trotzdem kam kein focusout).
     page.execute_script("document.activeElement.blur()")
-    assert_equal @task.reload.due_date, warte_auf_aenderung(Date.new(2026, 9, 1)),
+
+    # ERST warten, DANN vergleichen. Mein erster Anlauf las den Ist-Wert vor
+    # dem Warten und verglich ihn mit dem Ergebnis des Wartens — lokal ging
+    # das durch, in der CI nicht: Dort war der Save beim ersten Lesen noch
+    # unterwegs. Ein Test, der von der Reihenfolge zweier Lesevorgaenge
+    # abhaengt, misst die Maschine und nicht die Anwendung.
+    #
+    # Verglichen wird auf „veraendert", nicht auf ein bestimmtes Datum: Welches
+    # Segment die Pfeiltaste erhoeht, haengt vom Datumsformat des Browsers ab
+    # (hier der Tag, in der CI der Monat). Das ist fuer die Frage, ob beim
+    # Verlassen gespeichert wird, ohne Belang.
+    neu = warte_auf_aenderung(Date.new(2026, 9, 1))
+    refute_equal Date.new(2026, 9, 1), neu,
                  "beim Verlassen wird der geaenderte Wert uebernommen"
-    refute_equal Date.new(2026, 9, 1), @task.reload.due_date,
-                 "und er ist wirklich ein anderer"
   end
 
   # Ohne Aenderung soll das Verlassen auch nichts ausloesen — sonst schriebe

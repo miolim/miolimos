@@ -15,6 +15,35 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.4.2] - 2026-08-31
+
+### Fixed
+
+- Typing no longer gets interrupted when a field saves itself (#1496). Saving
+  one field often makes the server re-render the whole card, which replaces
+  every field on it — including the one being typed in, and a replaced field
+  cannot keep the cursor. Both the position *and* the typed text are now
+  carried across the replacement, back to the field being worked on rather
+  than the one that was saved. Where the server genuinely changed a value —
+  formatting an amount, filling a dependent field — the server still wins,
+  so a correction is never overwritten by half-typed text.
+- Date fields save when you leave them, not while you are still typing
+  (#1496). A date field reports a change as soon as a complete date stands
+  there — which, when editing the day of an existing date, is immediately —
+  so it saved mid-entry and the field was replaced under the cursor. Nothing
+  happens now until the field is left, and only if the value actually
+  changed.
+- Clicking a row opens a card again after the stack has been reloaded in
+  place (#1496). The click paths asked a marker on the page body instead of
+  whether a stack is actually there; a second, older instance disconnecting
+  after the live one had connected wiped that marker, and row clicks went
+  dead while everything else kept working. They now ask the fact, which is
+  read fresh on every click.
+- The stack no longer shows a vertical scrollbar that reveals nothing
+  (#1496). A visually hidden file input escaped its card — hidden elements
+  are positioned absolutely, and without a positioned ancestor inside the
+  card body it was laid out far below the card's end, inflating its height.
+
 ## [0.4.1] - 2026-08-31
 
 ### Added
@@ -1102,7 +1131,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/miolim/miolimos/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/miolim/miolimos/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/miolim/miolimos/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/miolim/miolimos/compare/v0.3.4...v0.3.5

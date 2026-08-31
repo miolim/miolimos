@@ -96,10 +96,18 @@
       stabil). #859: NUR `stable`, NICHT `both-edges` — both-edges reservierte
       auch LINKS und schob die Scroll-Icons ggü. Header/Pinned/Zahnrad (die nach
       #875 außerhalb des Scrolls liegen) ~10px nach rechts. Mit `stable` (nur
-      rechts) sind alle Icons wieder linksbündig auf einer Linie. %>
+      rechts) sind alle Icons wieder linksbündig auf einer Linie.
+
+      #1496 (aus immoos #1343 übernommen): Der helle Streifen der aktiven Zeile
+      soll bis an die Kante laufen — der schmale Scrollbalken liegt aber
+      AUSSERHALB des Inhalts und lässt sich von keiner Zeile einfärben; rechts
+      bliebe zwangsläufig ein dunkler Rest. Der Balken ist deshalb unsichtbar
+      (gescrollt wird mit Rad, Touch und Tastatur wie zuvor). Der Kniff aus
+      #859 wird damit überflüssig: Ohne Balken ist die Inhaltsbreite ohnehin
+      konstant, die Icons stehen mit Header, Pinned und Zahnrad auf einer
+      Linie. %>
   <nav class="flex-1 min-h-0 overflow-y-auto px-0 py-2 flex flex-col gap-0.5 text-[13px]
-              [scrollbar-width:thin] [scrollbar-color:#334155_transparent]
-              [scrollbar-gutter:stable]">
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
     <% if sidebar_layout["scroll"].any? %>
       <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:md:invisible">
         <%= t("shared.sidebar.overview") %>

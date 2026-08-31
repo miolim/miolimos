@@ -65,9 +65,34 @@ module ApplicationHelper
     # Collapse exakt in derselben horizontalen Position. min-h-7 hält
     # die Reihe-Höhe konstant — sonst schrumpft die Höhe, wenn der
     # Label-Span hidden ist, und die Icons rücken vertikal zusammen.
-    base   = "flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800"
+    #
+    # #1496 (aus immoos #1343 uebernommen, Farbe angepasst): Die aktive Zeile
+    # war `bg-slate-800` auf `bg-slate-900` — ein Helligkeitsschritt, den man
+    # suchen muss. Jetzt ein HELLER Streifen ueber die volle Leistenbreite mit
+    # dunkler Schrift.
+    #
+    # Die Farbe ist nicht die des Forks (`slate-100`), sondern `slate-50`:
+    # genau der Grund, auf dem der Kartenstapel liegt (`body.bg-slate-50`).
+    # Hans: „Die Farbe so anpassen, dass sie dem Hintergrund entspricht, der
+    # einmal um den Stack herum sichtbar ist." Die Zeile in der Leiste und die
+    # Flaeche um die Karten sind damit dieselbe Flaeche — der Eintrag gehoert
+    # sichtbar zu dem, was rechts davon offen ist.
+    #
+    # `rounded-none` laesst den Streifen bis an beide Kanten laufen; das
+    # Padding bleibt `px-2`, damit die Icon-Spalte zwischen aktiver und
+    # inaktiver Zeile auf DERSELBEN x-Position steht und beim Wechsel nicht
+    # springt. `hover:bg-slate-50` schaltet die dunkle Hover-Farbe im aktiven
+    # Zustand stumm — sonst wuerde die helle Zeile beim Darueberfahren kurz
+    # schwarz.
+    #
+    # Der Hover ist ebenfalls heller (`slate-700` statt `slate-800`) und liegt
+    # bei Eintraegen mit „+" an der Umhuellung statt am Link — sonst hoert er
+    # vor dem Plus auf, mitten in der Zeile.
+    hover  = "hover:bg-slate-700"
+    base   = "flex items-center gap-2 px-2 py-1 min-h-7"
     link_klass = blade_kind ? "flex-1 min-w-0 #{base}" : base
-    klass  = active ? "#{link_klass} bg-slate-800 text-white" : link_klass
+    aktiv_klassen = "bg-slate-50 text-slate-900 font-medium rounded-none hover:bg-slate-50"
+    klass  = active ? "#{link_klass} #{aktiv_klassen}" : "#{link_klass} #{hover}"
     icon_slot = content_tag(:span,
       icon_name ? icon(icon_name) : "".html_safe,
       class: "w-5 flex items-center justify-center shrink-0")
@@ -102,8 +127,20 @@ module ApplicationHelper
       ])
     end
     return link unless blade_kind
-    plus = render("shared/sidebar_blade_plus", kind: blade_kind, id: blade_id, title: label)
-    content_tag(:div, safe_join([link, plus]), class: "flex items-center")
+
+    # #1496 (aus immoos #1343): Bei Eintraegen mit „+" liegt der Link in einer
+    # Umhuellung. Traegt nur ER die Farbe, hoert der Streifen mitten in der
+    # Zeile auf — der Bereich mit dem Plus bleibt dunkel. Deshalb traegt die
+    # UMHUELLUNG Hervorhebung und Hover ueber die ganze Breite, und der Link
+    # ist immer durchsichtig; sonst laege Hell auf Hell mit sichtbarer Kante.
+    plus    = render("shared/sidebar_blade_plus", kind: blade_kind, id: blade_id, title: label)
+    wrapper = "flex items-center #{active ? aktiv_klassen : hover}"
+    link    = link_to(path, class: "#{link_klass} bg-transparent hover:bg-transparent text-inherit",
+                      title: label, data: link_data) do
+      safe_join([icon_slot,
+                 content_tag(:span, label, class: "truncate group-data-[collapsed=true]/sidebar:md:hidden")])
+    end
+    content_tag(:div, safe_join([link, plus]), class: wrapper)
   end
 
   # #846: Anzeige-Label je Sidebar-Eintrag-ID. Einzige Label-Quelle —

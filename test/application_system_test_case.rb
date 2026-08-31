@@ -7,15 +7,30 @@ require "test_helper"
 require "capybara/rails"
 require "capybara/cuprite"
 
-Capybara.register_driver(:cuprite) do |app|
-  Capybara::Cuprite::Driver.new(app,
-    window_size: [1400, 900],
-    headless:    !ENV["HEADED"],
-    browser_options: { "no-sandbox" => nil },
-    # Default 5s ist zu knapp fuer den ersten Asset-Precompile-Treffer.
-    process_timeout: 30,
-    timeout: 15)
-end
+# #1496 (aus immoos #1459 uebernommen): Diese Optionen mussten aus
+# `Capybara.register_driver(:cuprite)` hierher. Der Grund ist unangenehm:
+# Rails' `driven_by :cuprite` REGISTRIERT DEN TREIBER NEU
+# (ActionDispatch::SystemTesting::Driver#register) und ueberschreibt damit
+# jede eigene Registrierung. Unsere Konfiguration war deshalb wirkungslos —
+# im Browser kam `timeout = 5` an statt der hier gesetzten 15, und
+# `pending_connection_errors` stand auf dem Standard.
+#
+# Das erklaert, warum die Suite als Ganzes unbrauchbar war: FUENF Sekunden
+# fuer eine Seite, die ihre Controller als einzelne Dateien nachlaedt
+# (importmap mit pin_all_from), von denen der Browser nur sechs gleichzeitig
+# holt. Mal reicht es, mal nicht — und es trifft jedes Mal andere Tests.
+# Gemessen an unserer Suite: vorher 2 Fehler und 39 Abbrueche, danach 0.
+CUPRITE_OPTIONEN = {
+  headless: !ENV["HEADED"],
+  browser_options: { "no-sandbox" => nil },
+  process_timeout: 30,
+  timeout: 15,
+  # Ferrum wartet beim Seitenaufruf auf NETZWERK-RUHE und meldet sonst die
+  # offenen Anfragen als Fehler — obwohl die Seite laengst steht und nur noch
+  # Controller nachladen. Was ein Test wirklich braucht, prueft er danach mit
+  # `assert_selector`, und das wartet von sich aus.
+  pending_connection_errors: false
+}.freeze
 
 Capybara.default_driver    = :cuprite
 Capybara.javascript_driver = :cuprite
@@ -23,10 +38,21 @@ Capybara.default_max_wait_time = 5
 Capybara.server = :puma, { Silent: true }
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :cuprite
+  # Kopie, weil Rails die Optionen intern veraendert: Driver#initialize holt
+  # sich `screen_size` mit `delete` heraus — an einer eingefrorenen Konstante
+  # scheitert das mit FrozenError.
+  driven_by :cuprite, screen_size: [1400, 900], options: CUPRITE_OPTIONEN.dup
 
-  # System-Tests laufen ohne parallelize — der Browser-Driver hat
-  # globalen Zustand, der nicht safe parallelisierbar ist.
+  # #1496 (aus immoos #1459): Systemtests laufen mit ZWEI Workern.
+  #
+  # Der fruehere Kommentar hier behauptete, sie liefen gar nicht parallel.
+  # Das stimmte nie: `parallelize` steht in test_helper.rb auf
+  # ActiveSupport::TestCase, und ActionDispatch::SystemTestCase erbt davon.
+  # Gelaufen sind sie also mit `number_of_processors` — und jeder Worker
+  # bringt einen eigenen Chrome samt Server mit. Wer bei jedem Lauf andere
+  # rote Tests sieht, gewoehnt sich an rot und uebersieht den echten Fehler.
+  parallelize(workers: 2)
+
   self.use_transactional_tests = true
 
   # Re-use die Factories aus dem normalen test_helper.

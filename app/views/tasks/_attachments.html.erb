@@ -10,8 +10,17 @@
       den Text ein; min-h-7 gegen Höhen-Springen. %>
   <%= form_with url: task_attachments_path(task), method: :post,
         multipart: true, local: false, class: "block" do |f| %>
+    <%# #1496 (aus immoos #1478 uebernommen): `relative`, weil das Dateifeld
+        darin `sr-only` ist — und `sr-only` heisst `position: absolute`. Ohne
+        positionierten Vorfahren INNERHALB des scrollenden Card-Koerpers ist
+        der Bezugsrahmen die Card selbst (`.stack-card` ist `relative`). Das
+        Feld steht dann rechnerisch weit unter dem Card-Ende, ist unsichtbar
+        und blaeht die Hoehe der Card auf. Der Stapel-Container ist wegen
+        `overflow-x` auch senkrecht ein Scrollbereich und bekommt davon einen
+        senkrechten Scrollbalken, der nichts freilegt. Sichtbar aendert
+        `relative` nichts. %>
     <label title="<%= t("tasks.attachment") %>"
-           class="group/erow min-h-7 flex items-center gap-3 text-xs rounded px-1.5 -mx-1.5
+           class="relative group/erow min-h-7 flex items-center gap-3 text-xs rounded px-1.5 -mx-1.5
                   hover:bg-slate-50 cursor-pointer">
       <span class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 group-hover/erow:text-slate-700">
         <%= icon "paperclip" %>

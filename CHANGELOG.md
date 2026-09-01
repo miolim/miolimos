@@ -15,6 +15,41 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Administrators can set the preferences a new user starts with (#1500). Save
+  your own preferences, then adopt them as the default — anyone created after
+  that starts there instead of with the built-in values. People who already
+  have an account keep their settings, including the ones they never touched:
+  the default applies when an account is created, not retroactively. "This is
+  me" is never part of it; it says who someone is, not how their screen looks.
+
+### Changed
+
+- One rule for opening cards, everywhere (#1509). A click replaces everything
+  to the right of the calling card, Shift adds one beside it, Shift+Alt adds
+  one to its left, and Alt appends at the end of the stack; if the card is
+  already open, it is brought into view instead of opened twice. Ctrl/Cmd is
+  left to the browser ("open in new tab") — it used to be the append modifier.
+  Holding Shift on a clickable row no longer selects text; in input fields and
+  editable text, Shift+click still draws a selection as usual.
+- The rows in the sidebar follow the same rule, but only with a modifier held
+  (#1509). A plain click still navigates, the way the sidebar always has.
+- The card widths in Preferences are listed in plain language instead of their
+  internal names (#1500); the internal name stays as the row's tooltip, and an
+  unknown card type still falls back to showing it.
+- "This is me" moved to the top of the Preferences card (#1500) — it is the
+  only entry there that says who you are; the rest says how things look.
+
+### Removed
+
+- The plus buttons for appending a card, in the lists and in the sidebar
+  (#1509). They were the predecessor of the click modifiers, which now do the
+  same thing from the row itself.
+- The "Sidebar click" preference (#1500). Whether a sidebar click navigates or
+  appends is no longer a setting — a plain click navigates, a modifier
+  appends.
+
 ## [0.4.2] - 2026-08-31
 
 ### Fixed

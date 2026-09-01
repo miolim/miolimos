@@ -46,9 +46,12 @@ class SidebarAktiveZeileTest < ApplicationSystemTestCase
         const a = Array.from(document.querySelectorAll("aside nav a"))
                        .find(x => (x.getAttribute("href") || "").startsWith("/tasks"));
         if (!a) return null;
-        // Bei Eintraegen mit „+" traegt die Umhuellung die Farbe, nicht der Link.
-        const zeile = a.parentElement.classList.contains("flex") ? a.parentElement : a;
-        return getComputedStyle(zeile).backgroundColor;
+        // #1509: Bis zum Ausbau des Plus lag der Link in einer Umhuellung, und
+        // DIE trug die Farbe. Jetzt ist der Link die Zeile. Die alte Heuristik
+        // („nimm das Elternelement, wenn es `flex` hat") griff danach auf das
+        // <nav> — das ist `flex flex-col` und faerbt nicht: Der Test mass
+        // `rgba(0, 0, 0, 0)` und meldete einen Regress, den es nicht gab.
+        return getComputedStyle(a).backgroundColor;
       })()
     JS
 
@@ -66,8 +69,7 @@ class SidebarAktiveZeileTest < ApplicationSystemTestCase
         const links = Array.from(document.querySelectorAll("aside nav a"));
         const andere = links.find(x => !(x.getAttribute("href") || "").startsWith("/tasks"));
         if (!andere) return null;
-        const zeile = andere.parentElement.classList.contains("flex") ? andere.parentElement : andere;
-        return getComputedStyle(zeile).backgroundColor;
+        return getComputedStyle(andere).backgroundColor;
       })()
     JS
 

@@ -353,7 +353,8 @@ class BladeStackTest < ApplicationSystemTestCase
   end
 
   # has-blade-stack-Body-Klasse steuert die CSS-Sichtbarkeit der
-  # Sidebar-Plus-Icons (.sidebar-blade-plus).
+  # Topbar-Pfeile (.topbar-trail). Bis #1509 hing dasselbe Gate am
+  # Sidebar-Plus; das ist mit den Klick-Modifiern entfallen.
   test "body.has-blade-stack ist gesetzt wenn Seite einen Blade-Stack hat" do
     visit "/knowledge_items?stack=#{@alpha.uuid}"
     klass = page.evaluate_script("document.body.classList.contains('has-blade-stack')")
@@ -677,5 +678,66 @@ class BladeStackTest < ApplicationSystemTestCase
     visit "/settings"
     assert page.has_no_css?("#topbar_trail_back", visible: true),
            "Ohne Stack (CSS-Gate has-blade-stack) dürfen die Pfeile nicht sichtbar sein"
+  end
+
+  # ─── #1509 Nachtrag: die Modifier gelten auch in der Seitenleiste ─────
+  #
+  # Hans: „Dann die Modifier für den Mausklick auf die Sidebar übertragen."
+  # Die Zeile traegt jetzt selbst den Card-Aufruf — aber NUR mit Modifier;
+  # ohne gedrueckte Taste navigiert sie weiter, wie die Leiste es immer tat.
+  # Genau diese Grenze pruefen die drei Tests hier: Sie ist der Grund, warum
+  # das Plus weg konnte, ohne Bedienung wegzunehmen.
+  #
+  # Capybara nimmt Modifier als POSITIONSARGUMENT (`click(:alt)`), nicht als
+  # `modifiers:` — mit der falschen Form klickt es stillschweigend OHNE
+  # Modifier, und der Test misst das Falsche.
+  def sidebar_zeile(id)
+    find("a[data-blade-link-kind-value='list'][data-blade-link-id-value='#{id}']",
+         visible: :all)
+  end
+
+  test "Sidebar: schlichter Klick navigiert weiter, statt anzuhaengen" do
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
+
+    sidebar_zeile("tasks").click
+
+    assert_current_path(/\A\/tasks/, ignore_query: false)
+    assert page.has_no_css?("article.stack-card[data-uuid='#{@alpha.uuid}']"),
+           "ohne Modifier ist es Navigation — der alte Stapel bleibt nicht stehen"
+  end
+
+  test "Sidebar: ALT haengt die Liste ans Stapel-Ende, ohne zu navigieren" do
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
+
+    sidebar_zeile("tasks").click(:alt)
+
+    assert page.has_css?("article.stack-card[data-uuid='list:tasks']"),
+           "ALT muss die Aufgaben-Liste an den Stapel haengen"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']"),
+           "und die vorhandene Card stehen lassen"
+    uuids = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
+    assert_equal "list:tasks", uuids.last, "ALT heisst: ans ENDE"
+  end
+
+  # Ohne aufrufende Card gibt es keinen Anker fuer „rechts daneben" — in der
+  # Seitenleiste tritt die AKTIVE Card an ihre Stelle. Sonst waere Umschalt
+  # dort dasselbe wie ALT, und der Modifier haette keine eigene Bedeutung.
+  test "Sidebar: UMSCHALT ergaenzt rechts neben der aktiven Card" do
+    visit "/knowledge_items?stack=#{@alpha.uuid},#{@beta.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
+    page.execute_script(<<~JS, @alpha.uuid)
+      const el = document.querySelector("[data-controller~='blade-stack']")
+      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
+      ctrl.setActiveCard(document.querySelector(`article.stack-card[data-uuid='${arguments[0]}']`))
+    JS
+
+    sidebar_zeile("tasks").click(:shift)
+
+    assert page.has_css?("article.stack-card[data-uuid='list:tasks']")
+    uuids = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
+    assert_equal [@alpha.uuid, "list:tasks", @beta.uuid], uuids,
+                 "die neue Card gehoert rechts neben die aktive, nicht ans Ende"
   end
 end

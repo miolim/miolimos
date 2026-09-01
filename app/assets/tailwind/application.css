@@ -329,16 +329,12 @@
    mit #224 6f-1; Helligkeit signalisiert Focus, siehe Farbcode-Block
    weiter unten. */
 
-/* #163 Phase 4: Sidebar-Append-Plus-Icons sind nur dann nuetzlich,
-   wenn die aktuelle Seite einen Blade-Stack hat — sonst gibt es
-   nichts, an das man appenden koennte. blade_stack_controller setzt
-   die Klasse beim Connect auf <body>. */
-body:not(.has-blade-stack) .sidebar-blade-plus {
-  display: none !important;
-}
-
-/* #1198: Stack-Schritt-Pfeile in der Topbar — gleiche Gate-Mechanik:
-   nur sichtbar, wenn die Seite einen Card-Stack mountet. */
+/* #1198: Stack-Schritt-Pfeile in der Topbar. Gate-Mechanik: nur sichtbar,
+   wenn die Seite einen Card-Stack mountet — blade_stack_controller setzt die
+   Klasse beim Connect auf <body>. Dieselbe Regel trug bis #1509 auch das
+   Sidebar-Plus; das ist mit den Klick-Modifiern entfallen. Die Zeilen der
+   Seitenleiste brauchen kein Gate: Ohne Stapel fasst der blade-link-Controller
+   den Klick gar nicht erst an (stackVorhanden), die Zeile navigiert. */
 body:not(.has-blade-stack) .topbar-trail {
   display: none !important;
 }

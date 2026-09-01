@@ -3,9 +3,9 @@
     am Ende, nicht vorne, weil vorne schon der next-step-Marker steht).
     Klick aufs Chevron klappt die Sub-Topics-Liste darunter aus.
 
-    #163 Phase 4: Plus-Icon zwischen Topic-Link und Chevron — appendet
-    das Topic als Blade-Card an den aktuellen Blade-Stack (nur sichtbar,
-    wenn diese Seite einen Blade-Stack hat — body.has-blade-stack).
+    #1509: Das Plus zwischen Topic-Link und Chevron ist entfallen. Die
+    Zeile selbst haengt das Thema als Card an — mit gedruecktem Modifier
+    (Umschalt/Alt), ohne ihn navigiert sie wie bisher.
 
     Locals:
       topic       — das Topic-Objekt
@@ -17,11 +17,11 @@
   has_subs = subs.any?
   is_active = params[:slug] == topic.slug
 %>
-<%# Plus-Icon: shared zwischen has_subs- und no-subs-Zweig.
-    #247: Sidebar-Plus → Listen-Blade des Topics (Aufgaben-Liste),
-    nicht Topic-Detail-Card. %>
-<% plus_button = render("shared/sidebar_blade_plus",
-                       kind: "topic_list", id: topic.slug, title: topic.name) %>
+<%# Klick-Daten: shared zwischen has_subs- und no-subs-Zweig.
+    #247: Der Sidebar-Aufruf oeffnet die Listen-Blade des Themas
+    (Aufgaben-Liste), nicht die Topic-Detail-Card. %>
+<% klick_daten = sidebar_blade_daten("topic_list", topic.slug,
+                   { action: "click->sidebar#hoverCollapse click->mobile-nav#close" }) %>
 <% if has_subs %>
   <div data-controller="disclosure"
        data-disclosure-storage-key-value="sidebar.topic.<%= topic.id %>">
@@ -34,14 +34,13 @@
          style="padding-left: <%= depth * 0.75 %>rem">
       <%= link_to topic_path(topic),
             title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
-            data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
+            data: klick_daten,
             class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
         <span class="w-5 flex items-center justify-center shrink-0">
           <%= topic_marker topic, next_step: has_next, size: :md %>
         </span>
         <span class="truncate group-data-[collapsed=true]/sidebar:md:hidden"><%= topic.name %></span>
       <% end %>
-      <%= plus_button %>
       <%# Chevron am Zeilenende — klappt Sub-Topics auf/zu. Im
           collapsed-Sidebar-Modus ausgeblendet, dort gibt's eh keinen
           horizontalen Platz. %>
@@ -68,13 +67,12 @@
        style="padding-left: <%= depth * 0.75 %>rem">
     <%= link_to topic_path(topic),
           title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
-          data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
+          data: klick_daten,
           class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
       <span class="w-5 flex items-center justify-center shrink-0">
         <%= topic_marker topic, next_step: has_next, size: :md %>
       </span>
       <span class="truncate group-data-[collapsed=true]/sidebar:md:hidden"><%= topic.name %></span>
     <% end %>
-    <%= plus_button %>
   </div>
 <% end %>

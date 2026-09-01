@@ -55,10 +55,10 @@ module ApplicationHelper
     "#{seconds / 31_536_000}y"
   end
 
-  # blade_kind/blade_id: optionales Plus-Icon, das den Sidebar-Eintrag
-  # an den aktuellen Blade-Stack appendet (#163 Phase 5a). Bei gesetztem
-  # blade_kind wird der Link mit einem Wrapper-Div um Link + Plus-Icon
-  # herumgelegt; der Link bekommt flex-1, das Plus haengt rechts dran.
+  # blade_kind/blade_id: der Eintrag laesst sich als Card an den Blade-Stack
+  # anhaengen (#163 Phase 5a). Bis #1509 hing dafuer ein Plus-Icon an der
+  # Zeile; seit den Klick-Modifiern traegt die ZEILE SELBST den Card-Aufruf
+  # (siehe sidebar_blade_daten), und das Plus ist entfallen.
   def sidebar_link(label, path, icon_name = nil, blade_kind: nil, blade_id: nil, reset_stack_id: nil)
     active = current_page?(path) || (path != "/" && request.path.start_with?(path.split("?").first.to_s))
     # Icon sitzt in einer fixen w-5-Spalte und bleibt damit beim
@@ -85,12 +85,15 @@ module ApplicationHelper
     # Zustand stumm — sonst wuerde die helle Zeile beim Darueberfahren kurz
     # schwarz.
     #
-    # Der Hover ist ebenfalls heller (`slate-700` statt `slate-800`) und liegt
-    # bei Eintraegen mit „+" an der Umhuellung statt am Link — sonst hoert er
-    # vor dem Plus auf, mitten in der Zeile.
+    # Der Hover ist ebenfalls heller (`slate-700` statt `slate-800`). Er lag
+    # bei Eintraegen mit „+" an der Umhuellung statt am Link, sonst hoerte er
+    # mitten in der Zeile auf; seit #1509 gibt es kein Plus mehr, und der
+    # Link ist die ganze Zeile.
     hover  = "hover:bg-slate-700"
     base   = "flex items-center gap-2 px-2 py-1 min-h-7"
-    link_klass = blade_kind ? "flex-1 min-w-0 #{base}" : base
+    # #1509: Bis zum Ausbau des Plus lag der Link in einer Umhuellung und
+    # brauchte `flex-1`. Jetzt IST der Link die Zeile.
+    link_klass = base
     aktiv_klassen = "bg-slate-50 text-slate-900 font-medium rounded-none hover:bg-slate-50"
     klass  = active ? "#{link_klass} #{aktiv_klassen}" : "#{link_klass} #{hover}"
     icon_slot = content_tag(:span,
@@ -98,9 +101,6 @@ module ApplicationHelper
       class: "w-5 flex items-center justify-center shrink-0")
     # #154: Klick collapsed die hover-expandierte Desktop-Sidebar und
     # schließt das Mobile-Hamburger-Overlay.
-    # #271: bei pref_sidebar_click_mode = "append" UND vorhandenem
-    # blade_kind/blade_id wird der Link selber zum Append-Trigger
-    # (blade-link-Controller), statt zur Seite zu navigieren.
     link_data = { action: "click->sidebar#hoverCollapse click->mobile-nav#close" }
     # #434 (Hans, 2026-06-01): Klick auf diese Liste, wenn sie das ERSTE Blade
     # des aktuellen Stacks ist -> Stack zuruecksetzen (Snapshot + frischer
@@ -109,38 +109,46 @@ module ApplicationHelper
     # list-Blades automatisch list:<id>, sonst explizit ueber reset_stack_id.
     reset_id = reset_stack_id || ("list:#{blade_id}" if blade_kind == "list" && blade_id)
     link_data[:"stack-reset-id"] = reset_id if reset_id
-    if blade_kind && blade_id && current_actor&.pref_sidebar_click_mode == "append"
-      link_data[:controller]              = "blade-link"
-      link_data[:"blade-link-kind-value"] = blade_kind
-      link_data[:"blade-link-id-value"]   = blade_id
-      link_data[:action] = "click->blade-link#append #{link_data[:action]}"
-    end
+    link_data = sidebar_blade_daten(blade_kind, blade_id, link_data) if blade_kind && blade_id
     # #856 (immoOS): Label nur auf Desktop (md+) ausblenden, wenn collapsed —
     # die Icon-Rail gibt es nur ab md (die w-14-Breite ist md:-guarded). Auf
     # Mobile ist die Sidebar immer ein w-60-Overlay, dort sollen die
     # Bezeichnungen IMMER sichtbar sein (sonst leere Icon-Spalte trotz voller
     # Breite). Gleiche md:-Logik wie an den Breiten-Klassen der Aside.
-    link = link_to(path, class: klass, title: label, data: link_data) do
+    link_to(path, class: klass, title: label, data: link_data) do
       safe_join([
         icon_slot,
         content_tag(:span, label, class: "truncate group-data-[collapsed=true]/sidebar:md:hidden")
       ])
     end
-    return link unless blade_kind
+  end
 
-    # #1496 (aus immoos #1343): Bei Eintraegen mit „+" liegt der Link in einer
-    # Umhuellung. Traegt nur ER die Farbe, hoert der Streifen mitten in der
-    # Zeile auf — der Bereich mit dem Plus bleibt dunkel. Deshalb traegt die
-    # UMHUELLUNG Hervorhebung und Hover ueber die ganze Breite, und der Link
-    # ist immer durchsichtig; sonst laege Hell auf Hell mit sichtbarer Kante.
-    plus    = render("shared/sidebar_blade_plus", kind: blade_kind, id: blade_id, title: label)
-    wrapper = "flex items-center #{active ? aktiv_klassen : hover}"
-    link    = link_to(path, class: "#{link_klass} bg-transparent hover:bg-transparent text-inherit",
-                      title: label, data: link_data) do
-      safe_join([icon_slot,
-                 content_tag(:span, label, class: "truncate group-data-[collapsed=true]/sidebar:md:hidden")])
-    end
-    content_tag(:div, safe_join([link, plus]), class: wrapper)
+  # #1509 (Hans): „Mit den Tastatur-Modifiern haben sich die Plus-Zeichen in den
+  # Listen eigentlich erledigt … die Plus-Zeichen bitte überall entfernen."
+  # Nachtrag: „Dann die Modifier für den Mausklick auf die Sidebar übertragen."
+  #
+  # Damit gilt in der Seitenleiste dieselbe Regel wie an jeder Card-Zeile:
+  #
+  #   Umschalt+Klick       ergänzt rechts neben der aktiven Card
+  #   Umschalt+Alt+Klick   ergänzt links daneben
+  #   Alt+Klick            hängt ans Stapel-Ende
+  #
+  # NUR mit Modifier. Ein schlichter Klick navigiert weiter zur Seite, wie die
+  # Seitenleiste es immer getan hat — sie ist eine Navigations-Liste, kein
+  # Kartenstapel. Das erledigt `nur-modifier-value` im blade-link-Controller.
+  #
+  # Eine Stelle für alle vier Zeilen-Arten (dieser Helper, Themen-Zeile,
+  # „zuletzt geöffnet", Wartend): Die Regel soll nicht viermal leicht
+  # unterschiedlich dastehen.
+  def sidebar_blade_daten(kind, id, daten = {})
+    daten = daten.dup
+    daten[:controller]                       = [daten[:controller], "blade-link"].compact.join(" ")
+    daten[:"blade-link-kind-value"]          = kind
+    daten[:"blade-link-id-value"]            = id
+    daten[:"blade-link-nur-modifier-value"]  = true
+    aktion = daten[:action].presence
+    daten[:action] = ["click->blade-link#append", aktion].compact.join(" ")
+    daten
   end
 
   # #846: Anzeige-Label je Sidebar-Eintrag-ID. Einzige Label-Quelle —

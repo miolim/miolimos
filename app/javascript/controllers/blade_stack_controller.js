@@ -425,10 +425,12 @@ class BladeStackController extends Controller {
     this._onSpineStreamRender = () => requestAnimationFrame(() => this._upgradeSpineTopIcons())
     document.addEventListener("turbo:before-stream-render", this._onSpineStreamRender)
 
-    // #163 Phase 4: Sidebar-Plus-Icons (Append-to-Stack) sollen NUR
+    // #163 Phase 4: Bedienelemente, die an den Stapel anhaengen, sollen NUR
     // sichtbar sein, wenn diese Seite einen Blade-Stack hat. Body-Klasse
-    // toggled die CSS-Sichtbarkeit, siehe .sidebar-blade-plus in
-    // application.css.
+    // toggled die CSS-Sichtbarkeit — seit #1509 nur noch fuer .topbar-trail
+    // (das Sidebar-Plus, das hier ebenfalls dranhing, ist entfallen; die
+    // Zeilen der Seitenleiste brauchen kein Gate, siehe stackVorhanden im
+    // blade-link-Controller).
     document.body.classList.add("has-blade-stack")
 
     // #163 Phase 4: Sidebar (separater DOM-Teilbaum, kein Stimulus-
@@ -479,7 +481,15 @@ class BladeStackController extends Controller {
       // aufrufende Card bekannt, entscheidet der KLICK, wo die neue Card
       // landet. Ist sie schon offen, sticht das Springen — egal was
       // gedrueckt war; sonst haette man zwei Karten desselben Dinges.
-      const quelle = quelleId ? document.getElementById(quelleId) : null
+      // #1509 Nachtrag (Hans): Ein Klick aus der SEITENLEISTE hat keine
+      // aufrufende Card — dort gibt es keine. Damit die Modifier auch von
+      // dort etwas heissen, tritt die AKTIVE Card an ihre Stelle: „rechts
+      // daneben" ist dann rechts neben der Card, auf die man gerade schaut.
+      // Nur fuer die drei Modifier-Arten; „ersetzen" ohne aufrufende Card
+      // bleibt der gewachsene Anhaengen-Weg (sonst raeumte ein Klick den
+      // halben Stapel ab, ohne dass jemand darum gebeten hat).
+      const quelle = (quelleId ? document.getElementById(quelleId) : null) ||
+                     (oeffnen && oeffnen !== "ersetzen" ? this.activeCard() : null)
       if (oeffnen && quelle && !alreadyOpen) {
         const fertig = await this._oeffneNeben(stackId, url, quelle, oeffnen)
         if (fertig) { this.pushTrailState(); this.syncUrl({ pushHistory: false }) }

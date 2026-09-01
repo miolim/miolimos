@@ -549,8 +549,14 @@ Rails.application.routes.draw do
         post :revoke_token
       end
     end
-    # #271: Vorlieben des Actors (Card-Breiten, Wheel-Speed, Sidebar-Klick).
-    resource :preferences, only: [:show, :update], controller: "preferences"
+    # #271: Vorlieben des Actors (Card-Breiten, Wheel-Speed).
+    resource :preferences, only: [:show, :update], controller: "preferences" do
+      # #1500 (aus immoos uebernommen, Hans): „Ich würde gern als Admin diesen
+      # Standard für neue Nutzer vorher auf meinen aktuellen Stand festlegen
+      # können."
+      post   :default, action: :set_default,   as: :set_default
+      delete :default, action: :reset_default, as: :reset_default
+    end
     # #547: Unterschriftsbild des Users (fürs signierte PDF).
     resource :signature, only: [:show, :update, :destroy], controller: "signatures"
     # #995: Internetmarke-Zugangsdaten (Portokasse/DHL-API) fürs Frankieren.

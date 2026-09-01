@@ -12,7 +12,7 @@ import { stackVorhanden } from "lib/blade_stack_present"
 //   data-blade-link-id-value="<slug-or-id>"
 //   data-action="click->blade-link#append"
 export default class extends Controller {
-  static values = { kind: String, id: String, anchor: String, mode: String }
+  static values = { kind: String, id: String, anchor: String, mode: String, nurModifier: Boolean }
 
   // #1509 (aus immoos #1348 uebernommen). EINE Regel fuer alle Card-Aufrufe:
   //
@@ -47,6 +47,13 @@ export default class extends Controller {
     // #1509: Cmd/Strg gehoert dem Browser — bei gedrueckter Taste fassen wir
     // den Klick gar nicht erst an, dann macht er sein Uebliches.
     if (event.metaKey || event.ctrlKey) return
+    // #1509 Nachtrag (Hans): „Dann die Modifier fuer den Mausklick auf die
+    // Sidebar uebertragen." Die Seitenleiste ist eine NAVIGATIONS-Liste: Ein
+    // schlichter Klick soll dort weiter zur Seite fuehren, wie er es immer
+    // getan hat. Nur mit gedrueckter Taste wird die Zeile zum Card-Aufruf.
+    // Deshalb faellt „ersetzen" hier durch — ohne preventDefault, damit der
+    // Link seine normale Navigation behaelt.
+    if (this.nurModifierValue && this.constructor.oeffnungsart(event) === "ersetzen") return
     event.preventDefault()
     event.stopPropagation()
     if (!this.kindValue || !this.idValue) return

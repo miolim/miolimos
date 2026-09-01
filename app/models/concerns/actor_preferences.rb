@@ -6,6 +6,57 @@
 module ActorPreferences
   extend ActiveSupport::Concern
 
+  # #1500 (aus immoos uebernommen, Hans): „Im Moment macht jeder Nutzer die
+  # Einstellungen in den Vorlieben für sich selbst, ausgehend von einem
+  # ‚organisch gewachsenen‘ Standard. Ich würde gern als Admin diesen Standard
+  # für neue Nutzer vorher auf meinen aktuellen Stand festlegen können."
+  #
+  # Die Vorgabe wirkt bei der ANLAGE eines Actors, nicht beim Lesen: Ein neuer
+  # Nutzer bekommt sie einmal in seine eigenen Vorlieben kopiert und ist danach
+  # Herr darüber. Die Alternative — beim Lesen über die Vorgabe hinweglesen —
+  # wäre bequemer zu bauen und falsch: Sie änderte rückwirkend die Oberfläche
+  # aller, die einen Wert nie angefasst haben, und niemand könnte eine Vorgabe
+  # bewusst „so lassen wie sie ist". Gefragt war ausdrücklich der Standard für
+  # NEUE Nutzer.
+  #
+  # Abgelegt im generischen Setting-Speicher, damit dafür keine Spalte und
+  # keine Migration nötig ist.
+  DEFAULTS_SETTING_KEY = "actor_preference_defaults".freeze
+
+  included do
+    before_create :vorlieben_aus_vorgabe
+  end
+
+  class_methods do
+    # Die hinterlegte Vorgabe. Kaputtes JSON ist kein Grund, die Anlage eines
+    # Nutzers scheitern zu lassen — dann gilt eben keine Vorgabe.
+    def global_defaults
+      roh = Setting.get(DEFAULTS_SETTING_KEY)
+      return {} if roh.blank?
+
+      wert = JSON.parse(roh)
+      wert.is_a?(Hash) ? wert : {}
+    rescue JSON::ParserError
+      {}
+    end
+
+    def global_defaults? = global_defaults.any?
+
+    # Gespeichert wird nur, was auch eine Vorliebe IST: Der Weg durch
+    # `pruefe_vorlieben` einer Wegwerf-Instanz filtert unbekannte und
+    # unsinnige Schlüssel genauso wie beim Speichern am Nutzer. Damit kann
+    # hier nichts landen, was dort nicht ankäme.
+    def global_defaults=(vorlieben)
+      probe = new(preferences: {})
+      probe.pruefe_vorlieben(vorlieben.to_h)
+      Setting.set(DEFAULTS_SETTING_KEY, probe.preferences.to_json)
+    end
+
+    def reset_global_defaults!
+      Setting.where(key: DEFAULTS_SETTING_KEY).delete_all
+    end
+  end
+
   # Card-Breiten in rem pro Card-Kind. Aktuelle Defaults entsprechen den
   # bisher hartcodierten Werten in den *_blade_card-Partials.
   # #1152-Aufraeumen: die Keys sind die Kind-Namen, die der Blade-Stack aus
@@ -35,8 +86,6 @@ module ActorPreferences
     "normal" => { "threshold" => 20, "lock_ms" => 110 },
     "fast"   => { "threshold" => 10, "lock_ms" => 60  }
   }.freeze
-
-  SIDEBAR_CLICK_MODES = %w[navigate append].freeze
 
   # #619 (Hans, 2026-06-18): UI-Sprache pro Nutzer. Muss zu
   # config.i18n.available_locales passen. Default folgt der App-
@@ -81,11 +130,6 @@ module ActorPreferences
 
   def pref_wheel
     WHEEL_PRESETS[pref_wheel_preset]
-  end
-
-  def pref_sidebar_click_mode
-    val = preferences["sidebar_click_mode"].to_s
-    SIDEBAR_CLICK_MODES.include?(val) ? val : "navigate"
   end
 
   # #373 Phase A (Hans, 2026-05-26): Anzeige-Schalter fuer den CM6-
@@ -239,6 +283,15 @@ module ActorPreferences
   end
 
   def update_preferences(updates)
+    pruefe_vorlieben(updates)
+    save!
+  end
+
+  # #1500: Die Prüfung ist von der Speicherung getrennt — dieselben Regeln
+  # gelten für die Vorlieben eines Nutzers UND für die Vorgabe, die ein Admin
+  # für neue Nutzer hinterlegt. Zwei Filter für dieselbe Frage wären genau das
+  # Auseinanderdriften, gegen das die Tabelle oben angelegt ist.
+  def pruefe_vorlieben(updates)
     new_prefs = preferences.deep_dup
     updates.each do |key, value|
       case key.to_s
@@ -255,8 +308,6 @@ module ActorPreferences
         new_prefs["card_widths"] = (new_prefs["card_widths"] || {}).merge(cleaned)
       when "wheel_preset"
         new_prefs["wheel_preset"] = value.to_s if WHEEL_PRESETS.key?(value.to_s)
-      when "sidebar_click_mode"
-        new_prefs["sidebar_click_mode"] = value.to_s if SIDEBAR_CLICK_MODES.include?(value.to_s)
       when "cm6_editor"
         new_prefs["cm6_editor"] = ActiveModel::Type::Boolean.new.cast(value)
       when "sidebar_recent_topics_count"
@@ -271,10 +322,20 @@ module ActorPreferences
         new_prefs["mail_compose"] = value.to_s if MAIL_COMPOSE_TARGETS.include?(value.to_s)
       end
     end
-    update!(preferences: new_prefs)
+    self.preferences = new_prefs
   end
 
   private
+
+  # #1500: Ein neuer Actor erbt die hinterlegte Vorgabe — einmal, bei der
+  # Anlage. Was beim Anlegen ausdrücklich mitgegeben wurde, gewinnt: Die
+  # Vorgabe ist ein Startpunkt, keine Übersteuerung.
+  def vorlieben_aus_vorgabe
+    vorgabe = self.class.global_defaults
+    return if vorgabe.empty?
+
+    self.preferences = vorgabe.deep_merge(preferences || {})
+  end
 
   # #846: Sidebar-Layout aus dem Form-Input saeubern. Akzeptiert je Bereich
   # ein Array oder einen komma-separierten String (Hidden-Field), behaelt nur

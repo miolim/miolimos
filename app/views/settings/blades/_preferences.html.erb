@@ -5,6 +5,28 @@
         class: "bg-white rounded border border-slate-200 divide-y divide-slate-100",
         data: { turbo: false } do |f| %>
 
+    <%# #768 (Hans): explizite Selbst-Identität — verknüpft Dich mit Deiner
+        Personen-KI. Daraus zieht der Mail-Sync Deine eigenen Adressen.
+        #1500 (Hans): „‚Das bin ich‘ auf die Card ganz nach oben setzen." — Es
+        ist die einzige Angabe hier, die sagt, WER man ist; alles andere sagt,
+        wie es aussehen soll. %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.self_ki_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.self_ki_help") %></p>
+      <input type="text" name="preferences[person_ki_title]" list="self-ki-persons"
+             value="<%= current_actor.person_ki&.title %>"
+             placeholder="<%= t('preferences.self_ki_placeholder') %>"
+             class="w-full max-w-md text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+      <datalist id="self-ki-persons">
+        <% KnowledgeItem.persons.where(deleted_at: nil).order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |ti| %>
+          <option value="<%= ti %>"></option>
+        <% end %>
+      </datalist>
+      <% if current_actor.person_ki %>
+        <p class="text-xs text-slate-400 mt-1"><%= t("preferences.self_ki_addresses", n: current_actor.self_email_addresses.size) %></p>
+      <% end %>
+    </section>
+
     <%# #619 (Hans): UI-Sprache pro Nutzer (DE/EN). %>
     <section class="px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.language_title") %></h2>
@@ -40,8 +62,11 @@
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.card_widths_help") %></p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
         <% current_actor.pref_card_widths.each do |kind, width| %>
-          <label class="flex items-center gap-2">
-            <span class="w-32 text-slate-700"><%= kind %></span>
+          <%# #1500 (Hans): Klartext statt Code-Name. Der technische Name bleibt
+              als Titel am Element — er ist der Schlüssel, unter dem die Breite
+              wirkt, und wer ihn sucht, findet ihn per Mouseover. %>
+          <label class="flex items-center gap-2" title="<%= kind %>">
+            <span class="w-32 text-slate-700"><%= t("preferences.card_kinds.#{kind}", default: kind) %></span>
             <input type="number" name="preferences[card_widths][<%= kind %>]"
                    value="<%= width.to_i %>" min="16" max="120" step="1"
                    class="w-20 rounded border border-slate-200 px-2 py-1 tabular-nums">
@@ -62,23 +87,6 @@
             <span><%= preset %></span>
           </label>
         <% end %>
-      </div>
-    </section>
-
-    <section class="px-4 py-3">
-      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.sidebar_click_title") %></h2>
-      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.sidebar_click_help") %></p>
-      <div class="flex flex-col gap-1 text-sm">
-        <label class="flex items-center gap-1.5">
-          <input type="radio" name="preferences[sidebar_click_mode]" value="navigate"
-                 <%= "checked" if current_actor.pref_sidebar_click_mode == "navigate" %>>
-          <span><%= t("preferences.sidebar_click_replace_html") %></span>
-        </label>
-        <label class="flex items-center gap-1.5">
-          <input type="radio" name="preferences[sidebar_click_mode]" value="append"
-                 <%= "checked" if current_actor.pref_sidebar_click_mode == "append" %>>
-          <span><%= t("preferences.sidebar_click_append_html") %></span>
-        </label>
       </div>
     </section>
 
@@ -184,27 +192,48 @@
         die alte Plain-Textarea-Ansicht ist abgeschafft). Per-Request-
         Override für Tests bleibt via ?cm6=0 möglich. %>
 
-    <%# #768 (Hans): explizite Selbst-Identität — verknüpft Dich mit Deiner
-        Personen-KI. Daraus zieht der Mail-Sync Deine eigenen Adressen. %>
-    <section class="px-4 py-3">
-      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.self_ki_title") %></h2>
-      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.self_ki_help") %></p>
-      <input type="text" name="preferences[person_ki_title]" list="self-ki-persons"
-             value="<%= current_actor.person_ki&.title %>"
-             placeholder="<%= t('preferences.self_ki_placeholder') %>"
-             class="w-full max-w-md text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
-      <datalist id="self-ki-persons">
-        <% KnowledgeItem.persons.where(deleted_at: nil).order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |ti| %>
-          <option value="<%= ti %>"></option>
-        <% end %>
-      </datalist>
-      <% if current_actor.person_ki %>
-        <p class="text-xs text-slate-400 mt-1"><%= t("preferences.self_ki_addresses", n: current_actor.self_email_addresses.size) %></p>
-      <% end %>
-    </section>
-
     <div class="px-4 py-3 flex justify-end">
       <%= f.submit t("preferences.save"),
             class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
     </div>
+  <% end %>
+
+  <%# #1500 (Hans): „Ich würde gern als Admin diesen Standard für neue Nutzer
+      vorher auf meinen aktuellen Stand festlegen können."
+
+      Bewusst ein EIGENER Block außerhalb des Formulars: Er speichert nichts
+      für mich, sondern legt etwas für andere fest — und er wirkt auf den
+      GESPEICHERTEN Stand, nicht auf das, was gerade in den Feldern steht.
+      Stünde der Knopf im Formular, sähe er aus wie ein zweiter Speichern-Knopf
+      und legte halb Getipptes für alle künftigen Nutzer fest.
+
+      Sichtbar nur für Actor, die Nutzer anlegen dürfen — dieselbe Berechtigung,
+      die auch die Actions verlangen (sonst zeigte die Card einen Knopf, der im
+      403 endet). %>
+  <% if AccessGate.can?(actor: current_actor, resource_type: "Actor", action: "create") %>
+    <% vorgabe = Actor.global_defaults %>
+    <section class="mt-4 bg-white rounded border border-slate-200 px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.default_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.default_help") %></p>
+
+      <p class="text-xs mb-3 <%= vorgabe.any? ? "text-slate-600" : "text-slate-400" %>">
+        <% if vorgabe.any? %>
+          <%= t("preferences.default_set", count: vorgabe.keys.size) %>
+          <span class="text-slate-400"><%= vorgabe.keys.sort.join(", ") %></span>
+        <% else %>
+          <%= t("preferences.default_none") %>
+        <% end %>
+      </p>
+
+      <div class="flex items-center gap-2">
+        <%= button_to t("preferences.default_take_over"), set_default_settings_preferences_path,
+              method: :post, form: { data: { turbo: false } },
+              class: "px-3 py-1 rounded border border-emerald-600 text-emerald-700 text-sm hover:bg-emerald-50 bg-transparent cursor-pointer" %>
+        <% if vorgabe.any? %>
+          <%= button_to t("preferences.default_clear"), reset_default_settings_preferences_path,
+                method: :delete, form: { data: { turbo: false } },
+                class: "px-3 py-1 rounded border border-slate-300 text-slate-600 text-sm hover:bg-slate-50 bg-transparent cursor-pointer" %>
+        <% end %>
+      </div>
+    </section>
   <% end %>

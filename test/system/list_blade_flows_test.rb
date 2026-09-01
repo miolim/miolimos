@@ -45,9 +45,15 @@ class ListBladeFlowsTest < ApplicationSystemTestCase
   test "#563: KI-Liste öffnet Einträge auch auf /tasks (Seite ohne card-url-template)" do
     visit "/tasks"
     assert page.has_css?("[data-controller~='blade-stack']")
-    # Personen-Liste per Sidebar-Plus an den Task-Stack appenden …
-    find("button[data-blade-link-kind-value='list'][data-blade-link-id-value='persons']",
-         visible: :all).click
+    # Personen-Liste aus der Seitenleiste an den Task-Stack anhaengen …
+    # #1509: Bis hierher hing dafuer ein Plus-Button an der Zeile. Den gibt es
+    # nicht mehr — die ZEILE traegt den Card-Aufruf, aber nur mit Modifier:
+    # ohne gedrueckte Taste navigiert sie weiter zur Seite. ALT haengt an.
+    # (Capybara nimmt Modifier als POSITIONSARGUMENT, nicht als `modifiers:` —
+    # mit der falschen Form klickt es stillschweigend OHNE Modifier, und der
+    # Test navigiert weg statt anzuhaengen.)
+    find("a[data-blade-link-kind-value='list'][data-blade-link-id-value='persons']",
+         visible: :all).click(:alt)
     assert page.has_css?("article.stack-card[data-uuid='list:persons']"),
            "Personen-Liste muss am Task-Stack hängen"
     # … und ein Eintrag-Klick muss das Detail öffnen (war #563: leere URL).

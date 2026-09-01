@@ -195,37 +195,45 @@ class BladeStackTest < ApplicationSystemTestCase
   # #1151: STRG-Klick (bzw. Cmd auf dem Mac) auf ein Listen-Item haengt
   # die Card an den Stack an (wie das Plus-Icon), statt den Sub-Stack
   # zu ersetzen.
-  test "openFromList mit STRG-Taste appendet statt zu ersetzen" do
+  # #1509: STRG war bis hierher der Anhaengen-Modifier (#1151). Es gehoert
+  # aber dem Browser („in neuem Tab oeffnen") — deshalb fassen wir den Klick
+  # bei gedrueckter STRG-Taste gar nicht mehr an. Das Anhaengen liegt jetzt
+  # auf UMSCHALT (rechts daneben) bzw. ALT (ans Stapel-Ende).
+  test "openFromList: Umschalt ergaenzt, STRG bleibt dem Browser" do
     visit "/knowledge_items"
     list_card_sel = "article.stack-card[data-uuid='list:knowledge_items']"
     assert page.has_css?(list_card_sel)
 
-    # Erst beta normal oeffnen (replace-Semantik).
-    page.execute_script(<<~JS, @beta.uuid, list_card_sel)
+    oeffnen = <<~JS
       const el = document.querySelector("[data-controller~='blade-stack']")
       const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
       const fake = document.createElement("a")
       fake.dataset.targetUuid = arguments[0]
       const sourceList = document.querySelector(arguments[1])
       sourceList.appendChild(fake)
-      ctrl.openFromList({ preventDefault() {}, currentTarget: fake, target: fake })
+      ctrl.openFromList(Object.assign({ preventDefault() {}, stopPropagation() {},
+                                        currentTarget: fake, target: fake },
+                                      JSON.parse(arguments[2])))
     JS
+
+    # Erst beta normal oeffnen (ersetzen).
+    page.execute_script(oeffnen, @beta.uuid, list_card_sel, "{}")
     assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
 
-    # Dann gamma mit gedrueckter STRG-Taste: beta bleibt, gamma kommt dazu.
-    page.execute_script(<<~JS, @gamma.uuid, list_card_sel)
-      const el = document.querySelector("[data-controller~='blade-stack']")
-      const ctrl = window.Stimulus.getControllerForElementAndIdentifier(el, "blade-stack")
-      const fake = document.createElement("a")
-      fake.dataset.targetUuid = arguments[0]
-      const sourceList = document.querySelector(arguments[1])
-      sourceList.appendChild(fake)
-      ctrl.openFromList({ ctrlKey: true, preventDefault() {}, stopPropagation() {},
-                          currentTarget: fake, target: fake })
-    JS
+    # Dann gamma mit UMSCHALT: beta bleibt, gamma kommt dazu.
+    page.execute_script(oeffnen, @gamma.uuid, list_card_sel, '{"shiftKey":true}')
     assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
     assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
-           "Beta-Card muss bei STRG-Klick erhalten bleiben (Append statt Ersatz)"
+           "bei Umschalt bleibt die vorhandene Card stehen (ergaenzen statt ersetzen)"
+
+    # Und die Gegenprobe: Mit STRG passiert in der Anwendung NICHTS — der
+    # Browser bekommt den Klick. Sonst haetten wir ihm sein „in neuem Tab
+    # oeffnen" weggenommen.
+    vorher = page.all("article.stack-card").size
+    page.execute_script(oeffnen, @alpha.uuid, list_card_sel, '{"ctrlKey":true}')
+    sleep 0.5
+    assert_equal vorher, page.all("article.stack-card").size,
+                 "STRG gehoert dem Browser — die Anwendung fasst den Klick nicht an"
   end
 
   # #1154: STRG beim Resize-Ziehen invertiert die Zugrichtung — Maus nach

@@ -347,11 +347,14 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
          headers: { "Accept" => "text/vnd.turbo-stream.html" }
     assert_response :ok
     assert_equal "today", task.reload.commitment
-    # #737 (Hans): die neu gerenderte Row muss den Plus-Button (Append-an-
-    # Stack) behalten — er haengt an blade_kind/blade_id, die der Re-Render
-    # mitgeben muss. Vorher fehlten sie und der Plus verschwand.
-    assert_includes @response.body, "append_to_substack",
-                    "Plus-Button (Append) darf beim Wann-Wechsel nicht aus der Row fallen"
+    # #737 (Hans): die neu gerenderte Row muss den Card-Aufruf behalten — er
+    # haengt an blade_kind/blade_id, die der Re-Render mitgeben muss. Vorher
+    # fehlten sie.
+    # #1509: Geprueft wird jetzt der blade-link statt des Plus-Buttons — das
+    # Plus ist weg, Umschalt/Alt am Klick haben es abgeloest. Die Gefahr ist
+    # dieselbe geblieben: Ohne blade_kind/blade_id ist die Zeile tot.
+    assert_includes @response.body, %(data-blade-link-id-value="#{task.id}"),
+                    "der Card-Aufruf darf beim Wann-Wechsel nicht aus der Row fallen"
   end
 
   test "POST /tasks/:id/set_commitment with inbox sets commitment to nil" do

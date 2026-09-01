@@ -75,7 +75,6 @@
   <% end %>
 
   <% if blade_kind && blade_id %>
-    <%= render "shared/blade_plus_button", kind: blade_kind, id: blade_id %>
   <% end %>
 
   <%= button_to resolve_awaiting_path(awaiting), method: :post,

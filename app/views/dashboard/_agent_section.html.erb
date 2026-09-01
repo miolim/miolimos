@@ -186,7 +186,6 @@
                   </a>
                   <span class="text-xs text-slate-400 tabular-nums shrink-0">#<%= task.id %></span>
                   <%# #514 (Hans, 2026-06-04): „+" hängt die Aufgabe an statt zu ersetzen. %>
-                  <%= render "shared/blade_plus_button", kind: "task", id: task.id %>
                 </div>
                 <ul class="pl-5 mt-0.5">
                   <% group.each do |c| %>
@@ -277,7 +276,6 @@
                     <% end %>
                   </a>
                   <%# #514 (Hans, 2026-06-04): „+" hängt die Aufgabe an statt zu ersetzen. %>
-                  <%= render "shared/blade_plus_button", kind: "task", id: entry.task.id %>
                 </div>
               </li>
             <% end %>

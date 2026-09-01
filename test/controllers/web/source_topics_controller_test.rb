@@ -63,7 +63,9 @@ class SourceTopicsControllerTest < ActionDispatch::IntegrationTest
 
   # #577: Recherche-Quellen oeffnen im Stack (blade-link append) und
   # tragen das Plus zum Anhaengen — wie die anderen Listen.
-  test "Recherche-Quellen-Eintrag hat blade-link und Plus-Button" do
+  # #1509: Das Plus ist weg — Umschalt/Alt am Klick haben es abgeloest.
+  # Geprueft wird jetzt, dass die Zeile den Aufruf-Weg ueberhaupt traegt.
+  test "Recherche-Quellen-Eintrag traegt den Card-Aufruf" do
     SourceTopic.create!(source: @source, topic: @topic, relevance: "relevant")
     get "/topics/#{@topic.slug}/list_card", params: { tab: "sources" }
     assert_response :success
@@ -71,6 +73,5 @@ class SourceTopicsControllerTest < ActionDispatch::IntegrationTest
     assert band, "Recherche-Quellen-Band fehlt"
     assert_includes band, %(data-blade-link-kind-value="source")
     assert_includes band, %(data-blade-link-id-value="#{@source.slug}")
-    assert_includes band, "append_to_substack"
   end
 end

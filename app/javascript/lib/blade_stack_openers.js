@@ -10,6 +10,8 @@
 // Enthaltene Methoden (data-action `blade-stack#openX`):
 //   openFromList · openSource · openTask · openTopic · openAwaiting · openCommunication
 
+import BladeLinkController from "controllers/blade_link_controller"
+
 export const BladeStackOpenersMixin = {
   // #224 6f-2: Default-Klick auf ein Listen-Item ersetzt den nachge-
   // lagerten Sub-Stack (alles zwischen dieser List-Card und dem
@@ -17,20 +19,36 @@ export const BladeStackOpenersMixin = {
   // Action) wuerde stattdessen appenden.
   // #1151: STRG-Klick (Mac: Cmd) = Plus-Klick — Card anhaengen statt
   // ersetzen. preventDefault unterdrueckt dabei den Browser-Neuer-Tab.
+  // #1509 (aus immoos #1348 uebernommen): DIESELBE Regel wie am
+  // blade-link-Pfad — die Zeilen in den Listen-Cards laufen hier durch,
+  // nicht dort. Umschalt = rechts daneben, Umschalt+Alt = links daneben,
+  // Alt = ans Stapel-Ende, nichts gedrueckt = ersetzen.
+  //
+  // Strg/Cmd war bei uns bisher der Anhaengen-Modifier (#1151). Es gehoert
+  // aber dem Browser („in neuem Tab oeffnen"), und mit vier Oeffnungsarten
+  // auf Umschalt und Alt wird es dafuer auch nicht mehr gebraucht.
   async openFromList(event) {
-    if (event.ctrlKey || event.metaKey) return this.appendFromList(event)
+    if (event.ctrlKey || event.metaKey) return   // gehoert dem Browser
     event.preventDefault()
     const uuid = event.currentTarget.dataset.targetUuid
     if (!uuid) return
     const sourceListCard = event.target?.closest?.("article.stack-card[data-uuid^='list:']")
     const existing = this.cardForUuid(uuid)
     if (existing) {
+      // Ist die Card schon offen, sticht das Springen — egal was gedrueckt
+      // ist. Sonst haette man zwei Karten desselben Dinges.
       this._expandCard(existing)
       existing.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
       this.setActiveCard(existing)
       return
     }
-    if (sourceListCard) {
+
+    const art    = BladeLinkController.oeffnungsart(event)
+    const quelle = event.target?.closest?.("article.stack-card")
+    if (art !== "ersetzen" && quelle) {
+      const url = this._urlForStackId(uuid) || this.cardUrlTemplateValue.replace("UUID", uuid)
+      await this._oeffneNeben(uuid, url, quelle, art)
+    } else if (sourceListCard) {
       const url = this.cardUrlTemplateValue.replace("UUID", uuid)
       await this._appendBladeAtUrl({ stackId: uuid, url,
                                      sourceListCard, mode: "replace_substack" })

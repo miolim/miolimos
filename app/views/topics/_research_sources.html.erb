@@ -78,7 +78,6 @@
             <% end %>
             <%# #577: Plus haengt die Quelle an den Stack an (wie in den
                 anderen Listen, #509). Braucht group-Klasse am li. %>
-            <%= render "shared/blade_plus_button", kind: "source", id: st.source.slug %>
           </div>
           <%= form_with url: source_topic_path(st.source.slug, st.topic_id), method: :patch,
                 class: "mt-1 pl-6" do |f| %>

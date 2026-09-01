@@ -436,7 +436,7 @@ class BladeStackController extends Controller {
     // hoeren auf window und routen sie ins normale _appendBladeAtUrl.
     // Erwartetes detail-Shape: { kind: "topic"|"task"|"source", id: String }.
     this._onAppendEvent = async (e) => {
-      const { kind, id, sourceListId, anchor, mode: explicitMode } = e.detail || {}
+      const { kind, id, sourceListId, anchor, mode: explicitMode, oeffnen, quelleId } = e.detail || {}
       if (!kind || !id) return
       // #564: kind→(stackId,url) kommt aus der EINEN Routing-Tabelle
       // (lib/blade_stack_routes) — vorher ein eigener Switch, der gegen
@@ -474,6 +474,18 @@ class BladeStackController extends Controller {
       // forceNew und oeffneten die Card jedes Mal erneut. Ausnahme bleibt das
       // Plus-Icon: `append_to_substack` heisst ausdruecklich "noch eine".
       const alreadyOpen = !!this.cardForUuid(stackId)
+
+      // #1509 (aus immoos #1348): Ist eine Oeffnungsart angegeben und die
+      // aufrufende Card bekannt, entscheidet der KLICK, wo die neue Card
+      // landet. Ist sie schon offen, sticht das Springen — egal was
+      // gedrueckt war; sonst haette man zwei Karten desselben Dinges.
+      const quelle = quelleId ? document.getElementById(quelleId) : null
+      if (oeffnen && quelle && !alreadyOpen) {
+        const fertig = await this._oeffneNeben(stackId, url, quelle, oeffnen)
+        if (fertig) { this.pushTrailState(); this.syncUrl({ pushHistory: false }) }
+        return
+      }
+
       await this._appendBladeAtUrl({
         stackId, url,
         forceNew:       mode === "append_to_substack" || (!fromList && !alreadyOpen),
@@ -501,6 +513,33 @@ class BladeStackController extends Controller {
       this.syncUrl({ pushHistory: true })
     }
     window.addEventListener("blade-stack:append", this._onAppendEvent)
+
+    // #1509 (Hans): „UMSCHALT und ALT-UMSCHALT sind auch Modifier. Bei der
+    // Benutzung wird aber an einigen Stellen Text in der Card selektiert.
+    // Wenn dann die neue Card geoeffnet wurde, wird die Selektion auf deren
+    // Text ausgedehnt. Das ist sehr irritierend."
+    //
+    // Das Auswaehlen passiert beim MOUSEDOWN, nicht beim Klick — ein
+    // `preventDefault` im Klick-Handler kommt also zu spaet. Deshalb hier,
+    // eine Ebene frueher.
+    //
+    // Selektiv, wie gewuenscht: In Eingabefeldern und editierbarem Text
+    // bleibt Umschalt+Klick, was es ist — die uebliche Art, eine Auswahl
+    // aufzuziehen. Nur auf einer anklickbaren Card-Zeile, wo Umschalt der
+    // Modifier fuer „rechts daneben oeffnen" ist, wird die Auswahl
+    // unterdrueckt. Eine andere Taste zu nehmen ist damit nicht noetig.
+    this._keineAuswahlBeiModifier = (event) => {
+      if (!event.shiftKey) return               // nur Umschalt zieht auf
+      if (event.button !== 0) return            // nur die linke Taste
+      const ziel = event.target
+      if (!ziel?.closest) return
+      // In Textfeldern gehoert das Aufziehen dem Nutzer.
+      if (ziel.closest("input, textarea, select, [contenteditable=''], [contenteditable='true']")) return
+      // Nur dort eingreifen, wo Umschalt ueberhaupt eine Bedeutung hat.
+      if (!ziel.closest("[data-controller~='blade-link']")) return
+      event.preventDefault()
+    }
+    document.addEventListener("mousedown", this._keineAuswahlBeiModifier, true)
 
     // #1198: Topbar-Pfeile (Schritt zurück/vor) liegen außerhalb des
     // Stimulus-Scopes — sie feuern ein globales Event (Muster wie
@@ -579,6 +618,9 @@ class BladeStackController extends Controller {
       document.body.classList.remove("has-blade-stack")
     }
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
+    if (this._keineAuswahlBeiModifier) {
+      document.removeEventListener("mousedown", this._keineAuswahlBeiModifier, true)
+    }
     if (this._onTrailNav)    window.removeEventListener("blade-stack:trail", this._onTrailNav)
   }
 
@@ -1800,6 +1842,59 @@ class BladeStackController extends Controller {
   // #1198 v4: optional beforeNode — der Trail-Diff fügt fehlende Cards
   // an ihrer Position ein statt nur ans Ende (Back nach dem Schließen
   // einer mittleren Card).
+  // #1509 (aus immoos #1348 uebernommen): die Weiche fuer die vier
+  // Oeffnungsarten. Was der Klick meint, entscheidet der Modifier —
+  // ersetzen (nichts gedrueckt), rechts (Umschalt), links (Umschalt+Alt),
+  // ans Ende (Alt).
+  async _oeffneNeben(stackId, url, quelle, art) {
+    // Ans Ende haengen kann der gewachsene Weg schon — hier nur die Weiche.
+    if (art === "ende") {
+      await this._appendBladeAtUrl({ stackId, url })
+      return true
+    }
+    if (art === "ersetzen") {
+      const doomed = []
+      let cur = quelle.nextElementSibling
+      while (cur) {
+        if (cur.classList?.contains("stack-card")) doomed.push(cur)
+        cur = cur.nextElementSibling
+      }
+      if (!this._confirmDiscardDrafts(doomed)) return false
+      doomed.forEach(c => c.remove())
+    }
+
+    const res = await fetch(url, { headers: { "Accept": "text/html" } })
+    if (!res.ok) {
+      console.warn("blade fetch failed", url, res.status)
+      this._showBladeError(`Blade konnte nicht geladen werden (${res.status})`)
+      return false
+    }
+    const { nodes, card } = this._parseCardHtml(await res.text())
+    if (!card) return false
+    this.containerTarget.querySelectorAll(":scope > p").forEach(el => el.remove())
+
+    if (art === "links") {
+      // Links einfuegen schiebt alles nach rechts — ohne Ausgleich springt
+      // das Bild unter den Augen des Nutzers weg. Deshalb die Scrollposition
+      // um den Zuwachs mitziehen.
+      const vorher       = this.containerTarget.scrollLeft
+      const breiteVorher = this.containerTarget.scrollWidth
+      nodes.forEach(n => this.containerTarget.insertBefore(n, quelle))
+      this._uniquifyCardId(card)
+      this._applySavedWidth(card)
+      this.restickify()
+      this.containerTarget.scrollLeft = vorher + (this.containerTarget.scrollWidth - breiteVorher)
+    } else {
+      let ref = quelle
+      nodes.forEach(n => { ref.after(n); ref = n })
+      this._uniquifyCardId(card)
+      this._applySavedWidth(card)
+      this.restickify()
+    }
+    requestAnimationFrame(() => this._scrollCardIntoFocus(card))
+    return true
+  }
+
   async appendCardBare(uuid, { beforeNode = null } = {}) {
     // #352 (Hans, 2026-05-25): _urlForStackId kennt alle Card-Typen
     // (task:, topic:, render:topic:, list:, …). cardUrlTemplate ist

@@ -60,6 +60,5 @@
     <%= l(comm.sent_at, format: :short) if comm.sent_at %>
   </span>
   <% if blade_kind && blade_id %>
-    <%= render "shared/blade_plus_button", kind: blade_kind, id: blade_id %>
   <% end %>
 </li>

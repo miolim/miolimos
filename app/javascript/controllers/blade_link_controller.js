@@ -14,6 +14,25 @@ import { stackVorhanden } from "lib/blade_stack_present"
 export default class extends Controller {
   static values = { kind: String, id: String, anchor: String, mode: String }
 
+  // #1509 (aus immoos #1348 uebernommen). EINE Regel fuer alle Card-Aufrufe:
+  //
+  //   Klick                ersetzt alles rechts der aufrufenden Card
+  //   Umschalt+Klick       ergaenzt rechts daneben
+  //   Umschalt+Alt+Klick   ergaenzt links daneben
+  //   Alt+Klick            haengt ans Stapel-Ende
+  //   ist die Card schon offen: springen, egal was gedrueckt ist
+  //
+  // Cmd/Strg bleibt bewusst FREI — das gehoert dem Browser („in neuem Tab
+  // oeffnen"). Bei uns war Strg bisher der Anhaengen-Modifier (#1151); das
+  // aendert sich damit, und zwar zugunsten der Regel, die der Browser
+  // ohnehin hat.
+  static oeffnungsart(event) {
+    if (event?.shiftKey && event?.altKey) return "links"
+    if (event?.shiftKey) return "rechts"
+    if (event?.altKey)   return "ende"
+    return "ersetzen"
+  }
+
   append(event) {
     // #163 Phase 6c: wenn die aktuelle Seite KEINEN blade-stack hat
     // (body hat dann die has-blade-stack-Klasse NICHT), lassen wir das
@@ -25,6 +44,9 @@ export default class extends Controller {
     // die Body-Klasse kann eine sich trennende Alt-Instanz entfernt haben,
     // waehrend der Stapel steht.
     if (!stackVorhanden()) return
+    // #1509: Cmd/Strg gehoert dem Browser — bei gedrueckter Taste fassen wir
+    // den Klick gar nicht erst an, dann macht er sein Uebliches.
+    if (event.metaKey || event.ctrlKey) return
     event.preventDefault()
     event.stopPropagation()
     if (!this.kindValue || !this.idValue) return
@@ -44,7 +66,14 @@ export default class extends Controller {
         // #224 6f-2 cleanup: mode-Override. Default-Klick aus einer
         // Listen-Blade ist REPLACE_SUBSTACK; ein Plus-Icon kann hier
         // explizit "append_to_substack" anfordern.
-        mode: this.modeValue || null
+        mode: this.modeValue || null,
+        // #1509: Die Oeffnungsart kommt aus dem KLICK, nicht aus der Herkunft
+        // des Elements. Ein Plus an einer Zeile bleibt „ergaenze rechts" —
+        // es IST der Modifier fuer Finger.
+        oeffnen: this.modeValue === "append_to_substack"
+                   ? "rechts" : this.constructor.oeffnungsart(event),
+        // #1509: Anker ist die aufrufende CARD — egal ob Liste oder Detail.
+        quelleId: event.currentTarget.closest("article.stack-card")?.id || null
       }
     }))
   }

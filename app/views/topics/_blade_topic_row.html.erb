@@ -28,7 +28,6 @@
           <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
         </button>
         <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
-        <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
         <button type="button"
                 data-action="click->disclosure#toggle"
                 data-disclosure-target="icon"
@@ -58,7 +57,6 @@
         <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
       </button>
       <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
-      <%= render "shared/blade_plus_button", kind: "topic_list", id: topic.slug %>
     </div>
   <% end %>
 </li>

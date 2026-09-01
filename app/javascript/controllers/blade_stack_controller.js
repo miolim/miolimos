@@ -824,8 +824,14 @@ class BladeStackController extends Controller {
       // #1091 v4: NATUERLICHES Content-Ende, nicht scrollWidth — das
       // enthaelt jetzt den stehenden Overscroll-Spacer; scrollWidth
       // wuerde die neue Card links gepinnt in der Leere abstellen.
+      // #1509 (Hinweis von immoos_builder, dort #1503): NICHT ans rechnerische
+      // Ende springen. Das ist nur so lange dasselbe wie „zur neuen Card",
+      // wie dieses Ende RECHTS der aktuellen Position liegt. Steht man im
+      // Freiraum dahinter (#1091 v4), ist es KLEINER — der Stapel springt
+      // zurueck und klappt die weggescrollten Ruecken wieder auf. Gemessen:
+      // 548 → 394. `_scrollCardIntoFocus` scrollt nur so weit wie noetig.
       if (wasEmpty) this.containerTarget.scrollLeft = 0
-      else this.containerTarget.scrollTo({ left: this._naturalEndScroll(), behavior: "smooth" })
+      else this._scrollCardIntoFocus(card)
       card.querySelector("input[name='title']")?.focus()
     })
   }
@@ -1833,7 +1839,8 @@ class BladeStackController extends Controller {
       } else if (beforeNode) {
         card.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
       } else {
-        this.containerTarget.scrollTo({ left: this._naturalEndScroll(), behavior: "smooth" })
+        // #1509: siehe openNewCard — dasselbe Zurueckspringen, andere Stelle.
+        this._scrollCardIntoFocus(card)
       }
     })
   }

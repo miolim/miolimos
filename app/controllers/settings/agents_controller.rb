@@ -1,6 +1,7 @@
 class Settings::AgentsController < Settings::BaseController
   before_action :set_agent, only: [:show, :edit, :update, :destroy,
-                                    :regenerate_token, :trigger_inbox_run]
+                                    :regenerate_token, :trigger_inbox_run,
+                                    :issue_token, :revoke_token]
 
   # #613: Einstellungen sind ein Blade-Stack — die alte Reiter-URL
   # leitet auf den Stack mit geöffnetem Bereichs-Blade.
@@ -59,6 +60,28 @@ class Settings::AgentsController < Settings::BaseController
                 notice: "Neuer API-Token erzeugt — alter ist ab sofort ungültig. Token nur JETZT sichtbar."
   end
 
+  # #1499 (Hans): „Lassen sie sich einzeln zurückziehen?" — jetzt ja. Ein
+  # benanntes Token je Verwendungszweck; der Klartext kommt einmalig per
+  # Flash und ist danach nirgends mehr abrufbar.
+  def issue_token
+    name = params[:name].to_s.strip.presence || "Unbenannt"
+    tage = params[:expires_in_days].to_i
+    token = ApiToken.issue!(actor: @agent, name: name,
+                            expires_at: (tage.positive? ? tage.days.from_now : nil))
+    flash[:agent_api_token]      = token.token
+    flash[:agent_api_token_name] = token.name
+    redirect_to agent_blade_path, notice: "Token #{token.name.inspect} erzeugt — nur JETZT sichtbar."
+  end
+
+  # Zurückziehen statt löschen: Ein zurückgezogenes Token bleibt sichtbar,
+  # mit Datum. Sonst verschwindet mit dem Eintrag auch die Antwort auf die
+  # Frage, ob es dieses Token je gab.
+  def revoke_token
+    token = @agent.api_tokens.find(params[:token_id])
+    token.revoke!
+    redirect_to agent_blade_path, notice: "Token #{token.name.inspect} zurückgezogen."
+  end
+
   # #152: Inbox-Run anstoßen. Setzt `inbox_run_requested_at`; der Agent
   # sieht das beim nächsten Heartbeat-GET als `pending_trigger: true`.
   def trigger_inbox_run
@@ -68,6 +91,10 @@ class Settings::AgentsController < Settings::BaseController
   end
 
   private
+
+  def agent_blade_path
+    settings_path(stack: "list:settings,settings:agents,settingssub:agents:#{@agent.id}")
+  end
 
   def set_agent
     @agent = AgentActor.find(params[:id])

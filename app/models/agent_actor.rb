@@ -1,4 +1,7 @@
 class AgentActor < Actor
+  # #1499: benannte Token mit Ablauf, Benutzungsspur und eigenem Rueckzug.
+  has_many :api_tokens, foreign_key: :actor_id, dependent: :destroy, inverse_of: :actor
+
   before_validation :ensure_api_token
 
   validates :api_token_digest, presence: true, uniqueness: true

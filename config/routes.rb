@@ -544,6 +544,9 @@ Rails.application.routes.draw do
       member do
         post :regenerate_token
         post :trigger_inbox_run
+        # #1499: benannte Token je Agent — anlegen und einzeln zurueckziehen.
+        post :issue_token
+        post :revoke_token
       end
     end
     # #271: Vorlieben des Actors (Card-Breiten, Wheel-Speed, Sidebar-Klick).

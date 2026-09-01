@@ -23,15 +23,34 @@ module Api
       private
 
       def authenticate_actor
-        token = request.headers["Authorization"]&.split("Bearer ", 2)&.last
-        # #1052: DB hält nur SHA256-Digests — reinkommendes Token hashen
-        # und über den Unique-Index vergleichen.
-        @current_actor = Actor.find_by(api_token_digest: Actor.digest_api_token(token), active: true) if token.present?
-        unless @current_actor
-          render json: { error: "Unauthorized", code: "invalid_token" }, status: :unauthorized
-          return
+        secret = request.headers["Authorization"]&.split("Bearer ", 2)&.last
+        return unauthorized! if secret.blank?
+
+        # #1499: Zuerst die benannten Token (eigener Gegenstand, mit Ablauf,
+        # Rueckzug und Benutzungsspur). Danach das ALTE Token an der
+        # Actor-Spalte — die laufenden Agenten senden es noch, und ein
+        # Umstieg, der sie alle gleichzeitig aussperrt, waere das Gegenteil
+        # von Sicherheit. Die Zeile faellt, sobald rotiert ist.
+        if (t = ApiToken.authenticate(secret)) && t.actor&.active?
+          @api_token = t
+          @current_actor = t.actor
+          t.benutzt!
+        else
+          # #1052: In der DB liegt nur der SHA256-Digest — reinkommendes
+          # Token hashen und ueber den Unique-Index vergleichen.
+          @current_actor = Actor.find_by(api_token_digest: Actor.digest_api_token(secret), active: true)
+          # #1499 Punkt 2: Auch fuer das alte Token mitschreiben, wann es
+          # zuletzt benutzt wurde. `update_column`, weil das eine Randnotiz
+          # ist und weder Rueckrufe ausloesen noch `updated_at` bewegen soll.
+          @current_actor&.update_column(:api_token_last_used_at, Time.current)
         end
+
+        return unauthorized! unless @current_actor
         Current.actor = @current_actor
+      end
+
+      def unauthorized!
+        render json: { error: "Unauthorized", code: "invalid_token" }, status: :unauthorized
       end
 
       def current_actor

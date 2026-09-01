@@ -142,7 +142,8 @@ CREATE TABLE public.actors (
     otp_enabled_at timestamp(6) without time zone,
     otp_recovery_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
     otp_consumed_timestep bigint,
-    api_token_digest character varying
+    api_token_digest character varying,
+    api_token_last_used_at timestamp(6) without time zone
 );
 
 
@@ -200,6 +201,42 @@ CREATE SEQUENCE public.affiliations_id_seq
 --
 
 ALTER SEQUENCE public.affiliations_id_seq OWNED BY public.affiliations.id;
+
+
+--
+-- Name: api_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.api_tokens (
+    id bigint NOT NULL,
+    actor_id bigint NOT NULL,
+    name character varying NOT NULL,
+    token_digest character varying NOT NULL,
+    expires_at timestamp(6) without time zone,
+    last_used_at timestamp(6) without time zone,
+    revoked_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: api_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.api_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: api_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.api_tokens_id_seq OWNED BY public.api_tokens.id;
 
 
 --
@@ -2774,6 +2811,13 @@ ALTER TABLE ONLY public.affiliations ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: api_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_tokens ALTER COLUMN id SET DEFAULT nextval('public.api_tokens_id_seq'::regclass);
+
+
+--
 -- Name: audit_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3272,6 +3316,14 @@ ALTER TABLE ONLY public.actors
 
 ALTER TABLE ONLY public.affiliations
     ADD CONSTRAINT affiliations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: api_tokens api_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_tokens
+    ADD CONSTRAINT api_tokens_pkey PRIMARY KEY (id);
 
 
 --
@@ -4035,6 +4087,27 @@ CREATE INDEX index_affiliations_on_person_uuid ON public.affiliations USING btre
 --
 
 CREATE UNIQUE INDEX index_affiliations_unique_combo ON public.affiliations USING btree (person_uuid, organization_uuid, role, start_at);
+
+
+--
+-- Name: index_api_tokens_on_actor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_api_tokens_on_actor_id ON public.api_tokens USING btree (actor_id);
+
+
+--
+-- Name: index_api_tokens_on_actor_id_and_revoked_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_api_tokens_on_actor_id_and_revoked_at ON public.api_tokens USING btree (actor_id, revoked_at);
+
+
+--
+-- Name: index_api_tokens_on_token_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_api_tokens_on_token_digest ON public.api_tokens USING btree (token_digest);
 
 
 --
@@ -5875,6 +5948,14 @@ ALTER TABLE ONLY public.awaitings
 
 
 --
+-- Name: api_tokens fk_rails_6036f60e5a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_tokens
+    ADD CONSTRAINT fk_rails_6036f60e5a FOREIGN KEY (actor_id) REFERENCES public.actors(id);
+
+
+--
 -- Name: topic_trees fk_rails_60e86080e6; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6385,6 +6466,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260901090000'),
 ('20260810133000'),
 ('20260810123000'),
 ('20260810120100'),

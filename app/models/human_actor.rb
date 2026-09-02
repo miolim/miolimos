@@ -7,6 +7,17 @@ class HumanActor < Actor
   validates :email,    presence: true, uniqueness: true
   validates :password, length: { minimum: 8 }, if: -> { password.present? }
 
+  # #1520 (Hans): „Passwort vergessen" — der Link aus der Mail traegt keinen
+  # Token in der Datenbank, sondern einen signierten, der sich SELBST entwertet:
+  # Er haengt am Salz des aktuellen Passworts. Sobald ein neues Passwort
+  # gesetzt ist, aendert sich das Salz, und jeder noch offene Link wird
+  # ungueltig — auch der, den ein Zweiter aus demselben Postfach gefischt hat.
+  # Eine eigene Spalte samt Aufraeum-Job braucht es dafuer nicht.
+  PASSWORD_RESET_TTL = 30.minutes
+  generates_token_for :password_reset, expires_in: PASSWORD_RESET_TTL do
+    password_salt&.last(10)
+  end
+
   # #1051: TOTP-Zweitfaktor (Opt-in pro Nutzer, Settings → Sicherheit).
   # Enrollment: Settings::TwoFactorController hält das Kandidaten-Secret in
   # der Session, bis der Nutzer einen gültigen Code bestätigt — erst

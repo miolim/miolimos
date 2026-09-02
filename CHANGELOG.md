@@ -17,6 +17,19 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- You can change your own password, under Settings → Security (#1520). Until
+  now only someone with user administration could set a password — for anyone,
+  including you. Changing it asks for your current password: a session left
+  open should not be enough to take over an account.
+- "Forgot your password?" on the sign-in page (#1520). You get a link by email
+  that lets you set a new password. The link is valid for 30 minutes and only
+  once — it hangs on your current password, so setting a new one invalidates
+  any link still lying around, including one someone else fished out of the
+  same mailbox. It sets a password; it does not sign you in, so two-factor
+  authentication still applies afterwards. The page answers the same way for
+  an unknown address as for a known one, so it cannot be used to find out who
+  has an account.
+
 - Administrators can set the preferences a new user starts with (#1500). Save
   your own preferences, then adopt them as the default — anyone created after
   that starts there instead of with the built-in values. People who already

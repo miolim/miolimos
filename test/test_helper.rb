@@ -54,7 +54,19 @@ module MiolimosTestSandbox
 end
 
 MiolimosTestSandbox.install!
-at_exit { FileUtils.remove_entry(MiolimosTestSandbox::ROOT, true) }
+# Aufgeraeumt wird das EIGENE Verzeichnis, nicht die gemeinsame Wurzel.
+#
+# `fork` nimmt at_exit-Haken mit: Stand hier ROOT, lief der Aufraeumer in JEDEM
+# Worker und riss der noch laufenden Nachbarschaft ihr Verzeichnis weg — wer
+# zuerst fertig war, gewann. Das Symptom ist ein `Errno::ENOENT` beim Schreiben
+# an einer Stelle, an der unmittelbar davor `mkdir_p` lief; also ein Verzeichnis,
+# das ZWISCHEN Anlegen und Schreiben verschwindet, folglich von aussen.
+#
+# `FileProxy::BASE_PATH` zeigt im Worker auf dessen eigene Sandbox (siehe
+# parallelize_setup unten) und im Eltern-Prozess auf ROOT — und der endet
+# zuletzt, raeumt also am Schluss alles ab. (Hinweis von immoos_builder,
+# 2026-09-02, dort als Ursache sporadischer Roter nachgewiesen.)
+at_exit { FileUtils.remove_entry(FileProxy::BASE_PATH, true) }
 
 # Sicherung gegen ein stilles Zurückfallen: Zeigt der Pfad nicht in die
 # Sandbox, brechen wir ab, statt in den Wissensbestand zu schreiben.
@@ -99,6 +111,11 @@ module ActiveSupport
     # Tests eines Workers zusammen und ab dem elften wird jeder
     # Test-Login gebremst (549 rote Tests beim ersten Versuch).
     setup { SessionsController::RATE_LIMIT_STORE.clear }
+    # #1520: dieselbe Bauart, dieselbe Falle — die Bremse am „Passwort
+    # vergessen" zaehlt sonst ueber Testgrenzen hinweg mit, und ab dem
+    # sechsten Anfordern eines Workers landet jeder Test auf der
+    # Bremsen-Meldung statt auf dem Ergebnis.
+    setup { PasswordResetsController::RATE_LIMIT_STORE.clear }
 
     # ─── Factories ───────────────────────────────────────────────────────────
     # Lightweight, explicit builders — no gem dependency.

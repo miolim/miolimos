@@ -34,6 +34,36 @@ de:
     search_placeholder: "Suche (⌘K) …"
     logout:          "Abmelden"
 
+  # #1520 (Hans): „Passwort vergessen", Passwort ändern.
+  passwords:
+    self_title:      "Passwort"
+    self_intro:      "Ändere Dein Passwort. Zur Sicherheit brauchst Du dafür Dein aktuelles — eine offen gelassene Sitzung soll nicht reichen."
+    self_submit:     "Passwort ändern"
+    current:         "Aktuelles Passwort"
+    new_password:    "Neues Passwort"
+    repeat:          "Neues Passwort wiederholen"
+    current_wrong:   "Das aktuelle Passwort stimmt nicht."
+    mismatch:        "Die beiden neuen Passwörter stimmen nicht überein."
+    changed_self:    "Passwort geändert."
+    forgot_link:     "Passwort vergessen?"
+    forgot_heading:  "Passwort vergessen"
+    forgot_hint:     "Trage Deine E-Mail-Adresse ein. Wenn es dazu ein Konto gibt, schicken wir Dir einen Link zum Setzen eines neuen Passworts."
+    forgot_submit:   "Link schicken"
+    back_to_login:   "Zurück zur Anmeldung"
+    sent:            "Wenn es zu dieser Adresse ein Konto gibt, ist der Link unterwegs. Schau auch im Spam-Ordner nach."
+    new_heading:     "Neues Passwort setzen"
+    new_hint:        "Für %{email}. Mindestens 8 Zeichen."
+    set_submit:      "Passwort setzen"
+    changed:         "Passwort gesetzt. Du kannst Dich jetzt anmelden."
+    link_invalid:    "Der Link ist abgelaufen oder wurde schon benutzt. Fordere einen neuen an."
+    rate_limited:    "Zu viele Versuche. Warte ein paar Minuten."
+    mail:
+      subject:  "Neues Passwort für miolimOS"
+      greeting: "Hallo %{name},"
+      intro:    "Du hast ein neues Passwort für miolimOS angefordert. Über diesen Link kannst Du eines setzen:"
+      validity: "Der Link gilt %{minutes} Minuten und nur ein einziges Mal — sobald ein neues Passwort gesetzt ist, verfällt er."
+      ignore:   "Warst Du das nicht, brauchst Du nichts zu tun: Ohne diesen Link ändert sich nichts an Deinem Zugang."
+
   sessions:
     new_heading:         "Anmelden"
     email:               "E-Mail"

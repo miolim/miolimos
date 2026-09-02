@@ -21,4 +21,10 @@
     <%= f.submit t("sessions.submit"),
           class: "w-full rounded bg-emerald-600 text-white font-medium py-1.5 hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
+
+  <%# #1520 (Hans): „Passwort vergessen" — hier und nirgends sonst, denn nur
+      hier steht der, der sich nicht anmelden kann. %>
+  <p class="mt-4 text-xs text-slate-500">
+    <%= link_to t("passwords.forgot_link"), new_password_reset_path, class: "hover:text-slate-700 underline" %>
+  </p>
 </div>

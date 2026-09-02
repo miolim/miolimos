@@ -7,6 +7,13 @@ Rails.application.routes.draw do
   # #1051: zweiter Login-Schritt (TOTP-/Recovery-Code) bei aktivierter 2FA.
   get    "/login/otp", to: "sessions#otp",        as: :login_otp
   post   "/login/otp", to: "sessions#verify_otp"
+  # #1520 (Hans): „Passwort vergessen". Offen erreichbar — genau der, der es
+  # braucht, kann sich nicht anmelden. Der Link aus der Mail traegt einen
+  # signierten Token (HumanActor#generates_token_for), keinen in der Datenbank.
+  get    "/password/new",  to: "password_resets#new",    as: :new_password_reset
+  post   "/password",      to: "password_resets#create", as: :password_resets
+  get    "/password/edit", to: "password_resets#edit",   as: :edit_password_reset
+  patch  "/password",      to: "password_resets#update", as: :password_reset
   # #816: geräteübergreifender Stack-Verlauf (Drawer-Sync).
   resources :stack_snapshots, only: [:index, :create, :update, :destroy]
 
@@ -532,6 +539,9 @@ Rails.application.routes.draw do
         post :reset_two_factor
       end
     end
+    # #1520 (Hans): eigenes Passwort aendern — dieselbe Seite „Sicherheit",
+    # dieselbe Regel wie bei 2FA: immer der wirklich angemeldete Nutzer.
+    resource :password, only: [:update], controller: "passwords"
     # #1051: TOTP-Selbstverwaltung des eingeloggten Nutzers (Enrollment,
     # Recovery-Codes, Deaktivieren) — Seite „Sicherheit" im Settings-Stack.
     resource :two_factor, only: [], controller: "two_factor" do

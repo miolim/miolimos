@@ -5,6 +5,38 @@
     Settings::TwoFactorController — in der DB liegen nur Digests. %>
 <% recovery_codes = flash[:otp_recovery_codes] %>
 <div class="p-4 max-w-md space-y-4">
+  <%# #1520 (Hans): „Gibt es schon die Möglichkeit, dass der Nutzer selbst sein
+      Passwort anpasst?" — Jetzt hier, gleich oben: Das Passwort ist der Zugang,
+      der Zweitfaktor kommt danach. Das aktuelle Passwort ist Pflicht; eine
+      offen stehen gelassene Sitzung soll nicht reichen, um das Konto zu
+      übernehmen. %>
+  <section class="space-y-3">
+    <h1 class="text-lg font-semibold"><%= t("passwords.self_title") %></h1>
+    <p class="text-sm text-slate-600"><%= t("passwords.self_intro") %></p>
+    <%= form_with url: settings_password_path, method: :patch,
+          data: { turbo: false }, class: "space-y-2" do |f| %>
+      <div>
+        <%= f.label :current_password, t("passwords.current"), class: "block text-xs text-slate-600 mb-1" %>
+        <%= f.password_field :current_password, required: true, autocomplete: "current-password",
+              class: "w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:border-emerald-400" %>
+      </div>
+      <div>
+        <%= f.label :password, t("passwords.new_password"), class: "block text-xs text-slate-600 mb-1" %>
+        <%= f.password_field :password, required: true, autocomplete: "new-password",
+              class: "w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:border-emerald-400" %>
+      </div>
+      <div>
+        <%= f.label :password_confirmation, t("passwords.repeat"), class: "block text-xs text-slate-600 mb-1" %>
+        <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password",
+              class: "w-full rounded border border-slate-200 px-2 py-1 focus:outline-none focus:border-emerald-400" %>
+      </div>
+      <%= f.submit t("passwords.self_submit"),
+            class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+    <% end %>
+  </section>
+
+  <hr class="border-slate-200">
+
   <h1 class="text-lg font-semibold"><%= t("settings.two_factor.title") %></h1>
   <p class="text-sm text-slate-600"><%= t("settings.two_factor.intro") %></p>
 

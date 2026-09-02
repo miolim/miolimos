@@ -1,0 +1,29 @@
+<%# #1520: Neues Passwort setzen. Der Token steckt im Formular, damit auch der
+    fehlgeschlagene Versuch (Tippfehler in der Wiederholung) noch einen
+    gueltigen Link hat — sonst muesste der Nutzer die Mail erneut anfordern. %>
+<% content_for :title, t("passwords.new_heading") %>
+
+<div class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="flex items-center gap-2 mb-4">
+    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+    <span class="font-semibold text-slate-900">miolimOS</span>
+  </div>
+  <h1 class="text-lg font-semibold mb-1"><%= t("passwords.new_heading") %></h1>
+  <p class="text-xs text-slate-500 mb-4"><%= t("passwords.new_hint", email: @actor.email) %></p>
+
+  <%= form_with url: password_reset_path, method: :patch, local: true do |f| %>
+    <%= f.hidden_field :token, value: @token %>
+    <div class="mb-3">
+      <%= f.label :password, t("passwords.new_password"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.password_field :password, autofocus: true, required: true, autocomplete: "new-password",
+            class: "w-full rounded border border-slate-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    </div>
+    <div class="mb-4">
+      <%= f.label :password_confirmation, t("passwords.repeat"), class: "block text-xs text-slate-600 mb-1" %>
+      <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password",
+            class: "w-full rounded border border-slate-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
+    </div>
+    <%= f.submit t("passwords.set_submit"),
+          class: "w-full rounded bg-emerald-600 text-white font-medium py-1.5 hover:bg-emerald-700 cursor-pointer" %>
+  <% end %>
+</div>

@@ -1168,6 +1168,8 @@ de:
       role_guest:     "Gast"
       view:           "Ansehen"
       view_title:     "Read-only-Vorschau: miolimOS mit den Augen dieses Nutzers"
+      # #1520 (Hans): „Passwort für andere Nutzer ändern bitte an Admin-Rechte binden."
+      password_admin_only: "Nur Admins können das Passwort anderer Benutzer ändern. Dein eigenes änderst Du unter Einstellungen → Sicherheit."
       delete_confirm: "Benutzer %{name} löschen?"
     relations:
       vocab_title:     "Beziehungstypen-Vokabular"

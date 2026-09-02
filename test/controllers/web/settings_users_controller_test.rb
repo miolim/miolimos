@@ -57,7 +57,12 @@ class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal old_digest, user.password_digest
   end
 
-  test "PATCH update with new password rotates digest" do
+  # #1520 (Hans): „Passwort für andere Nutzer ändern bitte an Admin-Rechte
+  # binden." Dieser Test forderte bis dahin das GEGENTEIL — er hielt fest,
+  # dass jeder mit Actor-Rechten das Passwort jedes anderen setzen kann.
+  # Umgedreht statt gelöscht: Er hält jetzt fest, dass es nicht zurückkommt.
+  test "PATCH update: ein Admin dreht das Passwort eines anderen" do
+    @hans.update!(role: :admin)
     user = HumanActor.create!(
       name: "User", email: "rot-#{SecureRandom.hex(3)}@t.local",
       password: "originalpass"
@@ -68,6 +73,52 @@ class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
       human_actor: { name: user.name, email: user.email, password: "differentpass" }
     }
     assert_not_equal old_digest, user.reload.password_digest
+  end
+
+  # Der Kern der Änderung. `@hans` ist hier bewusst KEIN Admin — er hat volle
+  # Actor-Rechte, und genau die reichten vorher aus.
+  test "PATCH update: ohne Admin-Recht bleibt das fremde Passwort stehen" do
+    assert_not @hans.admin?, "Vorbedingung: der Nutzer ist Member mit vollen Actor-Rechten"
+    user = HumanActor.create!(
+      name: "User", email: "kein-#{SecureRandom.hex(3)}@t.local",
+      password: "originalpass"
+    )
+    old_digest = user.password_digest
+
+    patch "/settings/users/#{user.id}", params: {
+      human_actor: { name: user.name, email: user.email, password: "differentpass" }
+    }
+
+    assert_redirected_to "/settings/users"
+    assert_equal I18n.t("settings.users.password_admin_only"), flash[:alert]
+    assert_equal old_digest, user.reload.password_digest,
+                 "das Passwort darf sich nicht geändert haben"
+    assert user.authenticate("originalpass"), "und das alte muss weiter gelten"
+  end
+
+  # Abgewiesen wird das PASSWORT, nicht der ganze Vorgang: Wer Benutzer
+  # verwalten darf, darf weiter Namen und Adresse pflegen. Hans hat genau
+  # eine Sache genannt — die Grenze steht hier, damit sie nicht unbemerkt
+  # weiter wandert.
+  test "PATCH update: die übrigen Felder bleiben auch ohne Admin-Recht änderbar" do
+    user = HumanActor.create!(
+      name: "User", email: "feld-#{SecureRandom.hex(3)}@t.local",
+      password: "originalpass"
+    )
+    patch "/settings/users/#{user.id}", params: {
+      human_actor: { name: "Umbenannt", email: user.email, password: "" }
+    }
+    assert_equal "Umbenannt", user.reload.name
+  end
+
+  # Das eigene Passwort bleibt hier möglich — gebunden ist das Passwort
+  # ANDERER. (Der bequeme Weg dafür steht seit #1520 unter Sicherheit.)
+  test "PATCH update: das eigene Passwort darf man weiter selbst setzen" do
+    old_digest = @hans.password_digest
+    patch "/settings/users/#{@hans.id}", params: {
+      human_actor: { name: @hans.name, email: @hans.email, password: "meinneuespw" }
+    }
+    assert_not_equal old_digest, @hans.reload.password_digest
   end
 
   test "DELETE removes user" do

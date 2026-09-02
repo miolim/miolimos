@@ -54,6 +54,15 @@ release is cut, this section is renamed to the new version and a fresh
 - "This is me" moved to the top of the Preferences card (#1500) — it is the
   only entry there that says who you are; the rest says how things look.
 
+### Changed
+
+- Changing another user's password now requires the admin role (#1520). Anyone
+  who could manage users could previously set any other user's password,
+  including an administrator's — everyone gets full rights on users by default,
+  and only the *role* was protected. Everything else about user management is
+  unchanged: names, addresses and the active flag can still be edited by
+  whoever could edit them before, and you can still change your own password.
+
 ### Fixed
 
 - Replacing a card no longer makes the stack jump back to the left (#1501,

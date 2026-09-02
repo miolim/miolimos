@@ -33,6 +33,20 @@ class Settings::UsersController < Settings::BaseController
   def update
     attrs = user_params
     attrs.delete(:password) if attrs[:password].blank?  # leer = nicht ändern
+    # #1520 (Hans): „Passwort für andere Nutzer ändern bitte an Admin-Rechte
+    # binden." Bis hierher konnte JEDER angemeldete Nutzer das Passwort jedes
+    # anderen setzen — auch das eines Admins: HumanActors bekommen laut
+    # Rechtematrix Vollrechte auf `Actor` (CapabilityDefaults), und der Gate
+    # dieses Controllers prüft genau das. Admin-geschützt war allein die Rolle.
+    #
+    # Abgewiesen statt still übergangen: Ein weggeworfenes Passwortfeld sähe
+    # aus, als hätte es funktioniert. Das EIGENE Passwort bleibt hier möglich
+    # (die Selbstbedienung dafür steht unter Sicherheit) — gebunden ist genau
+    # das, was Hans genannt hat: das Passwort ANDERER.
+    if attrs[:password].present? && @user != current_actor && !current_actor&.admin?
+      redirect_to settings_users_path, alert: t("settings.users.password_admin_only")
+      return
+    end
     if @user.update(attrs)
       redirect_to settings_users_path, notice: "Benutzer gespeichert."
     else

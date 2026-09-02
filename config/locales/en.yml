@@ -1163,6 +1163,7 @@ en:
       role_guest:     "Guest"
       view:           "View"
       view_title:     "Read-only preview: miolimOS through this user's eyes"
+      password_admin_only: "Only admins can change another user's password. You can change your own under Settings → Security."
       delete_confirm: "Delete user %{name}?"
     relations:
       vocab_title:     "Relationship type vocabulary"

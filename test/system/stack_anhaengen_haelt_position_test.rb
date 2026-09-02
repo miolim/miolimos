@@ -29,7 +29,7 @@ class StackAnhaengenHaeltPositionTest < ApplicationSystemTestCase
     FileProxy.const_set(:BASE_PATH, @tmp_base)
     FileUtils.mkdir_p(@tmp_base.join("knowledge/notes"))
 
-    @items = %w[alpha beta gamma].map do |name|
+    @items = %w[alpha beta gamma delta].map do |name|
       uuid = SecureRandom.uuid
       rel  = "knowledge/notes/#{name}.md"
       File.write(@tmp_base.join(rel), "---\nid: #{uuid}\ntype: note\n---\n\n# #{name}\n\nInhalt.\n")
@@ -117,6 +117,72 @@ class StackAnhaengenHaeltPositionTest < ApplicationSystemTestCase
     assert_equal 3, nachher["cards"], "die dritte Card haengt dran"
     assert_in_delta vorher["scroll"], nachher["scroll"], 2,
                     "der Stapel darf nicht zurueckspringen (#{vorher['scroll']} → #{nachher['scroll']})"
+    assert_in_delta vorher["streifen"], nachher["streifen"], 2,
+                    "und die weggescrollte Card darf nicht wieder aufklappen " \
+                    "(#{vorher['streifen']}px → #{nachher['streifen']}px)"
+  end
+
+  # #1501 R2 (gemeldet von immoos_builder, belegt mit Hans' Browser-Zahlen aus
+  # dem Fork): der Fall, den die beiden Tests oben NICHT treffen. Sie haengen
+  # an — rechts der aufrufenden Card steht nichts, also gibt es nichts zu
+  # entfernen und der Ablauf nimmt den Anhaenge-Pfad. Steht rechts dagegen eine
+  # Card, wird sie ERSETZT: Sie verschwand bisher VOR dem Laden der neuen, der
+  # End-Freiraum schrumpfte, und der Browser kappte scrollLeft.
+  test "eine ersetzte Card laesst den Stapel stehen" do
+    page.driver.resize_window(1600, 900)
+    visit "/knowledge_items?stack=#{@items[0].uuid},#{@items[1].uuid}"
+    assert_selector "article.stack-card[data-uuid='#{@items[1].uuid}']", wait: 10
+
+    # Dritte Card anhaengen — sie ist gleich die, die ersetzt wird.
+    page.execute_script(<<~JS)
+      const el = document.querySelector('[data-controller~="blade-stack"]');
+      (window.Stimulus || window.application)
+        .getControllerForElementAndIdentifier(el, "blade-stack")
+        .appendCard("#{@items[2].uuid}");
+    JS
+    assert_selector "article.stack-card[data-uuid='#{@items[2].uuid}']", wait: 10
+
+    # Nach rechts scrollen, damit ueberhaupt eine Position da ist, die
+    # verlorengehen kann — und die erste Card weggescrollt ist.
+    page.execute_script(<<~JS)
+      const c = document.getElementById("blade_stack_container");
+      c.scrollLeft = c.scrollWidth;
+    JS
+    sleep 0.5
+    vorher = messen
+    assert_operator vorher["scroll"], :>, 0,
+                    "Vorbedingung: der Stapel muss verschoben sein, sonst misst der Test nichts"
+
+    # Vorbedingung des Fehlers ausdruecklich pruefen: Faellt die maximale
+    # Scrollposition OHNE die zu ersetzende Card unter die aktuelle? Nur dann
+    # kappt der Browser, und nur dann zeigt der alte Code den Fehler.
+    ohne = page.evaluate_script(<<~JS)
+      (() => {
+        const c = document.getElementById("blade_stack_container");
+        const k = c.querySelector('.stack-card[data-uuid="#{@items[2].uuid}"]');
+        return Math.round(c.scrollWidth - k.getBoundingClientRect().width - c.clientWidth);
+      })()
+    JS
+    assert_operator ohne, :<, vorher["scroll"],
+                    "Vorbedingung: ohne die ersetzte Card (#{ohne}) muss das Maximum unter " \
+                    "der aktuellen Position (#{vorher['scroll']}) liegen — sonst kappt nichts"
+
+    # Klick in der ZWEITEN Card; rechts von ihr steht die dritte, die wird
+    # ersetzt (die Regel aus #1509 fuer den schlichten Klick).
+    page.execute_script(<<~JS)
+      window.dispatchEvent(new CustomEvent("blade-stack:append", { detail: {
+        kind: "ki", id: "#{@items[3].uuid}",
+        quelleId: "stack_card_#{@items[1].uuid}", oeffnen: "ersetzen" } }))
+    JS
+    assert_selector "article.stack-card[data-uuid='#{@items[3].uuid}']", wait: 15
+    assert_no_selector "article.stack-card[data-uuid='#{@items[2].uuid}']", wait: 10
+    sleep 0.8
+
+    nachher = messen
+    assert_equal 3, nachher["cards"], "ersetzt, nicht angehaengt"
+    assert_in_delta vorher["scroll"], nachher["scroll"], 2,
+                    "der Stapel darf beim Ersetzen nicht wegspringen " \
+                    "(#{vorher['scroll']} → #{nachher['scroll']})"
     assert_in_delta vorher["streifen"], nachher["streifen"], 2,
                     "und die weggescrollte Card darf nicht wieder aufklappen " \
                     "(#{vorher['streifen']}px → #{nachher['streifen']}px)"

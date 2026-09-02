@@ -1862,15 +1862,28 @@ class BladeStackController extends Controller {
       await this._appendBladeAtUrl({ stackId, url })
       return true
     }
+    // #1501 R2 (gemeldet von immoos_builder, mit Browser-Zahlen von Hans belegt):
+    // Beim Ersetzen wurden die alten Cards ENTFERNT, bevor die neue geladen war
+    // — und dazwischen liegt ein Netzwerk-Zugriff, also eine echte Pause. Das
+    // Entfernen weckt den MutationObserver (er reagiert auch auf entfernte
+    // Knoten), der laesst restickify() und damit _syncEndSpacer() laufen; der
+    // End-Freiraum schrumpft auf die verbliebenen Cards, die maximale
+    // Scrollposition faellt unter den aktuellen Wert, und der BROWSER kappt
+    // scrollLeft. Ein gekappter Wert ist weg — das spaetere Einfuegen holt ihn
+    // nicht zurueck. Sichtbar wurde das als aufklappende Spines links (Hans'
+    // Messung im Fork: 388 → 0, Streifen 28 → 416 px).
+    //
+    // Deshalb: erst fragen, dann laden, und Entfernen + Einfuegen zum Schluss
+    // in EINEM synchronen Zug. Nebengewinn: Schlaegt das Laden fehl, steht der
+    // Stapel nicht mehr verstuemmelt da (alte Cards weg, neue nie gekommen).
+    let doomed = []
     if (art === "ersetzen") {
-      const doomed = []
       let cur = quelle.nextElementSibling
       while (cur) {
         if (cur.classList?.contains("stack-card")) doomed.push(cur)
         cur = cur.nextElementSibling
       }
       if (!this._confirmDiscardDrafts(doomed)) return false
-      doomed.forEach(c => c.remove())
     }
 
     const res = await fetch(url, { headers: { "Accept": "text/html" } })
@@ -1895,11 +1908,18 @@ class BladeStackController extends Controller {
       this.restickify()
       this.containerTarget.scrollLeft = vorher + (this.containerTarget.scrollWidth - breiteVorher)
     } else {
+      // #1501 R2: Position VOR dem Umbau merken und danach begrenzt
+      // wiederherstellen — dasselbe Muster wie im Zweig „links" darueber.
+      // Entfernen und Einfuegen stehen bewusst ohne Unterbrechung beieinander.
+      const vorher = this.containerTarget.scrollLeft
+      doomed.forEach(c => c.remove())
       let ref = quelle
       nodes.forEach(n => { ref.after(n); ref = n })
       this._uniquifyCardId(card)
       this._applySavedWidth(card)
       this.restickify()
+      const max = Math.max(0, this.containerTarget.scrollWidth - this.containerTarget.clientWidth)
+      this.containerTarget.scrollLeft = Math.min(vorher, max)
     }
     requestAnimationFrame(() => this._scrollCardIntoFocus(card))
     return true

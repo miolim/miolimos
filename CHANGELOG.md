@@ -41,6 +41,19 @@ release is cut, this section is renamed to the new version and a fresh
 - "This is me" moved to the top of the Preferences card (#1500) — it is the
   only entry there that says who you are; the rest says how things look.
 
+### Fixed
+
+- Replacing a card no longer makes the stack jump back to the left (#1501,
+  reported by immoos_builder). The cards being replaced were removed *before*
+  the new one had loaded, and a network request sits in between: the stack
+  briefly got narrower, the browser clamped the scroll position to the smaller
+  maximum, and a clamped value is gone — inserting the new card afterwards did
+  not bring it back. What you saw was the cards on the left unfolding again
+  after every click. Loading now happens first, and removing and inserting
+  happen together in one go. A failed load also no longer leaves the stack
+  mutilated: previously the old cards were already gone and the new one never
+  arrived; now everything stays and you only see the error.
+
 ### Removed
 
 - The plus buttons for appending a card, in the lists and in the sidebar

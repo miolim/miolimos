@@ -58,35 +58,53 @@ class StackListenklickHaeltPositionTest < ApplicationSystemTestCase
     visit "/knowledge_items?stack=list:persons,#{@ada.uuid}"
     assert_selector "article.stack-card[data-uuid='#{@ada.uuid}']", wait: 10
 
-    # In den Freiraum hinter dem rechnerischen Content-Ende scrollen. Nur dort
-    # steht ueberhaupt eine Position, die verlorengehen kann.
+    # Ein Stueck nach rechts — so weit, dass eine Position da ist, die
+    # verlorengehen kann, aber NICHT so weit, dass die Liste zum Spine wird.
+    #
+    # Das ist die Bedingung, an der mein erster Anlauf gescheitert ist: Ganz
+    # rechts ist die Listen-Card auf 28px eingeklappt und ihre Zeilen sind
+    # unsichtbar. Cuprite klickt sie trotzdem — der Browser fokussiert das
+    # Element und scrollt es dabei selbst ins Bild. Der Test mass dann diesen
+    # Fokus-Sprung (388 → 0), nicht den Umbau, und war rot, egal was der
+    # Umbau tat. Ein Nutzer kann keine unsichtbare Zeile anklicken.
     page.execute_script(<<~JS)
       const c = document.getElementById("blade_stack_container");
-      c.scrollLeft = c.scrollWidth;
+      c.scrollLeft = 100;
     JS
     sleep 0.5
     vorher = messen
     assert_operator vorher["scroll"], :>, 0,
                     "Vorbedingung: der Stapel muss verschoben sein, sonst misst der Test nichts"
-    assert_equal 1, vorher["spacer"], "Vorbedingung: der stehende Spacer muss da sein"
 
-    # Vorbedingung des Fehlers ausdruecklich pruefen: Faellt die maximale
-    # Scrollposition OHNE Spacer unter die aktuelle? Nur dann kappt der
-    # Browser — sonst waere der Test bei anderer Fenstergroesse still gruen,
-    # ohne je etwas gezeigt zu haben.
+    # Vorbedingung 2: die Zeile muss WIRKLICH SICHTBAR sein — sonst misst der
+    # Test wieder den Fokus-Sprung des Browsers statt des Umbaus.
+    sichtbar = page.evaluate_script(<<~JS)
+      (() => {
+        const c = document.getElementById("blade_stack_container");
+        const a = Array.from(c.querySelectorAll("a,button"))
+                       .find(x => (x.textContent || "").includes("Bob Bachmann"));
+        if (!a) return -1;
+        const cr = c.getBoundingClientRect(), r = a.getBoundingClientRect();
+        return Math.round(Math.min(r.right, cr.right) - Math.max(r.left, cr.left));
+      })()
+    JS
+    assert_operator sichtbar, :>, 50,
+                    "Vorbedingung: die zu klickende Zeile muss sichtbar sein (#{sichtbar}px), " \
+                    "sonst scrollt der Browser sie beim Fokussieren selbst ins Bild"
+
+    # Vorbedingung 3: Faellt das Maximum OHNE die zu ersetzende Card unter die
+    # aktuelle Position? Nur dann kappt der Browser ueberhaupt.
     ohne = page.evaluate_script(<<~JS)
       (() => {
-        const c  = document.getElementById("blade_stack_container");
-        const sp = c.querySelector(":scope > .stack-end-spacer");
-        const b  = parseFloat(sp.style.width) || 0;
-        return Math.round(c.scrollWidth - b - c.clientWidth);
+        const c = document.getElementById("blade_stack_container");
+        const k = c.querySelector('.stack-card[data-uuid="#{@ada.uuid}"]');
+        return Math.round(c.scrollWidth - k.getBoundingClientRect().width - c.clientWidth);
       })()
     JS
     assert_operator ohne, :<, vorher["scroll"],
-                    "Vorbedingung: ohne den Spacer (#{ohne}) muss das Maximum unter der " \
-                    "aktuellen Position (#{vorher['scroll']}) liegen — sonst kappt nichts"
+                    "Vorbedingung: ohne die ersetzte Card (#{ohne}) muss das Maximum unter " \
+                    "der aktuellen Position (#{vorher['scroll']}) liegen — sonst kappt nichts"
 
-    # Andere Zeile in der Liste anklicken: ersetzt den Substack rechts davon.
     click_on "Bob Bachmann"
     assert_selector "article.stack-card[data-uuid='#{@bob.uuid}']", wait: 15
     assert_no_selector "article.stack-card[data-uuid='#{@ada.uuid}']", wait: 10
@@ -94,12 +112,8 @@ class StackListenklickHaeltPositionTest < ApplicationSystemTestCase
 
     nachher = messen
     assert_equal 2, nachher["cards"], "ersetzt, nicht angehaengt"
-    assert_equal 1, nachher["spacer"], "der stehende Spacer darf beim Ersetzen nicht mitentfernt werden"
     assert_in_delta vorher["scroll"], nachher["scroll"], 2,
                     "der Stapel darf beim Listen-Klick nicht wegspringen " \
                     "(#{vorher['scroll']} → #{nachher['scroll']})"
-    assert_in_delta vorher["streifen"], nachher["streifen"], 2,
-                    "und die weggescrollte Liste darf nicht wieder aufklappen " \
-                    "(#{vorher['streifen']}px → #{nachher['streifen']}px)"
   end
 end

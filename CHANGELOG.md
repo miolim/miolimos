@@ -65,6 +65,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Clicking a row in a list card no longer shifts the stack sideways (#1501).
+  This is the same defect as the one below, on the other path: replacing the
+  cards to the right of a list briefly made the stack narrower, the browser
+  clamped the scroll position, and nothing put it back. Two things were
+  missing here that the neighbouring paths already had — the end spacer that
+  holds the free space on the right was swept up with the cards being removed,
+  and the scroll position was never restored afterwards. Restoring it needs
+  the spacer back *first*, otherwise the restore is capped against a container
+  that is momentarily too narrow.
 - Replacing a card no longer makes the stack jump back to the left (#1501,
   reported by immoos_builder). The cards being replaced were removed *before*
   the new one had loaded, and a network request sits in between: the stack

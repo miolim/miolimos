@@ -1198,6 +1198,22 @@ class BladeStackController extends Controller {
     this._setEndSpacerWidth(Math.max(standing, preserve))
   }
 
+  // #1501 R3: Position nach einem Card-Ersatz wiederherstellen.
+  //
+  // Die Reihenfolge ist der ganze Punkt: ERST den Freiraum zurueckgeben, DANN
+  // scrollen. Andersherum begrenzt `max` gegen einen Container, der gerade
+  // schmaler ist als der, in dem der Nutzer stand — und die Position ist weg,
+  // obwohl sie gleich wieder moeglich waere. `_syncEndSpacer` pendelt den
+  // Spacer beim naechsten restickify() von selbst wieder ein, dann aber gegen
+  // die WIEDERHERGESTELLTE Position. Gleiches Vorgehen wie nach dem Morph.
+  _restoreScrollAfterUmbau(scrollVorher, spacerVorher) {
+    if (spacerVorher > 0 && !this._mediaMobile?.matches) {
+      this._setEndSpacerWidth(Math.max(spacerVorher, this._endSpacerWidthNow()))
+    }
+    const max = Math.max(0, this.containerTarget.scrollWidth - this.containerTarget.clientWidth)
+    this.containerTarget.scrollLeft = Math.min(scrollVorher, max)
+  }
+
   // #1091 v4: Regal-Schritt — eine Wheel-/Tastatur-Geste im Freiraum.
   // Vorwaerts (dir>0): naechste Card rueckt in den linken Spine-Stapel.
   // Rueckwaerts (dir<0): die zuletzt eingestapelte faehrt wieder aus.
@@ -1540,6 +1556,20 @@ class BladeStackController extends Controller {
     if (!card) return
     this.containerTarget.querySelectorAll(":scope > p").forEach(el => el.remove())
 
+    // #1501 R3: Position VOR dem Umbau merken. Beim Ersetzen kann die neue
+    // Card schmaler sein als die weggenommene — dann faellt das Maximum
+    // zurecht, und ohne Wiederherstellung bliebe der Stapel dort stehen, wohin
+    // der Browser ihn gekappt hat. Dasselbe Muster wie im Zweig „links
+    // einfuegen" und in _oeffneNeben (R2); nur dieser Pfad hatte es nie.
+    const scrollVorher = this.containerTarget.scrollLeft
+    // Und die Spacer-Breite dazu. Der End-Freiraum ist zum Teil aus der
+    // Scrollposition selbst abgeleitet (#1091 v4: max(stehend, erhaltend)).
+    // Kappt der Browser die Position waehrend des Umbaus, faellt beim
+    // naechsten restickify() auch der erhaltende Anteil weg — und dann hat
+    // die Wiederherstellung kein Ziel mehr, auf das sie zurueckkoennte.
+    // Dasselbe Rezept wie beim Page-Morph (#1091 v3b, _morphSpacerW).
+    const spacerVorher = this._endSpacerWidthNow()
+
     if (sourceListCard && mode === "replace_substack") {
       // #593: Abbruch, wenn der Nutzer dirty Entwürfe nicht verwerfen will.
       if (!this._replaceSubStackAfter(sourceListCard)) return
@@ -1553,6 +1583,9 @@ class BladeStackController extends Controller {
     this._uniquifyCardId(card)
     this._applySavedWidth(card)   // #601: VOR dem Scroll, sonst Default-Breite
     this.restickify()
+    if (sourceListCard && mode === "replace_substack") {
+      this._restoreScrollAfterUmbau(scrollVorher, spacerVorher)
+    }
     requestAnimationFrame(() => {
       this._scrollCardIntoFocus(card)
     })
@@ -1580,12 +1613,21 @@ class BladeStackController extends Controller {
 
   // #593: liefert false, wenn der Nutzer das Verwerfen dirty Entwürfe in
   // den zu ersetzenden Cards ablehnt — der Aufrufer bricht dann ab.
+  // #1501 R3: NUR Cards einsammeln. Folgt kein weiteres Listen-Blade, liefert
+  // _subStackEndElement null und die Schleife laeuft bis ans Container-Ende —
+  // dort steht der stehende Spacer (#1091 v4) als direktes Kind. Ohne diesen
+  // Filter wurde er mitentfernt, und er ist genau das, was rechts den Freiraum
+  // haelt: `scrollWidth` faellt, die maximale Scrollposition sinkt unter die
+  // aktuelle, und der BROWSER kappt `scrollLeft`. Ein gekappter Wert ist weg.
+  // (Der Spacer taucht danach wieder auf — restickify legt ihn neu an. Genau
+  // das macht den Fehler so schwer zu sehen: Am Ende sieht alles vollstaendig
+  // aus, nur die Scrollposition fehlt.)
   _replaceSubStackAfter(sourceListCard) {
     const endEl = this._subStackEndElement(sourceListCard)
     const doomed = []
     let cur = sourceListCard.nextElementSibling
     while (cur && cur !== endEl) {
-      doomed.push(cur)
+      if (cur.classList?.contains("stack-card")) doomed.push(cur)
       cur = cur.nextElementSibling
     }
     if (!this._confirmDiscardDrafts(doomed)) return false
@@ -1911,15 +1953,15 @@ class BladeStackController extends Controller {
       // #1501 R2: Position VOR dem Umbau merken und danach begrenzt
       // wiederherstellen — dasselbe Muster wie im Zweig „links" darueber.
       // Entfernen und Einfuegen stehen bewusst ohne Unterbrechung beieinander.
-      const vorher = this.containerTarget.scrollLeft
+      const vorher       = this.containerTarget.scrollLeft
+      const spacerVorher = this._endSpacerWidthNow()
       doomed.forEach(c => c.remove())
       let ref = quelle
       nodes.forEach(n => { ref.after(n); ref = n })
       this._uniquifyCardId(card)
       this._applySavedWidth(card)
       this.restickify()
-      const max = Math.max(0, this.containerTarget.scrollWidth - this.containerTarget.clientWidth)
-      this.containerTarget.scrollLeft = Math.min(vorher, max)
+      this._restoreScrollAfterUmbau(vorher, spacerVorher)
     }
     requestAnimationFrame(() => this._scrollCardIntoFocus(card))
     return true

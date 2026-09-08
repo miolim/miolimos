@@ -4,21 +4,21 @@ require "uri"
 require "base64"
 
 module Llm
-  # Schmaler Chat-Completion-Client. Auto-Detection in Reihenfolge:
+  # Schmaler Chat-Completion-Client. Auto-Detection:
   #   1. ANTHROPIC_API_KEY gesetzt → Anthropic-Client (Claude)
-  #   2. Ollama erreichbar mit Chat-Modell → Ollama-Client
-  #   3. raise UnavailableError
+  #   2. sonst raise UnavailableError
   #
   # Nutzung:
   #   resp = Llm::ChatClient.complete(
   #     prompt: "Fasse diesen Text zusammen: …",
-  #     model:  "ollama:llama3.1:8b"  # optional Override
+  #     model:  "anthropic:claude-haiku-4-5"  # optional Override
   #   )
+  #
+  # #1546: Der lokale Ollama-Zweig ist entfallen — der Dienst ist von der
+  # Maschine genommen; Anthropic war ohnehin der einzige benutzte Weg.
   module ChatClient
     class UnavailableError < StandardError; end
 
-    DEFAULT_OLLAMA_HOST  = ENV.fetch("OLLAMA_HOST", "http://localhost:11434")
-    DEFAULT_OLLAMA_MODEL = ENV.fetch("OLLAMA_CHAT_MODEL", "llama3.1:8b")
     DEFAULT_ANTHROPIC_MODEL = ENV.fetch("ANTHROPIC_MODEL", "claude-haiku-4-5")
 
     # #628 W0: Preise (USD pro 1M Tokens, [input, output]) für die
@@ -53,27 +53,20 @@ module Llm
     end
 
     # #628 W0: optionales `activity:` (LlmActivity) — der Anthropic-Pfad
-    # schreibt input/output_tokens + cost_eur daran. Ollama ist lokal
-    # (Kosten 0, keine Usage-Erfassung).
+    # schreibt input/output_tokens + cost_eur daran.
     # #934: optional `pdf_bytes:` (PDF als document-Block mitschicken) und
     # `schema:` (JSON-Schema; erzwingt schema-valides JSON via Structured
-    # Outputs). Beides Anthropic-only — Ollama kann weder PDF noch Schema.
+    # Outputs).
     def self.complete(prompt:, model: nil, system: nil, max_tokens: 2048, activity: nil,
                       pdf_bytes: nil, schema: nil)
       provider, model_name = parse_model(model)
       provider ||= detect_provider
-      raise UnavailableError, "Kein LLM-Client verfügbar (Ollama läuft nicht, ANTHROPIC_API_KEY fehlt)" unless provider
+      raise UnavailableError, "Kein LLM-Client verfügbar (ANTHROPIC_API_KEY fehlt)" unless provider
+      raise UnavailableError, "Unbekannter LLM-Anbieter: #{provider}" unless provider == :anthropic
 
-      case provider
-      when :anthropic
-        Anthropic.new.complete(prompt: prompt, model: model_name || DEFAULT_ANTHROPIC_MODEL,
-                                system: system, max_tokens: max_tokens, activity: activity,
-                                pdf_bytes: pdf_bytes, schema: schema)
-      when :ollama
-        raise UnavailableError, "PDF-/Schema-Extraktion braucht die Anthropic-API (ANTHROPIC_API_KEY fehlt)" if pdf_bytes || schema
-        Ollama.new.complete(prompt: prompt, model: model_name || DEFAULT_OLLAMA_MODEL,
-                             system: system)
-      end
+      Anthropic.new.complete(prompt: prompt, model: model_name || DEFAULT_ANTHROPIC_MODEL,
+                             system: system, max_tokens: max_tokens, activity: activity,
+                             pdf_bytes: pdf_bytes, schema: schema)
     end
 
     def self.parse_model(model)
@@ -83,49 +76,7 @@ module Llm
     end
 
     def self.detect_provider
-      return :anthropic if anthropic_api_key.present?
-      return :ollama    if Ollama.new.available?
-      nil
-    end
-
-    # ─── Ollama ──────────────────────────────────────────────────────────
-    class Ollama
-      def initialize(host: DEFAULT_OLLAMA_HOST)
-        @host = host
-      end
-
-      def available?
-        uri = URI("#{@host}/api/tags")
-        Net::HTTP.start(uri.host, uri.port, open_timeout: 1, read_timeout: 1) do |http|
-          res = http.request(Net::HTTP::Get.new(uri.path))
-          return false unless res.is_a?(Net::HTTPSuccess)
-          # Mindestens 1 Modell vorhanden, das nicht nur ein Embedder ist?
-          # Heuristik: bge/embed im Namen → vermutlich Embedder, ignorieren.
-          tags = JSON.parse(res.body)["models"] || []
-          tags.any? { |m| !m["name"].to_s.match?(/embed|bge/i) }
-        end
-      rescue
-        false
-      end
-
-      def complete(prompt:, model:, system: nil)
-        uri  = URI("#{@host}/api/chat")
-        msgs = []
-        msgs << { role: "system",  content: system } if system.present?
-        msgs << { role: "user",    content: prompt }
-        body = { model: model, messages: msgs, stream: false }.to_json
-
-        # Read-Timeout 10 min — CPU-Inferenz auf einem 8B-Modell für
-        # eine ~1k-Token-Zusammenfassung dauert leicht 2–5 Minuten.
-        # Erstes Laden des Modells in RAM addiert nochmal ~30–60s.
-        Net::HTTP.start(uri.host, uri.port, read_timeout: 600, open_timeout: 5) do |http|
-          req = Net::HTTP::Post.new(uri.path, "Content-Type" => "application/json")
-          req.body = body
-          res = http.request(req)
-          raise UnavailableError, "Ollama HTTP #{res.code}: #{res.body.to_s.truncate(200)}" unless res.is_a?(Net::HTTPSuccess)
-          JSON.parse(res.body).dig("message", "content").to_s
-        end
-      end
+      :anthropic if anthropic_api_key.present?
     end
 
     # ─── Anthropic ───────────────────────────────────────────────────────

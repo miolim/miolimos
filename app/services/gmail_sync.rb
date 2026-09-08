@@ -270,16 +270,6 @@ class GmailSync
       assign_projects(comm)
     end
 
-    # Phase 6a: Nach der Aufnahme sofort klassifizieren. Fällt still
-    # durch, wenn Ollama nicht erreichbar ist.
-    if comm
-      begin
-        Classifiers::EmailTopicSuggester.new.apply(comm)
-      rescue => e
-        Rails.logger.warn("GmailSync: classifier failed on #{comm.external_id}: #{e.class} #{e.message}")
-      end
-    end
-
     result.created += 1
   rescue ActiveRecord::RecordNotUnique
     # race with a concurrent sync — not an error

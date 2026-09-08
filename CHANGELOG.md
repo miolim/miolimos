@@ -93,6 +93,17 @@ release is cut, this section is renamed to the new version and a fresh
 - The "Sidebar click" preference (#1500). Whether a sidebar click navigates or
   appends is no longer a setting — a plain click navigates, a modifier
   appends.
+- The automatic topic classifier for emails and imported documents (#1546),
+  along with the local Ollama service it ran on. It guessed a topic from the
+  text and either assigned it or offered it for confirmation; the guesses were
+  not good enough to be worth the machine it needed — a permanent 1.6 GB of
+  memory on a host that is short of it. Topics assigned so far stay untouched,
+  and topics can be set by hand exactly as before. The "Classify" button, the
+  suggestion banner on an email, and the `communications:classify_all` task
+  are gone.
+- The local Ollama fallback in the LLM client (#1546). Text work has run
+  through Anthropic throughout; without an API key the client now says so
+  instead of quietly reaching for a local model that is no longer installed.
 
 ## [0.4.2] - 2026-08-31
 

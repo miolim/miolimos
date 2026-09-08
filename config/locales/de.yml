@@ -396,7 +396,6 @@ de:
       organization: "Organisation"
 
   communications:
-    ollama_unavailable: "Ollama nicht erreichbar — siehe phase6a-setup.md"
     select_communication: "Kommunikation auswählen"
     bulk_delete_confirm: "Ausgewählte Kommunikationen aus miolimOS löschen? (Gmail bleibt unverändert)"
     bulk_deleted:
@@ -405,7 +404,6 @@ de:
     bulk_assigned:
       one: "1 Kommunikation „%{topic}“ zugeordnet."
       other: "%{count} Kommunikationen „%{topic}“ zugeordnet."
-    setup_hint: "Setup-Hinweis in docs/ollama-setup.md"
     index_title:    "Inbox"
     list_title:     "Kommunikation"
     no_topic:       "Ohne Thema"
@@ -428,8 +426,6 @@ de:
     open_full:      "In Vollansicht öffnen"
     remove:         "Entfernen"
     remove_title:   "Aus miolimOS entfernen"
-    accept:         "Übernehmen"
-    reject:         "Ablehnen"
     open_in_inbox:  "In der Inbox öffnen"
     import_to_inbox: "In Inbox übernehmen"
     reply_placeholder: "Antwort an den Kunden …"
@@ -443,7 +439,6 @@ de:
     sort_sender:    "Absender"
     sort_subject:   "Betreff"
     remove_confirm: "Aus miolimOS entfernen? (Gmail bleibt unberührt)"
-    suggestion:     "Vorschlag:"
     create_topic:   "Thema anlegen"
     create_tag:     "Tag anlegen"
     role_sender:    "Von"
@@ -456,13 +451,9 @@ de:
     tasks_from_email: "Aufgaben aus dieser E-Mail"
     portal_reply:   "Portal-Antwort"
     portal_reply_submit: "Im Portal antworten"
-    classify:       "%{count} klassifizieren"
-    classifier_off: "Klassifikator aus"
-    classify_confirm: "%{count} Mails jetzt klassifizieren? Das kann ein paar Sekunden dauern."
     all_directions: "Alle Richtungen"
     none:           "Noch keine Kommunikation."
     no_results:     "Keine Treffer."
-    classify_all:   "klassifizieren"
     direction:
       inbound:  "eingehend"
       outbound: "ausgehend"

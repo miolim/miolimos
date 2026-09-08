@@ -2,8 +2,7 @@ class CommunicationsController < ApplicationController
   include KnowledgeStackHelpers
 
   before_action :set_communication, only: [:show, :destroy, :create_task, :create_awaiting,
-                                           :accept_topic_suggestion, :reject_topic_suggestion, :card,
-                                           :call_duration]
+                                           :card, :call_duration]
 
   # #163 Phase 5a-2: Listen-Blade fuer Cross-Entity-Stack.
   def list_card
@@ -42,42 +41,12 @@ class CommunicationsController < ApplicationController
                                      communication_mentions: :mentioned)
                            .limit(100)
 
-    # Classifier-Status für den Button im Header.
-    @unclassified_count   = Communication.visible_to(current_actor).left_joins(:communication_topics)
-                                         .where(communication_topics: { id: nil }).count
-    @classifier_available = Classifiers::OllamaEmbedder.new.available?
-
     # #163 Phase 6c: /communications ist eine Blade-Stack-Seite.
     if params[:stack].blank?
       params[:stack] = "list:communications"
     end
     @initial_stack_items  = build_initial_stack
     @initial_stack_bodies = bodies_for_initial_stack(@initial_stack_items)
-  end
-
-  # Batch-Klassifikation aller Mails ohne Topic-Zuordnung. Läuft
-  # synchron — für Hans' Mail-Volumen schnell genug; die Flash-
-  # Rückmeldung zeigt das Ergebnis.
-  def classify_all
-    embedder = Classifiers::OllamaEmbedder.new
-    unless embedder.available?
-      redirect_to communications_path,
-        alert: "Klassifikator nicht erreichbar (Ollama läuft nicht). Setup in docs/ollama-setup.md."
-      return
-    end
-
-    suggester = Classifiers::EmailTopicSuggester.new(embedder: embedder)
-    stats = Hash.new(0)
-    mails = Communication.visible_to(current_actor).left_joins(:communication_topics)
-                         .where(communication_topics: { id: nil })
-
-    mails.find_each do |mail|
-      result = suggester.apply(mail)
-      stats[result[:decision]] += 1
-    end
-
-    flash[:notice] = "Klassifikation fertig · auto=#{stats[:auto_assign]}  vorgeschlagen=#{stats[:suggest]}  übersprungen=#{stats[:skip]}"
-    redirect_to communications_path
   end
 
   def show
@@ -139,22 +108,6 @@ class CommunicationsController < ApplicationController
     end
   end
 
-  # Phase 6a — User übernimmt den Classifier-Vorschlag.
-  def accept_topic_suggestion
-    topic = @communication.suggested_topic
-    if topic
-      CommunicationTopic.find_or_create_by!(communication: @communication, topic: topic)
-      @communication.update_columns(suggested_topic_decided_at: Time.current)
-    end
-    redirect_back fallback_location: communication_path(@communication)
-  end
-
-  # User lehnt den Vorschlag ab; nur decided_at setzen, kein Topic verknüpfen.
-  def reject_topic_suggestion
-    @communication.update_columns(suggested_topic_decided_at: Time.current)
-    redirect_back fallback_location: communication_path(@communication)
-  end
-
   # #765 (Hans): Anrufdauer nachträglich setzen/ändern — synchronisiert
   # Event-Endzeit und Zeitbuchung mit (siehe Call#apply_duration!).
   def call_duration
@@ -205,7 +158,7 @@ class CommunicationsController < ApplicationController
 
   def controller_action_to_capability
     return "create" if %w[create_task create_awaiting].include?(action_name)
-    return "update" if %w[accept_topic_suggestion reject_topic_suggestion classify_all call_duration].include?(action_name)
+    return "update" if %w[call_duration].include?(action_name)
     super
   end
 

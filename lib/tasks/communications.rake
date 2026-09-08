@@ -86,35 +86,4 @@ namespace :communications do
     puts "prune_trash: pruned=#{pruned} kept=#{kept} errors=#{errors}"
   end
 
-  # Phase 6a — Retro-Klassifikation: alle Mails ohne Topic-Zuordnung
-  # durch den Suggester jagen. Idempotent: re-run wird Mails, die beim
-  # letzten Lauf als :suggest markiert wurden aber noch nicht entschieden
-  # sind, erneut klassifizieren (Topic-Embeddings oder Schwellwerte
-  # könnten sich geändert haben).
-  desc "Run topic classifier over communications without a topic"
-  task classify_all: :environment do
-    suggester = Classifiers::EmailTopicSuggester.new
-    unless suggester.send(:instance_variable_get, :@embedder).available?
-      puts "Ollama nicht erreichbar unter http://localhost:11434 — Abbruch."
-      puts "Setup: curl -fsSL https://ollama.com/install.sh | sh && ollama pull bge-m3"
-      next
-    end
-
-    stats = Hash.new(0)
-    mails = Communication.left_joins(:communication_topics)
-                          .where(communication_topics: { id: nil })
-
-    total = mails.count
-    puts "Klassifiziere #{total} Mails ohne Thema …"
-
-    mails.find_each.with_index(1) do |mail, i|
-      result = suggester.apply(mail)
-      stats[result[:decision]] += 1
-      if (i % 10).zero?
-        puts "  #{i}/#{total}  auto=#{stats[:auto_assign]}  suggest=#{stats[:suggest]}  skip=#{stats[:skip]}"
-      end
-    end
-
-    puts "Fertig. auto=#{stats[:auto_assign]}  suggest=#{stats[:suggest]}  skip=#{stats[:skip]}"
-  end
 end

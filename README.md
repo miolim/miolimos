@@ -25,7 +25,7 @@ Solid Queue/Cache/Cable (no Redis required).
 
 Optional, only for specific features (all degrade gracefully if absent —
 see [External services](#external-services)):
-Ollama, Anthropic/OpenAI API keys, Google (Gmail/Calendar) OAuth credentials,
+Anthropic/OpenAI API keys, Google (Gmail/Calendar) OAuth credentials,
 `yt-dlp`, `rclone`, Chrome/Chromium (document PDFs, system tests),
 Node.js 20+ (JS unit tests, development only).
 
@@ -128,8 +128,7 @@ feature:
 
 | Feature | Needs | Without it |
 | --- | --- | --- |
-| Inbox AI (transforms, summaries, tags) | `ANTHROPIC_API_KEY` (or local Ollama) | AI-assisted inbox steps unavailable |
-| Email classifier | Ollama + `bge-m3` (see [docs/ollama-setup.md](docs/ollama-setup.md)) | Classification is skipped silently |
+| Inbox AI (transforms, summaries, tags) | `ANTHROPIC_API_KEY` | AI-assisted inbox steps unavailable |
 | Email send/sync, Calendar | Google OAuth credentials (`google.*` in Rails credentials) | Email/calendar sync disabled |
 | Audio/video transcription | `OPENAI_API_KEY`, `yt-dlp` | Transcription unavailable |
 | Speaker recognition (diarization) | `ASSEMBLYAI_API_KEY` | Only plain Whisper transcription offered |

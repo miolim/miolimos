@@ -121,7 +121,6 @@ module Inbox
           create_records!(item, actor: actor)
         else
           extraction = analyze(item, path, actor: actor)
-          suggest_topic(item, extraction)
           if extraction["source"] == "zugferd"
             # #934 Stufe 2: deterministisch gelesene E-Rechnungen laufen ohne
             # Review durch — kein LLM-Risiko, die Invoice bleibt editierbar.
@@ -277,21 +276,6 @@ module Inbox
                                        uploaded_io: io, item_type: :transcript)
           end
         end
-      end
-
-      # #934 Stufe 2: Themen-Vorschlag für Dokumente ohne Mail-Kontext —
-      # dieselbe Embedding-Klassifikation wie bei E-Mails, gegen Titel/
-      # Absender/Typ der Extraktion. Nur der sichere AUTO-Fall wird
-      # übernommen; ohne Ollama (oder bei vorgepflegten Themen) No-Op.
-      def suggest_topic(item, extraction)
-        return if item.topics.any?
-        text = [extraction["title"], extraction.dig("sender", "name"),
-                extraction["doc_type"]].compact_blank.join("\n")
-        result = Classifiers::EmailTopicSuggester.new.suggest_text(text)
-        return unless result[:decision] == :auto_assign && result[:top]
-        InboxItemTopic.find_or_create_by!(inbox_item: item, topic: result[:top][:topic])
-      rescue => e
-        Rails.logger.warn("DocumentImport: Topic-Vorschlag fehlgeschlagen: #{e.class} #{e.message}")
       end
 
       # Titel der Standard-Aufgabe (identisch zum Review-UI, s. Locale-Key).

@@ -103,32 +103,6 @@
     </div>
   </div>
 
-  <%# Classifier-Vorschlag: nur sichtbar wenn vorgeschlagen und noch
-      nicht entschieden, UND das Thema ist nicht bereits verknüpft. %>
-  <% if comm.suggested_topic_id.present? &&
-        comm.suggested_topic_decided_at.nil? &&
-        !comm.topics.exists?(id: comm.suggested_topic_id) %>
-    <% suggestion = comm.suggested_topic %>
-    <% score_pct = ((comm.suggested_topic_score || 0) * 100).round %>
-    <div class="flex items-center gap-2 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px]">
-      <span class="text-emerald-700"><%= t("communications.suggestion") %></span>
-      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white text-emerald-900 border border-emerald-200">
-        <%= topic_dot suggestion %><%= suggestion.name %>
-      </span>
-      <span class="text-xs text-emerald-700"><%= score_pct %>%</span>
-      <div class="ml-auto flex items-center gap-2">
-        <%= button_to t("communications.accept"), accept_topic_suggestion_communication_path(comm),
-              method: :post,
-              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
-              class: "text-xs rounded bg-emerald-600 text-white px-2 py-1 hover:bg-emerald-700 cursor-pointer" %>
-        <%= button_to t("communications.reject"), reject_topic_suggestion_communication_path(comm),
-              method: :post,
-              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
-              class: "text-xs rounded border border-slate-200 px-2 py-1 text-slate-600 hover:bg-white cursor-pointer" %>
-      </div>
-    </div>
-  <% end %>
-
   <%# #696 R2 (Hans): Themen + Tags ÜBER dem Von/An-Bereich, mit EXAKT der
       Picker-UX der Aufgaben-Details-Section — Icon + Label + Full-Row-Hover
       (entity_picker mit icon:/label:; #695-Tags = bookmark wie task_tags). %>

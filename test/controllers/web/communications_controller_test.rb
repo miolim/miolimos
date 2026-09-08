@@ -104,28 +104,6 @@ class CommunicationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to task_path(task)
   end
 
-  test "POST /communications/:id/accept_topic_suggestion links the topic" do
-    topic = Topic.create!(name: "T", slug: "t-#{SecureRandom.hex(3)}", creator: @hans)
-    c = build_comm(subject: "Angebot")
-    c.update_columns(suggested_topic_id: topic.id, suggested_topic_score: 0.55,
-                     suggested_topic_decided_at: nil)
-
-    post "/communications/#{c.id}/accept_topic_suggestion"
-    assert_includes c.reload.topics, topic
-    assert_not_nil c.suggested_topic_decided_at
-  end
-
-  test "POST /communications/:id/reject_topic_suggestion marks decided without linking" do
-    topic = Topic.create!(name: "T", slug: "t-#{SecureRandom.hex(3)}", creator: @hans)
-    c = build_comm(subject: "Spam?")
-    c.update_columns(suggested_topic_id: topic.id, suggested_topic_score: 0.5,
-                     suggested_topic_decided_at: nil)
-
-    post "/communications/#{c.id}/reject_topic_suggestion"
-    assert_empty c.reload.topics
-    assert_not_nil c.suggested_topic_decided_at
-  end
-
   test "POST /communications/:id/create_awaiting creates awaiting with topics" do
     topic = Topic.create!(name: "T", slug: "t-#{SecureRandom.hex(3)}", creator: @hans)
     c = build_comm(subject: "Follow-up?")

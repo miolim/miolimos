@@ -321,7 +321,6 @@ Rails.application.routes.draw do
 
   resources :communications, only: [:index, :show, :destroy] do
     collection do
-      post :classify_all    # Batch-Klassifikation aller Mails ohne Thema
       get  :list_card       # #163 Phase 5a-2: Listen-Blade fuer Cross-Entity-Stack
       # #1018 (Hans, 2026-07-16): Batch-Edit — ids[] + Thema zuordnen/loeschen.
       post :bulk_update
@@ -335,8 +334,6 @@ Rails.application.routes.draw do
     member do
       post :create_task
       post :create_awaiting   # "Warte auf Antwort"
-      post :accept_topic_suggestion
-      post :reject_topic_suggestion
       get  :card              # #163 Phase 5b-1: Detail-Blade-Card-Fragment
       patch :call_duration    # #765: Anrufdauer nachträglich setzen/ändern
     end

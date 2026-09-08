@@ -1,6 +1,6 @@
 require "test_helper"
 # BEWUSST nicht webmock/minitest: dessen Require-Hook schaltet
-# disable_net_connect! prozessweit — und Ferrum (PDF) + lokales Ollama
+# disable_net_connect! prozessweit — und Ferrum (PDF)
 # brauchen in anderen Tests echtes localhost-HTTP. Hier: plain webmock,
 # scharf nur zwischen setup und teardown dieses einen Tests.
 require "webmock"

@@ -98,6 +98,17 @@ export default class extends Controller {
     // ResizeObserver holt es nach, sobald es wieder Groesse hat.
     if (!content || !content.offsetHeight) return
 
+    // #1572 Nachtrag (Hans, 2026-09-12): `bottom: 0` klebt an der
+    // INNEN-Kante des Scroll-Containers — sein `padding-bottom`
+    // scrollt mit, und in diesem Streifen lief der Text weiter unter
+    // dem Feld durch. Die Klebe-Linie deshalb um genau dieses Padding
+    // nach unten schieben, dann schliesst das Feld buendig mit der
+    // Card-Kante ab. Nebeneffekt, der zusammenpasst: das Kleben
+    // beginnt jetzt an derselben Kante, an der auch die Hoehenrechnung
+    // misst (`viewBottom`).
+    const padBottom = parseFloat(getComputedStyle(this.scroller).paddingBottom) || 0
+    this.element.style.bottom = padBottom ? `-${padBottom}px` : ""
+
     const cs      = getComputedStyle(content)
     const es      = getComputedStyle(editor)
     const borderY = (parseFloat(es.borderTopWidth) || 0) + (parseFloat(es.borderBottomWidth) || 0)

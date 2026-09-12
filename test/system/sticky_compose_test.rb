@@ -29,7 +29,11 @@ class StickyComposeTest < ApplicationSystemTestCase
       if (!view) return null
       const f = form.getBoundingClientRect()
       const v = view.getBoundingClientRect()
+      // Was liegt direkt ueber der Card-Unterkante? Dort darf kein
+      // Text durchscheinen, sondern nur das Feld selbst.
+      const unten = document.elementFromPoint(f.left + f.width / 2, v.bottom - 3)
       return {
+        deckelDicht: !!(unten && form.contains(unten)),
         editorHeight: editor ? editor.getBoundingClientRect().height : 0,
         formBottom: f.bottom, formTop: f.top,
         viewBottom: v.bottom, viewTop: v.top,
@@ -93,11 +97,14 @@ class StickyComposeTest < ApplicationSystemTestCase
     scrolle(unten["maxScroll"] - 300)
     oben = mess
 
-    assert oben["formBottom"] <= oben["viewBottom"] + 1,
-      "Feld darf nicht unter die Card-Kante rutschen (#{oben['formBottom']} > #{oben['viewBottom']})"
-    assert oben["formBottom"] > oben["viewBottom"] - 40,
-      "Feld muss am unteren Rand kleben, nicht mitgescrollt sein " \
+    # #1572 Nachtrag (Hans): buendig mit der Card-Kante. Vorher blieb
+    # das `padding-bottom` des Scroll-Containers (16px) frei, und der
+    # Text scrollte in diesem Streifen unter dem Feld weiter.
+    assert_in_delta oben["viewBottom"], oben["formBottom"], 1,
+      "Feld muss buendig mit der Card-Unterkante abschliessen " \
       "(formBottom=#{oben['formBottom']}, viewBottom=#{oben['viewBottom']})"
+    assert oben["deckelDicht"],
+      "Direkt ueber der Card-Kante darf kein Text durchscheinen — dort gehoert das Feld hin"
     assert oben["formTop"] < oben["viewBottom"],
       "Feld muss im sichtbaren Bereich liegen"
   end
@@ -136,8 +143,10 @@ class StickyComposeTest < ApplicationSystemTestCase
       "Feld muss auf die Minimalgroesse zusammengehen (#{klein['editorHeight']}px)"
     assert klein["editorHeight"] > 40,
       "Feld darf nicht unter zwei Zeilen fallen (#{klein['editorHeight']}px)"
-    assert klein["formBottom"] <= klein["viewBottom"] + 1,
-      "Feld klebt auch in Minimalgroesse am unteren Rand"
+    assert_in_delta klein["viewBottom"], klein["formBottom"], 1,
+      "Feld klebt auch in Minimalgroesse buendig am unteren Rand"
+    assert klein["deckelDicht"],
+      "Auch mit sichtbaren Knoepfen darf darunter kein Text durchscheinen"
 
     # Zurueck an den Boden: wieder volle Hoehe, nichts bleibt geschrumpft.
     scrolle(-1)

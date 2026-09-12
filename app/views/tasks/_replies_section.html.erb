@@ -73,18 +73,24 @@
         Strg+Umschalt+Enter=Senden). %>
     <%# #533 #1: Auto-Timer — beim aktiven Tippen startet der Aufgaben-Timer,
         beim Absenden (Entwurf/Senden) endet er. %>
+    <%# #1572 (Hans, 2026-09-12): Das Compose-Form klebt am unteren Rand
+        der Card (sticky bottom-0), damit man beim Eingehen auf einzelne
+        Punkte einer langen Antwort nicht mehr hoch- und runterscrollen
+        muss. Der sticky-compose-Controller schrumpft das Feld beim
+        Hochscrollen bis auf zwei Zeilen. Klebe-Strecke ist dieser
+        content-Kasten, also der Antworten-Bereich. %>
     <%= form_with url: task_replies_path(task),
           method: :post, local: false,
           data: { reply_compose: true,
                   turbo_frame: "_top",
-                  controller: "buttons-when-filled dirty-warn reply-timer",
+                  controller: "buttons-when-filled dirty-warn reply-timer sticky-compose",
                   reply_timer_subject_type_value: "Task",
                   reply_timer_subject_id_value:   task.id,
                   reply_timer_start_url_value:    reply_start_time_entries_path,
                   reply_timer_end_url_value:      reply_end_time_entries_path,
                   reply_timer_pause_url_value:    reply_pause_time_entries_path,
                   action:     "input->buttons-when-filled#sync input->dirty-warn#mark input->reply-timer#begin submit->reply-timer#end focusin->reply-timer#begin focusout->reply-timer#pause" },
-          class: "flex flex-col gap-2 mt-2" do |f| %>
+          class: "flex flex-col gap-2 mt-2 sticky bottom-0 z-10 bg-white pt-2" do |f| %>
       <%# #373 Phase-Reply-CM6 (Hans, 2026-05-28): Reply-Textarea
           ueber CM6 visualisieren (Markdown-Highlights, Wikilink-/
           Mention-Autocomplete, Mod-Enter→Submit). %>

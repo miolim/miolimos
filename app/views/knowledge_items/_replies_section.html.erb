@@ -44,13 +44,19 @@
         ungespeicherter Antwort (analog Task-Replies). %>
     <%# #451 (Hans, 2026-06-02): data-reply-compose markiert das Antwort-
         Compose-Form fuer die Blade-Shortcuts. %>
+    <%# #1572 (Hans, 2026-09-12): Das Compose-Form klebt am unteren Rand
+        der Card (sticky bottom-0), damit man beim Eingehen auf einzelne
+        Punkte einer langen Antwort nicht mehr hoch- und runterscrollen
+        muss. Der sticky-compose-Controller schrumpft das Feld beim
+        Hochscrollen bis auf zwei Zeilen. Klebe-Strecke ist dieser
+        content-Kasten, also der Antworten-Bereich. %>
     <%= form_with url: knowledge_item_replies_path(item.uuid),
           method: :post, local: false,
           data: { reply_compose: true,
                   turbo_frame: "_top",
-                  controller: "buttons-when-filled dirty-warn",
+                  controller: "buttons-when-filled dirty-warn sticky-compose",
                   action:     "input->buttons-when-filled#sync input->dirty-warn#mark" },
-          class: "flex flex-col gap-2 mt-2" do |f| %>
+          class: "flex flex-col gap-2 mt-2 sticky bottom-0 z-10 bg-white pt-2" do |f| %>
       <%# #373 Phase-Reply-CM6 (Hans, 2026-05-28): Reply-Textarea
           ueber CM6 visualisieren (Markdown-Highlights, Wikilink-/
           Mention-Autocomplete, Mod-Enter→Submit). %>

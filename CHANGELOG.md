@@ -39,6 +39,16 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- The reply field now sticks to the bottom edge of the card (#1572). Going
+  through a long answer point by point used to mean scrolling up and down
+  between the passage and the input field, or opening the card a second time.
+  The field stays in reach instead: scrolling up shrinks it by exactly the
+  amount that would have slid out of view, down to two lines, and it stays
+  that size until you scroll back — then it expands to the full draft again.
+  It sticks over the replies area, which is where the answer you are replying
+  to lives; scrolling past that into the task description or the item's own
+  text leaves it behind, as before. An empty field sticks too, so you can
+  start writing at any point.
 - One rule for opening cards, everywhere (#1509). A click replaces everything
   to the right of the calling card, Shift adds one beside it, Shift+Alt adds
   one to its left, and Alt appends at the end of the stack; if the card is

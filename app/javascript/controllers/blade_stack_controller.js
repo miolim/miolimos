@@ -549,7 +549,10 @@ class BladeStackController extends Controller {
       // In Textfeldern gehoert das Aufziehen dem Nutzer.
       if (ziel.closest("input, textarea, select, [contenteditable=''], [contenteditable='true']")) return
       // Nur dort eingreifen, wo Umschalt ueberhaupt eine Bedeutung hat.
-      if (!ziel.closest("[data-controller~='blade-link']")) return
+      // #1576: Listenzeilen, die ueber openFromList / openDocument laufen, tragen
+      // dieselbe Regel, aber keinen blade-link-Controller — dort hat Umschalt+
+      // Klick bisher Text markiert.
+      if (!ziel.closest("[data-controller~='blade-link'], [data-action*='blade-stack#openFromList'], [data-action*='blade-stack#openDocument']")) return
       event.preventDefault()
     }
     document.addEventListener("mousedown", this._keineAuswahlBeiModifier, true)

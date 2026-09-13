@@ -157,32 +157,43 @@ export const BladeStackOpenersMixin = {
     })
   },
 
-  // #532: Dokument als Detail-Blade öffnen. data-document-id. Klick aus der
-  // Liste ersetzt den Sub-Stack (wie openFromList), sonst Append.
-  // #1151: STRG-Klick (Mac: Cmd) haengt an statt zu ersetzen (wie Plus).
+  // #532: Dokument als Detail-Blade öffnen. data-document-id.
+  // #1576 (Hans): „Ja, bitte entsprechend angleichen." Bis hierher galt noch
+  // #1151 (Strg/Cmd = anhaengen) — als einzige Liste, nachdem #1509 ueberall
+  // sonst auf die gemeinsame Regel umgestellt hatte. Jetzt dieselbe Weiche wie
+  // openFromList: nichts gedrueckt = ersetzen, Umschalt = rechts daneben,
+  // Umschalt+Alt = links daneben, Alt = ans Stapel-Ende; ist die Card offen,
+  // wird gesprungen. Strg/Cmd gehoert dem Browser. Die Zeile ist ein <li> ohne
+  // Link (Dokumente haben keine eigene Seite) — dort passiert dann schlicht
+  // nichts, statt wie bisher heimlich anzuhaengen.
   async openDocument(event) {
+    if (event.ctrlKey || event.metaKey) return   // gehoert dem Browser
     event.preventDefault()
     event.stopPropagation()
     const id = event.currentTarget.dataset.documentId
     if (!id) return
-    const append = event.ctrlKey || event.metaKey
-    const existing = this.cardForUuid(`document:${id}`)
-    if (existing && !append) {
+    const stackId  = `document:${id}`
+    const url      = `/documents/${encodeURIComponent(id)}/card`
+    const existing = this.cardForUuid(stackId)
+    if (existing) {
       this._expandCard(existing)
       existing.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
       this.setActiveCard(existing)
       return
     }
+    const art            = BladeLinkController.oeffnungsart(event)
+    const quelle         = event.target?.closest?.("article.stack-card")
     const sourceListCard = event.target?.closest?.("article.stack-card[data-uuid^='list:']")
-    const opts = { stackId: `document:${id}`, url: `/documents/${encodeURIComponent(id)}/card` }
-    if (append) opts.forceNew = true
-    if (sourceListCard) {
-      opts.sourceListCard = sourceListCard
-      opts.mode = append ? "append_to_substack" : "replace_substack"
-    } else if (append) {
-      opts.mode = "append_to_stack"
+    if (art !== "ersetzen" && quelle) {
+      if (!await this._oeffneNeben(stackId, url, quelle, art)) return
+    } else if (sourceListCard) {
+      await this._appendBladeAtUrl({ stackId, url, sourceListCard, mode: "replace_substack" })
+    } else {
+      await this._appendBladeAtUrl({ stackId, url })
     }
-    await this._appendBladeAtUrl(opts)
+    this.pushTrailState()
+    this.applyHighlighting()
+    this.refreshTrailControls()
     this.syncUrl({ pushHistory: true })
   },
 

@@ -39,6 +39,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- The documents list opens cards with the same clicks as every other list
+  (#1576): click replaces what is right of the list, Shift opens beside it,
+  Shift + Alt to its left, Alt at the end of the stack. Cmd/Ctrl + click no
+  longer appends there (a leftover from before #1509); it is left to the
+  browser like everywhere else. Shift + click on a list row no longer
+  selects text in lists that open cards this way.
 - The shortcut overview (`?`) is grouped under headings and now lists the
   mouse gestures too (#1576): the click modifiers for opening entries
   (click, Shift, Shift + Alt, Alt, Cmd/Ctrl), clicks on the spine, the

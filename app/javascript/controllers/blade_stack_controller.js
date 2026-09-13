@@ -51,6 +51,8 @@ class BladeStackController extends Controller {
     // #1573: Der Server hat den Stack aus dem Snapshot wiederhergestellt
     // (Dashboard ohne ?stack=, #1066) — die URL zieht dann sofort nach.
     serverRestored:    { type: Boolean, default: false },
+    // #1582: Startseiten-Vorliebe „leerer Stack" — nichts wiederherstellen.
+    startEmpty:        { type: Boolean, default: false },
     // #271: per-User-Vorlieben via Settings/Vorlieben. Layout schreibt
     // hier die Default-Card-Breiten in rem pro Card-Kind, plus die
     // Wheel-Schwellen — die ueberschreiben die hartcodierten Defaults.
@@ -585,6 +587,9 @@ class BladeStackController extends Controller {
       // Restore: Die Cards stehen schon, ein aelterer Stand aus dem
       // sessionStorage haengte sonst Karten an, die der Snapshot nicht hat.
       this.syncUrl({ pushHistory: false })
+    } else if (this.startEmptyValue) {
+      // #1582 (Hans): „mit einem leeren Stack, also ohne voreingestellte
+      // Card starten" — dann auch keinen gemerkten Stand nachladen.
     } else {
       this._restoreSessionStackIfNeeded()
     }

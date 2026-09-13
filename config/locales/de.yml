@@ -1419,6 +1419,10 @@ de:
     mail_compose_auto:   "Automatisch — Gmail, wenn dein Google-Konto verbunden ist, sonst Mail-Programm"
     mail_compose_gmail:  "Gmail (im Browser)"
     mail_compose_mailto: "Standard-Mail-Programm (mailto)"
+    # #1582: Startseite
+    start_stack_title: "Beim Start öffnen"
+    start_stack_help:  "Was erscheint, wenn Du miolimOS ohne bestimmte Seite öffnest oder Dich anmeldest. Ein Link auf eine bestimmte Card führt weiterhin dorthin; der Dashboard-Eintrag in der Seitenleiste öffnet weiterhin das Dashboard."
+    start_stack_empty: "Leerer Stack (keine Card)"
     saved:          "Einstellungen gespeichert."
     # #1500 (aus immoos uebernommen, Hans): „Die Kartenbreiten haben alle
     # englische Bezeichnungen, vermutlich aus dem Code. Gibt es dafür deutsche

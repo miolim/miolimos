@@ -57,6 +57,20 @@
       </div>
     </section>
 
+    <%# #1582 (Hans): welcher Stack beim Programmstart zuerst erscheint —
+        Dashboard, leer oder eine Seite aus der Seitenleiste. %>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.start_stack_title") %></h2>
+      <p class="text-xs text-slate-500 mb-3"><%= t("preferences.start_stack_help") %></p>
+      <select name="preferences[start_stack]"
+              class="text-sm border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+        <% ActorPreferences::START_STACK_OPTIONS.each do |option| %>
+          <% label = option == ActorPreferences::START_STACK_EMPTY ? t("preferences.start_stack_empty") : sidebar_item_label(option) %>
+          <option value="<%= option %>" <%= "selected" if current_actor.pref_start_stack == option %>><%= label %></option>
+        <% end %>
+      </select>
+    </section>
+
     <section class="px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-900 mb-1"><%= t("preferences.card_widths_title") %></h2>
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.card_widths_help") %></p>

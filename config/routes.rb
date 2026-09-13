@@ -23,7 +23,8 @@ Rails.application.routes.draw do
   delete "/logout", to: "sessions#destroy", as: :logout
 
   # ─── Web-UI ────────────────────────────────────────────────────────────
-  root to: redirect("/dashboard")
+  # #1582: Programmstart folgt der Startseiten-Vorliebe (Standard: Dashboard).
+  root to: "start#show"
 
   # #532 Phase 2: Theme-Werkbank für Dokument-Vorlagen.
   get "documents/preview", to: "documents#preview", as: :document_preview

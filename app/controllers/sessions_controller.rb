@@ -97,7 +97,8 @@ class SessionsController < ActionController::Base
     return_to = session[:return_to]
     reset_session
     session[:actor_id] = actor.id
-    redirect_to(return_to || dashboard_path)
+    # #1582: ohne Deep-Link zur Startseite aus den Vorlieben.
+    redirect_to(return_to || helpers.start_stack_path(actor))
   end
 
   def otp_pending_actor

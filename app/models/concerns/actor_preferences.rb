@@ -188,6 +188,25 @@ module ActorPreferences
 
   SIDEBAR_ITEM_IDS = SIDEBAR_ITEM_DEFAULTS.map(&:first).freeze
 
+  # #1582 (Hans): „Man soll festlegen können, welcher Stack beim Programmstart
+  # als erstes angezeigt wird. […] Es soll auch möglich sein, mit einem leeren
+  # Stack, also ohne voreingestellte Card zu starten."
+  #
+  # Zur Wahl stehen das Dashboard (wie bisher, inklusive des zuletzt offenen
+  # Stacks, #1066), ein leerer Stack und jeder Seitenleisten-Eintrag, der eine
+  # eigene Seite hat — dieselben IDs wie im Sidebar-Layout, damit ein neuer
+  # Eintrag dort auch hier ohne weitere Pflege auftaucht. „Zuletzt geöffnet"
+  # ist eine Themen-Liste in der Leiste, kein Ziel.
+  START_STACK_DEFAULT = "dashboard".freeze
+  START_STACK_EMPTY   = "empty".freeze
+  START_STACK_OPTIONS = ([START_STACK_DEFAULT, START_STACK_EMPTY] +
+                         (SIDEBAR_ITEM_IDS - %w[dashboard recent_topics])).freeze
+
+  def pref_start_stack
+    val = preferences["start_stack"].to_s
+    START_STACK_OPTIONS.include?(val) ? val : START_STACK_DEFAULT
+  end
+
   # Default-Layout ohne konkreten Actor (Fallback, wenn current_actor fehlt).
   def self.default_sidebar_layout
     layout = { "pinned" => [], "scroll" => [], "hidden" => [] }
@@ -320,6 +339,8 @@ module ActorPreferences
         new_prefs["locale"] = value.to_s if LOCALES.include?(value.to_s)
       when "mail_compose"
         new_prefs["mail_compose"] = value.to_s if MAIL_COMPOSE_TARGETS.include?(value.to_s)
+      when "start_stack"
+        new_prefs["start_stack"] = value.to_s if START_STACK_OPTIONS.include?(value.to_s)
       end
     end
     self.preferences = new_prefs

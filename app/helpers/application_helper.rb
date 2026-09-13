@@ -270,47 +270,85 @@ module ApplicationHelper
   # getrieben werden koennen. Unbekannte IDs => "" (robust gegen alte Layouts).
   def sidebar_item(id)
     ic = sidebar_item_icon(id)
+    path = sidebar_item_path(id)
     case id.to_s
     when "dashboard"
-      sidebar_link sidebar_item_label(id), dashboard_path, ic, reset_stack_id: "list:dashboard"
+      sidebar_link sidebar_item_label(id), path, ic, reset_stack_id: "list:dashboard"
     when "pinned"
-      sidebar_link sidebar_item_label(id), pinned_path, ic, blade_kind: "list", blade_id: "pinned"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "pinned"
     when "history"
-      sidebar_link sidebar_item_label(id), history_path, ic, blade_kind: "list", blade_id: "history"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "history"
     when "recent_topics"
       render "shared/sidebar_recent_topics"
     when "topics"
-      sidebar_link sidebar_item_label(id), topics_path, ic, blade_kind: "list", blade_id: "topics"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "topics"
     when "inbox"
-      sidebar_link sidebar_item_label(id), inbox_items_path, ic, blade_kind: "list", blade_id: "inbox_items"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "inbox_items"
     when "tasks"
-      sidebar_link sidebar_item_label(id), tasks_path, ic, blade_kind: "list", blade_id: "tasks"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "tasks"
     when "trash"
-      sidebar_link sidebar_item_label(id), trash_tasks_path, ic
+      sidebar_link sidebar_item_label(id), path, ic
     when "awaitings"
       render "shared/sidebar_awaitings"
     when "communications"
-      sidebar_link sidebar_item_label(id), communications_path, ic, blade_kind: "list", blade_id: "communications"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "communications"
     when "knowledge"
-      sidebar_link sidebar_item_label(id), knowledge_items_path, ic, blade_kind: "list", blade_id: "knowledge_items"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "knowledge_items"
     when "persons"
-      sidebar_link sidebar_item_label(id), knowledge_items_path(stack: "list:persons"), ic, blade_kind: "list", blade_id: "persons"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "persons"
     when "times"
-      sidebar_link sidebar_item_label(id), time_entries_path, ic, blade_kind: "list", blade_id: "time_entries"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "time_entries"
     when "calendar"
-      sidebar_link sidebar_item_label(id), calendar_path, ic, blade_kind: "list", blade_id: "calendar"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "calendar"
     when "documents"
-      sidebar_link sidebar_item_label(id), documents_path, ic, blade_kind: "list", blade_id: "documents"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "documents"
     when "invoices"
-      sidebar_link sidebar_item_label(id), invoices_path, ic, blade_kind: "list", blade_id: "invoices"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "invoices"
     when "sources"
-      sidebar_link sidebar_item_label(id), sources_path, ic, blade_kind: "list", blade_id: "sources"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "sources"
     when "docs"
-      sidebar_link sidebar_item_label(id), knowledge_items_path(item_type: "doc"), ic
+      sidebar_link sidebar_item_label(id), path, ic
     when "tags"
-      sidebar_link sidebar_item_label(id), tags_path, ic, blade_kind: "list", blade_id: "tags"
+      sidebar_link sidebar_item_label(id), path, ic, blade_kind: "list", blade_id: "tags"
     else
       "".html_safe
+    end
+  end
+
+  # #1582: Ziel-Seite eines Seitenleisten-Eintrags — einmal hier, damit die
+  # Leiste und die Startseiten-Vorliebe dieselbe Tabelle nutzen. nil für
+  # Einträge ohne eigene Seite („Zuletzt geöffnet") und unbekannte IDs.
+  def sidebar_item_path(id)
+    case id.to_s
+    when "dashboard"      then dashboard_path
+    when "pinned"         then pinned_path
+    when "history"        then history_path
+    when "topics"         then topics_path
+    when "inbox"          then inbox_items_path
+    when "tasks"          then tasks_path
+    when "trash"          then trash_tasks_path
+    when "awaitings"      then awaitings_path
+    when "communications" then communications_path
+    when "knowledge"      then knowledge_items_path
+    when "persons"        then knowledge_items_path(stack: "list:persons")
+    when "times"          then time_entries_path
+    when "calendar"       then calendar_path
+    when "documents"      then documents_path
+    when "invoices"       then invoices_path
+    when "sources"        then sources_path
+    when "docs"           then knowledge_items_path(item_type: "doc")
+    when "tags"           then tags_path
+    end
+  end
+
+  # #1582: Wohin der Programmstart führt (`/` und der Login ohne Deep-Link).
+  # Das Dashboard bleibt der Standard; „leer" ist die Dashboard-Seite ohne
+  # Card und ohne Wiederherstellen des letzten Stacks.
+  def start_stack_path(actor)
+    case (id = actor.pref_start_stack)
+    when ActorPreferences::START_STACK_DEFAULT then dashboard_path
+    when ActorPreferences::START_STACK_EMPTY   then dashboard_path(start: DashboardController::START_EMPTY)
+    else sidebar_item_path(id) || dashboard_path
     end
   end
 

@@ -15,8 +15,21 @@ class DashboardController < ApplicationController
   DEFAULT_STACK_TOKEN = "list:dashboard"
   LIST_HISTORY_KEY    = "stack.history.#{DEFAULT_STACK_TOKEN}".freeze
   PAGE_HISTORY_KEY    = "dashboard.stack.history"
+  # #1582: `?start=empty` — Startseiten-Vorliebe „leerer Stack".
+  START_EMPTY         = "empty"
 
   def index
+    # #1582 (Hans): „mit einem leeren Stack, also ohne voreingestellte Card
+    # starten". Nur ohne ausdrücklichen ?stack= — sobald eine Card offen ist,
+    # schreibt der Client den Stack in die URL, und der gewinnt beim Neuladen.
+    # Kein Snapshot-Restore, keine Sektionen: Die Dashboard-Card kommt ja nicht.
+    if params[:start] == START_EMPTY && params[:stack].blank?
+      @start_empty          = true
+      @initial_stack_items  = []
+      @initial_stack_bodies = {}
+      return
+    end
+
     load_dashboard_sections!
 
     # #214 / #163 Phase 5b-2: rechte Sektionen liegen jetzt im Blade-

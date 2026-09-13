@@ -17,6 +17,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- Choose what opens when you start miolimOS, under Settings → Preferences
+  (#1582). The dashboard stays the default, and still brings back the stack
+  you last had open. You can also start with an empty stack, or with any page
+  from the sidebar, such as Tasks or Knowledge. The choice applies when you
+  open the address without a specific page, and after signing in; a link to a
+  particular card still leads there, and clicking Dashboard in the sidebar
+  still opens the dashboard.
 - You can change your own password, under Settings → Security (#1520). Until
   now only someone with user administration could set a password — for anyone,
   including you. Changing it asks for your current password: a session left

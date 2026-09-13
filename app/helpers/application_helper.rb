@@ -111,7 +111,7 @@ module ApplicationHelper
     link_data[:"stack-reset-id"] = reset_id if reset_id
     link_data = sidebar_blade_daten(blade_kind, blade_id, link_data) if blade_kind && blade_id
     # #856 (immoOS): Label nur auf Desktop (md+) ausblenden, wenn collapsed —
-    # die Icon-Rail gibt es nur ab md (die w-14-Breite ist md:-guarded). Auf
+    # die Icon-Rail gibt es nur ab md (die w-9-Breite ist md:-guarded). Auf
     # Mobile ist die Sidebar immer ein w-60-Overlay, dort sollen die
     # Bezeichnungen IMMER sichtbar sein (sonst leere Icon-Spalte trotz voller
     # Breite). Gleiche md:-Logik wie an den Breiten-Klassen der Aside.

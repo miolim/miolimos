@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Desktop-Collapse für die Hauptnavigation. Schaltet zwischen Voll-
-// (w-60, Icon + Label) und Schmal-Modus (w-14, nur Icons) per
+// (w-60, Icon + Label) und Schmal-Modus (w-9, nur Icons; #1574) per
 // data-collapsed-Attribut. Tailwind data-Variants und group-data-
 // Selektoren übernehmen das Styling auf den Kindern.
 //

@@ -75,6 +75,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The icons in the collapsed sidebar are centered again (#1574). The narrow
+  sidebar was still as wide as it needed to be when a plus sign sat next to
+  each entry; since those were removed (#1509), the icons sat off to the
+  left. The collapsed sidebar is now 36px instead of 56px wide, and the
+  icons stay in the same place when it expands.
 - A large stack no longer freezes the page while it loads (#1573). Every
   text editor made the browser restyle the whole page: the library behind
   the editors rewrote its stylesheet each time one was created, even when

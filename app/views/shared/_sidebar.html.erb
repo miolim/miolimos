@@ -13,10 +13,18 @@
     Mobile-Logik bleibt unangetastet.
     #250 v2: solange die Sidebar persistent-collapsed ist, lebt sie
     DAUERHAFT als md:fixed-Overlay (nicht im Flex-Flow). Der Placeholder-
-    Sibling haelt den w-14-Slot, damit die Blades dort sitzen, wo sie
-    sollen. Hover aendert NUR die Aside-Breite (14 → 60) — kein
+    Sibling haelt den w-9-Slot, damit die Blades dort sitzen, wo sie
+    sollen. Hover aendert NUR die Aside-Breite (9 → 60) — kein
     Flow-Wechsel, kein hin-und-her-Verschieben. Erst Toggle (persistent
-    Expand) springt zurueck ins Flex-Flow mit md:static + w-60. %>
+    Expand) springt zurueck ins Flex-Flow mit md:static + w-60.
+    #1574 (Hans): „Auf der Sidebar sind die Icons aktuell nicht zentriert …
+    Bitte die Sidebar entsprechend schmaler machen." Jede Zeile legt ihr Icon
+    mit px-2 + w-5-Spalte ab, die Icon-Mitte liegt also bei 18px — in beiden
+    Modi, damit beim Auf- und Zuklappen nichts springt. Die schmale Leiste ist
+    deshalb 36px (w-9) breit statt 56px (w-14); die 20px Rest stammten aus der
+    Zeit mit Plus-Zeichen neben den Zeilen (bis #1509). Wer Zeilen-Padding oder
+    Icon-Spalte aendert, muss diese Breite mitziehen (test/system/
+    sidebar_schmal_zentriert_test.rb misst es nach). %>
 <aside data-controller="sidebar"
        data-ui-label="Seitenleiste (Navigation)"
        data-mobile-nav-target="sidebar"
@@ -28,7 +36,7 @@
               w-60
               fixed md:static inset-y-0 left-0 z-40
               data-[persistent-collapsed=true]:md:fixed
-              data-[persistent-collapsed=true]:md:w-14
+              data-[persistent-collapsed=true]:md:w-9
               data-[persistent-collapsed=true]:md:z-50
               data-[persistent-collapsed=true]:data-[hover-active=true]:md:w-60
               data-[persistent-collapsed=true]:data-[hover-active=true]:md:shadow-2xl
@@ -141,14 +149,14 @@
     die Sidebar selbst im Hover-Overlay-Modus aus dem Flow herausspringt
     (data-hover-active=true). Nur Desktop relevant — auf Mobile ist
     die Sidebar generell fixed/translate-x. Default w-0 (kein Layout-
-    Impact); im Overlay-Modus w-14 (matching collapsed-sidebar). %>
+    Impact); im Overlay-Modus w-9 (matching collapsed-sidebar, #1574). %>
 <%# #250 v2: Placeholder ist exakt dann sichtbar, wenn die Aside
     persistent collapsed ist (data-active="true" = collapsed). Haelt
-    den w-14-Flex-Slot besetzt, weil die Aside in dem Modus md:fixed
+    den w-9-Flex-Slot besetzt, weil die Aside in dem Modus md:fixed
     ist (out-of-flow). Bei persistent-Expanded ist der Placeholder
     inaktiv und die Aside selbst sitzt mit w-60 im Flow. %>
 <div data-sidebar-placeholder
      data-active="false"
      class="hidden md:shrink-0
             data-[active=true]:md:block
-            data-[active=true]:md:w-14"></div>
+            data-[active=true]:md:w-9"></div>

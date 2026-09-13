@@ -85,6 +85,12 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Clicking anywhere on a page no longer raises "Missing target element list"
+  from the `[[` link and `[@` citation suggestions (#1580). The rich text
+  editor takes over from these suggestion lists; when it did, the old lists
+  failed to remove their click listener, and every later click ran into a
+  list that was no longer theirs. They now let go cleanly, and a missing list
+  simply counts as closed.
 - The icons in the collapsed sidebar are centered again (#1574). The narrow
   sidebar was still as wide as it needed to be when a plus sign sat next to
   each entry; since those were removed (#1509), the icons sat off to the

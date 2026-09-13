@@ -153,6 +153,7 @@ export default class TextareaAutocompleteBase extends Controller {
     this.suggestions = []
     this.openStart   = null
     // #1580/immoOS #1578: eine fehlende Liste ist geschlossen.
+    if (!this.hasListTarget) return
     this.listTarget.classList.add("hidden")
     this.listTarget.innerHTML = ""
   }

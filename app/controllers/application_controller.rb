@@ -1,5 +1,7 @@
 class ApplicationController < ActionController::Base
   include Gated
+  # #1582 (aus immoOS #1581): ohne 2FA beim Start zuerst die Sicherheits-Card.
+  include SicherheitZuerst
 
   # require_login must run BEFORE Gated's enforce_access_gate, otherwise
   # AccessGate receives a nil current_actor (same bug we fixed in Api::V1).

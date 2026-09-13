@@ -30,7 +30,8 @@ class LoginRateLimitTest < ActionDispatch::IntegrationTest
 
     travel 4.minutes do
       post "/login", params: { email: @hans.email, password: "secretsecret" }
-      assert_redirected_to "/dashboard"
+      # #1582 R2: erfolgreicher Login — ohne 2FA zuerst die Sicherheits-Card.
+      assert_redirected_to "/settings?stack=settings%3Asecurity"
     end
   end
 

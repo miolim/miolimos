@@ -24,6 +24,11 @@ release is cut, this section is renamed to the new version and a fresh
   open the address without a specific page, and after signing in; a link to a
   particular card still leads there, and clicking Dashboard in the sidebar
   still opens the dashboard.
+- Without two-factor authentication set up, starting miolimOS first shows the
+  Security card (#1582, from immoOS #1581) — after signing in, and once per
+  session when you open the start page. After that you continue to your
+  chosen start page. A link to a particular card still leads there, and the
+  Dashboard entry in the sidebar is never redirected.
 - You can change your own password, under Settings → Security (#1520). Until
   now only someone with user administration could set a password — for anyone,
   including you. Changing it asks for your current password: a session left

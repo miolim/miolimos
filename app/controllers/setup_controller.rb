@@ -38,7 +38,9 @@ class SetupController < ActionController::Base
       CapabilityDefaults.grant_full!(@actor)
       reset_session
       session[:actor_id] = @actor.id
-      redirect_to dashboard_path, notice: t("setup.created")
+      # #1582: über den Start — der erste Admin hat noch keine 2FA, also kommt
+      # zuerst die Sicherheits-Card, danach die Startseite.
+      redirect_to root_path, notice: t("setup.created")
     else
       render :new, status: :unprocessable_entity
     end

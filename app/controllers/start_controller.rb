@@ -15,6 +15,19 @@ class StartController < ApplicationController
   skip_before_action :enforce_access_gate
 
   def show
+    # Meldungen (etwa „Instanz eingerichtet" aus dem Setup) über diesen
+    # Zwischenschritt hinweg erhalten.
+    flash.keep
+
+    # #1582 R2 (Hans, aus immoOS #1581): „Auch bei miolim_os sollte man
+    # beständig auf 2FA hingewiesen werden, wenn es noch nicht eingerichtet
+    # ist." Einmal je Sitzung — sonst wäre die Startseite ohne 2FA gar nicht
+    # erreichbar. Nicht in der Vorschau: Dort sieht ein Admin fremde Daten, der
+    # Zweitfaktor ist sein eigener.
+    if !previewing? && !session[:sicherheit_gezeigt] && sicherheit_zuerst?(real_actor)
+      return sicherheit_zuerst_umleiten!
+    end
+
     redirect_to helpers.start_stack_path(current_actor)
   end
 end

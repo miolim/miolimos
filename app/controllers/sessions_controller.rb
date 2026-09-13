@@ -1,5 +1,9 @@
 class SessionsController < ActionController::Base
   layout "auth"
+  # #1582 (aus immoOS #1581): ohne 2FA nach dem Login zuerst die Sicherheits-
+  # Card. Eigenes include, weil dieser Controller bewusst NICHT vom
+  # ApplicationController erbt (der Login darf nicht hinter require_login stehen).
+  include SicherheitZuerst
 
   # #209: CSRF-Verification fuer den Login-POST ausgeschaltet. In Prod
   # tritt regelmaessig `Can't verify CSRF token authenticity` auf, wenn
@@ -97,8 +101,19 @@ class SessionsController < ActionController::Base
     return_to = session[:return_to]
     reset_session
     session[:actor_id] = actor.id
+    # #1582 R2 (aus immoOS #1581): Ohne 2FA zuerst die Sicherheits-Card. Ein
+    # echter Deep-Link (etwa aus einer Mail) gewinnt — wer auf eine bestimmte
+    # Card wollte, soll dort ankommen; die Sicherheits-Card kommt dann beim
+    # nächsten Start (StartController). Die Startseite selbst ist kein Deep-Link.
+    if start_ziel?(return_to) && sicherheit_zuerst?(actor)
+      return sicherheit_zuerst_umleiten!
+    end
     # #1582: ohne Deep-Link zur Startseite aus den Vorlieben.
     redirect_to(return_to || helpers.start_stack_path(actor))
+  end
+
+  def start_ziel?(return_to)
+    return_to.blank? || return_to.split("?").first.in?(["/", dashboard_path])
   end
 
   def otp_pending_actor

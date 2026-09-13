@@ -22,7 +22,7 @@ class SetupControllerTest < ActionDispatch::IntegrationTest
         password: "sehrsicher123", password_confirmation: "sehrsicher123"
       } }
     end
-    assert_redirected_to "/dashboard"
+    assert_redirected_to "/"
 
     admin = HumanActor.last
     assert_equal "admin", admin.role
@@ -32,8 +32,14 @@ class SetupControllerTest < ActionDispatch::IntegrationTest
       assert AccessGate.can?(actor: admin, resource_type: rt, action: "delete"),
              "admin must be able to delete #{rt}"
     end
-    # direkt angemeldet: Dashboard erreichbar
+    # direkt angemeldet. #1582 R2: Der erste Admin hat noch keine 2FA — der
+    # erste Start zeigt deshalb zuerst die Sicherheits-Card, danach das Dashboard.
     follow_redirect!
+    assert_redirected_to "/settings?stack=settings%3Asecurity"
+    assert_equal I18n.t("setup.created"), flash[:notice], "Meldung überlebt den Start-Zwischenschritt"
+    follow_redirect!
+    assert_response :ok
+    get "/dashboard"
     assert_response :ok
   end
 

@@ -17,7 +17,8 @@ class TwoFactorTest < ActionDispatch::IntegrationTest
 
   test "ohne 2FA bleibt der Login einstufig" do
     login!
-    assert_redirected_to "/dashboard"
+    # #1582 R2: kein Code-Schritt — aber zuerst die Sicherheits-Card.
+    assert_redirected_to "/settings?stack=settings%3Asecurity"
     get "/dashboard"
     assert_response :success
   end

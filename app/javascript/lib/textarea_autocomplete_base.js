@@ -48,15 +48,23 @@ export default class TextareaAutocompleteBase extends Controller {
     this._onInput    = this.onInput.bind(this)
     this._onKeyDown  = this.onKeyDown.bind(this)
     this._onDocClick = this.onDocClick.bind(this)
-    this.inputTarget.addEventListener("input",   this._onInput)
-    this.inputTarget.addEventListener("keydown", this._onKeyDown)
+    // #1580: das Input-Element MERKEN statt in disconnect() erneut über
+    // `this.inputTarget` zu suchen. cm6-editor nimmt unseren Token aus
+    // data-controller (#373) — danach passt das Element nicht mehr zum
+    // Controller-Selektor, der Target-Getter WIRFT, und der Dokument-
+    // Listener blieb hängen: jeder spätere Klick → close() → „Missing
+    // target element list".
+    this._input = this.inputTarget
+    this._input.addEventListener("input",   this._onInput)
+    this._input.addEventListener("keydown", this._onKeyDown)
     document.addEventListener("click", this._onDocClick)
   }
 
   disconnect() {
-    this.inputTarget?.removeEventListener("input",   this._onInput)
-    this.inputTarget?.removeEventListener("keydown", this._onKeyDown)
     document.removeEventListener("click", this._onDocClick)
+    this._input?.removeEventListener("input",   this._onInput)
+    this._input?.removeEventListener("keydown", this._onKeyDown)
+    this._input = null
   }
 
   // ─── Trigger-Logik ──────────────────────────────────────────────────
@@ -144,6 +152,7 @@ export default class TextareaAutocompleteBase extends Controller {
   close() {
     this.suggestions = []
     this.openStart   = null
+    // #1580/immoOS #1578: eine fehlende Liste ist geschlossen.
     this.listTarget.classList.add("hidden")
     this.listTarget.innerHTML = ""
   }

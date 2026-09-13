@@ -21,6 +21,36 @@ import { tags } from "@lezer/highlight"
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete"
 import { miolimDecorations, miolimDecorationTheme } from "lib/cm6_decorations"
 import { dispatchBladeShortcut } from "lib/submit_shortcuts"
+import { StyleModule } from "style-mod"
+
+// #1573 (Hans): „Der Stack laedt in mehreren Stufen … man kann nichts
+// machen." Jeder neue Editor ruft `StyleModule.mount` auf. style-mod legt
+// die Regeln im Dokument in EINEM <style>-Tag ab und schreibt dessen
+// textContent bei jedem Aufruf komplett neu — auch wenn sich an den Modulen
+// nichts geaendert hat. Ein neu geschriebenes Stylesheet heisst fuer den
+// Browser: alle Elemente neu stylen. Der naechste Editor liest beim Aufbau
+// die Selektion und muss darauf warten. Auf einem Dashboard mit 25 Cards
+// (118 000 Elemente) kostete das je Editor rund 700 ms, bei 46 Editoren
+// knapp eine Minute eingefrorene Seite.
+//
+// Deshalb hier: Ist fuer dieses Dokument schon genau diese Modulliste in
+// genau dieser Reihenfolge eingehaengt und das <style>-Tag noch da, ist der
+// Aufruf ein No-op und entfaellt. Alles andere (neue Module, andere
+// Reihenfolge, Nonce, Tag entfernt) geht unveraendert an style-mod.
+const lastMount = new WeakMap()   // root -> { modules, tag }
+const originalMount = StyleModule.mount
+StyleModule.mount = function (root, modules, options) {
+  const list = Array.isArray(modules) ? modules : [modules]
+  const last = lastMount.get(root)
+  const unchanged = !options?.nonce && last && last.tag?.isConnected &&
+    last.modules.length === list.length && last.modules.every((m, i) => m === list[i])
+  if (unchanged) return
+  originalMount.call(this, root, modules, options)
+  const probe = list.find(m => m.getRules())?.getRules()
+  const head  = root.head || root
+  const tag   = probe && Array.from(head.querySelectorAll?.("style") || []).find(s => s.textContent.includes(probe))
+  lastMount.set(root, { modules: list, tag })
+}
 
 // #373 Phase C (c) (Hans, 2026-05-26): Slash-Commands fuer schnelles
 // Einfuegen von Markdown-Strukturen am Zeilenanfang. Trigger: `/` am
@@ -177,6 +207,58 @@ const HL_COLORS = HL_MENU_COLORS.map(c => c[0])
 // BodyHighlightWrapper (#449).
 const BLOCK_PREFIX_RE = /^([ \t]*(?:[-*+] |\d+[.)] |>+ |#{1,6} ))/
 
+// #1573: Theme und Highlight-Stil EINMAL pro Seite. `EditorView.theme` und
+// `HighlightStyle.define` erzeugen bei jedem Aufruf ein neues StyleModule
+// mit eigenem Klassennamen. Standen sie in connect(), brachte jeder Editor
+// eine andere Modulliste mit — und der Mount-Schutz oben griff nie.
+
+// #373 Phase B (Hans, 2026-05-26): Heading-Levels visuell groesser,
+// damit Edit-Mode dem Read-Mode naeher kommt.
+const MIOLIM_HIGHLIGHT_STYLE = HighlightStyle.define([
+  { tag: tags.heading1, fontSize: "1.5em",  fontWeight: "700" },
+  { tag: tags.heading2, fontSize: "1.3em",  fontWeight: "700" },
+  { tag: tags.heading3, fontSize: "1.15em", fontWeight: "600" },
+  { tag: tags.heading4, fontSize: "1.05em", fontWeight: "600" },
+  { tag: tags.strong,   fontWeight: "700" },
+  { tag: tags.emphasis, fontStyle: "italic" },
+  { tag: tags.link,     color: "rgb(4 120 87)" }              // emerald-700
+])
+
+const MIOLIM_EDITOR_THEME = EditorView.theme({
+  "&": {
+    // #373 Phase B+ (Hans, 2026-05-26): Font vom Container
+    // erben (= body-Font-Stack), damit Edit-Modus optisch
+    // exakt dem Read-Modus entspricht.
+    fontSize: "14px",                        // = .markdown-body text-sm
+    fontFamily: "inherit",
+    color: "rgb(51 65 85)",                  // slate-700, wie .markdown-body
+    border: "1px solid rgb(226 232 240)",    // slate-200
+    borderRadius: "4px"
+    // #403 Iter 4 (Hans, 2026-05-30): kein maxHeight mehr —
+    // Edit-Bereich waechst auf volle Inhalts-Hoehe analog
+    // Read-Mode. Section-Header ist sticky, Save-Klick
+    // bleibt erreichbar. Outer-Scroll-Container handhabt
+    // den Scroll, scrollTop-Restore funktioniert sauber.
+  },
+  ".cm-content": {
+    padding: "8px",
+    lineHeight: "1.55",
+    fontFamily: "inherit"
+  },
+  // #373 Phase C (d) (Hans, 2026-05-26): Auf Mobile horizontale
+  // Touch-Gesten an den Parent durchreichen, damit native
+  // scroll-snap (blade-stack) zwischen Cards swipen kann.
+  // Vertikales Scrollen im Editor bleibt moeglich.
+  "@media (max-width: 767px)": {
+    "&": { touchAction: "pan-y" },
+    ".cm-content":  { touchAction: "pan-y" },
+    ".cm-scroller": { touchAction: "pan-y" }
+  },
+  ".cm-focused": { outline: "none" },
+  "&.cm-focused": { borderColor: "rgb(74 222 128)" },  // emerald-400
+  ".cm-scroller": { overflow: "auto", fontFamily: "inherit" }
+})
+
 export default class extends Controller {
   static targets = ["host", "textarea"]
   // #451 (Hans, 2026-06-01): autofocus — nach einem Antwort-Entwurf-Save
@@ -216,18 +298,6 @@ export default class extends Controller {
         .filter(t => t && t !== "wikilink-autocomplete" && t !== "cite-autocomplete")
         .join(" ")
     }
-
-    // #373 Phase B (Hans, 2026-05-26): Heading-Levels visuell groesser,
-    // damit Edit-Mode dem Read-Mode naeher kommt.
-    const miolimHighlightStyle = HighlightStyle.define([
-      { tag: tags.heading1, fontSize: "1.5em",  fontWeight: "700" },
-      { tag: tags.heading2, fontSize: "1.3em",  fontWeight: "700" },
-      { tag: tags.heading3, fontSize: "1.15em", fontWeight: "600" },
-      { tag: tags.heading4, fontSize: "1.05em", fontWeight: "600" },
-      { tag: tags.strong,   fontWeight: "700" },
-      { tag: tags.emphasis, fontStyle: "italic" },
-      { tag: tags.link,     color: "rgb(4 120 87)" }              // emerald-700
-    ])
 
     this.view = new EditorView({
       state: EditorState.create({
@@ -272,46 +342,13 @@ export default class extends Controller {
             ...completionKeymap, ...closeBracketsKeymap]),
           markdown(),
           syntaxHighlighting(defaultHighlightStyle),
-          syntaxHighlighting(miolimHighlightStyle),
+          syntaxHighlighting(MIOLIM_HIGHLIGHT_STYLE),
           bracketMatching(),
           highlightActiveLine(),
           EditorView.lineWrapping,
           miolimDecorations,
           miolimDecorationTheme,
-          EditorView.theme({
-            "&": {
-              // #373 Phase B+ (Hans, 2026-05-26): Font vom Container
-              // erben (= body-Font-Stack), damit Edit-Modus optisch
-              // exakt dem Read-Modus entspricht.
-              fontSize: "14px",                        // = .markdown-body text-sm
-              fontFamily: "inherit",
-              color: "rgb(51 65 85)",                  // slate-700, wie .markdown-body
-              border: "1px solid rgb(226 232 240)",    // slate-200
-              borderRadius: "4px"
-              // #403 Iter 4 (Hans, 2026-05-30): kein maxHeight mehr —
-              // Edit-Bereich waechst auf volle Inhalts-Hoehe analog
-              // Read-Mode. Section-Header ist sticky, Save-Klick
-              // bleibt erreichbar. Outer-Scroll-Container handhabt
-              // den Scroll, scrollTop-Restore funktioniert sauber.
-            },
-            ".cm-content": {
-              padding: "8px",
-              lineHeight: "1.55",
-              fontFamily: "inherit"
-            },
-            // #373 Phase C (d) (Hans, 2026-05-26): Auf Mobile horizontale
-            // Touch-Gesten an den Parent durchreichen, damit native
-            // scroll-snap (blade-stack) zwischen Cards swipen kann.
-            // Vertikales Scrollen im Editor bleibt moeglich.
-            "@media (max-width: 767px)": {
-              "&": { touchAction: "pan-y" },
-              ".cm-content":  { touchAction: "pan-y" },
-              ".cm-scroller": { touchAction: "pan-y" }
-            },
-            ".cm-focused": { outline: "none" },
-            "&.cm-focused": { borderColor: "rgb(74 222 128)" },  // emerald-400
-            ".cm-scroller": { overflow: "auto", fontFamily: "inherit" }
-          }),
+          MIOLIM_EDITOR_THEME,
           EditorView.updateListener.of((v) => {
             if (v.docChanged) {
               ta.value = v.state.doc.toString()

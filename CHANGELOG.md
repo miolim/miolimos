@@ -75,6 +75,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- A large stack no longer freezes the page while it loads (#1573). Every
+  text editor made the browser restyle the whole page: the library behind
+  the editors rewrote its stylesheet each time one was created, even when
+  nothing in it had changed, and each editor also brought its own copy of
+  the same theme. On a dashboard with 25 cards and 46 editors that blocked
+  the page for close to a minute; it is now down to a few seconds. The
+  theme exists once per page, and re-mounting an unchanged stylesheet is
+  skipped.
 - The address bar shows the restored dashboard stack right away (#1573).
   Since the dashboard reopens your last stack on the server, the URL only
   caught up at the next change to the stack; until then it read just

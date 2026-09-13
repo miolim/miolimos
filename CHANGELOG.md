@@ -39,6 +39,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- The shortcut overview (`?`) is grouped under headings and now lists the
+  mouse gestures too (#1576): the click modifiers for opening entries
+  (click, Shift, Shift + Alt, Alt, Cmd/Ctrl), clicks on the spine, the
+  width handle, Shift + mouse wheel and the right-click menus in text.
 - The reply field now sticks to the bottom edge of the card (#1572). Going
   through a long answer point by point used to mean scrolling up and down
   between the passage and the input field, or opening the card a second time.

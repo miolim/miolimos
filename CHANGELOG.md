@@ -75,6 +75,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- The address bar shows the restored dashboard stack right away (#1573).
+  Since the dashboard reopens your last stack on the server, the URL only
+  caught up at the next change to the stack; until then it read just
+  `/dashboard`. A stale stack kept in the browser tab could also add cards
+  on top of the restored ones. Both are gone.
 - Clicking a row in a list card no longer shifts the stack sideways (#1501).
   This is the same defect as the one below, on the other path: replacing the
   cards to the right of a list briefly made the stack narrower, the browser

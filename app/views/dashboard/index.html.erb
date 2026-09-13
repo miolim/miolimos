@@ -13,6 +13,7 @@
 <div data-controller="blade-stack"
      data-blade-stack-card-url-template-value="<%= card_knowledge_item_path(uuid: 'UUID') %>"
      data-blade-stack-history-storage-key-value="<%= DashboardController::PAGE_HISTORY_KEY %>"
+     <% if @stack_restored %>data-blade-stack-server-restored-value="true"<% end %>
      <%= raw blade_stack_pref_attrs %>
      class="stack-page">
   <main id="blade_stack_container" data-blade-stack-target="container"

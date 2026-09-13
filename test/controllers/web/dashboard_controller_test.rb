@@ -173,6 +173,29 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
                  "Card aus dem Snapshot muss ohne Nachladen im HTML stehen"
   end
 
+  # #1573: Nur ein aus dem Snapshot wiederhergestellter Stack traegt das
+  # Signal, an dem der Client die URL sofort nachzieht (und den Session-
+  # Restore auslaesst). Mit ?stack= steht der Stand schon in der URL, ohne
+  # Snapshot gibt es nichts wiederherzustellen.
+  test "nur der wiederhergestellte Stack meldet sich dem Client als server-restored" do
+    marker = 'data-blade-stack-server-restored-value="true"'
+
+    get "/dashboard"
+    assert_response :success
+    refute_includes @response.body, marker, "ohne Snapshot nichts wiederhergestellt"
+
+    task = Task.create!(title: "Restore-Aufgabe", creator: @hans, assignee: @hans, status: :open)
+    snapshot!([["list:dashboard", "task:#{task.id}"]])
+
+    get "/dashboard"
+    assert_response :success
+    assert_includes @response.body, marker
+
+    get "/dashboard", params: { stack: "list:dashboard,task:#{task.id}" }
+    assert_response :success
+    refute_includes @response.body, marker, "expliziter ?stack= ist kein Restore"
+  end
+
   test "GET /dashboard nimmt den juengsten Snapshot" do
     old_task = Task.create!(title: "Alte-Aufgabe", creator: @hans, assignee: @hans, status: :open)
     new_task = Task.create!(title: "Neue-Aufgabe", creator: @hans, assignee: @hans, status: :open)

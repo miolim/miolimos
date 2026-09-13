@@ -48,6 +48,9 @@ class BladeStackController extends Controller {
     // überschreiben den Default mit demselben Wert.
     cardUrlTemplate:   { type: String, default: "/knowledge_items/UUID/card" },
     historyStorageKey: { type: String, default: "knowledge.stack.history" },
+    // #1573: Der Server hat den Stack aus dem Snapshot wiederhergestellt
+    // (Dashboard ohne ?stack=, #1066) — die URL zieht dann sofort nach.
+    serverRestored:    { type: Boolean, default: false },
     // #271: per-User-Vorlieben via Settings/Vorlieben. Layout schreibt
     // hier die Default-Card-Breiten in rem pro Card-Kind, plus die
     // Wheel-Schwellen — die ueberschreiben die hartcodierten Defaults.
@@ -570,6 +573,15 @@ class BladeStackController extends Controller {
     const _urlStack = new URL(window.location.href).searchParams.get("stack")
     if (_urlStack) {
       this._persistSession(this.openUuids())
+    } else if (this.serverRestoredValue && this.openUuids().length) {
+      // #1573 (Hans): „im URL-Feld steht nur os.miolim.de/dashboard, und
+      // dann kommt irgendwann die Ergaenzung um die Cards." Seit #1066
+      // rendert der Server den letzten Stack, ohne dass die URL ihn nennt;
+      // geschrieben wurde sie erst bei der naechsten Stack-Aenderung. Jetzt
+      // sofort (replace, kein neuer History-Eintrag) — und KEIN Session-
+      // Restore: Die Cards stehen schon, ein aelterer Stand aus dem
+      // sessionStorage haengte sonst Karten an, die der Snapshot nicht hat.
+      this.syncUrl({ pushHistory: false })
     } else {
       this._restoreSessionStackIfNeeded()
     }

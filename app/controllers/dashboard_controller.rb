@@ -38,6 +38,9 @@ class DashboardController < ApplicationController
       # Fallback, laeuft aber leer, weil die Cards schon im DOM stehen.
       # Explizite Params gewinnen: ein Legacy-Link meint eine bestimmte Card.
       restored = legacy_tokens.one? ? restored_stack_tokens : nil
+      # #1573: Der Client schreibt den wiederhergestellten Stack sofort in
+      # die URL (statt erst bei der naechsten Stack-Aenderung).
+      @stack_restored = restored.present?
       params[:stack] = (restored || legacy_tokens).join(",")
     end
     @initial_stack_items  = build_initial_stack

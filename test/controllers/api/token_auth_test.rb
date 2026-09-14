@@ -5,14 +5,12 @@ require "test_helper"
 #
 # Hier steht die Antwort dort, wo sie zaehlt: an der Tuer. Die Regeln aus dem
 # Modell nuetzen nichts, wenn die Anmeldung an der Schnittstelle sie nicht
-# anwendet.
+# anwendet. Seit der Rotation (14.09.2026) gibt es nur noch benannte Token.
 class Api::TokenAuthTest < ActionDispatch::IntegrationTest
   setup do
     @agent = AgentActor.create!(name: "Test-Agent", email: "agent-#{SecureRandom.hex(3)}@test.local",
                                 description: "Testzweck", active: true)
     @agent.grant_default_capabilities!
-    @alt = AgentActor.generate_api_token
-    @agent.update!(api_token: @alt)
   end
 
   def hole(token)
@@ -49,12 +47,12 @@ class Api::TokenAuthTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized, "der Not-Aus am Agenten wirkt auch auf benannte Token"
   end
 
-  # Bis zur Rotation senden alle laufenden Agenten noch ihr altes Token. Ein
-  # Umstieg, der sie gleichzeitig aussperrt, waere das Gegenteil von
-  # Sicherheit.
-  test "das alte Token an der Actor-Spalte gilt weiter" do
-    hole(@alt)
-    assert_response :success
+  # Punkt 1: Ein Token, das nie als benanntes ausgestellt wurde, kommt nicht
+  # durch — so sind die alten, verstreuten Klartexte wertlos.
+  test "ein gut geformtes, aber nie ausgestelltes Token wird abgewiesen" do
+    ApiToken.issue!(actor: @agent, name: "Laptop")
+    hole(SecureRandom.hex(32))
+    assert_response :unauthorized
   end
 
   test "Unsinn und leerer Kopf werden abgewiesen" do
@@ -74,11 +72,6 @@ class Api::TokenAuthTest < ActionDispatch::IntegrationTest
 
     hole(t.token)
     assert_response :success
-    assert t.reload.last_used_at.present?, "benanntes Token"
-
-    @agent.update_column(:api_token_last_used_at, nil)
-    hole(@alt)
-    assert_response :success
-    assert @agent.reload.api_token_last_used_at.present?, "auch das alte Token"
+    assert t.reload.last_used_at.present?
   end
 end

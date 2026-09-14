@@ -9,7 +9,7 @@ class Api::V1::AwaitingsControllerTest < ActionDispatch::IntegrationTest
     grant(@agent, "Topic",    %w[read])
     grant(@agent, "Contact",  %w[read])
 
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "GET /api/v1/awaitings paginates open awaitings" do

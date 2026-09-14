@@ -4,7 +4,7 @@ class Api::V1::InboxItemsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @agent = AgentActor.create!(name: "Bot-#{SecureRandom.hex(3)}", description: "test")
     grant(@agent, "InboxItem", %w[read create update])
-    @auth = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "GET index lists active items in newest-first order" do
@@ -72,7 +72,7 @@ class Api::V1::InboxItemsControllerTest < ActionDispatch::IntegrationTest
     grant(no_caps, "InboxItem", %w[read])
     post "/api/v1/inbox_items",
          params: { raw_content: "hi" },
-         headers: { "Authorization" => "Bearer #{no_caps.api_token}" }
+         headers: { "Authorization" => "Bearer #{api_token_for(no_caps)}" }
     assert_response :forbidden
   end
 end
@@ -82,7 +82,7 @@ class Api::V1::ContactsGoneTest < ActionDispatch::IntegrationTest
     @agent = AgentActor.create!(name: "Bot-#{SecureRandom.hex(3)}", description: "test")
     grant(@agent, "KnowledgeItem", %w[read])
     grant(@agent, "Contact",       %w[read])
-    @auth = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "GET /api/v1/contacts returns 410 Gone with redirect hint" do

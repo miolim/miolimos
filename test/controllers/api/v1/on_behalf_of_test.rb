@@ -12,7 +12,7 @@ class Api::V1::OnBehalfOfTest < ActionDispatch::IntegrationTest
     %w[Task Topic KnowledgeItem Communication Awaiting].each do |rt|
       grant(@agent, rt, %w[read create update delete])
     end
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
 
     @geheim = create_topic(creator: @hans, name: "API Geheim", slug: "api-geheim-#{SecureRandom.hex(3)}")
     @geheim_task = Task.create!(title: "API Geheimtask", creator: @hans,

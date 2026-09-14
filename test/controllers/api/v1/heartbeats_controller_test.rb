@@ -5,7 +5,7 @@ class Api::V1::HeartbeatsControllerTest < ActionDispatch::IntegrationTest
     @agent = AgentActor.create!(name: "Bot-#{SecureRandom.hex(3)}", description: "test")
     grant(@agent, "Actor", %w[read update])
     grant(@agent, "Task", %w[read])
-    @auth = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "POST stamps last_seen_at on the calling actor and returns open_tasks" do

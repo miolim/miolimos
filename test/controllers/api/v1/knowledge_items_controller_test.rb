@@ -6,7 +6,7 @@ class Api::V1::KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     grant(@creator, "KnowledgeItem", %w[read create update delete])
     @agent = AgentActor.create!(name: "ki-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "KnowledgeItem", %w[read create update delete])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   def build_item(**overrides)
@@ -121,7 +121,7 @@ class Api::V1::KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
 
       patch "/api/v1/knowledge_items/#{uuid}",
             params: { title: "X" },
-            headers: { "Authorization" => "Bearer #{reader.api_token}" }
+            headers: { "Authorization" => "Bearer #{api_token_for(reader)}" }
       assert_response :forbidden
     end
   end
@@ -254,7 +254,7 @@ class Api::V1::KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
       grant(ro, "KnowledgeItem", %w[read])
 
       get "/api/v1/knowledge_items/#{item.uuid}/content",
-          headers: { "Authorization" => "Bearer #{ro.api_token}" }
+          headers: { "Authorization" => "Bearer #{api_token_for(ro)}" }
       assert_response :success
     end
   end

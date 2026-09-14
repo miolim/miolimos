@@ -28,10 +28,11 @@ classifier.assign_attributes(
   active: true
 )
 classifier.save!
-# #1052: Klartext-Token gibt es nur direkt nach der Generierung (Neuanlage);
-# bei bestehendem Agent liegt nur noch der Digest vor.
-if classifier.api_token
-  puts "  ✓ AgentActor: #{classifier.name} (token: #{classifier.api_token} — bitte notieren, wird nie wieder angezeigt)"
+# #1499: Zugang nur über benannte Token. Ein neues gibt es nur, wenn der Agent
+# noch kein gültiges hat — der Klartext erscheint genau hier einmal.
+if classifier.api_tokens.aktiv.none?
+  token = ApiToken.issue!(actor: classifier, name: "Seed")
+  puts "  ✓ AgentActor: #{classifier.name} (token: #{token.token} — bitte notieren, wird nie wieder angezeigt)"
 else
   puts "  ✓ AgentActor: #{classifier.name} (Token unverändert, nur als Hash gespeichert)"
 end

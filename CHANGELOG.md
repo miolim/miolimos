@@ -143,6 +143,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Removed
 
+- The single legacy API token per agent (#1499). Agents now authenticate only
+  with named tokens (Settings → Agents), each with its own expiry, usage
+  trail and revocation. All agent tokens were rotated; the old ones no longer
+  work, including any copies of them. A newly created agent gets a named token called "Standard",
+  shown once. "Rotate token" is gone: create a new named token and revoke the
+  old one instead. **Upgrading:** any integration still sending an old agent
+  token must switch to a named token before migrating.
 - The plus buttons for appending a card, in the lists and in the sidebar
   (#1509). They were the predecessor of the click modifiers, which now do the
   same thing from the row itself.

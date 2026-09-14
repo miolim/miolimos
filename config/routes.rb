@@ -550,7 +550,6 @@ Rails.application.routes.draw do
     end
     resources :agents do
       member do
-        post :regenerate_token
         post :trigger_inbox_run
         # #1499: benannte Token je Agent — anlegen und einzeln zurueckziehen.
         post :issue_token

@@ -6,7 +6,7 @@ class Api::V1::SourcesControllerTest < ActionDispatch::IntegrationTest
     grant(@creator, "Source", %w[read create update delete])
     @agent = AgentActor.create!(name: "src-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Source", %w[read create update])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "POST creates a source with title-only" do
@@ -138,7 +138,7 @@ class Api::V1::SourcesControllerTest < ActionDispatch::IntegrationTest
     actor = AgentActor.create!(name: "no-rights-#{SecureRandom.hex(3)}", description: "t")
     # KEIN grant(actor, "Source", ...) — explizit ohne Source-Capability
     grant(actor, "Task", %w[read])  # damit Auth überhaupt durchkommt
-    headers = { "Authorization" => "Bearer #{actor.api_token}" }
+    headers = { "Authorization" => "Bearer #{api_token_for(actor)}" }
     post "/api/v1/sources", params: { title: "X" }, headers: headers
     assert_response :forbidden
   end

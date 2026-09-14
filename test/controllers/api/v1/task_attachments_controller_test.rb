@@ -8,7 +8,7 @@ class Api::V1::TaskAttachmentsControllerTest < ActionDispatch::IntegrationTest
     @agent = AgentActor.create!(name: "Bot-#{SecureRandom.hex(2)}",
                                  description: "test", active: true)
     grant(@agent, "Task", %w[read])
-    @auth = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   def make_upload(filename: "shot.png", content: "PNGDATA", type: "image/png")
@@ -58,7 +58,7 @@ class Api::V1::TaskAttachmentsControllerTest < ActionDispatch::IntegrationTest
                                   description: "test", active: true)
     task = Task.create!(title: "X", creator: @hans, assignee: @hans)
     get "/api/v1/tasks/#{task.id}/attachments/1",
-        headers: { "Authorization" => "Bearer #{no_caps.api_token}" }
+        headers: { "Authorization" => "Bearer #{api_token_for(no_caps)}" }
     assert_response :forbidden
   end
 
@@ -71,7 +71,7 @@ class Api::V1::TaskAttachmentsControllerTest < ActionDispatch::IntegrationTest
       assert_difference -> { task.attachments.count }, 1 do
         post "/api/v1/tasks/#{task.id}/attachments",
              params: { file: make_upload(filename: "berlin.png", content: "IMGBYTES", type: "image/png") },
-             headers: { "Authorization" => "Bearer #{writer.api_token}" }
+             headers: { "Authorization" => "Bearer #{api_token_for(writer)}" }
       end
       assert_response :created
       body = JSON.parse(response.body)
@@ -87,7 +87,7 @@ class Api::V1::TaskAttachmentsControllerTest < ActionDispatch::IntegrationTest
       grant(writer, "Task", %w[read update])
       task = Task.create!(title: "Ziel", creator: @hans, assignee: @hans)
       post "/api/v1/tasks/#{task.id}/attachments",
-           headers: { "Authorization" => "Bearer #{writer.api_token}" }
+           headers: { "Authorization" => "Bearer #{api_token_for(writer)}" }
       assert_response :unprocessable_entity
     end
   end

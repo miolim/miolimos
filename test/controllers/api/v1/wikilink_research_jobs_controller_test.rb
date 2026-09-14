@@ -12,7 +12,7 @@ class Api::V1::WikilinkResearchJobsControllerTest < ActionDispatch::IntegrationT
     @researcher = AgentActor.create!(name: "Researcher-#{SecureRandom.hex(2)}",
                                       description: "test", active: true)
     grant(@researcher, "KnowledgeItem", %w[read create update])
-    @auth = { "Authorization" => "Bearer #{@researcher.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@researcher)}" }
 
     # Source-KI (wo der Wikilink steht) + Task (der die Recherche durchfuehrt)
     @source_ki = FileProxy.create(actor: @hans, title: "Quelle mit Wikilink",
@@ -54,7 +54,7 @@ class Api::V1::WikilinkResearchJobsControllerTest < ActionDispatch::IntegrationT
                                   description: "test", active: true)
     patch "/api/v1/wikilink_research_jobs/#{@job.id}",
           params:  { target_knowledge_item_id: "any" },
-          headers: { "Authorization" => "Bearer #{no_caps.api_token}" }
+          headers: { "Authorization" => "Bearer #{api_token_for(no_caps)}" }
     assert_response :forbidden
   end
 

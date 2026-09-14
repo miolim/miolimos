@@ -10,7 +10,7 @@ class Api::V1::AssociationEndpointsTest < ActionDispatch::IntegrationTest
     %w[Task Topic Communication Source KnowledgeItem Contact].each do |rt|
       grant(@agent, rt, %w[read create update delete])
     end
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   # ── /api/v1/tasks/:task_id/topics ────────────────────────────────────────

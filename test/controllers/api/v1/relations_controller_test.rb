@@ -4,7 +4,7 @@ class Api::V1::RelationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @agent = AgentActor.create!(name: "rel-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "KnowledgeItem", %w[read create update])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
 
     @source = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: "Quelle",
                                     item_type: :note, file_path: "x/q-#{SecureRandom.hex(3)}.md",

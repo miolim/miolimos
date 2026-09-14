@@ -8,7 +8,7 @@ class Api::V1::PersonIdentificationTest < ActionDispatch::IntegrationTest
     @agent = AgentActor.create!(name: "a-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Source", %w[read create update delete])
     grant(@agent, "KnowledgeItem", %w[read create update delete])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   def create_source_with_author(title, name)

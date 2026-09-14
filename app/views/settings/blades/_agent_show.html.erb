@@ -63,13 +63,17 @@
     <% end %>
   </div>
 
-  <%# API-Token + Regenerate. #1052: In der DB liegt nur der SHA256-Digest —
-      der Klartext kommt genau einmal per flash[:agent_api_token] hier an
-      (Anlegen/Rotation) und ist danach nirgends mehr abrufbar. %>
+  <%# #1499 Punkt 1 (Rotation 14.09.2026): Das alte Einzel-Token an der
+      Actor-Spalte ist entfallen, ein Agent hat nur noch benannte Token
+      (unten). Der Klartext eines frisch erzeugten Tokens kommt genau einmal
+      per flash[:agent_api_token] hier an und ist danach nirgends mehr
+      abrufbar. %>
   <% fresh_token = flash[:agent_api_token] %>
-  <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-2">
-    <h2 class="font-medium text-sm"><%= t("settings.agents.common.api_token") %></h2>
-    <% if fresh_token %>
+  <% if fresh_token %>
+    <div class="bg-white rounded border border-slate-200 px-4 py-3 space-y-2">
+      <h2 class="font-medium text-sm">
+        <%= t("settings.agents.common.api_token") %><% if flash[:agent_api_token_name] %> — <%= flash[:agent_api_token_name] %><% end %>
+      </h2>
       <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
         <%= t("settings.agents.common.token_visible_once") %>
       </p>
@@ -86,25 +90,8 @@
           <%= t("settings.agents.common.copy") %>
         </button>
       </div>
-    <% else %>
-      <p class="text-xs text-slate-500"><%= t("settings.agents.common.token_hashed_hint") %></p>
-    <% end %>
-    <%= button_to t("settings.agents.common.rotate_token"),
-          regenerate_token_settings_agent_path(agent), method: :post,
-          class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer",
-          form: { class: "inline m-0 p-0",
-                  data: { turbo_confirm: t("settings.agents.common.rotate_token_confirm") } } %>
-    <%# #1499 Punkt 2: Auch fuer das alte Token sichtbar machen, wann es
-        zuletzt benutzt wurde. Ohne das bleibt bis zur Rotation blind, was
-        gerade der interessanteste Fall ist. %>
-    <p class="text-xs text-slate-500">
-      <% if agent.api_token_last_used_at %>
-        Zuletzt benutzt: <%= l(agent.api_token_last_used_at, format: :short) %>
-      <% else %>
-        Seit der Umstellung nicht mehr benutzt.
-      <% end %>
-    </p>
-  </div>
+    </div>
+  <% end %>
 
   <%# #1499 (Hans): „Wie lange gelten die Token und lassen sie sich einzeln
       zurueckziehen?" Benannte Token je Verwendungszweck — mit Ablauf,
@@ -183,9 +170,11 @@
   <% memory_index   = "#{memory_dir}/MEMORY.md" %>
   <% inbox_prompt   = "Inbox-Check für #{agent.name} (id=#{agent.id}). Workflow-Details liegen in der Memory `#{safe_session}_workflow.md`. Schritte wie im Memory-File." %>
   <% workflow_body  = agent.workflow_instructions.presence || t("settings.agents.common.workflow_body_fallback") %>
-  <%# #1052: Ohne frisches Token (Flash) landet ein Platzhalter im Memory-
-      Snippet — der Klartext ist nach der Einmalanzeige nicht mehr abrufbar. %>
-  <% memory_file_content = "---\nname: #{agent.name} Async-Inbox-Workflow\ndescription: Workflow für Agent #{agent.name} (id=#{agent.id})\ntype: project\n---\n#{workflow_body}\n\n**Identität:**\n- Actor: `#{agent.email}` (id=#{agent.id} in Prod-DB)\n- API-Token: `#{fresh_token || "<TOKEN-BEIM-ROTIEREN-KOPIEREN>"}`\n- Auth-Header: `Authorization: Bearer <token>`\n- API-Base: `https://#{ENV.fetch(%[MIOLIMOS_HOST], %[os.miolim.de])}/api/v1/`\n" %>
+  <%# #1499: Das Token gehört NICHT in die Memory-Datei — genau so landeten
+      Klartext-Token in den Arbeitsanweisungen (und damit in jeder
+      Sitzungsmitschrift). Das Snippet verweist auf eine geschützte
+      curl-Konfiguration; das frische Token oben kommt dort hinein. %>
+  <% memory_file_content = "---\nname: #{agent.name} Async-Inbox-Workflow\ndescription: Workflow für Agent #{agent.name} (id=#{agent.id})\ntype: project\n---\n#{workflow_body}\n\n**Identität:**\n- Actor: `#{agent.email}` (id=#{agent.id} in Prod-DB)\n- API-Token: liegt in `~/.config/miolimos-agent-#{agent.id}.curl` (chmod 600, Inhalt `header = \"Authorization: Bearer …\"`). Immer `curl -K ~/.config/miolimos-agent-#{agent.id}.curl …` benutzen — den Klartext nie in Befehle oder in diese Datei schreiben.\n- Auth-Header: `Authorization: Bearer <token>`\n- API-Base: `https://#{ENV.fetch(%[MIOLIMOS_HOST], %[os.miolim.de])}/api/v1/`\n" %>
   <%# Heredoc mit quoted EOF — verhindert $-Expansion und Backtick-
       Interpretation in der Memory-Inhalt-Sektion, sodass Tokens und
       Sonderzeichen wortwörtlich landen. %>

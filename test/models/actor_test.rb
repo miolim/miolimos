@@ -14,19 +14,6 @@ class ActorTest < ActiveSupport::TestCase
     assert dup.errors.added?(:email, :taken, value: "same@test.local")
   end
 
-  test "AgentActor auto-generates api_token on create" do
-    agent = AgentActor.new(name: "Bot", description: "does stuff")
-    assert_predicate agent, :valid?
-    agent.save!
-    assert_match(/\A[0-9a-f]{64}\z/, agent.api_token)
-  end
-
-  test "AgentActor api_token is unique" do
-    a = AgentActor.create!(name: "Bot1", description: "x")
-    b = AgentActor.new(name: "Bot2", description: "x", api_token: a.api_token)
-    refute_predicate b, :valid?
-  end
-
   test "AgentActor requires description" do
     agent = AgentActor.new(name: "Bot")
     refute_predicate agent, :valid?
@@ -47,13 +34,6 @@ class ActorTest < ActiveSupport::TestCase
 
     assert_includes     Actor.active, on
     refute_includes     Actor.active, off
-  end
-
-  test "regenerate_api_token! produces a new token" do
-    agent = create_agent
-    original = agent.api_token
-    agent.regenerate_api_token!
-    refute_equal original, agent.reload.api_token
   end
 
   # #1058-Nachfund (2026-07-18): `@immoos-builder` (Bindestrich) fand den

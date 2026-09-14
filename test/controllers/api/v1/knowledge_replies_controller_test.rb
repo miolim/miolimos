@@ -6,7 +6,7 @@ class Api::V1::KnowledgeRepliesControllerTest < ActionDispatch::IntegrationTest
     grant(@creator, "KnowledgeItem", %w[read create update delete])
     @agent = AgentActor.create!(name: "kr-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "KnowledgeItem", %w[read create update])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "POST creates a reply-KI threaded to the parent KI" do

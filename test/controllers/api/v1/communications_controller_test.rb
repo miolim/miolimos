@@ -4,7 +4,7 @@ class Api::V1::CommunicationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @agent = AgentActor.create!(name: "cm-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Communication", %w[read update])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   def build_email(**overrides)
@@ -117,7 +117,7 @@ class Api::V1::CommunicationsControllerTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/communications/#{e.id}/topics",
          params: { topic_id: topic.id },
-         headers: { "Authorization" => "Bearer #{read_only.api_token}" }
+         headers: { "Authorization" => "Bearer #{api_token_for(read_only)}" }
     assert_response :forbidden
   end
 end

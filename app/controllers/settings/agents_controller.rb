@@ -1,6 +1,6 @@
 class Settings::AgentsController < Settings::BaseController
   before_action :set_agent, only: [:show, :edit, :update, :destroy,
-                                    :regenerate_token, :trigger_inbox_run,
+                                    :trigger_inbox_run,
                                     :issue_token, :revoke_token]
 
   # #613: Einstellungen sind ein Blade-Stack — die alte Reiter-URL
@@ -19,9 +19,11 @@ class Settings::AgentsController < Settings::BaseController
     include_delete = ActiveModel::Type::Boolean.new.cast(params.dig(:agent_actor, :include_delete))
     if @agent.save
       @agent.grant_default_capabilities!(include_delete: include_delete)
-      # #1052: Klartext-Token existiert nur in dieser Instanz — für die
-      # Einmalanzeige im Agent-Blade über den Flash mitgeben.
-      flash[:agent_api_token] = @agent.api_token
+      # #1499: Kein Token mehr an der Actor-Spalte — ein neuer Agent bekommt
+      # gleich ein benanntes Token. Klartext einmalig per Flash ins Agent-Blade.
+      token = ApiToken.issue!(actor: @agent, name: "Standard")
+      flash[:agent_api_token]      = token.token
+      flash[:agent_api_token_name] = token.name
       redirect_to settings_path(stack: "list:settings,settings:agents,settingssub:agents:#{@agent.id}"),
                   notice: "Agent „#{@agent.name}\" angelegt. API-Token unten kopierbar — nur JETZT sichtbar."
     else
@@ -50,14 +52,6 @@ class Settings::AgentsController < Settings::BaseController
   def destroy
     @agent.destroy!
     redirect_to settings_agents_path, notice: "Agent gelöscht."
-  end
-
-  # #152: Token rotieren. Alter Token wird sofort ungültig.
-  # #1052: Klartext kommt einmalig per Flash ins Agent-Blade.
-  def regenerate_token
-    flash[:agent_api_token] = @agent.regenerate_api_token!
-    redirect_to settings_path(stack: "list:settings,settings:agents,settingssub:agents:#{@agent.id}"),
-                notice: "Neuer API-Token erzeugt — alter ist ab sofort ungültig. Token nur JETZT sichtbar."
   end
 
   # #1499 (Hans): „Lassen sie sich einzeln zurückziehen?" — jetzt ja. Ein

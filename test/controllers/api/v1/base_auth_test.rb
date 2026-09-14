@@ -29,12 +29,12 @@ class Api::V1::BaseAuthTest < ActionDispatch::IntegrationTest
 
   test "inactive actor cannot authenticate even with valid token" do
     @token.update!(active: false)
-    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{@token.api_token}" }
+    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{api_token_for(@token)}" }
     assert_response :unauthorized
   end
 
   test "valid token with read capability succeeds" do
-    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{@token.api_token}" }
+    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{api_token_for(@token)}" }
     assert_response :success
     body = JSON.parse(response.body)
     assert body.key?("data")
@@ -43,7 +43,7 @@ class Api::V1::BaseAuthTest < ActionDispatch::IntegrationTest
 
   test "valid token without capability returns 403" do
     stripped = AgentActor.create!(name: "No-Caps-#{SecureRandom.hex(3)}", description: "test")
-    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{stripped.api_token}" }
+    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{api_token_for(stripped)}" }
     assert_response :forbidden
     body = JSON.parse(response.body)
     assert_equal "forbidden", body["code"]
@@ -51,7 +51,7 @@ class Api::V1::BaseAuthTest < ActionDispatch::IntegrationTest
 
   test "valid token with deny overrides allow" do
     grant(@token, "Task", %w[read], effect: :deny)
-    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{@token.api_token}" }
+    get "/api/v1/tasks", headers: { "Authorization" => "Bearer #{api_token_for(@token)}" }
     assert_response :forbidden
   end
 end

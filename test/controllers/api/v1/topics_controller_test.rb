@@ -5,7 +5,7 @@ class Api::V1::TopicsControllerTest < ActionDispatch::IntegrationTest
     @creator = create_human
     @agent = AgentActor.create!(name: "t-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Topic", %w[read create update delete])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "index filters by status and template" do
@@ -80,7 +80,7 @@ class Api::V1::TopicsControllerTest < ActionDispatch::IntegrationTest
 
     t = Topic.create!(name: "Before", slug: "upd-#{SecureRandom.hex(3)}", creator: @creator)
     patch "/api/v1/topics/#{t.id}", params: { name: "After" },
-          headers: { "Authorization" => "Bearer #{ro.api_token}" }
+          headers: { "Authorization" => "Bearer #{api_token_for(ro)}" }
     assert_response :forbidden
   end
 
@@ -91,7 +91,7 @@ class Api::V1::TopicsControllerTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/topics/#{template.id}/instantiate",
          params: { new_name: "x" },
-         headers: { "Authorization" => "Bearer #{bot.api_token}" }
+         headers: { "Authorization" => "Bearer #{api_token_for(bot)}" }
     assert_response :forbidden
   end
 end

@@ -4,7 +4,7 @@ class Api::V1::SourceTopicsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @agent = AgentActor.create!(name: "st-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Source", %w[read create update delete])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
 
     @source = Source.create!(title: "Schneider 2024", creator: @agent,
                              csl_type: "webpage",

@@ -5,7 +5,7 @@ class Api::V1::TasksControllerTest < ActionDispatch::IntegrationTest
     @creator = create_human
     @agent = AgentActor.create!(name: "ta-#{SecureRandom.hex(3)}", description: "t")
     grant(@agent, "Task", %w[read create update delete])
-    @headers = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @headers = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
   end
 
   test "index returns tasks" do
@@ -97,7 +97,7 @@ class Api::V1::TasksControllerTest < ActionDispatch::IntegrationTest
 
     post "/api/v1/tasks/#{t.id}/topics",
          params: { topic_id: topic.id },
-         headers: { "Authorization" => "Bearer #{read_only.api_token}" }
+         headers: { "Authorization" => "Bearer #{api_token_for(read_only)}" }
     assert_response :forbidden
   end
 end

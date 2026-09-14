@@ -131,6 +131,12 @@ module ActiveSupport
       AgentActor.create!(name: name, description: description, active: true)
     end
 
+    # #1499: API-Zugang eines Agenten = benanntes Token. Liefert den Klartext;
+    # jeder Aufruf stellt ein weiteres gültiges Token aus.
+    def api_token_for(actor, name: "Test")
+      ApiToken.issue!(actor: actor, name: name).token
+    end
+
     def create_team(name: "Team-#{SecureRandom.hex(4)}")
       Team.create!(name: name)
     end

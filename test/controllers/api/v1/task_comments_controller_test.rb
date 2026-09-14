@@ -10,7 +10,7 @@ class Api::V1::TaskCommentsControllerTest < ActionDispatch::IntegrationTest
     # #384 Phase 3c: Beitraege werden als Reply-KIs gespeichert →
     # KnowledgeItem-create-Cap noetig (FileProxy.create gated).
     grant(@agent, "KnowledgeItem", %w[create])
-    @auth = { "Authorization" => "Bearer #{@agent.api_token}" }
+    @auth = { "Authorization" => "Bearer #{api_token_for(@agent)}" }
 
     @task = Task.create!(title: "Tu was", creator: @hans, status: :open)
   end
@@ -41,7 +41,7 @@ class Api::V1::TaskCommentsControllerTest < ActionDispatch::IntegrationTest
     grant(no_caps, "Task", %w[read])
     post "/api/v1/tasks/#{@task.id}/comments",
          params: { body: "trotzdem" },
-         headers: { "Authorization" => "Bearer #{no_caps.api_token}" }
+         headers: { "Authorization" => "Bearer #{api_token_for(no_caps)}" }
     assert_response :forbidden
   end
 end

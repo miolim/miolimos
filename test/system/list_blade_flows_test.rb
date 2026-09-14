@@ -3,7 +3,7 @@ require "application_system_test_case"
 # #564: Sicherheitsnetz für die Listen-Blade-Flows — exakt die Bug-Klassen
 # der Aufgaben #549/#557/#558/#563:
 #   - Eintrag-Klick in einer Liste öffnet das Detail-Blade im selben Stack
-#   - Plus am Eintrag appendet (statt neuen Stack zu öffnen)
+#   - Alt-Klick am Eintrag hängt an (statt neuen Stack zu öffnen; #1579: kein Plus mehr)
 #   - Listen-Filter re-rendert in-place und wirft den Stack NICHT weg
 #   - KI-Listen funktionieren auch auf Seiten OHNE card-url-template (#563)
 class ListBladeFlowsTest < ApplicationSystemTestCase
@@ -30,16 +30,19 @@ class ListBladeFlowsTest < ApplicationSystemTestCase
     assert_equal "list:persons", uuids.first
   end
 
-  test "Personenliste: Plus appendet das Detail-Blade" do
+  # #1604 (aus immoos #1579, Hans): „In der Personenliste gibt es noch ein
+  # Plus-Zeichen bei Mouse-Over … Das bitte entfernen; es wird jetzt über den
+  # Mouseklick-Modifier erreicht." Der Plus-Knopf ist fort; angehängt wird mit
+  # ALT-Klick auf den Namen (#1509). Capybara nimmt den Modifier als
+  # Positionsargument.
+  test "Personenliste: Alt-Klick hängt das Detail-Blade an, ein Plus gibt es nicht mehr" do
     visit "/knowledge_items?stack=list:persons"
     assert page.has_css?("article.stack-card[data-uuid='list:persons']")
-    # Der Plus-Button ist erst bei group-hover sichtbar — headless ist der
-    # CSS-Hover unzuverlässig, darum JS-Klick (Testziel ist der Append).
-    page.execute_script(<<~JS)
-      document.querySelector("button[data-action*='appendFromList'][data-target-uuid='#{@person.uuid}']").click()
-    JS
+    assert_no_selector "button[data-action*='appendFromList'][data-target-uuid='#{@person.uuid}']", visible: :all
+
+    find("article.stack-card[data-uuid='list:persons'] a", text: "Ada Lovelace").click(:alt)
     assert page.has_css?("article.stack-card[data-uuid='#{@person.uuid}']"),
-           "Plus muss das Detail-Blade appenden"
+           "Alt-Klick muss das Detail-Blade anhängen"
   end
 
   test "#563: KI-Liste öffnet Einträge auch auf /tasks (Seite ohne card-url-template)" do

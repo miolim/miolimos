@@ -818,8 +818,6 @@ en:
         known_toggle_title: "Familiarity: %{label} — click to switch"
         search_placeholder: "Search people …"
         empty: "No people or organizations."
-        append_title: "Append to current stack"
-        append_aria: "Append to stack"
         no_results: "No matches."
       backlinks:
         title: "Backlinks"

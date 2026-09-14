@@ -69,17 +69,11 @@
                   knowledge_item_path(ki.uuid),
                   data: { action: "click->blade-stack#openFromList", target_uuid: ki.uuid },
                   class: "flex-1 hover:underline truncate text-slate-700" %>
-            <button type="button"
-                    data-action="click->blade-stack#appendFromList"
-                    data-target-uuid="<%= ki.uuid %>"
-                    title="<%= t('knowledge.list.persons.append_title') %>"
-                    aria-label="<%= t('knowledge.list.persons.append_aria') %>"
-                    class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
-                           w-5 h-5 rounded text-slate-400 bg-transparent border-0
-                           hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
-                           leading-none text-base">
-              +
-            </button>
+            <%# #1604 (aus immoos #1579, Hans): „In der Personenliste gibt es noch
+                ein Plus-Zeichen bei Mouse-Over, mit dem die Card an den Stack
+                angehängt wird. Das bitte entfernen; es wird jetzt über den
+                Mouseklick-Modifier erreicht." (Klick-Regel #1509: Umschalt
+                rechts, Umschalt+Alt links, Alt ans Ende.) %>
           </li>
         <% end %>
       </ul>

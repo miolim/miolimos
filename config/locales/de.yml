@@ -822,8 +822,6 @@ de:
         known_toggle_title: "Bekanntheit: %{label} — klicken zum Wechseln"
         search_placeholder: "Personen durchsuchen …"
         empty: "Keine Personen oder Organisationen."
-        append_title: "An aktuelle Arbeitsfläche anhängen"
-        append_aria: "An Arbeitsfläche anhängen"
         no_results: "Keine Treffer."
       backlinks:
         title: "Backlinks"

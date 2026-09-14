@@ -15,6 +15,8 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.5.0] - 2026-09-14
+
 ### Added
 
 - Choose what opens when you start miolimOS, under Settings → Preferences
@@ -57,6 +59,17 @@ release is cut, this section is renamed to the new version and a fresh
   longer appends there (a leftover from before #1509); it is left to the
   browser like everywhere else. Shift + click on a list row no longer
   selects text in lists that open cards this way.
+- The address block leaves out the country for domestic mail, as DIN 5008
+  asks (#1604, from immoOS #1553). The country is still stored, and foreign
+  addresses still show it.
+- The active button in switches and filters is lighter, for WCAG AA contrast
+  (#1604, from immoOS #1521).
+- The message when a card fails to load says "Card" instead of "Blade"
+  (#1604, from immoOS #1542).
+- The people list no longer shows a "+" to append a person; use the click
+  modifiers, as in every other list (#1604, from immoOS #1579).
+- Lists of invoices no longer query the database once per row to tell whether
+  an invoice is overdue (#1604, from immoOS #1597).
 - The button at the top of the sidebar that collapses and expands it shows a
   menu icon instead of a chevron (#1598).
 - Publishing a task or reply no longer types into an agent's session while
@@ -95,9 +108,6 @@ release is cut, this section is renamed to the new version and a fresh
   unknown card type still falls back to showing it.
 - "This is me" moved to the top of the Preferences card (#1500) — it is the
   only entry there that says who you are; the rest says how things look.
-
-### Changed
-
 - Changing another user's password now requires the admin role (#1520). Anyone
   who could manage users could previously set any other user's password,
   including an administrator's — everyone gets full rights on users by default,
@@ -107,6 +117,18 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- "Discard" and "Analyze again" in the document import review do what they
+  say (#1604, from immoOS #1537). Both were separate forms placed inside the
+  confirm form, which browsers do not allow: they became submit buttons of the
+  confirm form, so "Discard" created the document instead of discarding it.
+  They are links now, and a test checks every view for forms inside forms.
+- A link to a place inside a card now jumps there even when the card opens
+  next to the current one, and brings a card that sits behind others in the
+  stack into view (#1604, from immoOS #1566). If the place is in a hidden
+  tab, that tab is shown.
+- Date fields accept four-digit years only (#1604, from immoOS #1591).
+  Without an upper limit, a mistyped year ran on to six digits before the
+  field started over.
 - "Settings" at the bottom of the sidebar is no longer larger than the other
   entries (#1599). Its label used 14px instead of the sidebar's 13px, and the
   gear icon, which fills almost its entire square, looked bigger than the
@@ -1308,7 +1330,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/miolim/miolimos/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/miolim/miolimos/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/miolim/miolimos/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/miolim/miolimos/compare/v0.3.5...v0.4.0

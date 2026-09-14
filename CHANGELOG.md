@@ -141,6 +141,16 @@ release is cut, this section is renamed to the new version and a fresh
   mutilated: previously the old cards were already gone and the new one never
   arrived; now everything stays and you only see the error.
 
+### ⚠️ Upgrade notes
+
+- **Old agent API tokens stop working** (#1499). The migration
+  `DropLegacyApiTokenFromActors` drops `actors.api_token_digest` and
+  `actors.api_token_last_used_at`. Before running it, give every agent or
+  integration that still sends its old token a named token (Settings → Agents
+  → "Token erzeugen") and switch it over; the agent's token list shows when
+  each named token was last used. The migration cannot bring the old tokens
+  back.
+
 ### Removed
 
 - The single legacy API token per agent (#1499). Agents now authenticate only

@@ -1568,7 +1568,7 @@ class BladeStackController extends Controller {
     const res = await fetch(url, { headers: { "Accept": "text/html" } })
     if (!res.ok) {
       console.warn("blade fetch failed", url, res.status)
-      this._showBladeError(`Blade konnte nicht geladen werden (${res.status})`)
+      this._showBladeError(`Card konnte nicht geladen werden (${res.status})`)
       return
     }
     const html = await res.text()
@@ -1951,7 +1951,7 @@ class BladeStackController extends Controller {
     const res = await fetch(url, { headers: { "Accept": "text/html" } })
     if (!res.ok) {
       console.warn("blade fetch failed", url, res.status)
-      this._showBladeError(`Blade konnte nicht geladen werden (${res.status})`)
+      this._showBladeError(`Card konnte nicht geladen werden (${res.status})`)
       return false
     }
     const { nodes, card } = this._parseCardHtml(await res.text())

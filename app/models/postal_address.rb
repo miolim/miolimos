@@ -49,9 +49,24 @@ class PostalAddress < ApplicationRecord
   end
 
   # Adresszeilen fürs DIN-Adressfeld: Straße, (Zusatz), "PLZ Ort", (Land).
+  # #1553 (Hans): „In der Absender-Adresse und in der Empfänger-Adresse die
+  # Landesbezeichnung, also DE oder Deutschland, weglassen."
+  #
+  # Das ist nicht nur Geschmack, sondern DIN 5008: Das Bestimmungsland gehört ins
+  # Anschriftfeld NUR bei Auslandspost. Bei Inlandsbriefen steht dort nichts —
+  # ein „DE" unter der Ortszeile sieht nach Formular aus, nicht nach Brief.
+  # Deshalb gilt die Regel für alle Belege, nicht nur für die Abrechnung.
+  INLAND = %w[de deu deutschland germany].freeze
+
   def lines
-    [line1, line2, [postal_code, city].compact_blank.join(" ").presence, country]
+    [line1, line2, [postal_code, city].compact_blank.join(" ").presence, auslandsangabe]
       .compact_blank
+  end
+
+  def auslandsangabe
+    return nil if country.blank? || INLAND.include?(country.to_s.strip.downcase)
+
+    country
   end
 
   def oneline = lines.join(" · ")

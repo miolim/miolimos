@@ -1014,7 +1014,10 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Musterstr. 1", a[0].line1
     assert_equal "Hamburg",      a[0].city
     assert a[0].billing
-    assert_equal ["Musterstr. 1", "20095 Hamburg", "DE"], a[0].lines
+    assert_equal "DE", a[0].country, "gespeichert wird das Land sehr wohl"
+    # #1553 (Hans): Im ANSCHRIFTFELD steht das Inland nicht — DIN 5008 nennt das
+    # Bestimmungsland nur bei Auslandspost. Gespeichert bleibt es (Zeile darüber).
+    assert_equal ["Musterstr. 1", "20095 Hamburg"], a[0].lines
 
     keep = a[0].id
     patch "/knowledge_items/#{org.uuid}/addresses", params: {

@@ -68,7 +68,15 @@ class Invoice < ApplicationRecord
   # sie eine Lüge. Was es gibt, ist die nächste offene.
   def next_due_on = payment_obligations.unsettled.where.not(due_on: nil).minimum(:due_on)
 
-  def overdue?(on = Date.current) = payment_obligations.overdue(on).exists?
+  # #1597: In einer Liste sind die Zahlungspflichten vorgeladen — dann im Speicher
+  # prüfen statt je Zeile per SQL. Dieselbe Regel wie der Scope
+  # `PaymentObligation.overdue` (amount/settled_amount sind NOT NULL): nicht
+  # getilgt und fällig vor dem Stichtag.
+  def overdue?(on = Date.current)
+    return payment_obligations.any? { |o| o.overdue?(on) } if payment_obligations.loaded?
+
+    payment_obligations.overdue(on).exists?
+  end
 
   # #1337 Schnitt 4: der Überfälligkeits-Hinweis, in SQL statt im Speicher.
   # Er fragt die ZAHLUNGSPFLICHTEN — ein Beleg ohne Pflicht kann nicht

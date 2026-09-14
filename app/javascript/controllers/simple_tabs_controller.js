@@ -24,6 +24,16 @@ export default class extends Controller {
     if (this.hasStorageKeyValue) sessionStorage.setItem(this._key(), name)
   }
 
+  // #1566 R3 (immoOS): von außen einen Reiter zeigen — für einen Anker, der in
+  // einem verborgenen Reiter liegt (blade_stack_scroll#scrollToAnchorInCard).
+  // Gemerkt wie beim Klick, sonst spränge die Card beim nächsten Re-Render
+  // zurück.
+  zeige(name) {
+    if (!this.tabTargets.some((t) => t.dataset.name === name)) return
+    this._activate(name)
+    if (this.hasStorageKeyValue) sessionStorage.setItem(this._key(), name)
+  }
+
   _key() {
     return `simple-tabs:${this.storageKeyValue}`
   }

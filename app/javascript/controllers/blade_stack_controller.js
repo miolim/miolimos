@@ -497,7 +497,21 @@ class BladeStackController extends Controller {
                      (oeffnen && oeffnen !== "ersetzen" ? this.activeCard() : null)
       if (oeffnen && quelle && !alreadyOpen) {
         const fertig = await this._oeffneNeben(stackId, url, quelle, oeffnen)
-        if (fertig) { this.pushTrailState(); this.syncUrl({ pushHistory: false }) }
+        if (fertig) {
+          // #1566 R3 (immoOS): Der Anker gilt auch auf diesem Weg. Bisher
+          // wertete ihn nur der Anhängen-Zweig unten aus — ein Klick aus einer
+          // Card (der Normalfall seit #1348) öffnete die Ziel-Card, sprang aber
+          // nicht zur Stelle. Aufgefallen am Klick auf eine Zuordnungsregel in
+          // der Umsatz-Card: Das Mietverhältnis ging auf, der Reiter nicht.
+          if (anchor) {
+            const card = this.cardForUuid(stackId)
+            if (card) {
+              this.setActiveCard(card)
+              this.scrollToAnchorInCard(card, anchor)
+            }
+          }
+          this.pushTrailState(); this.syncUrl({ pushHistory: false })
+        }
         return
       }
 
@@ -513,7 +527,12 @@ class BladeStackController extends Controller {
           // #218: collapsed Card erst aufklappen, sonst wird
           // scrollToAnchorInCard ins Leere zielen.
           this._expandCard(card)
-          card.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
+          // #1566 R4 (immoOS): Hier stand zusätzlich `card.scrollIntoView` —
+          // nicht sticky-bewusst, es überstimmte den Fokus-Scroll aus
+          // _appendBladeAtUrl. Und die Card wurde nicht aktiv gesetzt: Bei einer
+          // schon offenen Ziel-Card blieb der Fokus beim Aufrufer. Jetzt wie
+          // _springeZu (#1348).
+          this.setActiveCard(card)
           this.scrollToAnchorInCard(card, anchor)
         }
       }

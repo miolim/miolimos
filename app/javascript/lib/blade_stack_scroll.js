@@ -211,9 +211,33 @@ export const BladeStackScrollMixin = {
           const ctrl = this.application?.getControllerForElementAndIdentifier(cursor, "disclosure")
           ctrl?.expand?.()
         }
+        // #1604 (aus immoos #1566 R3): Liegt der Anker in einem verborgenen
+        // Reiter (simple-tabs), diesen Reiter zeigen — auch bei einer schon
+        // offenen Card, deren Reiter-Controller längst verbunden ist. Sonst
+        // scrollte der Anker ins Unsichtbare.
+        if (cursor.dataset?.simpleTabsTarget === "panel" && cursor.classList.contains("hidden")) {
+          const tabsEl = cursor.parentElement?.closest("[data-controller~='simple-tabs']")
+          const tabs = tabsEl && this.application?.getControllerForElementAndIdentifier(tabsEl, "simple-tabs")
+          tabs?.zeige?.(cursor.dataset.name)
+        }
         cursor = cursor.parentElement
       }
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      // #1604 (aus immoos #1566 R4): Hier stand `el.scrollIntoView` — das
+      // scrollt ALLE Vorfahren, auch den waagerechten Stack, und kennt die
+      // gestapelten Spines nicht. Es überstimmte den Stack-eigenen
+      // Fokus-Scroll; eine Card links im Stapel blieb verdeckt. Jetzt senkrecht
+      // nur im Scroll-Bereich der Card, und die Card selbst holt der Stack
+      // sticky-bewusst ins Bild.
+      const scroller = card.querySelector(":scope > .overflow-y-auto")
+      if (scroller && scroller.contains(el)) {
+        const r = el.getBoundingClientRect()
+        const s = scroller.getBoundingClientRect()
+        const top = scroller.scrollTop + (r.top - s.top) - (s.height - r.height) / 2
+        scroller.scrollTo({ top: Math.max(0, top), behavior: "smooth" })
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
+      }
+      this._scrollCardIntoFocus?.(card)
       el.classList.add("anchor-flash")
       setTimeout(() => el.classList.remove("anchor-flash"), 1600)
     })

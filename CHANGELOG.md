@@ -57,6 +57,8 @@ release is cut, this section is renamed to the new version and a fresh
   longer appends there (a leftover from before #1509); it is left to the
   browser like everywhere else. Shift + click on a list row no longer
   selects text in lists that open cards this way.
+- The button at the top of the sidebar that collapses and expands it shows a
+  menu icon instead of a chevron (#1598).
 - Publishing a task or reply no longer types into an agent's session while
   it is in the middle of a step (#1586). The agent still sees the new item
   right away on its next check; the prompt itself waits until the session is

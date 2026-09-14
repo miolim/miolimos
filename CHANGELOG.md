@@ -107,6 +107,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- "Settings" at the bottom of the sidebar is no longer larger than the other
+  entries (#1599). Its label used 14px instead of the sidebar's 13px, and the
+  gear icon, which fills almost its entire square, looked bigger than the
+  other icons; it is now drawn slightly smaller in the same column.
 - Clicking anywhere on a page no longer raises "Missing target element list"
   from the `[[` link and `[@` citation suggestions (#1580). The rich text
   editor takes over from these suggestion lists; when it did, the old lists

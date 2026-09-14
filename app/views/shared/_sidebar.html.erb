@@ -125,16 +125,22 @@
     <% end %>
   </nav>
 
-  <%# Gear-Menü — FIXE Boden-Region (außerhalb des Scrolls). %>
-  <div class="border-t border-slate-700 px-0 py-2 shrink-0">
+  <%# Gear-Menü — FIXE Boden-Region (außerhalb des Scrolls).
+      #1599 (Hans): „Icon und Bezeichnung sehen größer aus als der Rest." —
+      Die Schrift WAR größer: Pinned und Liste setzen text-[13px], diese
+      Region erbte text-sm (14px) vom body. Das Icon hatte dieselbe Box
+      (w-5), aber das Zahnrad füllt seine 24er-Fläche fast bis an den Rand
+      (1–23, Kalender/Ordner nur 2–22) und wirkte dadurch größer — deshalb
+      18px in der unveränderten w-5-Spalte (Icon-Achse bleibt gleich). %>
+  <div class="border-t border-slate-700 px-0 py-2 shrink-0 text-[13px]">
     <%= link_to settings_path,
           title: t("nav.settings"),
           data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
           class: "flex items-center gap-2 px-2 py-1 min-h-7 rounded text-slate-400 hover:bg-slate-800 hover:text-white" do %>
       <span class="w-5 flex items-center justify-center shrink-0">
-        <%= icon "gear" %>
+        <%= icon "gear", size: "w-[18px] h-[18px]" %>
       </span>
-      <span class="group-data-[collapsed=true]/sidebar:md:hidden"><%= t("nav.settings") %></span>
+      <span class="truncate group-data-[collapsed=true]/sidebar:md:hidden"><%= t("nav.settings") %></span>
     <% end %>
   </div>
 

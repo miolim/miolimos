@@ -57,6 +57,14 @@ release is cut, this section is renamed to the new version and a fresh
   longer appends there (a leftover from before #1509); it is left to the
   browser like everywhere else. Shift + click on a list row no longer
   selects text in lists that open cards this way.
+- Publishing a task or reply no longer types into an agent's session while
+  it is in the middle of a step (#1586). The agent still sees the new item
+  right away on its next check; the prompt itself waits until the session is
+  idle — including while the agent waits for a background test or deploy run
+  — and is dropped if the agent already picked the item up. A reply to the
+  task the agent is currently working on still arrives immediately, so a
+  correction can reach it before it deploys. The "Inbox prüfen" button always
+  fires at once. After an hour of a busy session the prompt is sent anyway.
 - The shortcut overview (`?`) is grouped under headings and now lists the
   mouse gestures too (#1576): the click modifiers for opening entries
   (click, Shift, Shift + Alt, Alt, Cmd/Ctrl), clicks on the spine, the

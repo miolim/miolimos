@@ -19,12 +19,49 @@
 class BuilderInboxPoke
   DEBOUNCE = 45.seconds
 
+  # #1586 (Hans): „Wird dadurch die Arbeit des Agenten unterbrochen?" — Ein
+  # Poke in eine arbeitende Sitzung bricht nichts ab, landet aber mitten im
+  # laufenden Schritt. Deshalb: Antwort auf die Aufgabe, an der der Agent
+  # gerade sitzt (WIP), sofort — sie kann eine Korrektur vor dem Deploy sein.
+  # Alles andere setzt den Auslöser sofort, eingetippt wird aber erst, wenn
+  # die Sitzung ruhig ist (DeferredInboxPokeJob). „Beschäftigt" liest die
+  # Sitzung selbst ab, nicht den WIP-Marker: Der kann veralten, und ohne
+  # Cron-Rückfall (#441) wären Auslöser dann dauerhaft verschluckt.
+  DEFER_RECHECK = 30.seconds
+  DEFER_MAX     = 1.hour
+  # Claude Code zeigt das in der Fußzeile, solange ein Schritt läuft — auch
+  # während eines Vordergrund-Befehls. Beim Warten auf einen Hintergrund-Lauf
+  # nach Schrittende steht es NICHT da (gemessen 14.09.2026, #1586).
+  BUSY_MARKER   = "esc to interrupt".freeze
+
   # #512 (Hans, 2026-06-04): `clear:` schickt ein `/clear` Enter vor dem
   # Inbox-Check-Prompt — frischer Kontext (z. B. für eine neue Recherche,
   # damit der Agent sauber aus dem Handbuch bootstrappt statt alten Kontext
   # mitzuschleppen).
-  def self.poke(actor:, note: nil, debounce: true, clear: false)
-    new(actor: actor, note: note, debounce: debounce, clear: clear).call
+  # #1586: `task:` = die Aufgabe, um die es geht (Antwort/Veröffentlichung) —
+  # ist sie die WIP-Aufgabe des Agenten, wird sofort zugestellt. `sofort:` =
+  # ausdrücklicher Knopfdruck, wartet nie.
+  def self.poke(actor:, note: nil, debounce: true, clear: false, task: nil, sofort: false)
+    new(actor: actor, note: note, debounce: debounce, clear: clear, task: task, sofort: sofort).call
+  end
+
+  # #1586: Steht in der Fußzeile der Sitzung, dass gerade ein Schritt läuft?
+  # Pure Funktion fürs Testen.
+  def self.busy_pane?(text)
+    text.to_s.include?(BUSY_MARKER)
+  end
+
+  # Liest die Sitzung des Agenten ab. Im Zweifel „ruhig" — lieber einmal zu
+  # früh tippen (wie vor #1586) als eine Nachricht liegen lassen.
+  def self.session_busy?(actor)
+    return false if Rails.env.test?
+    session, = wiring_for(actor)
+    return false unless session
+    out = IO.popen(["tmux", "capture-pane", "-t", session, "-p"], err: File::NULL, &:read)
+    busy_pane?(out)
+  rescue StandardError => e
+    Rails.logger.warn "BuilderInboxPoke.session_busy?(id=#{actor&.id}): #{e.class}: #{e.message}"
+    false
   end
 
   # #518 (Hans, 2026-06-05): Agenten, die in einem Reply-KI per @-Mention
@@ -55,48 +92,57 @@ class BuilderInboxPoke
     end
   end
 
-  def initialize(actor:, note:, debounce:, clear: false)
+  def initialize(actor:, note:, debounce:, clear: false, task: nil, sofort: false)
     @actor    = actor
     @note     = note
     @debounce = debounce
     @clear    = clear
+    @task     = task
+    @sofort   = sofort
   end
 
-  # Liefert true, wenn tatsaechlich gepokt (Flag gesetzt + tmux geschickt),
-  # false bei Coalesce/kein Agent. Wirft nie — Fehler werden geloggt.
+  # Liefert true, wenn tatsaechlich gepokt (Flag gesetzt + tmux geschickt oder
+  # aufgeschoben), false bei Coalesce/kein Agent. Wirft nie — Fehler werden geloggt.
   def call
     return false unless @actor.is_a?(AgentActor)
     if @debounce && (last = @actor.inbox_run_requested_at) && last > DEBOUNCE.ago
       return false   # kurz zuvor schon gepokt -> coalesce
     end
-    @actor.update_column(:inbox_run_requested_at, Time.current)
-    send_tmux
+    # Auf Mikrosekunden gekürzt, wie Postgres speichert — der aufgeschobene
+    # Job erkennt „sein" Flag am exakten Wert.
+    jetzt = Time.current.floor(6)
+    @actor.update_column(:inbox_run_requested_at, jetzt)
+    if sofort_zustellen?
+      send_tmux
+    else
+      DeferredInboxPokeJob.set(wait: DEFER_RECHECK)
+                          .perform_later(@actor.id, @note, jetzt.iso8601(6), Time.current.iso8601)
+    end
     true
   rescue StandardError => e
     Rails.logger.warn "BuilderInboxPoke(id=#{@actor&.id}): #{e.class}: #{e.message}"
     false
   end
 
-  private
-
   # tmux send-keys mit 2-Schritt-Pattern (Text + Enter, dazwischen sleep) —
   # async im Thread, damit der HTTP-Request nicht 1s blockiert. Session +
   # Prompt kommen aus der Crontab-Zeile des Actors (Marker `(id=<id>)`).
-  def send_tmux
+  # #1586: Klassenmethode, damit auch DeferredInboxPokeJob sie nutzt.
+  def self.tippen(actor, note: nil, clear: false)
     # Test-Suite läuft auf derselben Maschine wie die echten tmux-Sessions —
     # ein Test-Actor mit zufällig passender id würde sonst REAL in die
     # Session des Builders tippen (passiert beim #587-Deploy-Gate).
     return if Rails.env.test?
-    session, prompt = cron_send_keys_for(@actor)
+    session, prompt = wiring_for(actor)
     unless session
-      Rails.logger.warn "BuilderInboxPoke: kein Crontab-Eintrag fuer (id=#{@actor.id})"
+      Rails.logger.warn "BuilderInboxPoke: kein Crontab-Eintrag fuer (id=#{actor.id})"
       return
     end
-    full = @note.present? ? "#{prompt} [Auslöser: #{@note}]" : prompt
+    full = note.present? ? "#{prompt} [Auslöser: #{note}]" : prompt
     Thread.new do
       begin
         # #512: optional erst /clear (frischer Kontext), dann den Prompt.
-        if @clear
+        if clear
           system("tmux", "send-keys", "-t", session, "-l", "/clear")
           sleep 0.3
           system("tmux", "send-keys", "-t", session, "Enter")
@@ -113,13 +159,25 @@ class BuilderInboxPoke
         sleep 2
         system("tmux", "send-keys", "-t", session, "Enter")
       rescue StandardError => e
-        Rails.logger.warn "BuilderInboxPoke tmux (id=#{@actor.id}): #{e.class}: #{e.message}"
+        Rails.logger.warn "BuilderInboxPoke tmux (id=#{actor.id}): #{e.class}: #{e.message}"
       end
     end
   end
 
-  def cron_send_keys_for(actor)
-    self.class.wiring_for(actor)
+  private
+
+  def sofort_zustellen?
+    return true if @sofort
+    return true if @task && @task.wip_actor_id == @actor.id
+    !session_busy?
+  end
+
+  def session_busy?
+    self.class.session_busy?(@actor)
+  end
+
+  def send_tmux
+    self.class.tippen(@actor, note: @note, clear: @clear)
   end
 
   # #639: Verdrahtung eines Agenten = Crontab-Zeile mit Marker

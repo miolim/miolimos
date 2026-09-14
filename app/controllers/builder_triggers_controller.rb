@@ -11,7 +11,9 @@ class BuilderTriggersController < ApplicationController
     # (debounce: false).
     # #512 (Hans, 2026-06-04): `clear=1` → /clear vor dem Prompt (frischer Kontext).
     clear = ActiveModel::Type::Boolean.new.cast(params[:clear])
-    BuilderInboxPoke.poke(actor: actor, debounce: false, clear: clear)
+    # #1586: Ein Knopfdruck ist ausdrücklich — er wartet nicht, bis die
+    # Sitzung ruhig ist.
+    BuilderInboxPoke.poke(actor: actor, debounce: false, clear: clear, sofort: true)
 
     respond_to do |format|
       format.turbo_stream do

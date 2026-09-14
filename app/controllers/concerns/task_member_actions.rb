@@ -279,7 +279,7 @@ module TaskMemberActions
   def notify_assignee_agent(note)
     agent = @task.assignee
     return unless agent.is_a?(AgentActor) && agent != current_actor
-    BuilderInboxPoke.poke(actor: agent, note: note)
+    BuilderInboxPoke.poke(actor: agent, note: note, task: @task)
   end
 
   # #480 Inc.3: KnowledgeBlockAnchor ist seit dieser Aenderung task-aware

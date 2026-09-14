@@ -43,7 +43,7 @@ class TaskRepliesController < ApplicationController
     # Aufgabe -> den Agenten direkt anstupsen (Entwuerfe nicht, eigene
     # Antworten des Agenten nicht).
     if !draft && (agent = @parent_task.assignee).is_a?(AgentActor) && agent != current_actor
-      BuilderInboxPoke.poke(actor: agent, note: "Neue Antwort auf Aufgabe ##{@parent_task.id}")
+      BuilderInboxPoke.poke(actor: agent, note: "Neue Antwort auf Aufgabe ##{@parent_task.id}", task: @parent_task)
     end
     respond_to do |format|
       format.turbo_stream do
@@ -78,7 +78,7 @@ class TaskRepliesController < ApplicationController
       reply.update!(published_at: Time.current)
       # #382: Entwurf-Antwort veroeffentlicht -> Agenten-Assignee anstupsen.
       if (agent = @parent_task.assignee).is_a?(AgentActor) && agent != current_actor
-        BuilderInboxPoke.poke(actor: agent, note: "Neue Antwort auf Aufgabe ##{@parent_task.id}")
+        BuilderInboxPoke.poke(actor: agent, note: "Neue Antwort auf Aufgabe ##{@parent_task.id}", task: @parent_task)
       end
     end
     respond_to do |format|

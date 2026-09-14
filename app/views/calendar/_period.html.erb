@@ -57,11 +57,11 @@
   <%# #598: Reihenfolge Tag | Woche | Monat. %>
   <span class="inline-flex rounded border border-slate-200 overflow-hidden text-xs">
     <%= link_to t("calendar.view_day"), nav.call(anchor, "day"), data: { turbo_frame: frame_id },
-          class: "px-2 py-0.5 #{view == 'day' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+          class: "px-2 py-0.5 #{view == 'day' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
     <%= link_to t("calendar.view_week"), nav.call(anchor, "week"), data: { turbo_frame: frame_id },
-          class: "px-2 py-0.5 #{view == 'week' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+          class: "px-2 py-0.5 #{view == 'week' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
     <%= link_to t("calendar.view_month"), nav.call(anchor, "month"), data: { turbo_frame: frame_id },
-          class: "px-2 py-0.5 #{view == 'month' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
+          class: "px-2 py-0.5 #{view == 'month' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
   </span>
 </div>
 

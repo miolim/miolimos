@@ -11,7 +11,7 @@
               data: { action: "click->topic-tabs#switch",
                       "topic-tabs-url-param": list_card_topic_path(topic, tab: tab, tree_id: t.id) },
               class: "px-2 py-0.5 rounded-full border cursor-pointer
-                      #{current_tree&.id == t.id ? 'bg-slate-700 border-slate-700 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}" do %>
+                      #{current_tree&.id == t.id ? 'bg-slate-500 border-slate-500 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}" do %>
           <%= t.display_name %>
         <% end %>
         <%# #600: Baum löschen (Knoten weg, KIs bleiben) — nur am gerade

@@ -33,7 +33,7 @@ export default class extends Controller {
     this.pillTargets.forEach(p => {
       const t  = p.dataset.type || ""
       const on = (t === "" && !any) || (t !== "" && this.active.has(t))
-      p.classList.toggle("bg-slate-700", on)
+      p.classList.toggle("bg-slate-500", on)
       p.classList.toggle("text-white", on)
       p.classList.toggle("text-slate-600", !on)
     })

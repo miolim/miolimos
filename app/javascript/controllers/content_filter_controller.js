@@ -18,7 +18,7 @@ export default class extends Controller {
     })
     this.btnTargets.forEach(b => {
       const active = b.dataset.contentFilterModeParam === this._mode
-      b.classList.toggle("bg-slate-700", active)
+      b.classList.toggle("bg-slate-500", active)
       b.classList.toggle("text-white", active)
       b.classList.toggle("text-slate-600", !active)
     })

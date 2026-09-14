@@ -71,13 +71,22 @@
       <button type="submit" class="text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer">
         <%= is_invoice ? t("inbox_items.document_review.confirm_invoice") : t("inbox_items.document_review.confirm_plain") %>
       </button>
-      <%= button_to t("inbox_items.document_review.reanalyze"),
-            process_now_inbox_item_path(item, processor_kind: "document_import"), method: :post,
-            form: { class: "inline m-0 p-0" },
-            class: "text-sm px-3 py-1 rounded border border-amber-300 text-amber-800 hover:bg-amber-100 cursor-pointer bg-transparent" %>
-      <%= button_to t("inbox_items.document_review.discard"), archive_inbox_item_path(item), method: :post,
-            form: { class: "inline m-0 p-0" },
-            class: "text-sm px-3 py-1 rounded text-slate-500 hover:bg-slate-100 cursor-pointer bg-transparent border-0" %>
+      <%# #1537: Links, KEINE button_to. Ein `button_to` ist ein eigenes
+          Formular, und diese beiden standen mitten im Bestätigen-Formular. Ein
+          Formular im Formular gibt es im HTML nicht: Der Browser verwirft das
+          innere Start-Tag samt seiner Adresse, und die Knöpfe werden zu
+          Submit-Knöpfen des ÄUSSEREN. Weil das äußere `confirm_import=1` führt,
+          hätte „Verwerfen" den Beleg angelegt statt ihn zu verwerfen und
+          „Erneut analysieren" ihn bestätigt statt neu zu lesen — beides
+          lautlos, mit dem Ergebnis, das der Knopf gerade nicht verspricht.
+          Ein Link darf im Formular stehen (wie #1409, #1459). %>
+      <%= link_to t("inbox_items.document_review.reanalyze"),
+            process_now_inbox_item_path(item, processor_kind: "document_import"),
+            data: { turbo_method: :post },
+            class: "text-sm px-3 py-1 rounded border border-amber-300 text-amber-800 hover:bg-amber-100 cursor-pointer no-underline inline-block" %>
+      <%= link_to t("inbox_items.document_review.discard"), archive_inbox_item_path(item),
+            data: { turbo_method: :post },
+            class: "text-sm px-3 py-1 rounded text-slate-500 hover:bg-slate-100 cursor-pointer no-underline inline-block" %>
     </div>
   <% end %>
 </section>

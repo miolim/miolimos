@@ -70,8 +70,16 @@
          class="hidden md:block fixed md:static top-12 left-0 right-0 z-30
                 p-2 md:p-0 bg-white md:bg-transparent border-b md:border-0 border-slate-200">
       <%= form_with url: search_path, method: :get, local: false, data: { turbo_frame: "search_results" } do |f| %>
+        <%# #1611 (Hans): „Eigenartige Vorschlagsliste — es werden einzelne
+            Zeichen angezeigt." Das ist die Formular-Vervollständigung des
+            BROWSERS: Er merkt sich Werte, wenn ein Formular abgeschickt wird,
+            und dieses Formular schickt bei jedem Tastendruck ab (search#submit,
+            150 ms) — so landeten „Z", „m", „So" als Einträge. `autocomplete=off`
+            speichert nichts mehr und blendet die gemerkten Einträge aus, wie
+            bei den Suchfeldern in den Cards. %>
         <%= f.search_field :q,
               value: params[:q],
+              autocomplete: "off",
               placeholder: t("nav.search_placeholder"),
               class: "w-full rounded border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400",
               data: { controller: "search",

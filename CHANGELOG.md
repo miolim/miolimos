@@ -19,6 +19,13 @@ release is cut, this section is renamed to the new version and a fresh
 
 - Organizations can have the legal form "GmbH & Co. KG" (#1610).
 
+### Fixed
+
+- The search field at the top no longer shows odd suggestions like single
+  letters (#1611). They came from the browser, which remembered every partly
+  typed search because the field searches as you type; the field now opts out
+  of the browser's suggestions.
+
 ## [0.5.0] - 2026-09-14
 
 ### Added

@@ -275,8 +275,10 @@ class KnowledgeItemsController < ApplicationController
     end
     if q.present?
       # Title-Substring ODER Alias-Substring — lower(alias) LIKE q via unnest.
+      # #1615: der Geburtsname zählt wie ein Alias.
       scope = scope.where(
-        "LOWER(title) LIKE :q OR EXISTS (SELECT 1 FROM unnest(aliases) a WHERE LOWER(a) LIKE :q)",
+        "LOWER(title) LIKE :q OR EXISTS (SELECT 1 FROM unnest(aliases) a WHERE LOWER(a) LIKE :q) " \
+        "OR LOWER(birth_name) LIKE :q",
         q: "%#{q}%"
       )
     end
@@ -817,6 +819,7 @@ class KnowledgeItemsController < ApplicationController
       fields[:gender]     = params[:gender]     if params[:gender].present?
       fields[:salutation] = params[:salutation] if params[:salutation].present?
       fields[:academic_title] = params[:academic_title] if params[:academic_title].present?
+      fields[:birth_name]     = params[:birth_name]     if params[:birth_name].present?   # #1615
       if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
         parts = item.title.split(/\s+/)
         fields[:first_name] = parts[0..-2].join(" ").presence

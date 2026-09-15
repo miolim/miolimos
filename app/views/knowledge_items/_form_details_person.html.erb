@@ -16,6 +16,14 @@
   </label>
 </div>
 
+<%# #1615: Geburtsname (Freitext), auffindbar wie ein Alias. %>
+<label class="block text-xs">
+  <span class="text-slate-500 mb-1 block"><%= t("knowledge.form.birth_name") %></span>
+  <%= f.text_field :birth_name,
+        placeholder: t("knowledge.detail.birth_name_placeholder"),
+        class: "w-full text-sm border border-slate-200 rounded px-2 py-1" %>
+</label>
+
 <%# #1090: Geschlecht (Katalog) + akademischer Titel (Freitext, Nachtrag) +
     Anrede (Freitext-Override). Alles fakultativ; leer = neutrale Anrede. %>
 <div class="grid grid-cols-2 gap-2 text-xs">

@@ -174,6 +174,7 @@ class KnowledgeIndexer
     item.gender          = (frontmatter["gender"] if Salutations.valid_gender?(frontmatter["gender"]))
     item.salutation      = frontmatter["salutation"].presence
     item.academic_title  = frontmatter["academic_title"].presence
+    item.birth_name      = frontmatter["birth_name"].presence   # #1615
 
     item.parent_org_uuid = References.resolve_parent_org_uuid(frontmatter["parent_org"])
     item.logo_uuid       = References.resolve_ki_uuid(frontmatter["logo"])   # #1168

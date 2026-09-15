@@ -152,6 +152,7 @@ class FileProxy
                first_name: nil, last_name: nil, orcid: nil,
                legal_form: nil,
                gender: nil, salutation: nil, academic_title: nil,
+               birth_name: nil,
                issuer: nil, logo: nil)
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
 
@@ -186,6 +187,7 @@ class FileProxy
         gender:         gender,
         salutation:     salutation,
         academic_title: academic_title,
+        birth_name:     birth_name,
         issuer:         issuer,
         logo:           logo
       )
@@ -248,6 +250,7 @@ class FileProxy
         gender:          fm["gender"],
         salutation:      fm["salutation"],
         academic_title:  fm["academic_title"],
+        birth_name:      fm["birth_name"],
         issuer:          ActiveModel::Type::Boolean.new.cast(fm["issuer"]) ? true : false,
         parent_org_uuid: KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
         logo_uuid:       KnowledgeIndexer.resolve_ki_uuid(fm["logo"]),

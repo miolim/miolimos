@@ -1412,6 +1412,56 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # #1615 (Hans): Geburtsname als eigenes Feld — genauer als ein Alias.
+  test "#1615 Inline-PATCH setzt den Geburtsnamen, leerer Wert räumt ab, Frontmatter zieht mit" do
+    with_isolated_miolimos_base do
+      p = FileProxy.create(actor: @hans, title: "Erika Neumann", item_type: :person,
+                           content: "", topics: [], contacts: [], tags: [])
+      patch "/knowledge_items/#{p.uuid}",
+            params: { birth_name: "Altmann", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_response :no_content
+      assert_equal "Altmann", p.reload.birth_name
+      assert_equal "Altmann", FileProxy::Reader.build_frontmatter_hash(p)["birth_name"]
+
+      patch "/knowledge_items/#{p.uuid}",
+            params: { birth_name: "", inline: "1" },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      assert_nil p.reload.birth_name
+    end
+  end
+
+  test "#1615 Create mit Geburtsnamen setzt die Spalte; Person ist darüber auffindbar" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { title: "Clara Neumann", item_type: "person", content: "",
+                     birth_name: "Vorberg" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      p = KnowledgeItem.find_by(title: "Clara Neumann")
+      assert_equal "Vorberg", p.birth_name
+
+      # Volltextsuche: der Geburtsname steht im Suchvektor wie ein Alias.
+      treffer = KnowledgeItem.where("search_vector @@ plainto_tsquery('german', ?)", "Vorberg").pluck(:uuid)
+      assert_includes treffer, p.uuid
+
+      # Autovervollständigung (Erwähnungen, Picker) findet sie ebenfalls.
+      get "/knowledge_items/suggest", params: { q: "vorberg" }, headers: { "Accept" => "application/json" }
+      assert_includes @response.body, p.uuid
+    end
+  end
+
+  test "#1615 Detail einer Person zeigt das Feld Geburtsname" do
+    with_isolated_miolimos_base do
+      p = FileProxy.create(actor: @hans, title: "Doris Weber", item_type: :person,
+                           content: "", topics: [], contacts: [], tags: [])
+      p.update!(birth_name: "Kramer")
+      get "/knowledge_items", params: { stack: p.uuid }
+      assert_response :success
+      assert_includes @response.body, "Geburtsname"
+      assert_includes @response.body, %(value="Kramer")
+    end
+  end
+
   # #1267 (Hans): Geschlecht schon in der Schnellanlage aus der Topbar. Der
   # Create-Pfad konnte das seit #1090, der Weg dorthin fehlte — deshalb hier
   # der Quick-Create-Pfad und nicht nur der Detail-Create.

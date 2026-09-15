@@ -250,7 +250,7 @@ class EntityMerge
       { "kind" => c.kind, "label" => c.label.to_s, "value" => c.value }
     end
 
-    %i[first_name last_name gender salutation academic_title orcid legal_form].each do |attr|
+    %i[first_name last_name birth_name gender salutation academic_title orcid legal_form].each do |attr|
       next if @target[attr].present? || @source[attr].blank?
       params[attr] = @source[attr]
     end

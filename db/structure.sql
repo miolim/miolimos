@@ -20,6 +20,7 @@ BEGIN
   NEW.search_vector :=
     setweight(to_tsvector('german', coalesce(NEW.title, '')), 'A') ||
     setweight(to_tsvector('german', coalesce(array_to_string(NEW.aliases, ' '), '')), 'A') ||
+    setweight(to_tsvector('german', coalesce(NEW.birth_name, '')), 'A') ||
     setweight(to_tsvector('german', coalesce(array_to_string(NEW.tags, ' '), '')), 'B') ||
     setweight(to_tsvector('german', coalesce(NEW.body, '')), 'C');
   RETURN NEW;
@@ -1370,7 +1371,8 @@ CREATE TABLE public.knowledge_items (
     gender character varying,
     salutation character varying,
     academic_title character varying,
-    logo_uuid character varying
+    logo_uuid character varying,
+    birth_name character varying
 );
 
 
@@ -5680,7 +5682,7 @@ CREATE INDEX index_work_nodes_on_tree_id ON public.work_nodes USING btree (tree_
 -- Name: knowledge_items knowledge_items_search_vector_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER knowledge_items_search_vector_trigger BEFORE INSERT OR UPDATE OF title, aliases, tags, body ON public.knowledge_items FOR EACH ROW EXECUTE FUNCTION public.knowledge_items_search_vector_update();
+CREATE TRIGGER knowledge_items_search_vector_trigger BEFORE INSERT OR UPDATE OF title, aliases, tags, body, birth_name ON public.knowledge_items FOR EACH ROW EXECUTE FUNCTION public.knowledge_items_search_vector_update();
 
 
 --
@@ -6457,6 +6459,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260915130000'),
 ('20260914061500'),
 ('20260901090000'),
 ('20260810133000'),

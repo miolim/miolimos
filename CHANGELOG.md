@@ -25,6 +25,9 @@ release is cut, this section is renamed to the new version and a fresh
   preferences, so it is the same on every device, and the default for new
   users (#1500) carries headings over. The fixed "Recently opened" and
   "Overview" headings are gone; existing sidebars start without headings.
+- Persons have a "Birth name" field (#1615), shown and editable in the
+  person's details and when creating a person. The birth name is searchable
+  like an alias: full-text search and the person picker find the person by it.
 
 ### Changed
 

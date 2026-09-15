@@ -645,6 +645,8 @@ de:
       type: "Typ"
       first_name: "Vorname"
       last_name: "Nachname"
+      birth_name: "Geburtsname"
+      birth_name_placeholder: "falls abweichend"
       parent_org_label_html: 'Übergeordnete Organisation <span class="text-slate-400 font-normal">(Title oder UUID, leer = top-level)</span>'
       parent_org_placeholder: "z.B. BigCorp"
       issuer_label_html: 'Aussteller <span class="text-slate-400 font-normal">(eigenes Rechtssubjekt)</span>'
@@ -788,6 +790,7 @@ de:
       url_optional: "URL (optional)"
       first_name: "Vorname (optional)"
       last_name: "Nachname (optional)"
+      birth_name: "Geburtsname (optional)"
       auto_from_title: "auto aus Title, falls leer"
       aliases_comma: "Aliases (komma-getrennt, optional)"
       aliases_placeholder_person: "z.B. J. K. Rowling, Joanne Rowling"

@@ -20,6 +20,7 @@ class FileProxy
               first_name:, last_name:, orcid: nil,
               legal_form: nil,
               gender: nil, salutation: nil, academic_title: nil,
+              birth_name: nil,
               issuer: nil, logo: nil)
       fm = old_fm.merge("updated_at" => Time.current.iso8601)
       fm["topics"]   = Array(topics)   if topics
@@ -53,6 +54,8 @@ class FileProxy
       fm["salutation"]     = salutation.presence                           unless salutation.nil?
       # #1090 Nachtrag: akademischer Titel ist Freitext wie die Anrede.
       fm["academic_title"] = academic_title.presence                       unless academic_title.nil?
+      # #1615: Geburtsname, Freitext.
+      fm["birth_name"]     = birth_name.presence                           unless birth_name.nil?
       # #1168: Logo als Titel-Referenz auf ein Bild-KI (wie parent_org);
       # "" räumt den Key ab (fm.compact unten).
       fm["logo"]           = logo.presence                                 unless logo.nil?

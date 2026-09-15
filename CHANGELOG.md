@@ -57,6 +57,9 @@ release is cut, this section is renamed to the new version and a fresh
   completely as soon as the stack scrolled. Hidden cards no longer count, and
   the focused card is never trimmed. It is also centred again, without a
   horizontal scrollbar: the stack's end spacer is hidden in the focus view.
+- Merging two persons or organizations now also moves a customer portal access
+  and the counterparty of bank transactions to the remaining entry (#1631).
+  Before, both kept pointing at the merged-away entry in the trash.
 
 ## [0.5.0] - 2026-09-14
 

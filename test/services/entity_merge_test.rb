@@ -138,6 +138,28 @@ class EntityMergeTest < ActiveSupport::TestCase
   end
 
   # #1168: Logo wandert mit, wenn das Ziel selbst keines hat.
+  # #1631: Nachfund der Spaltenprüfung aus immoOS #1608 — beide Verweise
+  # blieben an der Quelle hängen und zeigten nach dem Merge auf den Papierkorb.
+  test "Portalzugang und Gegenpartei eines Bankumsatzes folgen zum Ziel" do
+    with_isolated_miolimos_base do
+      source = create_person("Kundin")
+      target = create_person("Erika Kundin")
+      thema  = Topic.create!(name: "Portal-Thema", slug: "portal-#{SecureRandom.hex(3)}", creator: @hans)
+      zugang = PortalAccess.create!(topic: thema, email: "kundin-#{SecureRandom.hex(2)}@example.org",
+                                    knowledge_item_uuid: source.uuid)
+      konto  = BankLedger.create!(label: "Geschäftskonto")
+      umsatz = BankTransaction.create!(bank_ledger: konto, amount: 42, fingerprint: SecureRandom.hex(8),
+                                       counterparty_knowledge_item_uuid: source.uuid)
+
+      report = EntityMerge.merge!(source: source, target: target, actor: @hans)
+
+      assert_equal target.uuid, zugang.reload.knowledge_item_uuid
+      assert_equal target.uuid, umsatz.reload.counterparty_knowledge_item_uuid
+      assert_equal 1, report[:"portal_accesses.knowledge_item_uuid"]
+      assert_equal 1, report[:"bank_transactions.counterparty_knowledge_item_uuid"]
+    end
+  end
+
   test "Logo-Referenz wandert bei Merge zum Ziel" do
     with_isolated_miolimos_base do
       source = create_person("Stocker")

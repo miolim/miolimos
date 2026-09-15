@@ -218,6 +218,12 @@ class EntityMerge
     repoint TimeEntry, :subject_uuid
     repoint Topic, :customer_uuid
     repoint WorkNode, :knowledge_item_uuid
+    # #1631: Nachfund der Spaltenprüfung aus immoOS #1608 — diese Verweise
+    # blieben an der Quelle hängen und zeigten nach dem Merge auf den
+    # Papierkorb: Kunden-Kontakt eines Portalzugangs (#536) und Gegenpartei
+    # eines Bankumsatzes.
+    repoint PortalAccess, :knowledge_item_uuid
+    repoint BankTransaction, :counterparty_knowledge_item_uuid
 
     # Kinder der Quelle: Replies/Kommentare (parent_uuid) und — bei Orgs —
     # zugeordnete Personen/Unter-Orgs (parent_org_uuid). with_discarded,

@@ -718,6 +718,9 @@ section[data-controller~="tri-disclosure"]:not([data-state="closed"]) > button {
     width: var(--focus-blade-width, 46rem) !important;
     max-width: 95vw !important;
     margin-inline: auto !important;
+    /* #1613: Der Ueberstand-Beschnitt aus dem Regal (#1228) hat im Fokus
+       keine Bedeutung — die Card steht allein. */
+    clip-path: none !important;
   }
 
   /* Single Section: nur die aktive Beschreibungs-Section zeigen. Der

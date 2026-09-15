@@ -32,6 +32,12 @@ release is cut, this section is renamed to the new version and a fresh
   letters (#1611). They came from the browser, which remembered every partly
   typed search because the field searches as you type; the field now opts out
   of the browser's suggestions.
+- The focus view ("only this card") shows the card again instead of an empty
+  area (#1613). The rule that trims wide cards at the edge of the next card
+  (#1228) kept running in the focus view, where all other cards are hidden —
+  a hidden neighbour counted as an edge at 0, so the focused card was cut away
+  completely as soon as the stack scrolled. Hidden cards no longer count, and
+  the focused card is never trimmed.
 
 ## [0.5.0] - 2026-09-14
 

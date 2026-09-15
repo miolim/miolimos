@@ -18,16 +18,24 @@
 // beginnt: der Ueberstand ist 0 und es wird nichts geclippt.
 //
 // Die vorderste Card hat keine Nachfolgerin und wird nie geclippt.
+//
+// #1613 (Hans): Ausgeblendete Cards (Fokusansicht: alle ausser der
+// fokussierten sind `display: none`) haben ein Rect von 0/0. Sie sind keine
+// Kante — sonst galt die ganze fokussierte Card als Ueberstand und war
+// komplett weggeschnitten. Massgeblich ist die naechste SICHTBARE Card.
 
 // Subpixel-Rauschen aus getBoundingClientRect (Zoom, fraktionale
 // Layouts) soll keinen Clip ausloesen — erst ab einem sichtbaren Rest.
 const EPSILON = 0.5
 
+const sichtbar = (rect) => rect.right - rect.left > EPSILON
+
 // rects: [{ left, right }, …] in Stapel-Reihenfolge (vorderste zuletzt).
 // Rueckgabe: px-Werte fuer den rechten Beschnitt je Card (0 = kein Clip).
 export function overhangClips(rects) {
   return rects.map((rect, i) => {
-    const next = rects[i + 1]
+    if (!sichtbar(rect)) return 0
+    const next = rects.slice(i + 1).find(sichtbar)
     if (!next) return 0
     const overhang = rect.right - next.left
     return overhang > EPSILON ? overhang : 0

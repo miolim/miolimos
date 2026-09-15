@@ -46,6 +46,27 @@ test("Subpixel-Rauschen loest keinen Clip aus", () => {
   assert.deepEqual(overhangClips(rects), [0, 0])
 })
 
+// #1613: In der Fokusansicht sind alle anderen Cards `display: none` — ihr
+// Rect ist 0/0. Galt die ausgeblendete Nachfolgerin als Kante, wurde die
+// fokussierte Card komplett weggeschnitten.
+test("ausgeblendete Nachfolgerin (Breite 0) zaehlt nicht als Kante", () => {
+  const rects = [
+    { left: 0,   right: 0 },     // ausgeblendet
+    { left: 177, right: 913 },   // fokussiert
+    { left: 0,   right: 0 }      // ausgeblendet
+  ]
+  assert.deepEqual(overhangClips(rects), [0, 0, 0])
+})
+
+test("ausgeblendete Card dazwischen: Kante ist die naechste sichtbare", () => {
+  const rects = [
+    { left: 65, right: 737 },
+    { left: 0,  right: 0 },      // ausgeblendet
+    { left: 73, right: 649 }
+  ]
+  assert.deepEqual(overhangClips(rects), [737 - 73, 0, 0])
+})
+
 test("eine einzelne Card wird nicht geclippt", () => {
   assert.deepEqual(overhangClips([{ left: 0, right: 600 }]), [0])
   assert.deepEqual(overhangClips([]), [])

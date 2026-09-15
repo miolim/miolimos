@@ -331,9 +331,10 @@
       </div>
 
       <%# #1075: Merge-Picker — dieses (Dubletten-)KI in ein anderes
-          Person/Org-KI aufgehen lassen. Ziel wählen führt den Merge
-          sofort aus: alle Daten + Verweise wandern, diese Card
-          verschwindet, die Quelle geht in den Papierkorb. %>
+          Person/Org-KI aufgehen lassen: alle Daten + Verweise wandern, diese
+          Card verschwindet, die Quelle geht in den Papierkorb.
+          #1631 (aus immoOS #1608): Die Auswahl zeigt erst die Nachfrage mit
+          den Folgen (merge_preview); der Merge läuft beim Bestätigen darin. %>
       <% if item.item_type.in?(%w[person organization]) %>
         <div data-empty="true">
         <%= render "shared/entity_picker",
@@ -343,7 +344,7 @@
               chips_locals:  { item: item },
               suggest_url:   suggest_knowledge_items_path(id_as_uuid: 1, exclude: item.uuid,
                                                           item_type: "person,organization"),
-              add_url:       merge_knowledge_item_path(item.uuid),
+              add_url:       merge_preview_knowledge_item_path(item.uuid),
               param_name:    "target_uuid",
               label:         t("knowledge.detail.merge_label"),
               placeholder:   t("knowledge.detail.merge_placeholder"),

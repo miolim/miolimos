@@ -32,6 +32,17 @@ class EntityMerge
     new(source, target, actor).merge!
   end
 
+  # #1631 (aus immoOS #1608 übernommen). Hans dort: „Im Moment wird das
+  # Zusammenführen sofort durchgeführt. Vorher bitte eine Nachfrage einbauen,
+  # die die Konsequenzen aufzeigt und dann erst auf Bestätigung zusammenführt."
+  #
+  # Derselbe Weg wie merge!, nur in einem Savepoint, der zurückgerollt wird —
+  # so kann die Nachfrage nichts anderes ankündigen, als der Merge dann tut.
+  # Keine Datei-Operation, kein Papierkorb. Liefert den Report wie merge!.
+  def self.vorschau(source:, target:)
+    new(source, target, nil).vorschau
+  end
+
   def initialize(source, target, actor)
     @source = source
     @target = target
@@ -61,6 +72,25 @@ class EntityMerge
     export_target!
     FileProxy.destroy(actor: @actor, knowledge_item: @source)
 
+    @report
+  end
+
+  # `requires_new`: Der Rollback muss auch innerhalb einer äußeren Transaktion
+  # greifen (Tests, verschachtelte Aufrufe) — sonst schluckte die äußere ihn.
+  def vorschau
+    validate!
+    KnowledgeItem.transaction(requires_new: true) do
+      move_contact_points
+      move_postal_addresses
+      move_bank_accounts
+      move_identifiers
+      repoint_references
+      raise ActiveRecord::Rollback
+    end
+    # fill_flags und der Body-Anhang schreiben über Callbacks bzw. Dateien —
+    # hier nur gezählt, nicht ausgeführt.
+    @report[:personally_known] += 1 if @source.personally_known? && !@target.personally_known?
+    @report[:body_appended] += 1 if @source.body.present?
     @report
   end
 

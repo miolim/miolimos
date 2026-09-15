@@ -39,6 +39,10 @@ release is cut, this section is renamed to the new version and a fresh
   is always available now, also on the first card (it empties the stack) and on
   the last one (#1631, from immoOS #1481). Clicking an entry in the sidebar
   opens a card again.
+- Merging two persons or organizations asks first (#1631, from immoOS #1608).
+  Picking the target shows what will happen — the source goes to the trash and
+  becomes an alias, and how many links move over — and merges only once you
+  confirm. The API (`merge_into`) still merges immediately.
 
 ### Fixed
 

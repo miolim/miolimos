@@ -391,6 +391,8 @@ Rails.application.routes.draw do
       delete :supersede, action: :unsupersede
       # #1075: dieses Person/Org-KI in ein anderes mergen (target_uuid).
       post   :merge
+      # #1631 (aus immoOS #1608): vor dem Merge die Nachfrage mit den Folgen (schreibt nichts).
+      post   :merge_preview
       get    :file         # Binär-Datei (PDF etc.) inline streamen
       # #1168: Logo an Person/Org (Upload legt Bild-KI an, DELETE löst
       # nur die Verknüpfung).

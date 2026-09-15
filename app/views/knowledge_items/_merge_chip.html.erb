@@ -1,3 +1,8 @@
 <%# #1075: Der Merge-Picker hat keine Chips — bei Erfolg verschwindet
     die ganze Card (Quelle geht im Ziel auf). Partial existiert nur,
-    weil shared/entity_picker eines erwartet. Locals: item %>
+    weil shared/entity_picker eines erwartet. Locals: item
+
+    #1631 (aus immoOS #1608): Der leere Platz trägt die id, an die die
+    Nachfrage (knowledge_items/_merge_preview) per Stream gesetzt wird — ohne
+    Element mit dieser id liefe das Ersetzen still ins Leere. %>
+<span id="knowledge_merge_chip_<%= item.uuid %>" class="block"></span>

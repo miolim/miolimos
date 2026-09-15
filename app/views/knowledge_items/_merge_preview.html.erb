@@ -1,0 +1,65 @@
+<%# #1631 (aus immoOS #1608 übernommen). Hans dort: „Im Moment wird das
+    Zusammenführen sofort durchgeführt. Vorher bitte eine Nachfrage einbauen,
+    die die Konsequenzen aufzeigt und dann erst auf Bestätigung zusammenführt."
+
+    Steht am Platz der Merge-Chips (gleiche id wie knowledge_items/_merge_chip).
+    Die Zahlen kommen aus EntityMerge.vorschau — demselben Code wie der Merge,
+    in einer zurückgerollten Transaktion; sie können vom echten Ergebnis nicht
+    abweichen. Bestätigt wird per fetch: Der Picker sitzt im Detailbereich der
+    Card, ein eigenes <form> wäre dort verschachtelt (#1331).
+
+    Locals: item (Quelle), target (Ziel), report (EntityMerge-Report) %>
+<% item   = local_assigns.fetch(:item) %>
+<% target = local_assigns.fetch(:target) %>
+<% report = local_assigns.fetch(:report) %>
+<% bereiche = report.reject { |schluessel, _| schluessel.to_s == "body_appended" }
+                    .group_by { |schluessel, _| schluessel.to_s.split(".").first }
+                    .transform_values { |paare| paare.sum { |_, anzahl| anzahl } }
+                    .select { |_, anzahl| anzahl.positive? }
+                    .sort_by { |_, anzahl| -anzahl } %>
+<span id="knowledge_merge_chip_<%= item.uuid %>" class="block">
+  <div class="mt-1 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-slate-700 space-y-1.5"
+       role="alertdialog" aria-labelledby="knowledge_merge_title_<%= item.uuid %>">
+    <div id="knowledge_merge_title_<%= item.uuid %>" class="font-medium text-slate-800">
+      <%= t("knowledge.detail.merge_confirm_title", source: item.title, target: target.title) %>
+    </div>
+    <ul class="list-disc pl-4 space-y-0.5">
+      <li><%= t("knowledge.detail.merge_folge_papierkorb", source: item.title) %></li>
+      <li><%= t("knowledge.detail.merge_folge_ziel_gewinnt", source: item.title, target: target.title) %></li>
+      <li><%= t("knowledge.detail.merge_folge_alias", source: item.title, target: target.title) %></li>
+      <% if report[:body_appended].to_i.positive? %>
+        <li><%= t("knowledge.detail.merge_folge_text", source: item.title, target: target.title) %></li>
+      <% end %>
+    </ul>
+    <% if bereiche.any? %>
+      <div class="text-slate-600"><%= t("knowledge.detail.merge_umzug", target: target.title) %></div>
+      <table class="w-full">
+        <tbody>
+          <% bereiche.each do |tabelle, anzahl| %>
+            <tr data-merge-bereich="<%= tabelle %>">
+              <td class="py-px"><%= t("knowledge.detail.merge_bereiche.#{tabelle}", default: tabelle.humanize) %></td>
+              <td class="py-px text-right tabular-nums"><%= anzahl %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="text-[11px] text-slate-500"><%= t("knowledge.detail.merge_dubletten") %></p>
+    <% else %>
+      <p class="text-slate-600"><%= t("knowledge.detail.merge_nichts") %></p>
+    <% end %>
+    <div class="flex gap-1.5 pt-0.5">
+      <button type="button" data-merge-bestaetigen
+              class="px-2 py-1 rounded bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
+              onclick="this.disabled = true; fetch('<%= merge_knowledge_item_path(item.uuid) %>', {
+                         method: 'POST', credentials: 'same-origin',
+                         headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+                                    'Accept': 'text/vnd.turbo-stream.html',
+                                    'X-CSRF-Token': document.querySelector('meta[name=&quot;csrf-token&quot;]')?.content || '' },
+                         body: 'target_uuid=<%= target.uuid %>'
+                       }).then(r =&gt; r.text()).then(html =&gt; window.Turbo.renderStreamMessage(html))"><%= t("knowledge.detail.merge_confirm_ok") %></button>
+      <button type="button" data-merge-abbrechen
+              class="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer"
+              onclick="this.closest('#knowledge_merge_chip_<%= item.uuid %>').replaceChildren()"><%= t("knowledge.detail.merge_confirm_cancel") %></button>
+    </div>
+  </div>
+</span>

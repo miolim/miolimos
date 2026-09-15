@@ -4,7 +4,7 @@ class KnowledgeItemsController < ApplicationController
 
   before_action :set_item,     only: [:show, :edit, :update, :destroy,
                                       :file, :quote_from_clipboard,
-                                      :supersede, :unsupersede, :merge, :identifiers, :addresses, :bank_accounts, :vat_exempt,
+                                      :supersede, :unsupersede, :merge, :merge_preview, :identifiers, :addresses, :bank_accounts, :vat_exempt,
                                       :complete_from_url,
                                       :toggle_personally_known, :toggle_render_mode,
                                       :upload_logo, :remove_logo]
@@ -389,6 +389,26 @@ class KnowledgeItemsController < ApplicationController
         message: "'#{source_title.truncate(40)}' in '#{target.title.truncate(40)}' aufgegangen (#{moved} Verknüpfungen umgezogen)"
       )
     ]
+  rescue EntityMerge::Error => e
+    render turbo_stream: helpers.toast_stream(message: e.message), status: :unprocessable_entity
+  end
+
+  # #1631 (aus immoOS #1608 übernommen). Hans dort: „Vorher bitte eine
+  # Nachfrage einbauen, die die Konsequenzen aufzeigt und dann erst auf
+  # Bestätigung zusammenführt." Schreibt nichts (EntityMerge.vorschau rollt
+  # zurück); die Nachfrage steht am Platz der Merge-Chips, ihr
+  # Bestätigen-Knopf ruft #merge. Die API (merge_into) bleibt sofort.
+  def merge_preview
+    target = KnowledgeItem.visible_to(current_actor).find_by(uuid: params[:target_uuid].to_s)
+    if target.nil?
+      return render turbo_stream: helpers.toast_stream(message: t("knowledge.detail.merge_target_missing")),
+                    status: :unprocessable_entity
+    end
+    report = EntityMerge.vorschau(source: @item, target: target)
+    render turbo_stream: turbo_stream.replace(
+      "knowledge_merge_chip_#{@item.uuid}",
+      partial: "knowledge_items/merge_preview", locals: { item: @item, target: target, report: report }
+    )
   rescue EntityMerge::Error => e
     render turbo_stream: helpers.toast_stream(message: e.message), status: :unprocessable_entity
   end

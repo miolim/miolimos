@@ -122,16 +122,25 @@
              data-controller="sidebar-layout-editor"
              data-sidebar-layout-editor-default-value="<%= ActorPreferences.default_sidebar_layout.to_json %>"
              data-sidebar-layout-editor-labels-value="<%= sidebar_item_labels.to_json %>"
-             data-sidebar-layout-editor-icons-value="<%= sidebar_item_icons_svg.to_json %>">
+             data-sidebar-layout-editor-icons-value="<%= sidebar_item_icons_svg.to_json %>"
+             data-sidebar-layout-editor-heading-name-value="<%= t("preferences.sidebar_heading_default") %>"
+             data-sidebar-layout-editor-heading-label-value="<%= t("preferences.sidebar_heading_name") %>"
+             data-sidebar-layout-editor-heading-remove-value="<%= t("preferences.sidebar_heading_remove") %>">
       <div class="flex items-center justify-between mb-1">
         <h2 class="text-sm font-semibold text-slate-900"><%= t("preferences.sidebar_layout_title") %></h2>
-        <button type="button" data-action="sidebar-layout-editor#reset"
-                class="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer">
-          <%= t("preferences.sidebar_layout_reset") %>
-        </button>
+        <div class="flex items-center gap-3">
+          <%# #1612 (Hans): freie Überschriften für die Sidebar. %>
+          <button type="button" data-action="sidebar-layout-editor#addHeading"
+                  class="text-xs text-emerald-700 hover:text-emerald-900 underline cursor-pointer"><%= t("preferences.sidebar_heading_add") %></button>
+          <button type="button" data-action="sidebar-layout-editor#reset"
+                  class="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer">
+            <%= t("preferences.sidebar_layout_reset") %>
+          </button>
+        </div>
       </div>
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.sidebar_layout_help") %></p>
       <% layout = current_actor.pref_sidebar_layout %>
+      <% headings = current_actor.pref_sidebar_headings %>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <% [["pinned", t("preferences.sidebar_layout_pinned")],
             ["scroll", t("preferences.sidebar_layout_scroll")],
@@ -141,12 +150,29 @@
             <ul data-sidebar-layout-editor-target="list" data-section="<%= section %>"
                 class="min-h-16 rounded border border-slate-200 bg-slate-50 p-1 flex flex-col gap-1">
               <% layout[section].each do |item_id| %>
-                <li data-item-id="<%= item_id %>"
-                    class="flex items-center gap-2 px-2 py-1 rounded border border-slate-200 bg-white text-sm cursor-grab select-none">
-                  <span class="text-slate-400 shrink-0">⋮⋮</span>
-                  <span class="w-4 flex items-center justify-center shrink-0 text-slate-500"><%= icon(sidebar_item_icon(item_id), size: "w-4 h-4") %></span>
-                  <span class="truncate"><%= sidebar_item_label(item_id) %></span>
-                </li>
+                <% if ActorPreferences.sidebar_heading_id?(item_id) %>
+                  <%# #1612: Überschrift — Name direkt editierbar, × entfernt sie.
+                      Gleiches Markup baut sidebar-layout-editor#buildHeading. %>
+                  <% token = ActorPreferences.sidebar_heading_token(item_id) %>
+                  <li data-item-id="<%= item_id %>" data-heading
+                      class="flex items-center gap-2 px-2 py-1 rounded border border-dashed border-slate-300 bg-slate-100 text-sm cursor-grab select-none">
+                    <span class="text-slate-400 shrink-0">⋮⋮</span>
+                    <input type="text" name="preferences[sidebar_headings][<%= token %>]" value="<%= headings[token] %>"
+                           maxlength="<%= ActorPreferences::SIDEBAR_HEADING_NAME_MAX %>" required
+                           aria-label="<%= t("preferences.sidebar_heading_name") %>"
+                           class="flex-1 min-w-0 select-text text-[11px] uppercase tracking-wider bg-transparent border-0 px-0 py-0 focus:outline-none focus:ring-0">
+                    <button type="button" data-action="sidebar-layout-editor#removeHeading"
+                            title="<%= t("preferences.sidebar_heading_remove") %>" aria-label="<%= t("preferences.sidebar_heading_remove") %>"
+                            class="shrink-0 text-slate-400 hover:text-rose-600 cursor-pointer bg-transparent border-0 px-1">×</button>
+                  </li>
+                <% else %>
+                  <li data-item-id="<%= item_id %>"
+                      class="flex items-center gap-2 px-2 py-1 rounded border border-slate-200 bg-white text-sm cursor-grab select-none">
+                    <span class="text-slate-400 shrink-0">⋮⋮</span>
+                    <span class="w-4 flex items-center justify-center shrink-0 text-slate-500"><%= icon(sidebar_item_icon(item_id), size: "w-4 h-4") %></span>
+                    <span class="truncate"><%= sidebar_item_label(item_id) %></span>
+                  </li>
+                <% end %>
               <% end %>
             </ul>
             <input type="hidden" data-sidebar-layout-editor-target="input" data-section="<%= section %>"

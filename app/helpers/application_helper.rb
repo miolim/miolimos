@@ -352,6 +352,19 @@ module ApplicationHelper
     end
   end
 
+  # #1612: Einträge eines Sidebar-Bereichs, gegliedert nach Überschriften —
+  # [[nil, [ids vor der ersten Überschrift]], ["heading:…", [ids]], …].
+  # Eine Gruppe endet an der nächsten Überschrift oder am Ende des Bereichs.
+  def sidebar_groups(ids)
+    ids.each_with_object([[nil, []]]) do |id, gruppen|
+      if ActorPreferences.sidebar_heading_id?(id)
+        gruppen << [id, []]
+      else
+        gruppen.last[1] << id
+      end
+    end.reject { |heading, items| heading.nil? && items.empty? }
+  end
+
   # Rendert ein Lucide-Icon. Die Partials in app/views/shared/icons/
   # enthalten NUR den inneren SVG-Inhalt (Pfade); der Helper baut die
   # einheitliche `<svg>`-Hülle drumherum — so steckt stroke-width und

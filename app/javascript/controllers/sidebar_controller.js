@@ -14,7 +14,13 @@ import { Controller } from "@hotwired/stimulus"
 // Auf Mobile irrelevant — dort regelt mobile_nav_controller das
 // Slide-In/Out komplett separat.
 export default class extends Controller {
-  static values = { storageKey: { type: String, default: "sidebar.collapsed" } }
+  // #1612: `group` = Einträge unter einer freien Überschrift; `groupsUrl` =
+  // wohin der Klappzustand gespeichert wird (Vorlieben).
+  static targets = ["group"]
+  static values = {
+    storageKey: { type: String, default: "sidebar.collapsed" },
+    groupsUrl:  String
+  }
 
   connect() {
     const saved = localStorage.getItem(this.storageKeyValue)
@@ -98,6 +104,41 @@ export default class extends Controller {
       this.hoverActive = false
       this.applyEffective()
     }
+  }
+
+  // #1612 (Hans): „Die sollen auch wie Aufklapp-Menüs funktionieren und alle
+  // darunter liegenden Einträge bis zur nächsten Zwischenüberschrift bzw. bis
+  // zum Ende des Bereichs ein- und ausklappen können." — Zustand in den
+  // Vorlieben (a). Bewusst hier und nicht in einem eigenen Controller: Das
+  // Attribut `data-controller="sidebar"` am <aside> fragen Tests exakt ab,
+  // auch im immoOS-Fork.
+  //
+  // Der Server rendert jede Gruppe schon im richtigen Zustand (`data-zu`);
+  // ein Klick schaltet sofort um und speichert dann im Hintergrund die Liste
+  // ALLER zugeklappten Überschriften — als kommagetrennten Text, weil ein
+  // leeres JSON-Array beim Parsen verloren gehen kann.
+  toggleGroup(event) {
+    const token = event.params.token
+    const group = this.groupTargets.find((g) => g.dataset.token === token)
+    if (!group) return
+    const zu = group.dataset.zu !== "true"
+    group.dataset.zu = String(zu)
+    event.currentTarget.setAttribute("aria-expanded", String(!zu))
+    this._saveGroups()
+  }
+
+  _saveGroups() {
+    if (!this.groupsUrlValue) return
+    const tokens = this.groupTargets.filter((g) => g.dataset.zu === "true").map((g) => g.dataset.token)
+    const csrf = document.querySelector("meta[name='csrf-token']")?.content || ""
+    fetch(this.groupsUrlValue, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json", "Accept": "application/json", "X-CSRF-Token": csrf },
+      body:    JSON.stringify({ preferences: { sidebar_collapsed_headings: tokens.join(",") } })
+    }).catch(() => {
+      // Nicht speichern können (Vorschau, fehlendes Recht, offline) stört die
+      // Bedienung nicht — die Gruppe ist trotzdem umgeschaltet.
+    })
   }
 
   applyEffective() {

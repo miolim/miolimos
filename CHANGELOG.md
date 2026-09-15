@@ -18,6 +18,13 @@ release is cut, this section is renamed to the new version and a fresh
 ### Added
 
 - Organizations can have the legal form "GmbH & Co. KG" (#1610).
+- Free, collapsible headings in the sidebar (#1612). Add them under
+  Settings → Preferences in the sidebar layout, name them and drag them into
+  place; clicking a heading folds everything below it, up to the next heading
+  or the end of its area. Whether a heading is folded is saved in your
+  preferences, so it is the same on every device, and the default for new
+  users (#1500) carries headings over. The fixed "Recently opened" and
+  "Overview" headings are gone; existing sidebars start without headings.
 
 ### Fixed
 

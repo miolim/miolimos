@@ -26,6 +26,7 @@
     Icon-Spalte aendert, muss diese Breite mitziehen (test/system/
     sidebar_schmal_zentriert_test.rb misst es nach). %>
 <aside data-controller="sidebar"
+       data-sidebar-groups-url-value="<%= settings_preferences_path if current_actor %>"
        data-ui-label="Seitenleiste (Navigation)"
        data-mobile-nav-target="sidebar"
        data-action="mouseenter->sidebar#hoverExpand mouseleave->sidebar#hoverCollapse"
@@ -89,9 +90,7 @@
       und der Scrollbalken läuft nicht über sie hinweg. %>
   <% if sidebar_layout["pinned"].any? %>
     <div class="shrink-0 px-0 pt-1 flex flex-col gap-0.5 text-[13px] bg-slate-900">
-      <% sidebar_layout["pinned"].each do |item_id| %>
-        <%= sidebar_item(item_id) %>
-      <% end %>
+      <%= render "shared/sidebar_section", ids: sidebar_layout["pinned"] %>
     </div>
   <% end %>
 
@@ -115,13 +114,10 @@
       Linie. %>
   <nav class="flex-1 min-h-0 overflow-y-auto px-0 py-2 flex flex-col gap-0.5 text-[13px]
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <%# #1612 (Hans): Die feste Überschrift „Gesamt" entfällt — Überschriften
+        sind frei und kommen aus den Vorlieben (shared/_sidebar_section). %>
     <% if sidebar_layout["scroll"].any? %>
-      <div class="mb-1 px-2 text-[11px] uppercase tracking-wider text-slate-500 whitespace-nowrap overflow-hidden group-data-[collapsed=true]/sidebar:md:invisible">
-        <%= t("shared.sidebar.overview") %>
-      </div>
-      <% sidebar_layout["scroll"].each do |item_id| %>
-        <%= sidebar_item(item_id) %>
-      <% end %>
+      <%= render "shared/sidebar_section", ids: sidebar_layout["scroll"] %>
     <% end %>
   </nav>
 

@@ -18,8 +18,9 @@ class SidebarLayoutRenderTest < ActionDispatch::IntegrationTest
   test "dashboard renders the layout-driven sidebar with default layout" do
     get "/dashboard"
     assert_response :success
-    # „Gesamt"-Ueberschrift des Scrollbereichs beweist, dass die Nav gerendert hat.
-    assert_includes @response.body, I18n.t("shared.sidebar.overview")
+    # #1612: Die feste „Gesamt"-Überschrift gibt es nicht mehr — die Nav
+    # beweist sich über ihr Element und ihre Einträge.
+    assert_select "aside nav", 1
     # Ein Scroll-Eintrag und ein Pinned-Eintrag sind da.
     assert_includes @response.body, I18n.t("nav.tasks")
     assert_includes @response.body, I18n.t("nav.dashboard")

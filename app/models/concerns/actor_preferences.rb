@@ -188,6 +188,40 @@ module ActorPreferences
 
   SIDEBAR_ITEM_IDS = SIDEBAR_ITEM_DEFAULTS.map(&:first).freeze
 
+  # #1612 (Hans): „Stattdessen soll es möglich sein, in den Vorlieben freie
+  # Überschriften für die Sidebar zu definieren. Die sollen auch wie
+  # Aufklapp-Menüs funktionieren …" — Klappzustand in den Vorlieben (a),
+  # bestehende Nutzer starten ohne Überschriften (b).
+  #
+  # Eine Überschrift ist ein weiterer Eintrag im Layout (`heading:<token>`),
+  # ihr Name steht in `preferences["sidebar_headings"]`. Damit gilt für
+  # Überschriften alles, was das Layout schon kann — ziehen, verschieben,
+  # ausblenden, und der Standard für neue Nutzer (#1500) nimmt sie mit.
+  SIDEBAR_HEADING_PREFIX   = "heading:".freeze
+  SIDEBAR_HEADING_TOKEN    = /\A[0-9a-f]{8}\z/
+  SIDEBAR_HEADING_NAME_MAX = 40
+
+  def self.sidebar_heading_id?(id)    = id.to_s.start_with?(SIDEBAR_HEADING_PREFIX)
+  def self.sidebar_heading_token(id)  = id.to_s.delete_prefix(SIDEBAR_HEADING_PREFIX)
+
+  # { token => Name } — nur gültige Tokens mit nicht-leerem Namen.
+  def pref_sidebar_headings
+    raw = preferences["sidebar_headings"]
+    return {} unless raw.is_a?(Hash)
+
+    raw.each_with_object({}) do |(token, name), h|
+      t = token.to_s
+      n = name.to_s.strip
+      h[t] = n if t.match?(SIDEBAR_HEADING_TOKEN) && n.present?
+    end
+  end
+
+  # Tokens der zugeklappten Überschriften — nur solche, die es gibt.
+  def pref_sidebar_collapsed_headings
+    known = pref_sidebar_headings
+    Array(preferences["sidebar_collapsed_headings"]).map(&:to_s).select { |t| known.key?(t) }
+  end
+
   # #1582 (Hans): „Man soll festlegen können, welcher Stack beim Programmstart
   # als erstes angezeigt wird. […] Es soll auch möglich sein, mit einem leeren
   # Stack, also ohne voreingestellte Card zu starten."
@@ -222,11 +256,12 @@ module ActorPreferences
     saved  = preferences["sidebar_layout"]
     placed = {}
     result = { "pinned" => [], "scroll" => [], "hidden" => [] }
+    headings = pref_sidebar_headings   # #1612
     if saved.is_a?(Hash)
       SIDEBAR_SECTIONS.each do |sec|
         Array(saved[sec]).each do |raw_id|
           id = raw_id.to_s
-          next unless SIDEBAR_ITEM_IDS.include?(id)
+          next unless sidebar_layout_id?(id, headings)
           next if placed[id]
           result[sec] << id
           placed[id] = true
@@ -312,6 +347,13 @@ module ActorPreferences
   # Auseinanderdriften, gegen das die Tabelle oben angelegt ist.
   def pruefe_vorlieben(updates)
     new_prefs = preferences.deep_dup
+    schluessel = updates.keys.map(&:to_s)
+    # #1612: Überschriften ZUERST — das Layout darf nur Überschriften führen,
+    # deren Namen es gibt, egal in welcher Reihenfolge die Schlüssel kommen.
+    if schluessel.include?("sidebar_headings")
+      roh = updates["sidebar_headings"] || updates[:sidebar_headings]
+      new_prefs["sidebar_headings"] = sanitize_sidebar_headings(roh)
+    end
     updates.each do |key, value|
       case key.to_s
       when "card_widths"
@@ -332,7 +374,11 @@ module ActorPreferences
       when "sidebar_recent_topics_count"
         new_prefs["sidebar_recent_topics_count"] = value.to_i.clamp(0, SIDEBAR_RECENT_TOPICS_MAX)
       when "sidebar_layout"
-        new_prefs["sidebar_layout"] = sanitize_sidebar_layout(value)
+        new_prefs["sidebar_layout"] = sanitize_sidebar_layout(value, new_prefs["sidebar_headings"])
+      when "sidebar_collapsed_headings"
+        # #1612: als kommagetrennter Text (Stimulus) oder Liste (Vorgabe #1500).
+        tokens = value.is_a?(String) ? value.split(",") : Array(value)
+        new_prefs["sidebar_collapsed_headings"] = tokens.map { |t| t.to_s.strip }.reject(&:blank?).uniq
       when "topbar_layout"
         new_prefs["topbar_layout"] = sanitize_topbar_layout(value)
       when "locale"
@@ -342,6 +388,20 @@ module ActorPreferences
       when "start_stack"
         new_prefs["start_stack"] = value.to_s if START_STACK_OPTIONS.include?(value.to_s)
       end
+    end
+    # #1612: Wird das Layout gespeichert, fallen Überschriften weg, die nicht
+    # mehr darin stehen — im Editor gelöscht heißt: das Formular schickt sie
+    # nicht mehr (bei der letzten fehlt der Schlüssel ganz).
+    if schluessel.include?("sidebar_layout")
+      im_layout = new_prefs["sidebar_layout"].values.flatten
+                    .select { |id| ActorPreferences.sidebar_heading_id?(id) }
+                    .map { |id| ActorPreferences.sidebar_heading_token(id) }
+      bisher = new_prefs["sidebar_headings"].is_a?(Hash) ? new_prefs["sidebar_headings"] : {}
+      new_prefs["sidebar_headings"] = bisher.slice(*im_layout)
+    end
+    if new_prefs.key?("sidebar_collapsed_headings")
+      bekannt = new_prefs["sidebar_headings"].is_a?(Hash) ? new_prefs["sidebar_headings"] : {}
+      new_prefs["sidebar_collapsed_headings"] = Array(new_prefs["sidebar_collapsed_headings"]).select { |t| bekannt.key?(t) }
     end
     self.preferences = new_prefs
   end
@@ -363,7 +423,26 @@ module ActorPreferences
   # bekannte IDs, dedupliziert ueber alle Bereiche (eine ID kann nur an einem
   # Ort liegen). Reihenfolge = Eingabe-Reihenfolge. Fehlende IDs werden beim
   # Auslesen (pref_sidebar_layout) automatisch ergaenzt, hier NICHT.
-  def sanitize_sidebar_layout(value)
+  # #1612: Layout-ID gültig = fester Eintrag ODER Überschrift mit Namen.
+  def sidebar_layout_id?(id, headings)
+    return true if SIDEBAR_ITEM_IDS.include?(id)
+    return false unless ActorPreferences.sidebar_heading_id?(id)
+
+    (headings || {}).key?(ActorPreferences.sidebar_heading_token(id))
+  end
+
+  # #1612: { token => Name } aus dem Formular — Token 8 Hex-Zeichen, Name
+  # getrimmt, Leerraum zusammengezogen, gekürzt; leere Namen fallen weg.
+  def sanitize_sidebar_headings(value)
+    src = value.respond_to?(:to_h) ? value.to_h : {}
+    src.each_with_object({}) do |(token, name), h|
+      t = token.to_s
+      n = name.to_s.squish.first(SIDEBAR_HEADING_NAME_MAX)
+      h[t] = n if t.match?(SIDEBAR_HEADING_TOKEN) && n.present?
+    end
+  end
+
+  def sanitize_sidebar_layout(value, headings = nil)
     src    = value.respond_to?(:to_h) ? value.to_h : {}
     seen   = {}
     layout = { "pinned" => [], "scroll" => [], "hidden" => [] }
@@ -372,7 +451,7 @@ module ActorPreferences
       ids = raw.is_a?(String) ? raw.split(",") : Array(raw)
       ids.each do |raw_id|
         id = raw_id.to_s.strip
-        next unless SIDEBAR_ITEM_IDS.include?(id)
+        next unless sidebar_layout_id?(id, headings)
         next if seen[id]
         layout[sec] << id
         seen[id] = true

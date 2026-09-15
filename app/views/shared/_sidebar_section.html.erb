@@ -1,0 +1,45 @@
+<%# #1612 (Hans): Einträge eines Sidebar-Bereichs (Fest oben ODER Scrollbereich),
+    gegliedert durch freie Überschriften aus den Vorlieben. Eine Überschrift gilt
+    bis zur nächsten oder bis zum Ende dieses Bereichs; eine Gruppe reicht nie
+    über die Bereichsgrenze. Einträge vor der ersten Überschrift stehen offen.
+
+    In der schmalen Icon-Leiste bleibt von der Überschrift nur die Trennlinie;
+    eine zugeklappte Gruppe bleibt dort zu (Hover klappt die Leiste auf, dann
+    ist die Überschrift wieder anklickbar).
+
+    Ein-/Ausblenden über `data-zu` + `data-[zu=true]:hidden` statt über das
+    `hidden`-Attribut: Das kollidierte mit `flex` am selben Element. %>
+<% headings  = current_actor ? current_actor.pref_sidebar_headings : {} %>
+<% collapsed = current_actor ? current_actor.pref_sidebar_collapsed_headings : [] %>
+<% sidebar_groups(ids).each do |heading_id, items| %>
+  <% if heading_id %>
+    <% token = ActorPreferences.sidebar_heading_token(heading_id) %>
+    <% zu    = collapsed.include?(token) %>
+    <button type="button"
+            data-action="sidebar#toggleGroup"
+            data-sidebar-token-param="<%= token %>"
+            data-sidebar-heading="<%= token %>"
+            aria-expanded="<%= !zu %>"
+            aria-controls="sidebar-group-<%= token %>"
+            title="<%= headings[token] %>"
+            class="group/heading mt-1 flex items-center gap-1 w-full px-2 pt-1.5 pb-0.5 text-left text-[11px] uppercase tracking-wider text-slate-500 hover:text-slate-300 cursor-pointer bg-transparent border-0 border-t border-slate-800/60">
+      <span class="truncate group-data-[collapsed=true]/sidebar:md:invisible"><%= headings[token] %></span>
+      <span class="shrink-0 transition-transform group-aria-expanded/heading:rotate-90 group-data-[collapsed=true]/sidebar:md:invisible">
+        <%= icon "chevron_right", size: "w-3 h-3" %>
+      </span>
+    </button>
+    <div id="sidebar-group-<%= token %>"
+         data-sidebar-target="group"
+         data-token="<%= token %>"
+         data-zu="<%= zu %>"
+         class="flex flex-col gap-0.5 data-[zu=true]:hidden">
+      <% items.each do |item_id| %>
+        <%= sidebar_item(item_id) %>
+      <% end %>
+    </div>
+  <% else %>
+    <% items.each do |item_id| %>
+      <%= sidebar_item(item_id) %>
+    <% end %>
+  <% end %>
+<% end %>

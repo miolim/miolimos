@@ -2469,6 +2469,13 @@ en:
       label: "👁 Preview:"
       readonly: "You are viewing miolimOS as %{name} — read only."
       exit: "Exit preview"
+    # #1617: Copy button on the card spine — click = link, shift+click = wikilink.
+    blade_copy:
+      title: "Copy link"
+      title_with_wikilink: "Copy link · Shift+click: copy wikilink"
+      aria: "Copy link to clipboard"
+      link_copied: "Link copied: %{ref}"
+      wikilink_copied: "Wikilink copied: %{ref}"
     close_button:
       stack_history: "Stack history"
       close_card: "Close card"

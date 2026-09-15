@@ -26,6 +26,13 @@ release is cut, this section is renamed to the new version and a fresh
   users (#1500) carries headings over. The fixed "Recently opened" and
   "Overview" headings are gone; existing sidebars start without headings.
 
+### Changed
+
+- The copy icon on a card's spine now always copies the link to the card
+  (#1617). Hold Shift while clicking to copy the wikilink instead — for tasks
+  (`[[#123]]`), sources and knowledge items. Cards without wikilink syntax copy
+  the link either way.
+
 ### Fixed
 
 - The search field at the top no longer shows odd suggestions like single

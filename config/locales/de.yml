@@ -2497,6 +2497,13 @@ de:
       label: "👁 Vorschau:"
       readonly: "Du siehst miolimOS als %{name} — nur lesen."
       exit: "Vorschau beenden"
+    # #1617: Kopier-Knopf im Kartenrücken — Klick = Link, Umschalt+Klick = Wikilink.
+    blade_copy:
+      title: "Link kopieren"
+      title_with_wikilink: "Link kopieren · Umschalt+Klick: Wikilink kopieren"
+      aria: "Link in die Zwischenablage kopieren"
+      link_copied: "Link kopiert: %{ref}"
+      wikilink_copied: "Wikilink kopiert: %{ref}"
     close_button:
       stack_history: "Verlauf"
       close_card: "Karte schließen"

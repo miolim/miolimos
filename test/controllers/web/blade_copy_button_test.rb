@@ -1,7 +1,10 @@
 require "test_helper"
 
-# #630: Copy-Referenz-Button im Blade-Spine — Wikilink wo es Syntax
-# gibt (KI/Task/Quelle), sonst URL.
+# #630: Copy-Referenz-Button im Blade-Spine.
+# #1617 (Hans): „Es wird grundsätzlich immer der Link kopiert. Mit
+# UMSCHALT+Mausklick wird der Wikilink kopiert, falls vorhanden." — der
+# Button trägt immer den Link und, wo es Syntax gibt (KI/Task/Quelle),
+# zusätzlich den Wikilink.
 class BladeCopyButtonTest < ActionDispatch::IntegrationTest
   setup do
     @hans = create_human(password: "secretsecret")
@@ -11,36 +14,42 @@ class BladeCopyButtonTest < ActionDispatch::IntegrationTest
     post "/login", params: { email: @hans.email, password: "secretsecret" }
   end
 
-  test "Task-Blade kopiert [[#id]]" do
+  test "Task-Blade: Link auf die Aufgabe, Umschalt-Wikilink [[#id]]" do
     task = Task.create!(title: "Copy-Task", creator: @hans)
     get "/tasks", params: { stack: "list:tasks,task:#{task.id}" }
     assert_response :success
-    assert_includes @response.body, %(data-copy-clipboard-content-value="[[##{task.id}]]")
+    assert_includes @response.body, %(data-copy-clipboard-content-value="http://www.example.com/tasks?stack=task:#{task.id}")
+    assert_includes @response.body, %(data-copy-clipboard-wikilink-value="[[##{task.id}]]")
+    assert_includes @response.body, %(title="Link kopieren · Umschalt+Klick: Wikilink kopieren")
   end
 
-  test "KI-Blade kopiert [[Titel]]; Titel mit Syntax-Brechern fällt auf [[uuid]] zurück" do
+  test "KI-Blade: Link auf die KI, Umschalt-Wikilink [[Titel]]; Syntax-Brecher fallen auf [[uuid]] zurück" do
     item = create_ki(title: "Copy-KI-Eintrag")
     get "/knowledge_items", params: { stack: item.uuid }
     assert_response :success
-    assert_includes @response.body, %(data-copy-clipboard-content-value="[[Copy-KI-Eintrag]]")
+    assert_includes @response.body, %(data-copy-clipboard-content-value="http://www.example.com/knowledge_items?stack=#{item.uuid}")
+    assert_includes @response.body, %(data-copy-clipboard-wikilink-value="[[Copy-KI-Eintrag]]")
 
     weird = create_ki(title: "Hat [Klammer] drin")
     get "/knowledge_items", params: { stack: weird.uuid }
-    assert_includes @response.body, %(data-copy-clipboard-content-value="[[#{weird.uuid}]]")
+    assert_includes @response.body, %(data-copy-clipboard-wikilink-value="[[#{weird.uuid}]]")
   end
 
-  test "Topic-Blade kopiert die Topic-URL" do
+  test "Topic-Blade: nur der Link, kein Wikilink" do
     topic = Topic.create!(name: "Copy-Thema", slug: "copy-#{SecureRandom.hex(3)}", creator: @hans)
     get "/topics/#{topic.slug}"
     assert_response :success
     assert_includes @response.body, %(data-copy-clipboard-content-value="http://www.example.com/topics/#{topic.slug}")
+    assert_not_includes @response.body, "data-copy-clipboard-wikilink-value"
+    assert_includes @response.body, %(title="Link kopieren")
   end
 
-  test "Inbox-Detail-Blade kopiert die Inbox-URL" do
+  test "Inbox-Detail-Blade: nur der Link" do
     item = InboxItem.create!(source_kind: "text", raw_content: "x", status: "pending", creator: @hans)
     get "/inbox", params: { stack: "list:inbox_items,inboxitem:#{item.id}" }
     assert_response :success
     assert_includes @response.body, %(data-copy-clipboard-content-value="http://www.example.com/inbox/#{item.id}")
+    assert_not_includes @response.body, "data-copy-clipboard-wikilink-value"
   end
 
   # #636: Topic-Farbpunkt im Spine des Items.

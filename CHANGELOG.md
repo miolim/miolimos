@@ -37,7 +37,8 @@ release is cut, this section is renamed to the new version and a fresh
   (#1228) kept running in the focus view, where all other cards are hidden —
   a hidden neighbour counted as an edge at 0, so the focused card was cut away
   completely as soon as the stack scrolled. Hidden cards no longer count, and
-  the focused card is never trimmed.
+  the focused card is never trimmed. It is also centred again, without a
+  horizontal scrollbar: the stack's end spacer is hidden in the focus view.
 
 ## [0.5.0] - 2026-09-14
 

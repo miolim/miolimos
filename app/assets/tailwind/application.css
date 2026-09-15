@@ -709,7 +709,12 @@ section[data-controller~="tri-disclosure"]:not([data-state="closed"]) > button {
   body.focus-section #blade_stack_container { justify-content: center; }
 
   body.focus-blade #blade_stack_container > .stack-card:not([data-focus-blade]),
-  body.focus-section #blade_stack_container > .stack-card:not([data-focus-blade]) {
+  body.focus-section #blade_stack_container > .stack-card:not([data-focus-blade]),
+  /* #1613: Der End-Platzhalter (#1091) ist bei vielen Cards breiter als der
+     Bildschirm — im Fokus blieb er stehen, die Card rutschte an den Rand und
+     eine Scrollleiste erschien. */
+  body.focus-blade #blade_stack_container > .stack-end-spacer,
+  body.focus-section #blade_stack_container > .stack-end-spacer {
     display: none !important;
   }
 

@@ -49,11 +49,18 @@ class FocusCard1613Test < ApplicationSystemTestCase
       (() => {
         const c = document.querySelector(#{card.to_json})
         const r = c.getBoundingClientRect()
+        const cont = document.getElementById("blade_stack_container")
+        const cr = cont.getBoundingClientRect()
         return { clip: getComputedStyle(c).clipPath, breite: r.width,
-                 treffer: !!document.elementFromPoint(r.left + r.width / 2, r.top + 80)?.closest(#{card.to_json}) }
+                 treffer: !!document.elementFromPoint(r.left + r.width / 2, r.top + 80)?.closest(#{card.to_json}),
+                 mitte: (r.left + r.width / 2) - (cr.left + cr.width / 2),
+                 ueberlauf: cont.scrollWidth - cont.clientWidth }
       })()
     JS
     assert lage["breite"] > 300, "Die fokussierte Card braucht ihre Breite: #{lage.inspect}"
+    # Der End-Platzhalter (#1091) darf die Card nicht an den Rand schieben.
+    assert_operator lage["mitte"].abs, :<=, 2, "Die fokussierte Card steht mittig: #{lage.inspect}"
+    assert_operator lage["ueberlauf"], :<=, 1, "Im Fokus gibt es nichts waagerecht zu scrollen: #{lage.inspect}"
     assert_includes ["none", ""], lage["clip"], "Die fokussierte Card darf nicht beschnitten sein: #{lage.inspect}"
     assert lage["treffer"], "Die Mitte der fokussierten Card muss sichtbar sein: #{lage.inspect}"
     within(card) { assert_text ziel.title }

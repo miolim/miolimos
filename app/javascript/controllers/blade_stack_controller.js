@@ -955,23 +955,15 @@ class BladeStackController extends Controller {
   }
 
   _openCloseMenu(trigger, card) {
-    // #1496 (aus immoos #1481 uebernommen). Hans dort: „Der untere Befehl soll
-    // bei der aeussersten linken Card ausgegraut sein, weil ansonsten ein
-    // leerer Stack entstuende. Tatsaechlich ist er aber nicht bei der
-    // aeussersten linken Card ausgegraut, sondern bei der darauf folgenden."
+    // #1631 (aus immoos #1481 R2 uebernommen). Hans dort: „Bitte
+    // generalisieren: Einfach immer anzeigen. Ggf. entsteht dann ein leerer
+    // Stack, aber das schadet ja auch nicht. Klick in die Sidebar öffnet ja
+    // wieder die erste Card." — und: „Bitte in den Infos für miolim
+    // festhalten, dass es dort auch so umgesetzt wird."
     //
-    // Die Regel hing nur an „gibt es rechts noch etwas?" — in einem Stapel aus
-    // ZWEI Karten ist das genau die zweite, daher sein Befund. Jetzt zwei
-    // Bedingungen, und beide sagen dasselbe: Der Befehl darf nur, wenn er
-    // etwas uebrig laesst und mehr tut als der Befehl darueber.
-    //
-    //   · bei der ERSTEN Karte nicht — er schloesse den ganzen Stapel
-    //   · bei der LETZTEN nicht — rechts steht nichts, er waere „Diese Karte
-    //     schliessen" ein zweites Mal
-    const karten    = Array.from(this.containerTarget.querySelectorAll(".stack-card"))
-    const istErste  = karten.indexOf(card) <= 0
-    const hatRechts = !!(card.nextElementSibling?.classList?.contains("stack-card"))
-    const hasRight  = hatRechts && !istErste
+    // Beide Einträge sind deshalb immer freigegeben — auch an der ersten Karte
+    // (leert den Stapel) und an der letzten (wirkt wie „Diese Karte
+    // schließen"). Die mit #1496 übernommene Sperre ist bewusst entfallen.
     const menu = document.createElement("div")
     menu.className = "fixed z-50 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-52 text-sm text-slate-700"
     const addItem = (label, enabled, onPick) => {
@@ -989,7 +981,7 @@ class BladeStackController extends Controller {
       menu.appendChild(b)
     }
     addItem(window.t("blade_stack.close_menu_this"), true, () => this._closeCardElement(card))
-    addItem(window.t("blade_stack.close_menu_right_of"), hasRight, () => this._closeCardsFrom(card))
+    addItem(window.t("blade_stack.close_menu_right_of"), true, () => this._closeCardsFrom(card))
     document.body.appendChild(menu)
     // Über dem Trigger positionieren (das X sitzt am Card-Boden), links-
     // bündig zum Trigger, in den Viewport geclampt.

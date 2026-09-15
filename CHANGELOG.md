@@ -35,6 +35,10 @@ release is cut, this section is renamed to the new version and a fresh
   (#1617). Hold Shift while clicking to copy the wikilink instead — for tasks
   (`[[#123]]`), sources and knowledge items. Cards without wikilink syntax copy
   the link either way.
+- "Close this card and all to its right" in the close menu on a card's spine
+  is always available now, also on the first card (it empties the stack) and on
+  the last one (#1631, from immoOS #1481). Clicking an entry in the sidebar
+  opens a card again.
 
 ### Fixed
 

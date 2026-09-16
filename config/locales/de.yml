@@ -5,6 +5,8 @@ de:
       awaiting: Neuer Wartepunkt
       ki: Neuer Eintrag
       person: Neue Person
+      # #1644: derselbe Slot legt Personen UND Organisationen an.
+      person_or_org: Neue Person oder Organisation
       inbox: Inbox-Import
     fields:
       preset: "Preset:"
@@ -15,6 +17,12 @@ de:
       assignee_default: "— mir (Default) —"
       awaiting_placeholder: "Worauf wird gewartet?"
       person_placeholder: "Name der Person …"
+      # #1644: Umschalter oben im Slot + die Felder je Art.
+      type_person: "Person"
+      type_organization: "Organisation"
+      first_name_placeholder: "Vorname …"
+      last_name_placeholder: "Nachname …"
+      org_placeholder: "Name der Organisation …"
       person_url_placeholder: "Impressum-/Kontakt-URL (optional) — füllt Kontaktdaten"
       url_placeholder: "URL einfügen … (optional)"
       text_placeholder: "… oder Text-Schnipsel hier reinpasten"

@@ -149,38 +149,85 @@
     </div>
   <% end %>
 
-  <%# ─── Slot: Person ───────────────────────────────────────────── %>
+  <%# ─── Slot: Person / Organisation ────────────────────────────── %>
+  <%# #1644 (Hans): „Ich hätte gern oben zwei Optionsfelder: Person |
+      Organisation … Dann abhängig von der Option: Vorname/Nachname,
+      Geschlecht oder Organisationsname, Rechtsform."
+
+      Der Create-Pfad kann beides längst (apply_person_org!): Bei leerem Titel
+      baut er den Personen-Titel aus Vor- und Nachname (#739), `gender` gilt
+      nur für Personen (#1090/#1267), `legal_form` nur für Organisationen
+      (#1057). Hier fehlten nur die Felder und die Umschaltung. %>
   <%= render layout: "shared/quick_create_slot",
-        locals: { slot: "person", heading: t("quick_create.headings.person") } do %>
-    <%= form_with url: knowledge_items_path, method: :post, class: "space-y-2" do |f| %>
-      <%= hidden_field_tag :quick_create, "1" %>
-      <%= hidden_field_tag :item_type, "person" %>
-      <%= f.text_field :title,
-            placeholder: t("quick_create.fields.person_placeholder"),
-            autocomplete: "off",
-            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
-      <%# #1267 (Hans): Geschlecht schon bei der Schnellanlage. Der Create-Pfad
-          nimmt den Toplevel-Param `gender` seit #1090 entgegen
-          (apply_person_org!) — hier fehlte nur das Feld. Fakultativ; leer
-          bleibt „keine Angabe" und damit die neutrale Briefanrede. Direkt
-          unter dem Namen, weil beides zusammen die Anrede ergibt. %>
-      <label class="block text-[11px] text-slate-500"><%= t("knowledge.salutations.gender_label") %></label>
-      <%= f.select :gender,
-            Salutations::GENDERS.map { |v| [t("knowledge.salutations.genders.#{v}"), v] },
-            { include_blank: t("knowledge.salutations.gender_none") },
-            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
-      <%# #761 (Hans): optionale URL — ausgefüllt zieht der Create-Pfad gleich
-          die Kontaktdaten aus der Quelle (Kontaktdaten-Phase der
-          Entitäts-Recherche). %>
-      <%= f.url_field :enrich_url,
-            placeholder: t("quick_create.fields.person_url_placeholder"),
-            autocomplete: "off",
-            class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
-      <div class="flex justify-end">
-        <%= f.submit t("actions.create"),
-              class: "text-xs px-3 py-1 rounded bg-violet-600 text-white hover:bg-violet-700 cursor-pointer" %>
+        locals: { slot: "person", heading: t("quick_create.headings.person_or_org") } do %>
+    <div data-controller="entity-type-switch" data-entity-type-switch-typ-value="person">
+      <%# Zwei Optionsfelder als Umschalter; der aktive Knopf ist gefüllt. %>
+      <div role="group" aria-label="<%= t("quick_create.headings.person_or_org") %>"
+           class="grid grid-cols-2 gap-1 mb-2 rounded border border-slate-200 p-0.5">
+        <% [["person", t("quick_create.fields.type_person")],
+            ["organization", t("quick_create.fields.type_organization")]].each do |typ, label| %>
+          <button type="button"
+                  data-entity-type-switch-target="knopf"
+                  data-entity-type-switch-typ-param="<%= typ %>"
+                  data-action="entity-type-switch#waehlen"
+                  data-typ="<%= typ %>"
+                  aria-pressed="<%= typ == "person" %>"
+                  class="px-2 py-1 rounded text-xs cursor-pointer text-slate-600 hover:bg-slate-100
+                         data-[aktiv=true]:bg-violet-600 data-[aktiv=true]:text-white
+                         data-[aktiv=true]:hover:bg-violet-700"><%= label %></button>
+        <% end %>
       </div>
-    <% end %>
+
+      <%= form_with url: knowledge_items_path, method: :post, class: "space-y-2" do |f| %>
+        <%= hidden_field_tag :quick_create, "1" %>
+        <%= hidden_field_tag :item_type, "person",
+              data: { "entity-type-switch-target": "feldTyp" } %>
+
+        <%# Person: Vor-/Nachname (der Titel entsteht daraus), Geschlecht,
+            optionale URL für die Kontaktdaten (#761). %>
+        <div data-entity-type-switch-target="gruppe" data-typ="person" class="space-y-2">
+          <%= f.text_field :first_name,
+                placeholder: t("quick_create.fields.first_name_placeholder"),
+                autocomplete: "off",
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+          <%= f.text_field :last_name,
+                placeholder: t("quick_create.fields.last_name_placeholder"),
+                autocomplete: "off",
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+          <%# #1267 (Hans): Geschlecht schon bei der Schnellanlage. Fakultativ;
+              leer bleibt „keine Angabe" und damit die neutrale Briefanrede. %>
+          <label class="block text-[11px] text-slate-500"><%= t("knowledge.salutations.gender_label") %></label>
+          <%= f.select :gender,
+                Salutations::GENDERS.map { |v| [t("knowledge.salutations.genders.#{v}"), v] },
+                { include_blank: t("knowledge.salutations.gender_none") },
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+          <%# #761 (Hans): optionale URL — ausgefüllt zieht der Create-Pfad gleich
+              die Kontaktdaten aus der Quelle. %>
+          <%= f.url_field :enrich_url,
+                placeholder: t("quick_create.fields.person_url_placeholder"),
+                autocomplete: "off",
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+        </div>
+
+        <%# Organisation: Name (= Titel) und Rechtsform (#1057-Katalog). %>
+        <div data-entity-type-switch-target="gruppe" data-typ="organization" class="hidden space-y-2">
+          <%= f.text_field :title,
+                placeholder: t("quick_create.fields.org_placeholder"),
+                autocomplete: "off",
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+          <label class="block text-[11px] text-slate-500"><%= t("knowledge.legal_forms.label") %></label>
+          <%= f.select :legal_form,
+                LegalForms::OPTIONS.map { |v| [t("knowledge.legal_forms.#{v}"), v] },
+                { include_blank: t("knowledge.legal_forms.none") },
+                class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" %>
+        </div>
+
+        <div class="flex justify-end">
+          <%= f.submit t("actions.create"),
+                class: "text-xs px-3 py-1 rounded bg-violet-600 text-white hover:bg-violet-700 cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
   <% end %>
 
   <%# ─── Slot: Inbox-Import (#302 + #307) ───────────────────────── %>

@@ -5,6 +5,8 @@ en:
       awaiting: New waiting point
       ki: New knowledge item
       person: New person
+      # #1644: the same slot creates persons AND organizations.
+      person_or_org: New person or organization
       inbox: Inbox import
     fields:
       preset: "Preset:"
@@ -15,6 +17,12 @@ en:
       assignee_default: "— me (default) —"
       awaiting_placeholder: "What are you waiting for?"
       person_placeholder: "Name of the person …"
+      # #1644: the switch at the top of the slot and the fields per kind.
+      type_person: "Person"
+      type_organization: "Organization"
+      first_name_placeholder: "First name …"
+      last_name_placeholder: "Last name …"
+      org_placeholder: "Name of the organization …"
       person_url_placeholder: "Imprint/contact URL (optional) — fills contact data"
       url_placeholder: "Paste URL … (optional)"
       text_placeholder: "… or paste a text snippet here"

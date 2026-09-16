@@ -17,6 +17,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- The quick-add form for a person (topbar) now starts with two options,
+  "Person" and "Organization" (#1644). Person asks for first name, last name
+  and gender; organization asks for the name and the legal form. The title of a
+  person is built from the two name fields.
 - Opening a card from a row or a link now needs only one modifier (#1642):
   hold Shift while clicking and a small menu asks where the card should go —
   replace to the right, open on the left, open on the right, or open at the

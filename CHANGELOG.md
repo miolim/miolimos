@@ -17,6 +17,9 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- Wikilinks follow the same rule as every other link (#1648, from immoOS
+  #1643): hold Shift while clicking one and the menu asks where the card should
+  go. A plain click still appends the card at the end of the stack.
 - The quick-add form for a person (topbar) now starts with two options,
   "Person" and "Organization" (#1644). Person asks for first name, last name
   and gender; organization asks for the name and the legal form. The title of a
@@ -26,6 +29,13 @@ release is cut, this section is renamed to the new version and a fresh
   replace to the right, open on the left, open on the right, or open at the
   end. The Alt combinations are gone; Alt+click now behaves like a plain
   click, and Cmd/Ctrl still belongs to the browser.
+
+### Fixed
+
+- Starting with an empty stack stays empty (#1648, from immoOS #1645). The
+  history path brought the last open card back and even wrote it into the
+  address bar; the guard from #1582 only covered the other of the two places a
+  remembered stack comes from.
 
 ## [0.5.1] - 2026-09-15
 

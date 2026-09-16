@@ -13,6 +13,9 @@ import { BladeStackResizeMixin } from "lib/blade_stack_resize"
 import { focusTargetAfterClose, endSpacerWidth, standingSpacerWidth, nextShelfStop, prevShelfStop } from "lib/blade_stack_close"
 import { stickyOffsets } from "lib/blade_stack_sticky"
 import { overhangClips } from "lib/blade_stack_overhang"
+// #1648 (Hans): Auch der Wikilink-Klick fragt die Oeffnungsart — Umschalt
+// zeigt dasselbe Menue wie an allen anderen Klickwegen (#1642).
+import { oeffnungsart } from "lib/blade_open_menu"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -107,7 +110,14 @@ class BladeStackController extends Controller {
     // Sidebar-Klick auf "Wissen"): den letzten Eintrag aus der
     // localStorage-History wiederherstellen, damit der User dort
     // weiterarbeiten kann, wo er aufgehört hat.
-    if (initial.length === 0) {
+    //
+    // #1648 (aus immoOS #1645 uebernommen): Bei `?start=empty` (#1582) gilt
+    // das NICHT. Der gemerkte Stapel kommt aus zwei Quellen; die #1582-Sperre
+    // sass nur am Session-Restore weiter unten. Dieser Weg hier fragte nur
+    // „steht gar keine Card da?" — und beim leeren Start steht eben keine.
+    // Dadurch kam die zuletzt offene Card zurueck und schrieb sich per
+    // syncUrl sogar in die Adresszeile (`?start=empty&stack=…`).
+    if (initial.length === 0 && !this.startEmptyValue) {
       this.restoreLastFromHistoryIfAny()
     }
 
@@ -851,6 +861,29 @@ class BladeStackController extends Controller {
         if (fresh) {
           this.setActiveCard(fresh)
           this.scrollToAnchorInCard(fresh, blockAnchor)
+        }
+      }
+      return
+    }
+
+    // #1648 (Hans): „Das Verhalten für Links sollte überall gleich sein. Auch
+    // Wikilinks sollte man über UMSCHALT Mausklick an der entsprechenden
+    // Position öffnen können." — Umschalt fragt deshalb dasselbe Menue wie
+    // ueberall (lib/blade_open_menu); Abbruch oeffnet nichts. OHNE Umschalt
+    // bleibt es beim Anhaengen ans Ende (#312, siehe unten).
+    const art = await oeffnungsart(event)
+    if (!art || art === "browser") return
+    if (event.shiftKey && sourceCard) {
+      const ziel = this._urlForStackId(uuid) || this.cardUrlTemplateValue.replace("UUID", uuid)
+      if (await this._oeffneNeben(uuid, ziel, sourceCard, art)) {
+        this.pushTrailState()
+        this._collapseListIfExpanded()
+        if (blockAnchor) {
+          const fresh = this.cardForUuid(uuid)
+          if (fresh) {
+            this.setActiveCard(fresh)
+            this.scrollToAnchorInCard(fresh, blockAnchor)
+          }
         }
       }
       return

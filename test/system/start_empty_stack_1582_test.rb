@@ -51,4 +51,36 @@ class StartEmptyStack1582Test < ApplicationSystemTestCase
 
     assert_equal [], cards, "leerer Start darf keine Card nachladen"
   end
+
+  # #1648 (aus immoOS #1645 übernommen). Hans dort: „Wenn ich
+  # /dashboard?start=empty aufrufe, kommt immer eine automatische Weiterleitung
+  # auf …&stack=… statt des leeren Dashboards."
+  #
+  # Der gemerkte Stack kommt aus ZWEI Quellen, und der Test oben deckte nur
+  # eine ab (Session-/localStorage unter „stack…"). Die zweite ist die
+  # VERLAUFS-History: Sie fragte nur, ob gerade gar keine Card steht — und beim
+  # leeren Start steht eben keine. Deshalb hier nicht in den Browser-Speicher
+  # schreiben, sondern den Weg des Nutzers gehen: erst normal mit einer Card
+  # arbeiten, dann leer starten.
+  test "#1648: leerer Start bleibt leer, auch mit Verlauf in der History" do
+    # Bewusst OHNE Liste als erste Card: Der Verlauf hat zwei Behälter
+    # (LIST_HISTORY_KEY / PAGE_HISTORY_KEY). Ist die erste Card eine Liste,
+    # landet der Eintrag im Listen-Behälter — und den liest der leere Start
+    # gar nicht. Getroffen wird hier der Seiten-Behälter.
+    visit "/dashboard?stack=task:#{@task.id}"
+    assert_selector "#blade_stack_container [data-uuid='task:#{@task.id}']", wait: 5
+
+    visit "/dashboard?start=empty"
+    sleep 1
+
+    # Erst hier prüfbar: Geschrieben wird der Verlauf beim VERLASSEN der Seite
+    # (turbo:before-visit/beforeunload), nicht bei jeder Änderung. Ohne diese
+    # Vorbedingung bewiese ein leeres Ergebnis nichts.
+    assert_includes page.evaluate_script(
+      "localStorage.getItem('#{DashboardController::PAGE_HISTORY_KEY}') || ''"
+    ), "task:#{@task.id}", "Vorbedingung: der Verlaufs-Eintrag muss existieren"
+    assert_equal [], cards, "der leere Start darf auch den Verlauf nicht nachladen"
+    assert_no_match(/stack=/, page.current_url,
+                    "und sich keinen Stack in die Adresszeile schreiben")
+  end
 end

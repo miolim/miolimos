@@ -36,11 +36,12 @@ class ShortcutHelpTest < ApplicationSystemTestCase
     modal_oeffnen
 
     within "#shortcut_help_modal" do
-      %w[key_click key_shift_click key_shift_alt_click key_alt_click key_mod_click
+      %w[key_click key_shift_click key_mod_click
          key_spine_right key_resize_mod_dblclick key_shift_wheel].each do |k|
         assert_text I18n.t("js.shortcut_help.#{k}")
       end
-      assert_text I18n.t("js.shortcut_help.click_left")
+      # #1642: statt der Alt-Zeilen steht hier das Menue.
+      assert_text I18n.t("js.shortcut_help.click_menu")
       assert_text I18n.t("js.shortcut_help.group_open_note")
     end
   end

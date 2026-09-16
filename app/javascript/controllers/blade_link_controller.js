@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { stackVorhanden } from "lib/blade_stack_present"
+import { grundart, oeffnungsart } from "lib/blade_open_menu"
 
 // #163 Phase 4: Generischer „append-to-stack"-Trigger fuer Elemente
 // AUSSERHALB des blade-stack-DOM-Teilbaums (insbesondere die Sidebar).
@@ -14,26 +15,19 @@ import { stackVorhanden } from "lib/blade_stack_present"
 export default class extends Controller {
   static values = { kind: String, id: String, anchor: String, mode: String, nurModifier: Boolean }
 
-  // #1509 (aus immoos #1348 uebernommen). EINE Regel fuer alle Card-Aufrufe:
+  // #1642 (Hans): EIN Modifier statt drei Kombinationen — Umschalt+Klick
+  // oeffnet das Menue (lib/blade_open_menu), das die Oeffnungsart abfragt.
+  // Die Alt-Kombinationen aus #1509 entfallen; Alt+Klick wirkt jetzt wie ein
+  // schlichter Klick. Cmd/Strg gehoert weiter dem Browser.
   //
-  //   Klick                ersetzt alles rechts der aufrufenden Card
-  //   Umschalt+Klick       ergaenzt rechts daneben
-  //   Umschalt+Alt+Klick   ergaenzt links daneben
-  //   Alt+Klick            haengt ans Stapel-Ende
+  //   Klick            ersetzt alles rechts der aufrufenden Card
+  //   Umschalt+Klick   Menue: rechts ersetzen · links · rechts · ans Ende
   //   ist die Card schon offen: springen, egal was gedrueckt ist
-  //
-  // Cmd/Strg bleibt bewusst FREI — das gehoert dem Browser („in neuem Tab
-  // oeffnen"). Bei uns war Strg bisher der Anhaengen-Modifier (#1151); das
-  // aendert sich damit, und zwar zugunsten der Regel, die der Browser
-  // ohnehin hat.
-  static oeffnungsart(event) {
-    if (event?.shiftKey && event?.altKey) return "links"
-    if (event?.shiftKey) return "rechts"
-    if (event?.altKey)   return "ende"
-    return "ersetzen"
+  static grundart(event) {
+    return grundart(event)
   }
 
-  append(event) {
+  async append(event) {
     // #163 Phase 6c: wenn die aktuelle Seite KEINEN blade-stack hat
     // (body hat dann die has-blade-stack-Klasse NICHT), lassen wir das
     // Default-Browser-Verhalten weiterlaufen — d.h. <a href="...">
@@ -53,14 +47,22 @@ export default class extends Controller {
     // getan hat. Nur mit gedrueckter Taste wird die Zeile zum Card-Aufruf.
     // Deshalb faellt „ersetzen" hier durch — ohne preventDefault, damit der
     // Link seine normale Navigation behaelt.
-    if (this.nurModifierValue && this.constructor.oeffnungsart(event) === "ersetzen") return
+    if (this.nurModifierValue && grundart(event) === "ersetzen") return
     event.preventDefault()
     event.stopPropagation()
     if (!this.kindValue || !this.idValue) return
+    // #1642: Bei Umschalt fragt das Menue erst, wohin. Abbruch (Escape,
+    // Klick daneben) heisst: nichts tun.
+    //
+    // `currentTarget` NACH einem await ist null — das ausloesende Element
+    // deshalb vorher festhalten.
+    const ausloeser = event.currentTarget
+    const art = this.modeValue === "append_to_substack" ? "rechts" : await oeffnungsart(event)
+    if (!art || art === "browser") return
     // #163 Phase 6b: wenn der Klick AUS einer Listen-Blade kommt,
     // signalisieren wir das im Event-Detail; der blade-stack-Controller
     // collapsed dann die Source-Card.
-    const sourceList = event.currentTarget.closest("article.stack-card[data-uuid^='list:']")
+    const sourceList = ausloeser?.closest("article.stack-card[data-uuid^='list:']")
     window.dispatchEvent(new CustomEvent("blade-stack:append", {
       detail: {
         kind: this.kindValue,
@@ -77,10 +79,9 @@ export default class extends Controller {
         // #1509: Die Oeffnungsart kommt aus dem KLICK, nicht aus der Herkunft
         // des Elements. Ein Plus an einer Zeile bleibt „ergaenze rechts" —
         // es IST der Modifier fuer Finger.
-        oeffnen: this.modeValue === "append_to_substack"
-                   ? "rechts" : this.constructor.oeffnungsart(event),
+        oeffnen: art,
         // #1509: Anker ist die aufrufende CARD — egal ob Liste oder Detail.
-        quelleId: event.currentTarget.closest("article.stack-card")?.id || null
+        quelleId: ausloeser?.closest("article.stack-card")?.id || null
       }
     }))
   }

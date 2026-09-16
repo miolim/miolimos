@@ -10,7 +10,7 @@
 // Enthaltene Methoden (data-action `blade-stack#openX`):
 //   openFromList · openSource · openTask · openTopic · openAwaiting · openCommunication
 
-import BladeLinkController from "controllers/blade_link_controller"
+import { oeffnungsart } from "lib/blade_open_menu"
 
 export const BladeStackOpenersMixin = {
   // #224 6f-2: Default-Klick auf ein Listen-Item ersetzt den nachge-
@@ -43,7 +43,9 @@ export const BladeStackOpenersMixin = {
       return
     }
 
-    const art    = BladeLinkController.oeffnungsart(event)
+    // #1642: Umschalt fragt per Menue, wohin; Abbruch heisst nichts tun.
+    const art    = await oeffnungsart(event)
+    if (!art || art === "browser") return
     const quelle = event.target?.closest?.("article.stack-card")
     if (art !== "ersetzen" && quelle) {
       const url = this._urlForStackId(uuid) || this.cardUrlTemplateValue.replace("UUID", uuid)
@@ -181,7 +183,9 @@ export const BladeStackOpenersMixin = {
       this.setActiveCard(existing)
       return
     }
-    const art            = BladeLinkController.oeffnungsart(event)
+    // #1642: wie in openFromList — Umschalt zeigt das Menue.
+    const art            = await oeffnungsart(event)
+    if (!art || art === "browser") return
     const quelle         = event.target?.closest?.("article.stack-card")
     const sourceListCard = event.target?.closest?.("article.stack-card[data-uuid^='list:']")
     if (art !== "ersetzen" && quelle) {

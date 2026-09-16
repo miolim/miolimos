@@ -15,6 +15,14 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Changed
+
+- Opening a card from a row or a link now needs only one modifier (#1642):
+  hold Shift while clicking and a small menu asks where the card should go —
+  replace to the right, open on the left, open on the right, or open at the
+  end. The Alt combinations are gone; Alt+click now behaves like a plain
+  click, and Cmd/Ctrl still belongs to the browser.
+
 ## [0.5.1] - 2026-09-15
 
 ### Added

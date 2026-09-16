@@ -1,16 +1,14 @@
 require "application_system_test_case"
 
-# #1576 (Hans): „Ja, bitte entsprechend angleichen." — die Dokumente-Liste war
-# die letzte Liste mit der alten #1151-Regel (Strg/Cmd-Klick = anhaengen).
-# Jetzt gilt dort, was #1509 ueberall sonst eingefuehrt hat (vgl.
-# card_oeffnen_modifier_test fuer die Aufgabenliste):
+# #1576 (Hans): „Ja, bitte entsprechend angleichen." — die Dokumente-Liste folgt
+# derselben Regel wie alle anderen Listen.
+# #1642 (Hans): Diese Regel ist jetzt das Umschalt-Menü (Variante B):
 #
-#   Klick                ersetzt alles rechts der aufrufenden Card
-#   Umschalt+Klick       ergaenzt rechts daneben
-#   Umschalt+Alt+Klick   ergaenzt links daneben
-#   Alt+Klick            haengt ans Stapel-Ende
-#   Strg/Cmd+Klick       gehoert dem Browser — die Zeile tut nichts
-#   ist die Card schon offen: springen, egal was gedrueckt ist
+#   Klick            ersetzt alles rechts der aufrufenden Card
+#   Umschalt+Klick   Menü: rechts ersetzen · links · rechts · ans Ende
+#   Alt+Klick        wirkt wie ein schlichter Klick (kein Modifier mehr)
+#   Strg/Cmd+Klick   gehört dem Browser — die Zeile tut nichts
+#   ist die Card schon offen: springen, egal was gedrückt ist
 class DokumenteListeModifierTest < ApplicationSystemTestCase
   setup do
     @hans = create_human
@@ -38,6 +36,12 @@ class DokumenteListeModifierTest < ApplicationSystemTestCase
     modifier.empty? ? zeile.click : zeile.click(*modifier)
   end
 
+  def per_menue_oeffnen(doc, art)
+    zeile_klicken(doc, modifier: [:shift])
+    assert_selector "#blade_open_menu", wait: 5
+    find("#blade_open_menu button[data-open-art='#{art}']").click
+  end
+
   def liste_oeffnen
     page.driver.resize_window(1600, 900)
     visit "/documents?stack=list:documents"
@@ -60,21 +64,29 @@ class DokumenteListeModifierTest < ApplicationSystemTestCase
     assert_equal ["list:documents", card(@docs[1])], uuids
   end
 
-  test "Umschalt ergaenzt rechts neben der Liste" do
+  test "Menü-Wahl „rechts“ öffnet rechts neben der Liste" do
     erste_card_oeffnen
-    zeile_klicken(@docs[1], modifier: [:shift])
+    per_menue_oeffnen(@docs[1], "rechts")
     assert_selector ".stack-card[data-uuid='#{card(@docs[1])}']", wait: 10
     assert_equal ["list:documents", card(@docs[1]), card(@docs[0])], uuids
   end
 
-  test "Alt haengt ans Stapel-Ende" do
+  test "Menü-Wahl „am Ende“ hängt ans Stapel-Ende" do
     erste_card_oeffnen
-    zeile_klicken(@docs[1], modifier: [:alt])
+    per_menue_oeffnen(@docs[1], "ende")
     assert_selector ".stack-card[data-uuid='#{card(@docs[1])}']", wait: 10
     assert_equal ["list:documents", card(@docs[0]), card(@docs[1])], uuids
   end
 
-  test "Strg-Klick haengt nicht mehr an" do
+  test "Alt+Klick wirkt wie ein schlichter Klick" do
+    erste_card_oeffnen
+    zeile_klicken(@docs[1], modifier: [:alt])
+    assert_no_selector "#blade_open_menu", wait: 3
+    assert_selector ".stack-card[data-uuid='#{card(@docs[1])}']", wait: 10
+    assert_equal ["list:documents", card(@docs[1])], uuids
+  end
+
+  test "Strg-Klick hängt nicht an" do
     erste_card_oeffnen
     vorher = uuids
     zeile_klicken(@docs[1], modifier: [:control])
@@ -82,7 +94,7 @@ class DokumenteListeModifierTest < ApplicationSystemTestCase
     assert_equal vorher, uuids, "Strg/Cmd gehoert dem Browser, nicht dem Stapel"
   end
 
-  test "eine offene Card wird angesprungen, egal was gedrueckt ist" do
+  test "eine offene Card wird angesprungen, egal was gedrückt ist" do
     erste_card_oeffnen
     vorher = uuids
     zeile_klicken(@docs[0], modifier: [:alt])
@@ -93,7 +105,7 @@ class DokumenteListeModifierTest < ApplicationSystemTestCase
   test "Umschalt-Klick markiert keinen Text in der Zeile" do
     liste_oeffnen
     zeile_klicken(@docs[0], modifier: [:shift])
-    assert_selector ".stack-card[data-uuid='#{card(@docs[0])}']", wait: 10
+    assert_selector "#blade_open_menu", wait: 5
     assert_equal "", page.evaluate_script("window.getSelection().toString().trim()")
   end
 end

@@ -22,10 +22,14 @@ class ShortcutHelpLocalesTest < ActiveSupport::TestCase
     end
   end
 
+  # #1642: Umschalt+Klick fragt per Menue; die Alt-Kombinationen sind weg.
   test "die Mausklick-Modifier stehen in der Liste" do
     keys = schluessel
-    %w[key_click key_shift_click key_shift_alt_click key_alt_click key_mod_click].each do |k|
+    %w[key_click key_shift_click key_mod_click click_menu].each do |k|
       assert_includes keys, k
+    end
+    %w[key_shift_alt_click key_alt_click].each do |k|
+      assert_not_includes keys, k, "Alt ist seit #1642 kein Modifier mehr"
     end
   end
 

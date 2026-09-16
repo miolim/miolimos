@@ -18,9 +18,10 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Die Maus-Einträge beschreiben, was der Code tut; wer dort etwas ändert, zieht
 // die Zeile hier nach:
-//   Einträge öffnen   blade_link_controller#oeffnungsart (#1509), dieselbe Regel
-//                     in blade_stack_openers#openFromList; Seitenleiste nur mit
-//                     Modifier (nurModifier)
+//   Einträge öffnen   lib/blade_open_menu#oeffnungsart (#1642 — Umschalt zeigt
+//                     das Menü, Alt ist kein Modifier mehr); genutzt von
+//                     blade_link_controller#append, blade_stack_openers#openFromList
+//                     und #openDocument; Seitenleiste nur mit Modifier (nurModifier)
 //   Spine             blade_stack_controller#focusCard / #toggleCollapse /
 //                     #spineContextMenu
 //   Breitengriff      lib/blade_stack_resize (#1152 Übernehmen, #1154 Umkehren)
@@ -53,9 +54,7 @@ const GROUPS = [
   ] },
   { title: "shortcut_help.group_open", note: "shortcut_help.group_open_note", rows: [
     [{ t: "shortcut_help.key_click" }, "shortcut_help.click_replace"],
-    [{ t: "shortcut_help.key_shift_click" }, "shortcut_help.click_right"],
-    [{ t: "shortcut_help.key_shift_alt_click" }, "shortcut_help.click_left"],
-    [{ t: "shortcut_help.key_alt_click" }, "shortcut_help.click_end"],
+    [{ t: "shortcut_help.key_shift_click" }, "shortcut_help.click_menu"],
     [{ t: "shortcut_help.key_mod_click" }, "shortcut_help.click_browser"],
   ] },
   { title: "shortcut_help.group_mouse", rows: [

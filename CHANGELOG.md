@@ -15,6 +15,8 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.5.2] - 2026-09-16
+
 ### Changed
 
 - Wikilinks follow the same rule as every other link (#1648, from immoOS
@@ -1400,7 +1402,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/miolim/miolimos/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/miolim/miolimos/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/miolim/miolimos/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/miolim/miolimos/compare/v0.4.1...v0.4.2

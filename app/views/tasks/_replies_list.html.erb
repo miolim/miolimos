@@ -10,7 +10,15 @@
   last_two = replies.last(2)
   older    = replies[0...-2] || []
 %>
-<turbo-frame id="task_replies_list_frame_<%= task.id %>">
+<%# #1653: Marker fuers Nachholen nach einer Verbindungsunterbrechung
+    (live_resync_controller) — Nachlade-Adresse, Zaehler-Id und die aktuelle
+    Anzahl, damit der Zaehler ausserhalb des Frames mitgezogen wird. %>
+<turbo-frame id="task_replies_list_frame_<%= task.id %>"
+             data-live-resync-src="<%= task_replies_path(task) %>"
+             data-count-id="task_replies_count_<%= task.id %>">
+  <%# Die Anzahl steht IM Frame: beim Nachladen ersetzt Turbo nur den Inhalt,
+      Attribute am Frame selbst blieben auf dem alten Stand. %>
+  <span hidden data-replies-count="<%= replies.size %>"></span>
   <% if replies.any? %>
     <ul id="task_replies_list_<%= task.id %>" class="text-[13px]">
       <% if older.any? %>

@@ -16,7 +16,13 @@
   last_two  = replies.last(2)
   older     = replies[0...-2] || []
 %>
-<turbo-frame id="knowledge_replies_list_frame_<%= item.uuid %>">
+<%# #1653: Marker fuers Nachholen nach einer Verbindungsunterbrechung
+    (live_resync_controller) — wie bei den Aufgaben-Antworten. %>
+<turbo-frame id="knowledge_replies_list_frame_<%= item.uuid %>"
+             data-live-resync-src="<%= knowledge_item_replies_path(item.uuid) %>"
+             data-count-id="knowledge_replies_count_<%= item.uuid %>">
+  <%# Anzahl im Frame-INHALT — beim Nachladen tauscht Turbo nur diesen aus. %>
+  <span hidden data-replies-count="<%= replies.size %>"></span>
   <% if active_hl.any? %>
     <%# Filter-Modus: flache, aufgeklappte Liste aller passenden Antworten,
         jeweils nur die markierten Stellen. %>

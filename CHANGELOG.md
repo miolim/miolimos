@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Fixed
+
+- Replies that arrive while the connection is briefly down are no longer
+  missed (#1653). Live updates only work while the websocket is connected, and
+  nothing is replayed afterwards — so a reply posted during a deploy (which
+  restarts the server), while the laptop slept or on a network change stayed
+  invisible until a manual reload. The reply list now reloads itself after a
+  reconnect and after a longer pause in the background; a half-typed reply is
+  untouched.
+
 ## [0.5.2] - 2026-09-16
 
 ### Changed

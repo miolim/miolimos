@@ -22,6 +22,8 @@ class Settings::BladesController < Settings::BaseController
     "prompt_templates" => { label: "Prompt-Vorlagen",  resource: "PromptTemplate",  icon: "sparkles" },
     "document_templates" => { label: "Dokumentvorlagen", resource: "KnowledgeItem",  icon: "file_text" },
     "llm_activities"   => { label: "LLM-Aktivität",    resource: "Actor",           icon: "activity" },
+    # #1660: Token-Verbrauch der Agenten-Sitzungen (aus den Protokollen).
+    "agent_usage"      => { label: "Token-Verbrauch",  resource: "Actor",           icon: "banknote" },
     "knowledge_import" => { label: "Wissens-Import",   resource: "KnowledgeItem",   icon: "inbox" },
     "relations"        => { label: "Beziehungstypen",  resource: "KnowledgeItem",   icon: "link" },
     "tag_icons"        => { label: "Tag-Icons",        resource: "Actor",           icon: "tag" },

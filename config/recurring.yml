@@ -18,3 +18,8 @@ production:
   gmail_sync:
     class: GmailSyncJob
     schedule: every 15 minutes
+  # #1660: Token-Verbrauch der Agenten aus den Sitzungsprotokollen einlesen.
+  # Nachts, weil der Lauf alle Protokolle der letzten Wochen durchgeht.
+  agent_usage_import:
+    class: AgentUsageImportJob
+    schedule: every day at 3:20am

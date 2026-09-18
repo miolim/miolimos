@@ -1,0 +1,155 @@
+<%# #1660 (Hans): Token-Verbrauch der Agenten — zeitlich, nach Modell und nach
+    Aufgabe, je Art mit Kosten. Daten lädt Settings::BladeLoaders#load_agent_usage
+    (verdichtet von AgentUsage::Import aus den Sitzungsprotokollen).
+
+    Der Zeitraum-Umschalter arbeitet wie bei der LLM-Aktivität per Turbo-Frame
+    gegen den Card-Endpoint. %>
+<%
+  zahl = ->(n) { number_with_delimiter(n.to_i, delimiter: ".") }
+  usd  = ->(b) { number_to_currency(b.to_f, unit: "$", format: "%u%n",
+                                    precision: b.to_f.abs < 10 ? 2 : 0,
+                                    delimiter: ".", separator: ",") }
+%>
+<%= turbo_frame_tag "agent_usage_blade_frame" do %>
+  <div class="bg-white rounded border border-slate-200 px-3 py-2 flex flex-wrap items-center gap-3 text-sm">
+    <span class="font-semibold"><%= t("settings.agent_usage.title") %></span>
+    <nav class="flex items-center gap-0.5 text-xs">
+      <% [7, 30, 90, 365].each do |n| %>
+        <%= link_to settings_blade_path("agent_usage", tage: n),
+              data: { turbo_frame: "agent_usage_blade_frame" },
+              class: "px-2 py-0.5 rounded #{@tage == n ? 'font-medium text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}" do %>
+          <%= t("settings.agent_usage.days", count: n) %>
+        <% end %>
+      <% end %>
+    </nav>
+    <span class="text-xs text-slate-400 ml-auto">
+      <% if @usage_stand %>
+        <%= t("settings.agent_usage.updated_at", zeit: l(@usage_stand, format: :short)) %>
+      <% else %>
+        <%= t("settings.agent_usage.never_imported") %>
+      <% end %>
+    </span>
+  </div>
+
+  <% if @usage_gesamt[:antworten].zero? %>
+    <p class="text-slate-500 italic px-4 py-3 text-sm"><%= t("settings.agent_usage.no_data") %></p>
+  <% else %>
+    <%# ─── Gesamtsumme ─────────────────────────────────────────────── %>
+    <div class="bg-white rounded border border-slate-200 mt-2 p-3 text-sm">
+      <div class="flex items-baseline gap-3 flex-wrap">
+        <span class="text-2xl font-semibold"><%= usd.(@usage_gesamt[:kosten][:gesamt]) %></span>
+        <span class="text-slate-500">
+          ≈ <%= number_to_currency(@usage_gesamt[:kosten][:gesamt] * @usage_kurs, unit: "€", format: "%n %u", precision: 0, delimiter: ".", separator: ",") %>
+        </span>
+        <span class="text-xs text-slate-500">
+          <%= t("settings.agent_usage.responses", count: zahl.(@usage_gesamt[:antworten])) %>
+        </span>
+      </div>
+      <table class="w-full mt-2 text-xs">
+        <thead class="text-slate-500 text-left">
+          <tr>
+            <th class="py-1"><%= t("settings.agent_usage.kind") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.tokens") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.cost") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.share") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% AgentUsage::ARTEN.each do |art| %>
+            <% kosten = @usage_gesamt[:kosten][art] %>
+            <tr>
+              <td class="py-1"><%= t("settings.agent_usage.arten.#{art}") %></td>
+              <td class="py-1 text-right tabular-nums"><%= zahl.(@usage_gesamt[art]) %></td>
+              <td class="py-1 text-right tabular-nums"><%= usd.(kosten) %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500">
+                <%= number_to_percentage(@usage_gesamt[:kosten][:gesamt].positive? ? kosten / @usage_gesamt[:kosten][:gesamt] * 100 : 0, precision: 1, delimiter: ".", separator: ",") %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="text-[11px] text-slate-400 mt-2">
+        <%= t("settings.agent_usage.price_note", kurs: number_with_precision(@usage_kurs, precision: 2, separator: ",")) %>
+      </p>
+    </div>
+
+    <%# ─── Nach Modell ─────────────────────────────────────────────── %>
+    <div class="bg-white rounded border border-slate-200 mt-2 p-3 text-sm">
+      <div class="font-medium mb-1"><%= t("settings.agent_usage.by_model") %></div>
+      <table class="w-full text-xs">
+        <tbody class="divide-y divide-slate-100">
+          <% @usage_nach_modell.each do |model, s| %>
+            <tr>
+              <td class="py-1"><%= model %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:antworten]) %></td>
+              <td class="py-1 text-right tabular-nums"><%= usd.(s[:kosten][:gesamt]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%# ─── Zeitlich ────────────────────────────────────────────────── %>
+    <div class="bg-white rounded border border-slate-200 mt-2 p-3 text-sm">
+      <div class="font-medium mb-1"><%= t("settings.agent_usage.by_day") %></div>
+      <table class="w-full text-xs">
+        <thead class="text-slate-500 text-left">
+          <tr>
+            <th class="py-1"><%= t("settings.agent_usage.day") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.arten.ein") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.arten.aus") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.cache_short") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.cost") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @usage_nach_tag.each do |tag, s| %>
+            <tr>
+              <td class="py-1 whitespace-nowrap"><%= l(tag, format: :short) %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:ein]) %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:aus]) %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:cache_schreiben] + s[:cache_lesen]) %></td>
+              <td class="py-1 text-right tabular-nums"><%= usd.(s[:kosten][:gesamt]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%# ─── Nach Aufgabe ────────────────────────────────────────────── %>
+    <div class="bg-white rounded border border-slate-200 mt-2 p-3 text-sm">
+      <div class="font-medium mb-1"><%= t("settings.agent_usage.by_task") %></div>
+      <table class="w-full text-xs">
+        <thead class="text-slate-500 text-left">
+          <tr>
+            <th class="py-1"><%= t("settings.agent_usage.task") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.responses_short") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.cache_short") %></th>
+            <th class="py-1 text-right"><%= t("settings.agent_usage.cost") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @usage_nach_aufgabe.each do |(nummer, projekt), s| %>
+            <tr>
+              <td class="py-1">
+                <% if nummer.present? %>
+                  <%# Aufgabennummer öffnet die Karte im Stack. %>
+                  <button type="button" data-controller="blade-link"
+                          data-blade-link-kind-value="task" data-blade-link-id-value="<%= nummer %>"
+                          data-action="click->blade-link#append"
+                          class="bg-transparent border-0 p-0 cursor-pointer text-sky-700 hover:underline">#<%= nummer %></button>
+                <% else %>
+                  <span class="text-slate-400"><%= t("settings.agent_usage.without_task") %></span>
+                <% end %>
+                <span class="text-slate-400 ml-1"><%= projekt %></span>
+              </td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:antworten]) %></td>
+              <td class="py-1 text-right tabular-nums text-slate-500"><%= zahl.(s[:cache_schreiben] + s[:cache_lesen]) %></td>
+              <td class="py-1 text-right tabular-nums"><%= usd.(s[:kosten][:gesamt]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

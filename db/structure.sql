@@ -203,6 +203,45 @@ ALTER SEQUENCE public.affiliations_id_seq OWNED BY public.affiliations.id;
 
 
 --
+-- Name: agent_usages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_usages (
+    id bigint NOT NULL,
+    tag date NOT NULL,
+    projekt character varying NOT NULL,
+    aufgabe character varying,
+    model character varying NOT NULL,
+    antworten integer DEFAULT 0 NOT NULL,
+    input_tokens bigint DEFAULT 0 NOT NULL,
+    cache_creation_tokens bigint DEFAULT 0 NOT NULL,
+    cache_read_tokens bigint DEFAULT 0 NOT NULL,
+    output_tokens bigint DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: agent_usages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.agent_usages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: agent_usages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.agent_usages_id_seq OWNED BY public.agent_usages.id;
+
+
+--
 -- Name: api_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2811,6 +2850,13 @@ ALTER TABLE ONLY public.affiliations ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: agent_usages id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_usages ALTER COLUMN id SET DEFAULT nextval('public.agent_usages_id_seq'::regclass);
+
+
+--
 -- Name: api_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3316,6 +3362,14 @@ ALTER TABLE ONLY public.actors
 
 ALTER TABLE ONLY public.affiliations
     ADD CONSTRAINT affiliations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: agent_usages agent_usages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_usages
+    ADD CONSTRAINT agent_usages_pkey PRIMARY KEY (id);
 
 
 --
@@ -4080,6 +4134,20 @@ CREATE INDEX index_affiliations_on_person_uuid ON public.affiliations USING btre
 --
 
 CREATE UNIQUE INDEX index_affiliations_unique_combo ON public.affiliations USING btree (person_uuid, organization_uuid, role, start_at);
+
+
+--
+-- Name: index_agent_usages_on_aufgabe; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_agent_usages_on_aufgabe ON public.agent_usages USING btree (aufgabe);
+
+
+--
+-- Name: index_agent_usages_on_schluessel; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_agent_usages_on_schluessel ON public.agent_usages USING btree (tag, projekt, aufgabe, model);
 
 
 --
@@ -6459,6 +6527,7 @@ ALTER TABLE ONLY public.sources
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260918120000'),
 ('20260915130000'),
 ('20260914061500'),
 ('20260901090000'),

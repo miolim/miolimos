@@ -15,6 +15,15 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Settings → Token usage shows what the agent sessions consume (#1660): a
+  total with cost per kind (input, output, cache written, cache read), broken
+  down over time, by model and by task, for the last 7 to 365 days. The numbers
+  come from the agents' session transcripts and are imported nightly (or by
+  hand with `bin/rails agent_usage:import`). List prices per model family are
+  used and can be overridden per environment variable.
+
 ### Fixed
 
 - Replies that arrive while the connection is briefly down are no longer

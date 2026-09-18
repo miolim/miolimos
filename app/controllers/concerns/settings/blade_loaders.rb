@@ -64,6 +64,31 @@ module Settings::BladeLoaders
     @counts_by_status = LlmActivity.group(:status).count
   end
 
+  # #1660 (Hans): „Gesamtübersicht, sowohl zeitlich als auch nach Aufgabe
+  # gegliedert und dann jeweils Modell, Eingabe, Ausgabe, Cache mit
+  # jeweiligen Kosten und dann Gesamtkosten." Die Zeilen sind bereits
+  # verdichtet (AgentUsage::Import), das Gruppieren passiert hier in Ruby —
+  # die Kostensätze hängen am Modell, das kann SQL nicht summieren.
+  def load_agent_usage
+    @tage   = (params[:tage].presence || 30).to_i.clamp(1, 365)
+    zeilen  = AgentUsage.seit(Date.current - @tage + 1).to_a
+
+    @usage_gesamt = AgentUsage.summe(zeilen)
+    @usage_kurs   = AgentUsage.usd_eur_rate
+    @usage_stand  = AgentUsage.maximum(:updated_at)
+
+    @usage_nach_tag = zeilen.group_by(&:tag)
+                            .transform_values { |z| AgentUsage.summe(z) }
+                            .sort_by { |tag, _| tag }.reverse
+    @usage_nach_modell = zeilen.group_by(&:model)
+                               .transform_values { |z| AgentUsage.summe(z) }
+                               .sort_by { |_, s| -s[:kosten][:gesamt] }
+    @usage_nach_aufgabe = zeilen.group_by { |z| [z.aufgabe, z.projekt] }
+                                .transform_values { |z| AgentUsage.summe(z) }
+                                .sort_by { |_, s| -s[:kosten][:gesamt] }
+                                .first(40)
+  end
+
   def load_knowledge_import
     @inbox_path = WikiImporter::INBOX_PATH.to_s
     @prompt     = helpers.chat_import_prompt

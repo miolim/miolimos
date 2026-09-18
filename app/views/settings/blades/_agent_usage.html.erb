@@ -68,7 +68,13 @@
           <% end %>
         </tbody>
       </table>
+      <%# #1660 R1 (Hans): „Die 44450 ‚Antworten' sind aber wesentlich mehr als
+          das, was im Interface von miolim als Antworten angekommen ist." —
+          stimmt: gezählt werden Modellaufrufe, nicht gepostete Beiträge. %>
       <p class="text-[11px] text-slate-400 mt-2">
+        <%= t("settings.agent_usage.steps_note") %>
+      </p>
+      <p class="text-[11px] text-slate-400 mt-1">
         <%= t("settings.agent_usage.price_note", kurs: number_with_precision(@usage_kurs, precision: 2, separator: ",")) %>
       </p>
     </div>

@@ -19,7 +19,9 @@ release is cut, this section is renamed to the new version and a fresh
 
 - Settings → Token usage shows what the agent sessions consume (#1660): a
   total with cost per kind (input, output, cache written, cache read), broken
-  down over time, by model and by task, for the last 7 to 365 days. The numbers
+  down over time, by model and by task, for the last 7 to 365 days. Counted are
+  model steps — every call, including tool calls and thinking steps — not the
+  replies an agent posts; posted replies are a fraction of that. The numbers
   come from the agents' session transcripts and are imported nightly (or by
   hand with `bin/rails agent_usage:import`). List prices per model family are
   used and can be overridden per environment variable.

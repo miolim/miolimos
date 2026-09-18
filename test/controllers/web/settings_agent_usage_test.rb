@@ -41,6 +41,9 @@ class SettingsAgentUsageTest < ActionDispatch::IntegrationTest
     end
     # Aufgabennummer als Verweis auf die Karte.
     assert_includes @response.body, %(data-blade-link-id-value="1660")
+    # #1660 R1 (Hans): Die Zahl sind Modellaufrufe, nicht gepostete Antworten —
+    # der Hinweis dazu muss stehen, sonst verwirrt die Größenordnung.
+    assert_includes @response.body, I18n.t("settings.agent_usage.steps_note")
     assert_includes @response.body, "claude-haiku-4-5"
     # Kosten: 4 Mio Cache-Lesen (6,00) + 0,5 Mio Cache-Schreiben (15,00)
     # + 200k Ausgabe (15,00) + 1k Eingabe ≈ 36 USD für die Opus-Zeile.

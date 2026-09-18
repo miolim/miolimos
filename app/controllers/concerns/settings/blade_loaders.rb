@@ -87,6 +87,12 @@ module Settings::BladeLoaders
                                 .transform_values { |z| AgentUsage.summe(z) }
                                 .sort_by { |_, s| -s[:kosten][:gesamt] }
                                 .first(40)
+    # #1660 R2 (Hans): „Bitte bei den Aufgaben nicht nur die Nummer, sondern
+    # auch den Titel mit nennen." with_discarded, damit auch Aufgaben im
+    # Papierkorb ihren Titel behalten — sonst stünde dort nur eine Nummer.
+    nummern = @usage_nach_aufgabe.filter_map { |(nr, _), _| nr }.uniq
+    @usage_aufgaben_titel = Task.with_discarded.where(id: nummern).pluck(:id, :title)
+                                .to_h { |id, titel| [id.to_s, titel] }
   end
 
   def load_knowledge_import

@@ -50,6 +50,30 @@ class SettingsAgentUsageTest < ActionDispatch::IntegrationTest
     assert_match(/\$3[0-9]/, @response.body, "Gesamtkosten werden ausgewiesen")
   end
 
+  # #1660 R2 (Hans): „Bitte bei den Aufgaben nicht nur die Nummer, sondern auch
+  # den Titel mit nennen."
+  test "die Aufgaben-Tabelle nennt Nummer und Titel" do
+    aufgabe = Task.create!(title: "Titel-Probe für die Übersicht", creator: @hans,
+                           assignee: @hans, status: :open)
+    zeile!(aufgabe: aufgabe.id.to_s)
+
+    get "/settings/blade/agent_usage"
+    assert_response :success
+    assert_includes @response.body, %(data-blade-link-id-value="#{aufgabe.id}")
+    assert_includes @response.body, "Titel-Probe für die Übersicht"
+  end
+
+  test "eine Aufgabe im Papierkorb behaelt ihren Titel" do
+    aufgabe = Task.create!(title: "Weggeworfene Aufgabe", creator: @hans,
+                           assignee: @hans, status: :open)
+    zeile!(aufgabe: aufgabe.id.to_s)
+    aufgabe.discard!
+
+    get "/settings/blade/agent_usage"
+    assert_response :success
+    assert_includes @response.body, "Weggeworfene Aufgabe"
+  end
+
   test "der Zeitraum laesst sich umschalten" do
     zeile!(tag: Date.current - 40, aufgabe: "1500")
 

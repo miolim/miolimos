@@ -139,11 +139,13 @@
             <tr>
               <td class="py-1">
                 <% if nummer.present? %>
-                  <%# Aufgabennummer öffnet die Karte im Stack. %>
+                  <%# #1660 R2 (Hans): Nummer UND Titel; beides öffnet die Karte. %>
+                  <% titel = @usage_aufgaben_titel[nummer] %>
                   <button type="button" data-controller="blade-link"
                           data-blade-link-kind-value="task" data-blade-link-id-value="<%= nummer %>"
                           data-action="click->blade-link#append"
-                          class="bg-transparent border-0 p-0 cursor-pointer text-sky-700 hover:underline">#<%= nummer %></button>
+                          title="<%= titel %>"
+                          class="bg-transparent border-0 p-0 text-left cursor-pointer text-sky-700 hover:underline">#<%= nummer %><% if titel.present? %> <span class="text-slate-700"><%= titel %></span><% end %></button>
                 <% else %>
                   <span class="text-slate-400"><%= t("settings.agent_usage.without_task") %></span>
                 <% end %>

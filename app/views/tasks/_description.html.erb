@@ -38,19 +38,19 @@
       <span class="font-medium"><%= t("tasks.description_label") %></span>
     </button>
     <%# #685 (Hans): Single-Section-Fokus — nur diese Beschreibung. %>
-    <button type="button"
-            data-focus-trigger="section"
-            title="<%= t("tasks.focus_section") %>"
-            aria-label="<%= t("tasks.focus_section_aria") %>"
-            class="focus-view-trigger shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+    <%= ui_button :abschnitt_fokussieren,
+          "aria-label": t("tasks.focus_section_aria"),
+          data: { focus_trigger: "section" },
+          class: "focus-view-trigger shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5" do %><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span><% end %>
     <%# #615 (Hans): Suche über die GANZE Karte — Beschreibung + Antworten. %>
     <input type="search" placeholder="<%= t("tasks.search_card_placeholder") %>" autocomplete="off"
            data-reply-search-target="input"
            data-action="input->reply-search#search"
            class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
-    <button type="button" data-action="click->reply-search#forceSearch"
-                title="<%= t("tasks.search_now") %>" aria-label="<%= t("tasks.search_now_aria") %>"
-                class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "search" %></button>
+    <%= ui_button :jetzt_suchen, size: "w-3.5 h-3.5",
+          "aria-label": t("tasks.search_now_aria"),
+          data: { action: "click->reply-search#forceSearch" },
+          class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
         <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
     <button type="button" data-reply-search-target="mode"
            data-action="click->reply-search#cycleMode"
@@ -59,25 +59,15 @@
     <%# Edit-Icon im Preview-Mode. mousedown-Variante NICHT noetig hier,
         weil ein Klick auf das Pencil von ausserhalb der Textarea kommt
         — kein Blur-Submit. %>
-    <button type="button"
-            data-action="click->description-toggle#edit"
-            data-description-toggle-target="editBtn"
-            title="<%= t("actions.edit") %>" aria-label="<%= t("actions.edit") %>"
-            class="p-0.5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer
-                   <%= 'hidden' if start_mode == 'edit' %>">
-      <span class="[&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "pencil" %></span>
-    </button>
+    <%= ui_button :beschreibung_bearbeiten, size: "w-3.5 h-3.5",
+          data: { action: "click->description-toggle#edit", description_toggle_target: "editBtn" },
+          class: "p-0.5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer #{'hidden' if start_mode == 'edit'}" %>
     <%# Save-Icon im Edit-Mode: mousedown statt click, sonst feuert das
         onblur-Submit auf der Textarea vorher und wir senden zwei
         PATCH-Requests. %>
-    <button type="button"
-            data-action="mousedown->description-toggle#save"
-            data-description-toggle-target="saveBtn"
-            title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
-            class="p-0.5 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer
-                   <%= 'hidden' unless start_mode == 'edit' %>">
-      <span class="[&_svg]:w-3.5 [&_svg]:h-3.5"><%= icon "check" %></span>
-    </button>
+    <%= ui_button :beschreibung_speichern, size: "w-3.5 h-3.5",
+          data: { action: "mousedown->description-toggle#save", description_toggle_target: "saveBtn" },
+          class: "p-0.5 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer #{'hidden' unless start_mode == 'edit'}" %>
   </div>
 
   <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-3 space-y-1.5">

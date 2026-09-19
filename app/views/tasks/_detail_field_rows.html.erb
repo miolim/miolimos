@@ -57,11 +57,8 @@
             <%= form_with model: task, url: task_path(task), method: :patch, local: false,
                   class: "inline-flex m-0 p-0 leading-none" do |f| %>
               <%= f.hidden_field :commitment, value: (meta[:key] == "inbox" ? "" : meta[:key]) %>
-              <button type="submit" title="<%= t("tasks.sections.#{meta[:key]}") %>"
-                      class="p-0.5 rounded cursor-pointer bg-transparent border-0
-                             <%= active ? meta[:color] : 'text-slate-300 hover:text-slate-500' %>">
-                <%= icon meta[:icon] %>
-              </button>
+              <%= ui_button :"zusage_setzen_#{meta[:key]}", type: "submit",
+                    class: "p-0.5 rounded cursor-pointer bg-transparent border-0 #{active ? meta[:color] : 'text-slate-300 hover:text-slate-500'}" %>
             <% end %>
           <% end %>
         </span>

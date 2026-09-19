@@ -62,14 +62,13 @@
     <div class="flex items-center gap-0.5 shrink-0 [&_svg]:w-4 [&_svg]:h-4">
       <%# 1. Subaufgaben-Pfeil (oder Spacer). %>
       <% if has_subs %>
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="p-0.5 text-slate-400 hover:text-slate-700"
-                aria-label="<%= t("tasks.toggle_subtasks") %>">
+        <%= ui_button :unteraufgaben_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "p-0.5 text-slate-400 hover:text-slate-700" do %>
           <span data-disclosure-target="icon" class="inline-block transition-transform">
             <%= icon "chevron_right" %>
           </span>
-        </button>
+        <% end %>
       <% else %>
         <span class="w-5"></span>
       <% end %>
@@ -183,12 +182,9 @@
         <% CommitmentsHelper::COMMITMENTS.each do |meta| %>
           <% is_active = meta[:key] == current_commit %>
           <% if is_active %>
-            <button type="button"
-                    data-action="click->commitment-collapse#toggle"
-                    class="p-0.5 rounded <%= meta[:color] %> bg-transparent border-0 cursor-pointer"
-                    title="<%= t("tasks.sections.#{meta[:key]}") %>">
-              <%= icon meta[:icon] %>
-            </button>
+            <%= ui_button :"zusage_gruppe_#{meta[:key]}",
+                  data: { action: "click->commitment-collapse#toggle" },
+                  class: "p-0.5 rounded #{meta[:color]} bg-transparent border-0 cursor-pointer" %>
           <% else %>
             <%= button_to set_commitment_task_path(task, commitment: meta[:key]),
                   method: :post,

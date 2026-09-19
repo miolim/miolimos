@@ -219,3 +219,65 @@ preset_fish:
   icon: fish
   label: quick_create.fields.preset
   dynamisch: true
+
+# ── Aufgaben ──────────────────────────────────────────────────────────────
+zeit_fuer_aufgabe:
+  icon: timer
+  label: tasks.track_time
+abschnitt_fokussieren:
+  icon: expand
+  label: tasks.focus_section
+jetzt_suchen:
+  icon: search
+  label: tasks.search_now
+beschreibung_bearbeiten:
+  icon: pencil
+  label: actions.edit
+beschreibung_speichern:
+  icon: check
+  label: actions.save
+mehrfach_auswahl:
+  icon: check
+  label: tasks.multi_select
+unteraufgaben_klappen:
+  icon: chevron_right
+  label: tasks.toggle_subtasks
+kommentar_link_kopieren:
+  icon: external_link
+  label: task_comments.copy_link_title
+
+# Die vier Zusagen (#Eingang/Heute/Demnächst/Später). Zweimal vier Befehle:
+# eine Zusage SETZEN ist etwas anderes, als ihre Gruppe in der Liste
+# ein- und auszuklappen. Beide Kennungen entstehen aus dem Schleifenwert.
+zusage_setzen_inbox:
+  icon: inbox
+  label: tasks.sections.inbox
+  dynamisch: true
+zusage_setzen_today:
+  icon: today
+  label: tasks.sections.today
+  dynamisch: true
+zusage_setzen_soon:
+  icon: soon
+  label: tasks.sections.soon
+  dynamisch: true
+zusage_setzen_later:
+  icon: later
+  label: tasks.sections.later
+  dynamisch: true
+zusage_gruppe_inbox:
+  icon: inbox
+  label: tasks.sections.inbox
+  dynamisch: true
+zusage_gruppe_today:
+  icon: today
+  label: tasks.sections.today
+  dynamisch: true
+zusage_gruppe_soon:
+  icon: soon
+  label: tasks.sections.soon
+  dynamisch: true
+zusage_gruppe_later:
+  icon: later
+  label: tasks.sections.later
+  dynamisch: true

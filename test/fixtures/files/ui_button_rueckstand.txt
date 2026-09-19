@@ -2,7 +2,7 @@
 # Die Liste darf NUR schrumpfen — neue Dateien werden gleich mit ui_button
 # gebaut. Zwei Wächter halten das ehrlich (test/services/ui_button_wachter_test.rb).
 #
-# Stand: 42 Dateien, 71 Knöpfe.
+# Stand: 35 Dateien, 60 Knöpfe.
 app/views/communications/_detail_body.html.erb
 app/views/communications/_index_list_blade.html.erb
 app/views/dashboard/_agent_section.html.erb
@@ -26,13 +26,6 @@ app/views/settings/tag_icons/_row.html.erb
 app/views/shared/_entity_picker.html.erb
 app/views/sources/_form.html.erb
 app/views/sources/_inline_fields.html.erb
-app/views/task_comments/_comment.html.erb
-app/views/tasks/_blade_card.html.erb
-app/views/tasks/_description.html.erb
-app/views/tasks/_detail_field_rows.html.erb
-app/views/tasks/_index_list_blade.html.erb
-app/views/tasks/_replies_section.html.erb
-app/views/tasks/_row.html.erb
 app/views/time_entries/_blade_card.html.erb
 app/views/topics/_blade_toolbar.html.erb
 app/views/topics/_blade_topic_row.html.erb

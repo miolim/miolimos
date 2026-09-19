@@ -40,18 +40,14 @@
       <%# #572: Meilenstein-Toggle (Portal-Roadmap) — rot = aktiv. %>
       <%= render "tasks/milestone_button", task: task %>
       <%# #533 1c: Zeit für diese Aufgabe erfassen (Header-Timer übernimmt). %>
-      <button type="button"
-              data-controller="card-timer"
-              data-card-timer-subject-type-value="Task"
-              data-card-timer-subject-id-value="<%= task.id %>"
-              data-card-timer-label-value="<%= task.title %>"
-              data-card-timer-topics-value="<%= task.topics.map { |t| { id: t.id, name: t.name } }.to_json %>"
-              data-action="card-timer#start"
-              title="<%= t("tasks.track_time") %>"
-              aria-label="<%= t("tasks.track_time_aria") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-        <%= icon "timer" %>
-      </button>
+      <%= ui_button :zeit_fuer_aufgabe,
+            "aria-label": t("tasks.track_time_aria"),
+            data: { controller: "card-timer", action: "card-timer#start",
+                    card_timer_subject_type_value: "Task",
+                    card_timer_subject_id_value: task.id,
+                    card_timer_label_value: task.title,
+                    card_timer_topics_value: task.topics.map { |t| { id: t.id, name: t.name } }.to_json },
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0" %>
       <% unless task.done? %>
         <%= button_to promote_to_topic_task_path(task), method: :post,
               class: "p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 bg-transparent border-0 cursor-pointer shrink-0",

@@ -103,11 +103,9 @@
     <% tasks_count_slot = capture do %><span data-controller="list-count"
             data-list-count-list-ids-value='<%= ["tasks_section_inbox", "tasks_section_today", "tasks_section_soon", "tasks_section_later"].to_json %>'><%= @tasks.size %></span><% end %>
     <% tasks_controls = capture do %>
-      <button type="button" data-action="bulk-select#toggleMode"
-              title="<%= t("tasks.multi_select") %>"
-              class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-        <%= icon "check", size: "w-3.5 h-3.5" %>
-      </button>
+      <%= ui_button :mehrfach_auswahl, size: "w-3.5 h-3.5",
+            data: { action: "bulk-select#toggleMode" },
+            class: "inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
       <%= link_to list_card_tasks_path(assignee_next), data: { turbo_frame: "tasks_list_frame" },
             title: t("tasks.assignee_toggle_title", label: assignee_cfg[:label]),
             class: "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>

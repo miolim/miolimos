@@ -10,7 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 153 Dateien, 329 Bedienelemente.
+# Stand: 145 Dateien, 310 Bedienelemente.
 app/views/bank_ledgers/_blade_card.html.erb
 app/views/bank_ledgers/_list_blade_card.html.erb
 app/views/calendar/_item_row.html.erb
@@ -106,12 +106,6 @@ app/views/shared/_stack_history_drawer.html.erb
 app/views/shared/_time_section.html.erb
 app/views/shared/_time_timer.html.erb
 app/views/shared/_toast.html.erb
-app/views/sources/_detail.html.erb
-app/views/sources/_form.html.erb
-app/views/sources/_inline_fields.html.erb
-app/views/sources/_list_blade_card.html.erb
-app/views/sources/_row.html.erb
-app/views/sources/_stack_card_detail.html.erb
 app/views/tags/_manage_row.html.erb
 app/views/task_comments/_comment.html.erb
 app/views/task_comments/_edit_form.html.erb
@@ -143,8 +137,6 @@ app/views/tasks/_tags_chips.html.erb
 app/views/tasks/_topic_view.html.erb
 app/views/tasks/_topics_chips.html.erb
 app/views/tasks/trash.html.erb
-app/views/time_entries/_blade_card.html.erb
-app/views/time_entries/_list_blade_card.html.erb
 app/views/topics/_blade_toolbar.html.erb
 app/views/topics/_blade_topic_row.html.erb
 app/views/topics/_customer_chip.html.erb

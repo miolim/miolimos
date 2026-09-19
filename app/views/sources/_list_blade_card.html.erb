@@ -32,11 +32,9 @@
       <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
       <%# #631 v3: Expand-Link raus — das Blade IST die Quellen-Seite.
           Dafür: Neue Quelle anlegen. %>
-      <%= link_to new_source_path, data: { turbo_frame: "_top" },
-            title: t("sources.new_source_title"), "aria-label": t("sources.new_source"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 text-slate-500 shrink-0" do %>
-        <%= icon "plus_circle", size: "w-4 h-4" %>
-      <% end %>
+      <%= ui_link :quelle_anlegen, new_source_path, size: "w-4 h-4",
+            data: { turbo_frame: "_top" }, title: t("sources.new_source_title"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 text-slate-500 shrink-0" %>
     </div>
 
     <% if sources.empty? %>

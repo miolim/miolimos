@@ -68,10 +68,9 @@
           </div>
         <% end %>
       </div>
-      <button type="button" data-action="click->rows-editor#add"
-              class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
-        <%= t("sources.form.add_creator") %>
-      </button>
+      <%= ui_button :quelle_creator_hinzufuegen,
+            data: { action: "click->rows-editor#add" },
+            class: "text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100" %>
       <datalist id="creator-suggestions">
         <% KnowledgeItem.persons_and_orgs.order(:title).each do |k| %>
           <option value="<%= k.uuid %>"><%= k.title %></option>
@@ -121,10 +120,9 @@
           </div>
         <% end %>
       </div>
-      <button type="button" data-action="click->rows-editor#add"
-              class="text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
-        <%= t("sources.form.add_identifier") %>
-      </button>
+      <%= ui_button :quelle_identifier_hinzufuegen,
+            data: { action: "click->rows-editor#add" },
+            class: "text-xs px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100" %>
     </div>
   </fieldset>
 
@@ -188,9 +186,10 @@
   </div>
 
   <div class="flex items-center gap-2">
-    <%= f.submit (source.persisted? ? t("actions.save") : t("actions.create")),
+    <%= ui_button :quelle_speichern, type: :submit,
+          title: (source.persisted? ? t("actions.save") : t("actions.create")),
           class: "px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
-    <%= link_to t("actions.cancel"), (source.persisted? ? source_path(source.slug) : sources_path),
+    <%= ui_link :quelle_abbrechen, (source.persisted? ? source_path(source.slug) : sources_path),
           class: "px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50" %>
   </div>
 <% end %>

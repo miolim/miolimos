@@ -40,11 +40,11 @@
     <% if assigned.include?(source.id) %>
       <span class="shrink-0 text-[10px] text-emerald-600" title="<%= t("sources.row.already_in_topic_title") %>"><%= t("sources.row.in_topic") %></span>
     <% else %>
-      <%= button_to source_topics_path(source.slug),
+      <%= ui_button_to :quelle_zu_thema, source_topics_path(source.slug),
             params: { topic_id: att.id, relevance: "relevant" },
             form: { class: "inline-block m-0 p-0 leading-none shrink-0" },
-            class: "text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 cursor-pointer whitespace-nowrap",
-            title: t("sources.row.add_to_topic_title") do %><%= t("sources.row.add_to_topic") %><% end %>
+            title: t("sources.row.add_to_topic_title"),
+            class: "text-[10px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 cursor-pointer whitespace-nowrap" %>
     <% end %>
   <% else %>
     <%# #509 (Hans, 2026-06-04): außerhalb des Topic-Kontexts ein „+", das

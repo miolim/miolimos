@@ -20,19 +20,14 @@
         <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
         <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
         <% if source.url.present? %>
-          <%= link_to source.url, target: "_blank", rel: "noopener",
-                title: t("sources.open_url"), "aria-label": t("sources.open_url"),
-                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-            <%= icon "external_link" %>
-          <% end %>
+          <%= ui_link :quelle_url_aufrufen, source.url, target: "_blank", rel: "noopener",
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
         <% end %>
         <%# #584: Pencil entfernt — alles ist in der Details-Section
             inline editierbar (inkl. Titel/Slug/Creators/Identifier). %>
-        <%= link_to source_path(source.slug), data: { turbo_frame: "_top" },
-              title: t("sources.open_full_view"), "aria-label": t("sources.full_view"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-          <%= icon "expand" %>
-        <% end %>
+        <%= ui_link :quelle_vollansicht, source_path(source.slug), data: { turbo_frame: "_top" },
+              title: t("sources.open_full_view"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
       </div>
     </div>
 

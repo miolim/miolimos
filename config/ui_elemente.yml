@@ -760,3 +760,46 @@ dokument_art_anlegen:
   label: documents.list.new_document
 dokument_wiederherstellen:
   label: documents.trash.restore
+
+# ── Quellen und Zeitbuchungen (#1672 Etappe 12) ──────────────────────────
+quelle_url_aufrufen:
+  icon: external_link
+  label: sources.open_url
+quelle_loeschen:
+  icon: trash
+  label: actions.delete
+quelle_creator_hinzufuegen:
+  label: sources.form.add_creator
+quelle_identifier_hinzufuegen:
+  label: sources.form.add_identifier
+quelle_speichern:
+  label: actions.save
+quelle_abbrechen:
+  label: actions.cancel
+quelle_creators_klappen:
+  icon: chevron_right
+  label: sources.inline.authors_creators
+quelle_details_umschalten:
+  icon: chevron_right
+  label: sources.inline.details_cycle_title
+quelle_creator_zeile_hinzufuegen:
+  label: sources.inline.add_creator
+quelle_identifier_zeile_hinzufuegen:
+  label: sources.inline.add_identifier
+quelle_inline_speichern:
+  label: actions.save
+quelle_anlegen:
+  icon: plus_circle
+  label: sources.new_source
+quelle_zu_thema:
+  label: sources.row.add_to_topic
+quelle_vollansicht:
+  icon: expand
+  label: sources.full_view
+zeit_start_ende_speichern:
+  label: time_entries.save_start_end
+zeit_dauer_speichern:
+  label: time_entries.set_duration_only
+# Der Reiter kommt als Wert aus der Liste — ein Eintrag, Text vom Aufrufer.
+zeit_reiter_waehlen:
+  label: time_entries.tab_all

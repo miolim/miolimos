@@ -31,21 +31,15 @@
               bib_source_slug: source.slug,
               target:          :cross_navigate %>
         <% if source.url.present? %>
-          <%= link_to source.url, target: "_blank", rel: "noopener",
-                title: t("sources.open_url"), "aria-label": t("sources.open_url"),
-                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-            <%= icon "external_link" %>
-          <% end %>
+          <%= ui_link :quelle_url_aufrufen, source.url, target: "_blank", rel: "noopener",
+                class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
         <% end %>
         <%# #584: Pencil entfernt — alles ist in der Details-Section
             inline editierbar (inkl. Titel/Slug/Creators/Identifier). %>
-        <%= button_to source_path(source.slug), method: :delete,
-              title: t("actions.delete"), "aria-label": t("actions.delete"),
+        <%= ui_button_to :quelle_loeschen, source_path(source.slug), method: :delete,
               form: { class: "inline m-0 p-0", data: { turbo_frame: "_top",
                         turbo_confirm: t("sources.delete_confirm") } },
-              class: "p-1 rounded text-slate-400 hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
-          <%= icon "trash" %>
-        <% end %>
+              class: "p-1 rounded text-slate-400 hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" %>
       </div>
     </div>
 

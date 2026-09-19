@@ -73,17 +73,15 @@
                value="<%= entry.ended_at&.strftime('%Y-%m-%dT%H:%M') %>"
                class="mt-0.5 w-full rounded border border-slate-200 px-2 py-1">
       </label>
-      <button type="button" data-action="time-edit#saveTimes"
-              class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-        <%= t("time_entries.save_start_end") %>
-      </button>
+      <%= ui_button :zeit_start_ende_speichern,
+            data: { action: "time-edit#saveTimes" },
+            class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
       <div class="flex items-center gap-2 pt-1">
         <input type="number" min="1" step="1" data-time-edit-target="minutes" placeholder="<%= t("time_entries.duration_min") %>"
                class="w-28 rounded border border-slate-200 px-2 py-1 text-xs">
-        <button type="button" data-action="time-edit#saveDuration"
-                class="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer">
-          <%= t("time_entries.set_duration_only") %>
-        </button>
+        <%= ui_button :zeit_dauer_speichern,
+              data: { action: "time-edit#saveDuration" },
+              class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer" %>
       </div>
       <p data-time-edit-target="error" class="hidden text-xs text-rose-600"></p>
     </div>

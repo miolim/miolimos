@@ -39,14 +39,14 @@
 %>
 <section data-controller="disclosure" class="group border border-slate-200 rounded"
          data-disclosure-storage-key-value="source-creators-state">
-  <button type="button"
-          data-action="click->disclosure#toggle"
-          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+  <%= ui_button :quelle_creators_klappen,
+        data: { action: "click->disclosure#toggle" },
+        class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
     <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
       <%= icon "chevron_right" %>
     </span>
     <span class="font-medium"><%= t("sources.inline.authors_creators") %></span>
-  </button>
+  <% end %>
 
   <%# Kompakt-Ansicht: sichtbar solange die Section zugeklappt ist
       (data-collapsed kommt vom disclosure-Controller). %>
@@ -103,9 +103,9 @@
           <% end %>
         </div>
         <div class="flex items-center gap-2 mt-1">
-          <button type="button" data-action="click->rows-editor#add"
-                  class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("sources.inline.add_creator") %></button>
-          <%= submit_tag t("actions.save"), class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
+          <%= ui_button :quelle_creator_zeile_hinzufuegen, data: { action: "click->rows-editor#add" },
+                class: "px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100" %>
+          <%= ui_button :quelle_inline_speichern, type: :submit, class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
         </div>
         <%# #584-Folge: keine UUIDs anzeigen — Vorschlagswert ist der Titel;
             der Server löst Titel → Person auf (sync_creators). %>
@@ -125,16 +125,15 @@
 <section data-controller="tri-disclosure"
          data-tri-disclosure-storage-key-value="source-details-state"
          class="border border-slate-200 rounded">
-  <button type="button"
-          data-action="click->tri-disclosure#cycle"
-          title="<%= t("sources.inline.details_cycle_title") %>"
-          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+  <%= ui_button :quelle_details_umschalten,
+        data: { action: "click->tri-disclosure#cycle" },
+        class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
     <span data-tri-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
       <%= icon "chevron_right" %>
     </span>
     <span class="font-medium"><%= t("sources.inline.details") %></span>
     <span data-tri-disclosure-target="label" class="text-slate-400"></span>
-  </button>
+  <% end %>
   <div data-tri-disclosure-target="content"
        class="hidden px-3 pb-3 space-y-2 border-t border-slate-100 pt-3 text-xs">
     <%
@@ -256,9 +255,9 @@
             <% end %>
           </div>
           <div class="flex items-center gap-2 mt-1">
-            <button type="button" data-action="click->rows-editor#add"
-                    class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100"><%= t("sources.inline.add_identifier") %></button>
-            <%= submit_tag t("actions.save"), class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
+            <%= ui_button :quelle_identifier_zeile_hinzufuegen, data: { action: "click->rows-editor#add" },
+                  class: "px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100" %>
+            <%= ui_button :quelle_inline_speichern, type: :submit, class: "px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer" %>
           </div>
         </div>
       <% end %>

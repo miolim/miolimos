@@ -28,10 +28,9 @@
 <section data-controller="tri-disclosure"
          data-tri-disclosure-storage-key-value="knowledge.<%= item.uuid %>.details"
          class="border border-slate-200 rounded">
-  <button type="button"
-          data-action="click->tri-disclosure#cycle"
-          title="<%= t("knowledge.detail.details_cycle_hint") %>"
-          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+  <%= ui_button :ki_details_umschalten,
+        data: { action: "click->tri-disclosure#cycle" },
+        class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
     <span data-tri-disclosure-target="icon"
           class="inline-block transition-transform text-slate-400">
       <%= icon "chevron_right" %>
@@ -43,7 +42,7 @@
         %><% item.topics.order(:name).each do |topic| %> · <%= topic_dot topic %> <%= topic.name %><% end %><%
         %><%= picker_summary ? " · #{picker_summary}" : "" %>
     </span>
-  </button>
+  <% end %>
 
   <div data-tri-disclosure-target="content"
        class="hidden px-3 pb-3 border-t border-slate-100 pt-3 space-y-3">
@@ -63,13 +62,12 @@
       <% end %>
       <%# #389 (Hans, 2026-05-28): file_path als kleines Info-i mit
           Hover-/Klick-Tooltip statt eigener Zeile. %>
-      <button type="button"
-              title="<%= item.file_path %>"
-              class="ml-1 text-slate-400 hover:text-slate-700 cursor-help bg-transparent border-0 p-0 leading-none"
-              onclick="this.querySelector('span').classList.toggle('hidden')">
+      <%= ui_button :ki_dateipfad_zeigen, title: item.file_path,
+            onclick: "this.querySelector('span').classList.toggle('hidden')",
+            class: "ml-1 text-slate-400 hover:text-slate-700 cursor-help bg-transparent border-0 p-0 leading-none" do %>
         <%= icon "info", size: "w-3 h-3" %>
         <span class="hidden ml-1 font-mono text-[10px] text-slate-500"><%= item.file_path %></span>
-      </button>
+      <% end %>
     </div>
 
     <%# === Bereich 2: Felder — Typ-Inline + Person/Org-Felder === %>
@@ -266,8 +264,8 @@
         <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 shrink-0 select-none"><%= t("knowledge.detail.source") %></span>
         <%# #603 R3: Text-Trigger entfernt — nur Icon. Verstecktes
             trigger-Target bleibt für die picker-toggle-Mechanik. %>
-        <button type="button" hidden
-                data-picker-toggle-target="trigger"></button>
+        <%= ui_button :ki_quelle_auswahl_oeffnen, hidden: true,
+              data: { picker_toggle_target: "trigger" } do %><% end %>
         <div data-picker-toggle-target="inputBox" hidden class="relative flex-1 min-w-[12rem]">
           <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false, class: "block" do |f| %>
             <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
@@ -356,14 +354,14 @@
       <section data-controller="disclosure" data-empty="true"
                data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.history"
                class="border border-slate-200 rounded">
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+        <%= ui_button :ki_verlauf_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
           <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
             <%= icon "chevron_right" %>
           </span>
           <span class="font-medium">🕒 <%= t("knowledge.detail.version_history") %></span>
-        </button>
+        <% end %>
         <div data-disclosure-target="content" class="hidden border-t border-slate-100">
           <%= turbo_frame_tag "ki_history_#{item.uuid}",
                 src:     history_knowledge_item_path(uuid: item.uuid),
@@ -377,14 +375,14 @@
       <section data-controller="disclosure" data-empty="true"
                data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.frontmatter"
                class="border border-slate-200 rounded">
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+        <%= ui_button :ki_frontmatter_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
           <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
             <%= icon "chevron_right" %>
           </span>
           <span class="font-medium"><%= t("knowledge.detail.frontmatter_yaml") %></span>
-        </button>
+        <% end %>
         <div data-disclosure-target="content" class="hidden border-t border-slate-100">
           <%# #500 (Hans, 2026-06-04): Zwei Frontmatter — der vom Autor im Text
               getippte Block (typ/ebene/… , seit dem Strip nicht mehr in der

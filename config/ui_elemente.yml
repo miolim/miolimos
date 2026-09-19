@@ -920,3 +920,33 @@ rechnung_art_anlegen:
 eingangsrechnung_erfassen:
   icon: inbox
   label: invoices.list.new_incoming
+
+# ── Wissenseintrag: Abschnitte (#1672 Etappe 16) ─────────────────────────
+ki_details_umschalten:
+  icon: chevron_right
+  label: knowledge.detail.details_cycle_hint
+ki_dateipfad_zeigen:
+  icon: info
+  label: knowledge.detail.file_path
+ki_quelle_auswahl_oeffnen:
+  label: knowledge.detail.change_source
+ki_verlauf_klappen:
+  icon: chevron_right
+  label: knowledge.detail.version_history
+ki_frontmatter_klappen:
+  icon: chevron_right
+  label: knowledge.detail.frontmatter_yaml
+ki_body_klappen:
+  icon: chevron_right
+  label: knowledge.detail.description
+ki_suchmodus_umschalten:
+  label: knowledge.detail.search_mode
+ki_highlight_filtern:
+  label: knowledge.detail.highlights_filter
+ki_filter_aufheben:
+  label: knowledge.detail.clear_filter
+# Fuenf gleiche Klapp-Knoepfe auf dem Dashboard — ein Befehl, wie bei den
+# Abschnitts-Editoren.
+dashboard_abschnitt_klappen:
+  icon: chevron_right
+  label: dashboard.agent.toggle_section

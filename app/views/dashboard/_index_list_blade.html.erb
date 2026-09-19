@@ -45,16 +45,16 @@
                data-disclosure-storage-key-value="dashboard.inbox_tasks"
                class="bg-white rounded border border-slate-200">
         <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+          <%= ui_button :dashboard_abschnitt_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform rotate-90 text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <span class="text-slate-400"><%= icon "inbox", size: "w-4 h-4" %></span>
             <h2 class="font-semibold"><%= t("dashboard.inbox") %></h2>
-          </button>
+          <% end %>
           <span class="text-xs text-slate-500"><%= @inbox_tasks.size %></span>
         </header>
 
@@ -78,15 +78,15 @@
                data-disclosure-storage-key-value="dashboard.today_tasks"
                class="bg-white rounded border border-slate-200">
         <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+          <%= ui_button :dashboard_abschnitt_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform rotate-90 text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <h2 class="font-semibold"><%= t("dashboard.today") %></h2>
-          </button>
+          <% end %>
           <span class="text-xs text-slate-500"><%= @today_tasks.size %></span>
           <span class="ml-auto">
             <%= link_to t("dashboard.all_tasks"), tasks_path,
@@ -114,15 +114,15 @@
                data-disclosure-storage-key-value="dashboard.soon_tasks"
                class="bg-white rounded border border-slate-200">
         <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+          <%= ui_button :dashboard_abschnitt_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform rotate-90 text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <h2 class="font-semibold"><%= t("dashboard.upcoming") %></h2>
-          </button>
+          <% end %>
           <span class="text-xs text-slate-500"><%= @soon_tasks.size %></span>
         </header>
 
@@ -146,15 +146,15 @@
                data-disclosure-storage-key-value="dashboard.process_edge"
                class="bg-white rounded border border-slate-200">
         <header class="px-4 py-2 border-b border-slate-200 flex items-center gap-3">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+          <%= ui_button :dashboard_abschnitt_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform rotate-90 text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <h2 class="font-semibold"><%= t("dashboard.process_edge_title") %></h2>
-          </button>
+          <% end %>
           <span class="text-xs text-slate-500"><%= t("dashboard.topics_count", count: @process_edge_by_topic.size) %></span>
           <span class="ml-auto">
             <%= link_to t("dashboard.all_awaitings"), awaitings_path,
@@ -229,15 +229,15 @@
                data-disclosure-storage-key-value="dashboard.recent_communications"
                class="bg-white rounded border border-slate-200">
         <header class="px-4 py-2 border-b border-slate-200">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded">
+          <%= ui_button :dashboard_abschnitt_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "flex items-center gap-2 hover:bg-slate-50 -ml-1 px-1 py-0.5 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform rotate-90 text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <h2 class="font-semibold"><%= t("dashboard.recent_communications") %></h2>
-          </button>
+          <% end %>
         </header>
         <div data-disclosure-target="content">
         <% if @recent_communications.empty? %>

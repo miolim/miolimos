@@ -634,6 +634,9 @@ de:
         one: "%{count} Hervorhebung"
         other: "%{count} Hervorhebungen"
       clear_filter: "Filter aufheben"
+      file_path: "Dateipfad anzeigen"          # #1672
+      search_mode: "Anzeige-Modus umschalten"  # #1672
+      highlights_filter: "Nach Markierungsfarbe filtern"   # #1672
       all: "Alle"
       save_and_close: "Speichern und schliessen"
       html_iframe_title: "%{title} (HTML)"

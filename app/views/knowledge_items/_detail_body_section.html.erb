@@ -46,15 +46,15 @@
   <%# #652: top aus der gemessenen Titelhöhe (zweizeilige Titel!). %>
   <header style="top: var(--ki-title-h, 2.25rem)"
           class="sticky z-10 bg-white w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 rounded-t">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer">
+    <%= ui_button :ki_body_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer" do %>
       <span data-disclosure-target="icon"
             class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
       </span>
       <span class="font-medium"><%= t("knowledge.detail.description") %></span>
-    </button>
+    <% end %>
     <%# #685 (Hans): Single-Section-Fokus — nur diese Beschreibung. %>
     <%= ui_button :ki_abschnitt_fokussieren,
           "aria-label": t("knowledge.detail.focus_section_aria"),
@@ -70,9 +70,9 @@
           data: { action: "click->reply-search#forceSearch" },
           class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
     <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
-    <button type="button" data-reply-search-target="mode"
-               data-action="click->reply-search#cycleMode"
-               class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+    <%= ui_button :ki_suchmodus_umschalten,
+          data: { reply_search_target: "mode", action: "click->reply-search#cycleMode" },
+          class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5" do %><% end %>
     <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
     <%# #402 Phase B: pro Farbe ein Color-Icon mit Zaehler. Klick
         togglet die Farbe im ?hl=...-Query. %>
@@ -88,7 +88,7 @@
         <%# #402-Fix (Hans, 2026-05-29): turbo-frame auf das KI-
             Detail beschraenken, damit der Filter im Stack-Card
             bleibt und nicht den ganzen Browser-Tab wechselt. %>
-        <%= link_to href,
+        <%= ui_link :ki_highlight_filtern, href,
               data: { turbo_frame: "knowledge_detail_#{item.uuid}" },
               title: "#{color}: #{t("knowledge.detail.highlights", count: n)}",
               class: "inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 #{hl_color_bg[color]} text-[10px] tabular-nums font-semibold text-slate-800 #{'ring-2 ' + hl_color_ring[color] if selected}" do %>
@@ -96,9 +96,8 @@
         <% end %>
       <% end %>
       <% if active_hl.any? %>
-        <%= link_to knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+        <%= ui_link :ki_filter_aufheben, knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
               data: { turbo_frame: "knowledge_detail_#{item.uuid}" },
-              title: t("knowledge.detail.clear_filter"),
               class: "ml-1 px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600" do %>
           <%= t("knowledge.detail.all") %>
         <% end %>
@@ -113,11 +112,8 @@
         <%= ui_button :ki_speichern_und_schliessen, type: "submit", form: edit_form,
               class: "p-1 rounded text-emerald-700 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer" %>
       <% else %>
-        <%= link_to edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
-              title: t("actions.edit"), "aria-label": t("actions.edit"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-          <%= icon "pencil" %>
-        <% end %>
+        <%= ui_link :ki_bearbeiten, edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
       <% end %>
     </span>
   </header>

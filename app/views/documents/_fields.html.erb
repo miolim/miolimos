@@ -152,9 +152,10 @@
               suggest_url: suggest_links_documents_path(kind: "body"),
               add_url: link_document_path(document, field: "body"),
               param_name: "value", create_label: "", allow_create: false %>
-        <%= button_to create_body_ki_document_path(document), method: :post,
+        <%= ui_button_to :text_ki_anlegen, create_body_ki_document_path(document), method: :post,
               form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-              title: t("documents.fields.new_text_ki_title"), class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("documents.fields.new_short") %><% end %>
+              title: t("documents.fields.new_text_ki_title"),
+              class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer" %>
       </div>
     </div>
     <%# #926 Stufe 2: Platzhalter im Body-Text, die der Merge-Kontext (noch)

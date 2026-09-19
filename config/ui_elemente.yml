@@ -723,3 +723,40 @@ zahlungspflicht_entfernen:
   label: invoices.obligations.remove
 position_hinzufuegen:
   label: documents.invoice.add_position
+
+# ── Dokumente (#1672 Etappe 11) ──────────────────────────────────────────
+dokument_vorschau:
+  icon: external_link
+  label: documents.show.preview
+dokument_pdf_oeffnen:
+  icon: file_pdf
+  label: documents.show.pdf
+dokument_signiertes_pdf:
+  icon: file_check
+  label: documents.list.signed_pdf
+dokument_loeschen:
+  icon: trash
+  label: documents.trash.delete
+text_ki_anlegen:
+  label: documents.fields.new_short
+dokument_drucken:
+  label: documents.show.print
+vorschau_drucken:
+  label: documents.preview.print
+dokumente_filtern_anwenden:
+  label: documents.list.filter
+dokumente_filter_zuruecksetzen:
+  label: documents.list.reset
+dokumente_papierkorb:
+  icon: trash
+  label: documents.trash.title
+dokument_neu:
+  icon: plus_circle
+  label: documents.list.new_document
+# Die Dokument-Art kommt als Wert aus der Liste — ein Eintrag, Text vom
+# Aufrufer.
+dokument_art_anlegen:
+  icon: file_text
+  label: documents.list.new_document
+dokument_wiederherstellen:
+  label: documents.trash.restore

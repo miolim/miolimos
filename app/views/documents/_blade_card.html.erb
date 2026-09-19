@@ -22,33 +22,23 @@
           toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white",
           duplicate: false, entity_actions: capture { %>
       <%# Vorschau (gerendertes Dokument im neuen Tab). %>
-      <%= link_to document_path(document), target: "_blank", rel: "noopener",
-            title: t("documents.show.preview"), "aria-label": t("documents.show.preview"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-        <%= icon "external_link" %>
-      <% end %>
+      <%= ui_link :dokument_vorschau, document_path(document), target: "_blank", rel: "noopener",
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" %>
       <%# PDF — #1025 (aus immoos übernommen): als Stack-Card öffnen (dort weiter „im Tab öffnen"). %>
-      <button type="button"
-              <%= tag.attributes(data: pdf_card_data(rendered_pdf_document_path(document), title: document.display_name)) %>
-              title="<%= t("documents.show.pdf") %>" aria-label="<%= t("documents.show.pdf") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 bg-transparent border-0 cursor-pointer">
-        <%= icon "file_pdf" %>
-      </button>
+      <%= ui_button :dokument_pdf_oeffnen,
+            data: pdf_card_data(rendered_pdf_document_path(document), title: document.display_name),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 bg-transparent border-0 cursor-pointer" %>
       <%# #547: AES-signiertes PDF — nur wenn das Signier-Setup vorhanden ist. %>
       <% if DocumentSigner.available? %>
-        <%= link_to signed_pdf_document_path(document), target: "_blank", rel: "noopener",
-              title: t("documents.list.signed_pdf_title"), "aria-label": t("documents.list.signed_pdf"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-          <%= icon "file_check" %>
-        <% end %>
+        <%= ui_link :dokument_signiertes_pdf, signed_pdf_document_path(document), target: "_blank", rel: "noopener",
+              title: t("documents.list.signed_pdf_title"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" %>
       <% end %>
       <%# #787: Dokument löschen (Soft-Delete → Papierkorb). %>
-      <%= button_to document_path(document), method: :delete,
+      <%= ui_button_to :dokument_loeschen, document_path(document), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("documents.trash.confirm") } },
-            title: t("documents.trash.delete_title"), "aria-label": t("documents.trash.delete"),
-            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" do %>
-        <%= icon "trash" %>
-      <% end %>
+            title: t("documents.trash.delete_title"),
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" %>
     <% } %>
 
     <div class="flex items-center gap-2">

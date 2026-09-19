@@ -13,7 +13,7 @@
     <strong><%= @document.kind.titleize %><%= " · #{@document.display_name}" if @document.display_name %></strong>
     <span style="margin-left:auto;"></span>
     <a href="<%= rendered_pdf_document_path(@document) %>" class="pdf"><%= t("documents.show.download_pdf") %></a>
-    <button type="button" onclick="window.print()"><%= t("documents.show.print") %></button>
+    <%= ui_button :dokument_drucken, onclick: "window.print()" %>
   </div>
 
   <div class="doc-canvas">

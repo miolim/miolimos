@@ -35,7 +35,7 @@
 
     <span style="margin-left:auto;"></span>
     <a href="<%= document_pdf_path(sample: @sample, issuer: @issuer&.uuid) %>" class="pdf"><%= t("documents.preview.download_pdf") %></a>
-    <button type="button" onclick="window.print()"><%= t("documents.preview.print") %></button>
+    <%= ui_button :vorschau_drucken, onclick: "window.print()" %>
   </div>
 
   <div class="doc-canvas">

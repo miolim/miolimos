@@ -1,0 +1,22 @@
+# #1669: Der Katalog der Bedienelemente — die BASIS.
+#
+# Ein Eintrag je BEFEHL, nicht je Symbol: „Kontaktweg hinzufügen" und
+# „Kennung hinzufügen" sind zwei Einträge, obwohl beide ein Plus zeigen. Genau
+# daran scheitert ein Zeiger auf den Bild-Namen (`:icon:plus_circle:`): Auf
+# einer Card stehen leicht ein Dutzend identische Plus-Symbole.
+#
+# Wofür die Kennung gut ist:
+#   Programm:    <%= ui_button :ki_anlegen, ... %>
+#   Später:      Befehls-Suche und geführte Touren hängen am selben Anker.
+#
+# Pflichtfelder je Eintrag:
+#   icon   — Dateiname in app/views/shared/icons (ohne _ und .html.erb)
+#   label  — i18n-Schlüssel der Beschriftung (muss in de.yml UND en.yml stehen)
+#   dynamisch: true — die Kennung entsteht erst zur Laufzeit (Schleifenwert);
+#                     sie ist dann im Quelltext nicht zu finden.
+#
+# Geprüft wird das im Test (test/services/ui_elemente_test.rb).
+#
+# Ein Fork legt seine eigenen Kennungen in eine zweite Datei daneben
+# (`config/ui_elemente.<fork>.yml`) — sie wird automatisch mitgelesen, und der
+# Release-Merge bleibt konfliktfrei.

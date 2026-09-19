@@ -445,6 +445,59 @@ module ApplicationHelper
     resize + body.to_s
   end
 
+  # #1669: Ein Symbol, das zu einem BEDIENELEMENT gehört — nicht bloß ein Bild.
+  # Der Schlüssel steht im Katalog UiElemente.
+  #
+  # `data-ui-icon` macht das Element im Beschriftungs-Modus (#704) aufsammelbar.
+  def ui_icon(schluessel, size: "w-5 h-5", stroke: 1.5, **html_options)
+    eintrag = UiElemente[schluessel] or raise ArgumentError, "unbekanntes Bedienelement: #{schluessel}"
+
+    icon(eintrag[:icon], size: size, stroke: stroke,
+         **html_options.merge("data-ui-icon": schluessel.to_s))
+  end
+
+  # #1669 (Hans in immoOS #1664): „Könnte die Registrierung im Katalog nicht
+  # technische Voraussetzung für das Einfügen eines Buttons sein?" — Genau das
+  # ist dieser Helfer. Ein Knopf, der keinen Namen trägt, entsteht nur mit
+  # Kennung:
+  #
+  #   <%= ui_button :ki_anlegen, action: "click->x#y" %>
+  #   <%= ui_button :zeile_entfernen, tag: :summary, class: "…" %>
+  #
+  # Symbol UND Beschriftung kommen aus dem Katalog — Tooltip und aria-label
+  # müssen nicht mehr von Hand gesetzt (und vergessen) werden. `data-ui-icon`
+  # sitzt am KNOPF, nicht am Symbol: Der Zeiger hebt dann die Fläche hervor,
+  # die man anklickt, und die Kennung steht einmal statt zweimal.
+  #
+  # Unbekannte Kennung: Fehler in Entwicklung und Test (kann nicht ausgeliefert
+  # werden), in der Produktion nur eine Meldung im Protokoll — eine Card, die
+  # wegen eines fehlenden Katalogeintrags gar nicht mehr aufgeht, wäre der
+  # schlechtere Tausch.
+  def ui_button(schluessel, tag: :button, size: "w-5 h-5", stroke: 1.5, **html_options, &block)
+    eintrag = UiElemente[schluessel]
+    unless eintrag
+      unless Rails.env.production?
+        raise UiElemente::Unbekannt,
+              "Bedienelement #{schluessel} steht in keinem Katalog (config/ui_elemente*.yml)"
+      end
+
+      Rails.logger.error("[ui_button] unbekanntes Bedienelement: #{schluessel}")
+      eintrag = { icon: "help_circle", label: nil }
+    end
+
+    beschriftung = html_options.delete(:title).presence ||
+                   (eintrag[:label].present? ? t(eintrag[:label], default: schluessel.to_s) : schluessel.to_s)
+    attrs = {
+      title: beschriftung,
+      "aria-label": html_options.delete(:"aria-label").presence || beschriftung,
+      "data-ui-icon": schluessel.to_s
+    }.merge(html_options)
+    attrs[:type] = "button" if tag.to_sym == :button && !attrs.key?(:type)
+
+    inhalt = block ? capture(&block) : icon(eintrag[:icon], size: size, stroke: stroke)
+    content_tag(tag, inhalt, attrs)
+  end
+
   def icon(name, size: "w-5 h-5", stroke: 1.5, **html_options)
     extra_class = html_options.delete(:class)
     classes     = [size, extra_class].compact.join(" ").strip

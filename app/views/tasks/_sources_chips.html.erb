@@ -11,13 +11,12 @@
       <% if source.display_year.present? %>
         <span class="text-slate-400">(<%= source.display_year %>)</span>
       <% end %>
-      <%= button_to task_source_path(task, source.slug),
-            method: :delete,
+      <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+      <%= ui_button_to :aufgabe_quelle_loesen, task_source_path(task, source.slug), method: :delete,
+            size: "w-3.5 h-3.5",
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
-            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
-        ×
-      <% end %>
+            "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" %>
     </span>
   <% end %>
 </div>

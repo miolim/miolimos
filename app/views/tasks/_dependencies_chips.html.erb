@@ -8,12 +8,12 @@
                     blade_link_id_value: dep.predecessor.id, action: "click->blade-link#append" },
             class: "hover:underline" %>
       <%= status_badge dep.predecessor.status, labels: t("tasks.status") %>
-      <%= button_to task_dependency_path(task, dep), method: :delete,
+      <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+      <%= ui_button_to :aufgabe_abhaengigkeit_loesen, task_dependency_path(task, dep), method: :delete,
+            size: "w-3.5 h-3.5",
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
-            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
-        ×
-      <% end %>
+            "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" %>
     </span>
   <% end %>
 </div>

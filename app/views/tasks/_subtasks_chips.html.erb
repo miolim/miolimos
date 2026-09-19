@@ -11,12 +11,12 @@
                     blade_link_id_value: sub.id, action: "click->blade-link#append" },
             class: "hover:underline flex-1 min-w-0 truncate #{'text-slate-400 line-through' if sub.done?}" %>
       <%= status_badge sub.status, labels: t("tasks.status") %>
-      <%= button_to task_subtask_path(task, sub), method: :delete,
+      <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+      <%= ui_button_to :aufgabe_unteraufgabe_loesen, task_subtask_path(task, sub), method: :delete,
+            size: "w-3.5 h-3.5",
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-            title: t("tasks.remove_subtask"), "aria-label": t("tasks.unlink"),
-            class: "p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer text-xs leading-none" do %>
-        ×
-      <% end %>
+            "aria-label": t("tasks.unlink"),
+            class: "p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" %>
     </div>
   <% end %>
 </div>

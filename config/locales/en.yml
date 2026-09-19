@@ -267,6 +267,8 @@ en:
       back_to_tasks: "Back to tasks"
       restore: "Restore"
     no_longer_next_step: "No longer the next step"
+    set_next_step: "Set as next step"                              # #1672: was hardcoded
+    set_next_step_for: "Set as next step for %{topic}"
     index_title:      "Tasks"
     new:              "New task"
     quick_add_placeholder: "New task …"

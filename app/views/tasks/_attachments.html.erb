@@ -60,13 +60,11 @@
               · <%= att.uploader.name %>
             </div>
           </div>
-          <%= button_to task_attachment_path(task, att.id),
-                method: :delete,
+          <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+          <%= ui_button_to :anhang_entfernen, task_attachment_path(task, att.id),
+                method: :delete, size: "w-3.5 h-3.5",
                 form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.remove_attachment_confirm") } },
-                title: t("actions.delete"), "aria-label": t("tasks.remove_attachment"),
-                class: "p-1 rounded text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer self-center" do %>
-            ×
-          <% end %>
+                class: "p-1 rounded text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer self-center" %>
         </li>
       <% end %>
     </ul>

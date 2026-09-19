@@ -12,13 +12,12 @@
             data: { action: "click->blade-stack#openInStack",
                     target_uuid: ki.uuid, turbo_frame: "_top" },
             class: "hover:underline" %>
-      <%= button_to task_mention_path(task, ki.uuid),
-            method: :delete,
+      <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+      <%= ui_button_to :aufgabe_kontakt_loesen, task_mention_path(task, ki.uuid), method: :delete,
+            size: "w-3.5 h-3.5",
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-            title: t("tasks.unlink_relation"), "aria-label": t("tasks.unlink"),
-            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" do %>
-        ×
-      <% end %>
+            "aria-label": t("tasks.unlink"),
+            class: "ml-0.5 -mr-0.5 p-0 text-slate-400 hover:text-rose-600 bg-transparent border-0 cursor-pointer leading-none" %>
     </span>
   <% end %>
 </div>

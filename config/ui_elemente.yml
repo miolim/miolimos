@@ -1009,3 +1009,43 @@ kommentare_klappen:
 aeltere_kommentare_klappen:
   icon: chevron_right
   label: task_comments.older
+
+# ── Aufgaben: Chips und Card (#1672 Etappe 19) ───────────────────────────
+# Sechs Kreuze an den Chip-Leisten, sechs Befehle: Jedes loest eine ANDERE
+# Verknuepfung (Kontakt, Abhaengigkeit, Wissen, Quelle, Unteraufgabe, Tag).
+aufgabe_kontakt_loesen:
+  icon: x
+  label: tasks.unlink_relation
+aufgabe_abhaengigkeit_loesen:
+  icon: x
+  label: tasks.unlink_relation
+aufgabe_wissen_loesen:
+  icon: x
+  label: tasks.unlink_relation
+aufgabe_quelle_loesen:
+  icon: x
+  label: tasks.unlink_relation
+aufgabe_unteraufgabe_loesen:
+  icon: x
+  label: tasks.remove_subtask
+aufgabe_tag_entfernen:
+  icon: x
+  label: tasks.remove_tag
+aufgabe_thema_loesen:
+  icon: x
+  label: tasks.unlink_relation
+naechster_schritt_setzen:
+  label: tasks.set_next_step
+naechster_schritt_aufheben:
+  label: tasks.no_longer_next_step
+anhang_entfernen:
+  icon: x
+  label: tasks.remove_attachment
+aufgabe_zu_thema:
+  icon: group
+  label: tasks.to_topic
+aufgabe_loeschen:
+  icon: trash
+  label: actions.delete
+aufgabe_wiederherstellen:
+  label: tasks.trash.restore

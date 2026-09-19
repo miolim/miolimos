@@ -10,7 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 121 Dateien, 210 Bedienelemente.
+# Stand: 111 Dateien, 197 Bedienelemente.
 app/views/giro_codes/show.html.erb
 app/views/history/_list_blade_card.html.erb
 app/views/inbox_items/_document_review.html.erb
@@ -87,10 +87,6 @@ app/views/shared/_time_section.html.erb
 app/views/shared/_time_timer.html.erb
 app/views/shared/_toast.html.erb
 app/views/tags/_manage_row.html.erb
-app/views/tasks/_attachments.html.erb
-app/views/tasks/_blade_card.html.erb
-app/views/tasks/_contacts_chips.html.erb
-app/views/tasks/_dependencies_chips.html.erb
 app/views/tasks/_description.html.erb
 app/views/tasks/_detail_activity.html.erb
 app/views/tasks/_detail_awaitings.html.erb
@@ -100,19 +96,13 @@ app/views/tasks/_detail_header.html.erb
 app/views/tasks/_detail_section.html.erb
 app/views/tasks/_form.html.erb
 app/views/tasks/_index_list_blade.html.erb
-app/views/tasks/_knowledge_chips.html.erb
 app/views/tasks/_milestone_button.html.erb
 app/views/tasks/_quickadd_form.html.erb
 app/views/tasks/_replies_list.html.erb
 app/views/tasks/_replies_section.html.erb
 app/views/tasks/_row.html.erb
-app/views/tasks/_sources_chips.html.erb
 app/views/tasks/_status_control.html.erb
-app/views/tasks/_subtasks_chips.html.erb
-app/views/tasks/_tags_chips.html.erb
 app/views/tasks/_topic_view.html.erb
-app/views/tasks/_topics_chips.html.erb
-app/views/tasks/trash.html.erb
 app/views/topics/_blade_toolbar.html.erb
 app/views/topics/_blade_topic_row.html.erb
 app/views/topics/_customer_chip.html.erb

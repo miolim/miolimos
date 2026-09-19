@@ -49,26 +49,20 @@
                     card_timer_topics_value: task.topics.map { |t| { id: t.id, name: t.name } }.to_json },
             class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0" %>
       <% unless task.done? %>
-        <%= button_to promote_to_topic_task_path(task), method: :post,
+        <%= ui_button_to :aufgabe_zu_thema, promote_to_topic_task_path(task), method: :post,
               class: "p-1 rounded hover:bg-indigo-50 hover:text-indigo-700 bg-transparent border-0 cursor-pointer shrink-0",
-              title: t("tasks.to_topic"), "aria-label": t("tasks.to_topic"),
               form: { class: "inline m-0 p-0",
                       data: { turbo_frame: "_top",
-                              turbo_confirm: t("tasks.to_topic_confirm") } } do %>
-          <%= icon "group" %>
-        <% end %>
+                              turbo_confirm: t("tasks.to_topic_confirm") } } %>
         <%# #747 (Hans, 2026-06-21): EIN Status-Control (farbiges Icon) —
             Entwurf → grüner send (Veröffentlichen), veröffentlicht → pause
             (Auf Entwurf). Hier in der Card-Toolbar; auf der
             Frame-Detailansicht (keine Toolbar) rendert es der Header. %>
         <%= render "tasks/status_control", task: task %>
       <% end %>
-      <%= button_to task_path(task), method: :delete,
+      <%= ui_button_to :aufgabe_loeschen, task_path(task), method: :delete,
             class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0",
-            title: t("actions.delete"), "aria-label": t("actions.delete"),
-            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } do %>
-        <%= icon "trash" %>
-      <% end %>
+            form: { class: "inline m-0 p-0", data: { turbo_confirm: t("tasks.delete_confirm") } } %>
     <% } %>
 
     <div class="mt-3">

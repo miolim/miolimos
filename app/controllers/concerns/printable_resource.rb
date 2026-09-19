@@ -194,6 +194,13 @@ module PrintableResource
     return franking_error(t("printables.franking.not_frankable")) unless @printable.frankable?
     product = Internetmarke.product(params[:product])
     return franking_error(t("printables.franking.unknown_product")) unless product
+    # #1675: Eine BEZAHLTE Marke wird nie stillschweigend ersetzt — weder durch
+    # einen zweiten Kauf (Doppelklick, Zurück-Taste, zweiter Reiter: das kostete
+    # jedes Mal Porto, und die erste Marke war weg) noch durch ein Muster. Wer
+    # neu frankieren will, entfernt sie erst ausdrücklich (mit Nachfrage).
+    if @printable.postage_voucher && !@printable.postage_voucher.dummy?
+      return franking_error(t("printables.franking.already_franked"))
+    end
 
     if params[:dummy].present?
       attrs = { dummy: true, image: Internetmarke::DummyStamp.data_uri(product) }
@@ -206,10 +213,13 @@ module PrintableResource
                 wallet_balance_cents: bought[:wallet_balance],
                 image: "data:image/png;base64,#{Base64.strict_encode64(bought[:png])}" }
     end
-    @printable.postage_voucher&.destroy!
-    @printable.create_postage_voucher!(attrs.merge(
-      product_code: product[:code], product_label: product[:label],
-      price_cents: product[:cents], creator: current_actor))
+    # Ersetzen in EINEM Zug: Scheitert das Anlegen, bleibt die alte (Muster-)Marke.
+    PostageVoucher.transaction do
+      @printable.postage_voucher&.destroy!
+      @printable.create_postage_voucher!(attrs.merge(
+        product_code: product[:code], product_label: product[:label],
+        price_cents: product[:cents], creator: current_actor))
+    end
     replace_franking
   rescue Internetmarke::Client::Error => e
     franking_error(t("printables.franking.buy_failed", error: e.message))

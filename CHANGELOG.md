@@ -55,6 +55,12 @@ release is cut, this section is renamed to the new version and a fresh
   amount together with a debit/credit column (`Soll/Haben`) correctly, and
   rows whose amount cannot be read are now reported instead of silently
   dropped.
+- Franking cannot buy postage twice for the same document any more (#1675): a
+  second submit (double click, back button, second tab) bought another stamp
+  and deleted the first, paid one. A paid stamp is now never replaced
+  silently — neither by another purchase nor by a dummy stamp; remove it
+  explicitly first. A paid stamp that comes back without a voucher id is kept
+  instead of being discarded after payment.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

@@ -1123,6 +1123,7 @@ de:
       voucher_id:          "Marken-ID:"
       remove:              "Frankierung entfernen"
       remove_confirm_real: "Echte Marke entfernen? Das Porto ist bereits bezahlt und verfällt mit dem Dokument."
+      already_franked:     "Dieses Dokument trägt schon eine bezahlte Marke — es wurde nichts gekauft. Zum Neufrankieren die Frankierung erst entfernen."
       unknown_product:     "Unbekanntes Portoprodukt."
       not_frankable:       "Dieses Dokument hat kein DIN-Anschriftfeld und kann nicht frankiert werden."
       no_credentials:      "Keine Internetmarke-Zugangsdaten hinterlegt — unter Einstellungen → Frankierung eintragen (oder Dummy-Marke nutzen)."

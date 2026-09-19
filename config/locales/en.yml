@@ -1118,6 +1118,7 @@ en:
       voucher_id:          "Voucher ID:"
       remove:              "Remove franking"
       remove_confirm_real: "Remove the real stamp? The postage has been paid and is lost with the document."
+      already_franked:     "This document already carries a paid stamp — nothing was bought. Remove the franking first to frank it again."
       unknown_product:     "Unknown postage product."
       not_frankable:       "This document has no DIN address field and cannot be franked."
       no_credentials:      "No Internetmarke credentials on file — add them under Settings → Franking (or use the dummy stamp)."

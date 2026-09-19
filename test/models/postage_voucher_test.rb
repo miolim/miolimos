@@ -9,12 +9,14 @@ class PostageVoucherTest < ActiveSupport::TestCase
                                 image: "data:image/svg+xml;base64,AA==" }.merge(attrs))
   end
 
-  test "Dummy braucht keine voucher_id, echte Marke schon" do
+  # #1675: umgedreht. Die Pflicht auf voucher_id schlug NACH dem Kauf fehl, wenn
+  # die Post die Antwort ohne Marken-ID lieferte — die bezahlte Marke ging
+  # verloren, und der nächste Klick kaufte noch einmal. Das Bild ist die Marke.
+  test "eine bezahlte Marke ist auch ohne voucher_id gueltig — das Bild ist Pflicht" do
     assert build_voucher.valid?
-    real = build_voucher(dummy: false)
-    refute real.valid?
-    real.voucher_id = "A0123456789"
-    assert real.valid?
+    assert build_voucher(dummy: false).valid?
+    assert build_voucher(dummy: false, voucher_id: "A0123456789").valid?
+    refute build_voucher(dummy: false, image: nil).valid?
   end
 
   test "eine Frankierung pro Dokument — Neufrankieren ersetzt" do

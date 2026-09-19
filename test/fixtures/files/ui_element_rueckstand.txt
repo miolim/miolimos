@@ -10,11 +10,10 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 128 Dateien, 233 Bedienelemente.
+# Stand: 125 Dateien, 219 Bedienelemente.
 app/views/giro_codes/show.html.erb
 app/views/history/_list_blade_card.html.erb
 app/views/inbox_items/_document_review.html.erb
-app/views/inbox_items/_list_blade_card.html.erb
 app/views/inbox_items/_row.html.erb
 app/views/inbox_items/_run_picker.html.erb
 app/views/inbox_items/_topics_chips.html.erb
@@ -64,7 +63,6 @@ app/views/sessions/new.html.erb
 app/views/sessions/otp.html.erb
 app/views/settings/_index_list_blade.html.erb
 app/views/settings/agents/_form.html.erb
-app/views/settings/blades/_accounts.html.erb
 app/views/settings/blades/_agent_usage.html.erb
 app/views/settings/blades/_agents.html.erb
 app/views/settings/blades/_document_templates.html.erb
@@ -79,7 +77,6 @@ app/views/settings/blades/_signature.html.erb
 app/views/settings/blades/_tag_icons.html.erb
 app/views/settings/blades/_task_templates.html.erb
 app/views/settings/blades/_templates.html.erb
-app/views/settings/blades/_users.html.erb
 app/views/settings/llm_activities/show.html.erb
 app/views/settings/task_templates/_form.html.erb
 app/views/settings/users/_form.html.erb

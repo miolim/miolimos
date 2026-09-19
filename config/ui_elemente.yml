@@ -950,3 +950,35 @@ ki_filter_aufheben:
 dashboard_abschnitt_klappen:
   icon: chevron_right
   label: dashboard.agent.toggle_section
+
+# ── Posteingang-Liste, Konten, Nutzer (#1672 Etappe 17) ─────────────────
+posteingang_hinzufuegen_klappen:
+  icon: plus_circle
+  label: inbox_items.add_to_inbox
+posteingang_ordner_scannen:
+  label: inbox_items.scan_folder
+posteingang_eintrag_hinzufuegen:
+  label: inbox_items.submit_add
+# Reiter und Status-Chips: Auspraegung kommt als Wert aus der Liste.
+posteingang_reiter_waehlen:
+  label: inbox_items.add_to_inbox
+posteingang_status_filtern:
+  label: inbox_items.add_to_inbox
+konto_verbinden:
+  label: settings.accounts.connect
+konto_neu_verbinden:
+  label: settings.accounts.reconnect_needed
+konto_hinweis_bestaetigen:
+  label: settings.accounts.sync_now
+konto_jetzt_synchronisieren:
+  label: settings.accounts.sync_now
+konto_trennen:
+  label: settings.accounts.disconnect
+nutzer_anlegen:
+  label: settings.users.new
+nutzer_als_ansehen:
+  label: settings.users.view
+nutzer_bearbeiten:
+  label: actions.edit
+nutzer_loeschen:
+  label: actions.delete

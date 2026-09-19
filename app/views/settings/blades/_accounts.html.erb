@@ -4,7 +4,7 @@
   <div class="bg-white rounded border border-slate-200">
     <header class="px-4 py-2 border-b border-slate-200 flex items-center justify-between">
       <h1 class="font-semibold"><%= t("settings.accounts.title") %></h1>
-      <%= link_to t("settings.accounts.connect"), connect_settings_accounts_path,
+      <%= ui_link :konto_verbinden, connect_settings_accounts_path,
             class: "text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700" %>
     </header>
 
@@ -54,7 +54,7 @@
                 <% if c.active? %>
                   <span class="text-emerald-600">✓</span>
                 <% else %>
-                  <%= link_to t("settings.accounts.reconnect_needed"), connect_settings_accounts_path,
+                  <%= ui_link :konto_neu_verbinden, connect_settings_accounts_path,
                         class: "inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs hover:bg-amber-100" %>
                 <% end %>
               </td>
@@ -68,14 +68,15 @@
                         placeholder: t("settings.accounts.gcal_placeholder"),
                         autocomplete: "off",
                         class: "w-56 text-xs rounded border border-slate-200 px-2 py-1 font-mono" %>
-                  <%= submit_tag "OK", class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer" %>
+                  <%= ui_button :konto_hinweis_bestaetigen, type: :submit, title: "OK",
+                        class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer" do %>OK<% end %>
                 <% end %>
               </td>
               <td class="px-4 py-2 text-right">
-                <%= button_to t("settings.accounts.sync_now"), sync_settings_account_path(c), method: :post,
+                <%= ui_button_to :konto_jetzt_synchronisieren, sync_settings_account_path(c), method: :post,
                       class: "text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 mr-1",
                       form: { class: "inline" } %>
-                <%= button_to t("settings.accounts.disconnect"), settings_account_path(c), method: :delete,
+                <%= ui_button_to :konto_trennen, settings_account_path(c), method: :delete,
                       class: "text-xs px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100",
                       form: { class: "inline", data: { turbo_confirm: t("settings.accounts.disconnect_confirm", email: c.email_address) } } %>
               </td>

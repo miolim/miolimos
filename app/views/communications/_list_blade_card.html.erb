@@ -22,7 +22,7 @@
     <%= render "shared/list_header",
           lead_icon: "communications", title: t("communications.list_title"),
           count: comms.size, total: Communication.count,
-          search: render("shared/list_search", placeholder: t("communications.list_search_placeholder")) %>
+          search: render("shared/list_search", i18n_key: "communications.list_search_placeholder") %>
 
     <% if comms.empty? %>
       <p class="text-sm text-slate-400 italic py-3"><%= t("communications.none") %></p>

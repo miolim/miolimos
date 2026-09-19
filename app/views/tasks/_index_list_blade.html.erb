@@ -150,7 +150,7 @@
     <%= render "shared/list_header",
           lead_icon: "tasks", title: t("nav.tasks"),
           count: @tasks.size, count_slot: tasks_count_slot,
-          search: render("shared/list_search", placeholder: t("tasks.list_search_placeholder")),
+          search: render("shared/list_search", i18n_key: "tasks.list_search_placeholder"),
           controls: tasks_controls %>
 
     <div data-controller="active-row" class="space-y-3">

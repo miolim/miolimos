@@ -54,7 +54,7 @@
     <%# #703 (Hans): einheitlicher Topbereich (kein extra Kasten). %>
     <%= render "shared/list_header",
           lead_icon: "tag", title: t("tags.title"), count: total,
-          search: (total > 0 ? render("shared/list_search", placeholder: t("tags.search_placeholder")) : nil) %>
+          search: (total > 0 ? render("shared/list_search", i18n_key: "tags.search_placeholder") : nil) %>
 
     <% if total.zero? %>
       <p class="text-sm text-slate-400 italic"><%= t("tags.empty") %></p>

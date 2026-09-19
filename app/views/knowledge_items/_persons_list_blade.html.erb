@@ -80,7 +80,7 @@
           lead_icon: "users", title: t("nav.contacts"),
           count: items.size, total: total,
           add:      render("knowledge_items/type_picker", types: %w[person organization]),
-          search:   render("shared/list_search", placeholder: t("knowledge.list.persons.search_placeholder")),
+          search:   render("shared/list_search", i18n_key: "knowledge.list.persons.search_placeholder"),
           controls: capture { concat known_toggle; concat namen_toggle } %>
 
     <% if items.empty? %>

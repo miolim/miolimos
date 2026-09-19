@@ -72,7 +72,7 @@
     <%= render "shared/list_header",
           lead_icon: "folder", title: t("nav.topics"), count: total,
           add: safe_join([status_toggle, add_topic]),
-          search: (total > 0 ? render("shared/list_search", placeholder: t("topics.list_search_placeholder")) : nil) %>
+          search: (total > 0 ? render("shared/list_search", i18n_key: "topics.list_search_placeholder") : nil) %>
 
     <% if total.zero? %>
       <p class="text-sm text-slate-400 italic"><%= t("topics.no_topics") %></p>

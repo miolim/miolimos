@@ -23,7 +23,7 @@
     <%= render "shared/list_header",
           lead_icon: "waiting", title: t("nav.waiting"),
           count: awaitings.size, total: Awaiting.open.count,
-          search: render("shared/list_search", placeholder: t("awaitings.list_search_placeholder")) %>
+          search: render("shared/list_search", i18n_key: "awaitings.list_search_placeholder") %>
 
     <% if awaitings.empty? %>
       <p class="text-sm text-slate-400 italic py-3">Keine offenen Wartepunkte.</p>

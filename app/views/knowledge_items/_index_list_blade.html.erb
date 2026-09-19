@@ -86,7 +86,7 @@
           lead_icon: "knowledge", title: t("knowledge.index_title"),
           count: @items.size,
           add:      render("knowledge_items/type_picker", types: picker_types),
-          search:   render("shared/list_search", placeholder: t("knowledge.list.index.search_placeholder")),
+          search:   render("shared/list_search", i18n_key: "knowledge.list.index.search_placeholder"),
           controls: knowledge_controls %>
 
     <ul id="knowledge_list" class="divide-y divide-slate-100">

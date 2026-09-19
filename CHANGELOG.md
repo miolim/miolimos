@@ -30,6 +30,29 @@ release is cut, this section is renamed to the new version and a fresh
   a person — the relationship is now tied to the contact's id, so it survives
   a rename and tells two people of the same name apart (the name stays as a
   fallback for existing files and imports).
+- Help cards (#1677, from immoOS #1658/#1665). Every card and every list has
+  a question mark in its spine; it opens a help card right next to it. The
+  card has two parts: “Our note” on top, written by the people using the
+  installation (guests read only), and “How it works” below, shipped with the
+  program and editable by administrators. Both are Markdown with the usual
+  editor. If a card has tabs, the help belongs to the open tab and follows it
+  when you switch. The question mark is coloured when there is something to
+  read and pale when there is not.
+- Help texts can point at the screen: `:ui:<id>:` and `:icon:<name>:` render
+  the symbol of a control, `:feld:<i18n key>:` and `:bereich:<i18n key>:` the
+  current label of a field or section — so a renamed label never leaves the
+  help behind. A click on such a marker highlights the spot on the
+  neighbouring card (and opens its tab if needed). The labelling mode
+  (Cmd/Ctrl+.) copies the matching marker for whatever you click; the help
+  editor has a symbol picker and completes label keys by their visible word.
+  Markers are rendered in help texts only and never inside code or link
+  targets.
+- Shipped help texts live as Markdown files in `db/help/` and are imported
+  with `bin/rails help:import` (runs on every deploy and container start;
+  it never overwrites a text an administrator changed on the installation —
+  `help:rueckstand` shows the differences, `help:export` writes the installation's
+  texts back to the files). A first set of texts covers tasks, topics,
+  knowledge cards and the task and person lists.
 
 ### Security
 

@@ -41,7 +41,7 @@
       <span class="font-semibold text-sm"><%= t("documents.list.title") %></span>
       <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= docs.size %></span>
       <div class="flex-1 min-w-0">
-        <%= render "shared/list_search", placeholder: t("documents.list.search_placeholder") %>
+        <%= render "shared/list_search", i18n_key: "documents.list.search_placeholder" %>
       </div>
       <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
       <%# Filter-Popover: Typ / Absender / Empfänger (GET-Reload). %>

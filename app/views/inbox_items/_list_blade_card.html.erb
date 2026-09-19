@@ -125,7 +125,7 @@
           <% end %>
         </nav>
         <%# Zeile 3: Filterschlitz + inklusive-ODER-Statusauswahl des Reiters. %>
-        <%= render "shared/list_search", placeholder: t("inbox_items.search_placeholder") %>
+        <%= render "shared/list_search", i18n_key: "inbox_items.search_placeholder" %>
         <div class="flex flex-wrap items-center gap-1 text-[11px]">
           <% tabs[tab][:keys].each do |key, label| %>
             <%

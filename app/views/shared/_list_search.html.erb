@@ -8,10 +8,16 @@
 <%#     ul mit li-Eintraegen %>
 <%# %>
 <%# Locals (alle optional): %>
-<%#   placeholder:  String, default "Suchen ..." %>
+<%#   i18n_key:     Schlüssel des Platzhalters — daraus kommt der Text, UND das %>
+<%#                 Feld wird damit zum Marker-Ziel der Hilfe (#1677, aus %>
+<%#                 immoOS #1658 R15) %>
+<%#   placeholder:  String, default "Suchen ..." (schlägt i18n_key) %>
 <%#   class_extra:  zusaetzliche CSS-Klassen am Wrapper %>
 <%
-  placeholder = local_assigns.fetch(:placeholder, t("shared.list_search.placeholder"))
+  i18n_key    = local_assigns[:i18n_key].presence
+  placeholder = local_assigns[:placeholder].presence ||
+                (i18n_key ? t(i18n_key) : t("shared.list_search.placeholder"))
+  i18n_key  ||= "shared.list_search.placeholder" if local_assigns[:placeholder].blank?
   class_extra = local_assigns.fetch(:class_extra, "")
 %>
 <div class="relative flex items-center <%= class_extra %>">
@@ -22,6 +28,7 @@
          data-list-search-target="input"
          data-action="input->list-search#filter"
          placeholder="<%= placeholder %>"
+         <%= tag.attributes("data-i18n-key": i18n_key) if i18n_key %>
          class="w-full pl-7 pr-2 py-1 text-xs rounded border border-slate-200 bg-white
                 focus:outline-none focus:border-slate-400 placeholder:text-slate-400">
 </div>

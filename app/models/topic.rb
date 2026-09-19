@@ -114,11 +114,11 @@ class Topic < ApplicationRecord
            foreign_key: :suggested_topic_id, dependent: :nullify
 
   LOESCHHINDERNISSE = {
-    "Zeitbuchung(en)"  => -> (t) { TimeEntry.unscoped.where(topic_id: t.id) },
-    "Rechnung(en)"     => -> (t) { Invoice.unscoped.where(topic_id: t.id) },
-    "Dokument(e)"      => -> (t) { Document.unscoped.where(topic_id: t.id) },
-    "Termin(e)"        => -> (t) { Event.unscoped.where(topic_id: t.id) },
-    "Portalzugang/-zugänge" => -> (t) { PortalAccess.where(topic_id: t.id) }
+    "Zeitbuchung(en)"  => ->(t) { TimeEntry.unscoped.where(topic_id: t.id) },
+    "Rechnung(en)"     => ->(t) { Invoice.unscoped.where(topic_id: t.id) },
+    "Dokument(e)"      => ->(t) { Document.unscoped.where(topic_id: t.id) },
+    "Termin(e)"        => ->(t) { Event.unscoped.where(topic_id: t.id) },
+    "Portalzugang/-zugänge" => ->(t) { PortalAccess.where(topic_id: t.id) }
   }.freeze
 
   # { "Rechnung(en)" => 2, … } — leer heißt: darf gelöscht werden.

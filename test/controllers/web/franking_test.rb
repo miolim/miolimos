@@ -151,5 +151,4 @@ class FrankingTest < ActionDispatch::IntegrationTest
       assert_equal 1, kaeufe.size
     end
   end
-
 end

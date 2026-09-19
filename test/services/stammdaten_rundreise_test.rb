@@ -117,5 +117,4 @@ class StammdatenRundreiseTest < ActiveSupport::TestCase
       assert_raises(ArgumentError) { FileProxy.update(actor: @hans, knowledge_item: ki, geburtsname: "Tippfehler") }
     end
   end
-
 end

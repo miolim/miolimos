@@ -159,5 +159,4 @@ class InvoiceTest < ActiveSupport::TestCase
     neu = Invoice.next_number(aussteller)
     refute_equal alt.number, neu, "die Nummer aus dem Papierkorb wurde wiederverwendet"
   end
-
 end

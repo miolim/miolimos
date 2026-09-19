@@ -179,5 +179,4 @@ class TimeEntryTest < ActiveSupport::TestCase
     assert_equal 60, zeit.reload.duration_minutes
     assert_equal 1, position.reload.quantity
   end
-
 end

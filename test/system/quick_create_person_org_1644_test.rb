@@ -58,7 +58,10 @@ class QuickCreatePersonOrg1644Test < ApplicationSystemTestCase
     slot_oeffnen
     find("[data-slot='person'] button[data-entity-type-switch-typ-param='organization']").click
     find("#{gruppe('organization')} [name='title']").set("Beispiel Bau")
-    find("[data-slot='person'] input[type='submit']").click
+    # #1672 hat den Absende-Knopf in den Bedienelemente-Katalog gezogen — seither
+    # ein <button type="submit">, kein <input>. Der Test suchte weiter das input
+    # und war seitdem rot (Systemtests laufen nicht im Deploy-Tor).
+    find("[data-slot='person'] [type='submit']").click
 
     assert_selector ".stack-card", text: "Beispiel Bau", wait: 10
     org = KnowledgeItem.find_by(title: "Beispiel Bau")

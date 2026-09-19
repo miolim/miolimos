@@ -190,6 +190,13 @@ module ActiveSupport
         # Git-init the sandbox so commits work
         Dir.chdir(tmp) do
           system("git", "init", "-q", "-b", "main")
+          # #1677: Keine Hintergrund-Wartung in der Wegwerf-Ablage. Git startet
+          # nach Commits gelegentlich `maintenance`/`gc --auto` als ABGELÖSTEN
+          # Prozess; der legte `.git/objects/maintenance.lock` an, während
+          # mktmpdir schon aufräumte → Errno::ENOENT im Aufräumen, ein
+          # Zufallsfehler an wechselnden Tests (öffentliche CI, v0.6.0).
+          system("git", "config", "gc.auto", "0")
+          system("git", "config", "maintenance.auto", "false")
           system("git", "-c", "user.name=test", "-c", "user.email=test@test.local",
                  "commit", "--allow-empty", "-q", "-m", "root")
         end

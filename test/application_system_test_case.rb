@@ -22,7 +22,14 @@ require "capybara/cuprite"
 # Gemessen an unserer Suite: vorher 2 Fehler und 39 Abbrueche, danach 0.
 CUPRITE_OPTIONEN = {
   headless: !ENV["HEADED"],
-  browser_options: { "no-sandbox" => nil },
+  # #1677: Die Sprache des Browsers FESTLEGEN. Ein <input type="date"> ordnet
+  # seine Teile nach der Browser-Sprache — deutsch Tag.Monat.Jahr, englisch
+  # Monat/Tag/Jahr. Lokal (LANG=de_DE) tippte der Datums-Test „15.03.…", in der
+  # öffentlichen CI (englische Umgebung) wurde daraus Monat 15 → 2027-12-03, und
+  # der Test war dort seit seinem Einbau rot. Chrome liest unter Linux die
+  # Umgebung UND den Schalter; beides gesetzt, damit es überall gleich ist.
+  browser_options: { "no-sandbox" => nil, "lang" => "de-DE", "accept-lang" => "de-DE" },
+  env: { "LANG" => "de_DE.UTF-8", "LANGUAGE" => "de_DE:de", "LC_ALL" => "de_DE.UTF-8" },
   process_timeout: 30,
   timeout: 15,
   # Ferrum wartet beim Seitenaufruf auf NETZWERK-RUHE und meldet sonst die

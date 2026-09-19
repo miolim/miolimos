@@ -57,5 +57,4 @@ class DezimalbetragTest < ActiveSupport::TestCase
   test "ein Minus mittendrin bleibt Muell" do
     assert_nil Dezimalbetrag.parse("12-50")
   end
-
 end

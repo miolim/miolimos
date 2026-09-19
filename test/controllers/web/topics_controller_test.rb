@@ -259,5 +259,4 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert InboxItem.exists?(eintrag.id), "der Posteingangs-Eintrag selbst bleibt"
     assert_nil mail.reload.suggested_topic_id
   end
-
 end

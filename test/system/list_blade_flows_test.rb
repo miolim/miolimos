@@ -40,9 +40,11 @@ class ListBladeFlowsTest < ApplicationSystemTestCase
     assert page.has_css?("article.stack-card[data-uuid='list:persons']")
     assert_no_selector "button[data-action*='appendFromList'][data-target-uuid='#{@person.uuid}']", visible: :all
 
-    find("article.stack-card[data-uuid='list:persons'] a", text: "Ada Lovelace").click(:alt)
+    # #1642: Alt ist kein Modifier mehr — Umschalt fragt per Menü, wohin.
+    find("article.stack-card[data-uuid='list:persons'] a", text: "Ada Lovelace").click(:shift)
+    find("#blade_open_menu button[data-open-art='ende']", wait: 5).click
     assert page.has_css?("article.stack-card[data-uuid='#{@person.uuid}']"),
-           "Alt-Klick muss das Detail-Blade anhängen"
+           "die Menü-Wahl muss das Detail-Blade anhängen"
   end
 
   test "#563: KI-Liste öffnet Einträge auch auf /tasks (Seite ohne card-url-template)" do
@@ -51,12 +53,15 @@ class ListBladeFlowsTest < ApplicationSystemTestCase
     # Personen-Liste aus der Seitenleiste an den Task-Stack anhaengen …
     # #1509: Bis hierher hing dafuer ein Plus-Button an der Zeile. Den gibt es
     # nicht mehr — die ZEILE traegt den Card-Aufruf, aber nur mit Modifier:
-    # ohne gedrueckte Taste navigiert sie weiter zur Seite. ALT haengt an.
+    # ohne gedrueckte Taste navigiert sie weiter zur Seite. #1642: Der Modifier
+    # ist UMSCHALT, das Menue fragt, wohin (ALT haengte frueher an; der Test
+    # stand noch darauf und war seit v0.5.1 rot).
     # (Capybara nimmt Modifier als POSITIONSARGUMENT, nicht als `modifiers:` —
     # mit der falschen Form klickt es stillschweigend OHNE Modifier, und der
     # Test navigiert weg statt anzuhaengen.)
     find("a[data-blade-link-kind-value='list'][data-blade-link-id-value='persons']",
-         visible: :all).click(:alt)
+         visible: :all).click(:shift)
+    find("#blade_open_menu button[data-open-art='ende']", wait: 5).click
     assert page.has_css?("article.stack-card[data-uuid='list:persons']"),
            "Personen-Liste muss am Task-Stack hängen"
     # … und ein Eintrag-Klick muss das Detail öffnen (war #563: leere URL).

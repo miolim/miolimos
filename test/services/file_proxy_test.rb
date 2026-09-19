@@ -380,5 +380,4 @@ class FileProxyTest < ActiveSupport::TestCase
       assert_nil petra.reload.parent_org_uuid
     end
   end
-
 end

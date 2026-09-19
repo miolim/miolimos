@@ -90,5 +90,4 @@ class Api::V1::OnBehalfOfTest < ActionDispatch::IntegrationTest
       assert_response :not_found, "#{was}: für Mia gefragt, trotzdem geliefert"
     end
   end
-
 end

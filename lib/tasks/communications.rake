@@ -85,5 +85,4 @@ namespace :communications do
 
     puts "prune_trash: pruned=#{pruned} kept=#{kept} errors=#{errors}"
   end
-
 end

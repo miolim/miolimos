@@ -176,6 +176,10 @@ de:
     template:         "Vorlage"
     edit_topic:       "Thema bearbeiten"
     delete_confirm:   "Thema wirklich löschen?"
+    content_filter_all: "Alle"                 # #1672: waren hartkodiert
+    content_filter_title: "Nur Titel"
+    content_filter_body: "Mit Inhalt"
+    content_filter: "Inhalts-Filter"
     full_view:        "Vollansicht"
     open_full:        "In Vollansicht öffnen"
     no_results:       "Keine Treffer."

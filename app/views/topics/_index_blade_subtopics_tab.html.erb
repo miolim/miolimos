@@ -15,10 +15,8 @@
     <%= text_field_tag "topic[name]", nil,
           placeholder: t("topics.new_subtopic_placeholder"),
           class: "flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-emerald-400" %>
-    <button type="submit"
-            class="shrink-0 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer">
-      <%= t("actions.create") %>
-    </button>
+    <%= ui_button :unterthema_anlegen, type: :submit,
+          class: "shrink-0 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
 <% end %>
 <%= render layout: "topics/tab_shell",

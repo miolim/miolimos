@@ -175,6 +175,10 @@ en:
     template:         "Template"
     edit_topic:       "Edit topic"
     delete_confirm:   "Really delete this topic?"
+    content_filter_all: "All"                  # #1672: were hardcoded
+    content_filter_title: "Titles only"
+    content_filter_body: "With content"
+    content_filter: "Content filter"
     full_view:        "Full view"
     open_full:        "Open in full view"
     no_results:       "No matches."

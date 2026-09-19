@@ -57,7 +57,7 @@
         (statt Full-Page-Navigation) — kein neuer Stack, kein Breiten-Flimmern.
         href bleibt Fallback (kein JS). %>
     <% assignee_params = base_params.merge(assignee_id: assignee_cfg[:nextp]).compact_blank %>
-    <%= link_to topic_path(topic, assignee_params),
+    <%= ui_link :thema_zuweisung_umschalten, topic_path(topic, assignee_params),
           title: t("tasks.assignee_toggle_title", label: assignee_cfg[:label]),
           data: { action: "click->topic-tabs#switch",
                   "topic-tabs-url-param": list_card_topic_path(topic, assignee_params) },
@@ -65,7 +65,7 @@
       <%= icon assignee_cfg[:icon], size: "w-3.5 h-3.5" %><%= assignee_cfg[:label] %>
     <% end %>
     <% status_params = base_params.merge(task_status: status_cfg[:nextp]).compact_blank %>
-    <%= link_to topic_path(topic, status_params),
+    <%= ui_link :thema_status_umschalten, topic_path(topic, status_params),
           title: t("tasks.status_toggle_title", label: status_cfg[:label]),
           data: { action: "click->topic-tabs#switch",
                   "topic-tabs-url-param": list_card_topic_path(topic, status_params) },

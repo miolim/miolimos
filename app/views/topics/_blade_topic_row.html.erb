@@ -15,18 +15,15 @@
     <div data-controller="disclosure"
          data-disclosure-storage-key-value="topics.blade.<%= topic.id %>">
       <div class="group flex items-center" style="padding-left: <%= depth * 0.75 %>rem">
-        <button type="button"
-                data-controller="blade-link"
-                data-blade-link-kind-value="topic_list"
-                data-blade-link-id-value="<%= topic.slug %>"
-                data-action="click->blade-link#append"
-                title="<%= row_title %>"
-                class="flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0">
+        <%= ui_button :thema_zeile_oeffnen, title: row_title,
+              data: { controller: "blade-link", action: "click->blade-link#append",
+                      blade_link_kind_value: "topic_list", blade_link_id_value: topic.slug },
+              class: "flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0" do %>
           <span class="w-5 flex items-center justify-center shrink-0">
             <%= topic_marker topic, next_step: has_next, size: :md %>
           </span>
           <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
-        </button>
+        <% end %>
         <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
         <%= ui_button :unterthemen_klappen,
               data: { action: "click->disclosure#toggle", disclosure_target: "icon" },
@@ -40,18 +37,15 @@
     </div>
   <% else %>
     <div class="group flex items-center" style="padding-left: <%= depth * 0.75 %>rem">
-      <button type="button"
-              data-controller="blade-link"
-              data-blade-link-kind-value="topic_list"
-              data-blade-link-id-value="<%= topic.slug %>"
-              data-action="click->blade-link#append"
-              title="<%= row_title %>"
-              class="flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0">
+      <%= ui_button :thema_zeile_oeffnen, title: row_title,
+            data: { controller: "blade-link", action: "click->blade-link#append",
+                    blade_link_kind_value: "topic_list", blade_link_id_value: topic.slug },
+            class: "flex-1 min-w-0 text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer bg-transparent border-0" do %>
         <span class="w-5 flex items-center justify-center shrink-0">
           <%= topic_marker topic, next_step: has_next, size: :md %>
         </span>
         <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
-      </button>
+      <% end %>
       <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
     </div>
   <% end %>

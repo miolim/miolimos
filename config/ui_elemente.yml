@@ -1169,3 +1169,40 @@ ki_details_klappen:
 ki_tag_entfernen:
   icon: x
   label: knowledge.chip.unlink
+
+# ── Themen (#1672 Etappe 23) ─────────────────────────────────────────────
+thema_inbox_anlegen:
+  label: topics.submit_inbox
+portal_vorschau_oeffnen:
+  icon: globe
+  label: topics.portal
+thema_loeschen:
+  icon: trash
+  label: actions.delete
+thema_bearbeiten_voll:
+  icon: pencil
+  label: actions.edit
+thema_vollansicht:
+  icon: expand
+  label: topics.full_view
+thema_kunde_loesen:
+  icon: x
+  label: topics.unlink_customer
+thema_zeile_oeffnen:
+  label: topics.open_full
+# Der Inhalts-Filter: ein Befehl, Stufe kommt als Wert aus der Liste.
+thema_inhalt_filtern:
+  label: topics.content_filter
+thema_bekanntheit_umschalten:
+  icon: user-check
+  label: topics.known_toggle_title
+unterthema_anlegen:
+  label: actions.create
+thema_zuweisung_umschalten:
+  label: tasks.assignee_mine
+thema_status_umschalten:
+  label: tasks.status.open
+thema_speichern:
+  label: actions.save
+thema_abbrechen:
+  label: actions.cancel

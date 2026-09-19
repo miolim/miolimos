@@ -37,7 +37,7 @@
                 class: "text-xs flex-1 min-w-0" %>
         </label>
         <div class="flex justify-end">
-          <%= f.submit t("topics.submit_inbox"),
+          <%= ui_button :thema_inbox_anlegen, type: :submit,
                 class: "text-xs px-3 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
         </div>
       <% end %>
@@ -45,22 +45,16 @@
   </details>
   <%# #571: Portal aus Kundensicht öffnen (nur Projekte). %>
   <% if topic.project? %>
-    <%= link_to portal_preview_topic_path(topic), target: "_blank", rel: "noopener",
-          data: { turbo: false },
-          title: t("topics.portal_open"), "aria-label": t("topics.portal"),
-          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-      <%= icon "globe" %>
-    <% end %>
+    <%= ui_link :portal_vorschau_oeffnen, portal_preview_topic_path(topic), target: "_blank", rel: "noopener",
+          data: { turbo: false }, title: t("topics.portal_open"),
+          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
   <% end %>
   <%# #567: Eigenschaften als Blade im aktuellen Stack statt Vollnavigation. %>
   <%= ui_button :thema_bearbeiten,
         data: { controller: "blade-link", action: "click->blade-link#append",
                 blade_link_kind_value: "topic_props", blade_link_id_value: topic.slug },
         class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer" %>
-  <%= button_to topic_path(topic), method: :delete,
+  <%= ui_button_to :thema_loeschen, topic_path(topic), method: :delete,
         class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer",
-        title: t("actions.delete"), "aria-label": t("actions.delete"),
-        form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("topics.delete_confirm") } } do %>
-    <%= icon "trash" %>
-  <% end %>
+        form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("topics.delete_confirm") } } %>
 <% } %>

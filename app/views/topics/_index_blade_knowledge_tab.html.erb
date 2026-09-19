@@ -42,12 +42,14 @@
   # nur im Wissen-Reiter; filtert client-seitig über data-has-body.
   content_toggle = capture do %>
     <span class="inline-flex rounded border border-slate-200 overflow-hidden">
-      <% [["alle", "Alle"], ["titel", "Nur Titel"], ["inhalt", "Mit Inhalt"]].each_with_index do |(mode, label), i| %>
-        <button type="button"
-                data-content-filter-target="btn"
-                data-action="click->content-filter#filter"
-                data-content-filter-mode-param="<%= mode %>"
-                class="px-2 py-0.5 cursor-pointer <%= i.zero? ? "bg-slate-500 text-white" : "text-slate-600 hover:bg-slate-50" %>"><%= label %></button>
+      <%# #1672: die drei Beschriftungen waren hartkodiert deutsch. %>
+      <% [["alle", t("topics.content_filter_all")],
+          ["titel", t("topics.content_filter_title")],
+          ["inhalt", t("topics.content_filter_body")]].each_with_index do |(mode, label), i| %>
+        <%= ui_button :thema_inhalt_filtern, title: label,
+              data: { content_filter_target: "btn", action: "click->content-filter#filter",
+                      content_filter_mode_param: mode },
+              class: "px-2 py-0.5 cursor-pointer #{i.zero? ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" do %><%= label %><% end %>
       <% end %>
     </span>
   <% end %>
@@ -61,7 +63,7 @@
               "personal" => { label: t("topics.knowledge_known"),         nxt: nil } }[known] %>
   <% kparams = { tab: "persons", known: kcfg[:nxt] }.compact %>
   <% known_toggle = capture do %>
-    <%= link_to topic_path(topic, kparams),
+    <%= ui_link :thema_bekanntheit_umschalten, topic_path(topic, kparams),
           title: t("topics.known_toggle_title", label: kcfg[:label]),
           data: { action: "click->topic-tabs#switch",
                   "topic-tabs-url-param": list_card_topic_path(topic, kparams) },

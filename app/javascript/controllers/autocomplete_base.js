@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { sichtbaresItem } from "lib/autocomplete_auswahl"
 
 // Basis-Controller für Autocomplete-Felder, die ein JSON-Endpoint
 // abfragen und eine Dropdown-Liste rendern. Abstrahiert Keyboard-
@@ -70,10 +71,22 @@ export default class extends Controller {
 
   render() {
     if (this.suggestions.length === 0) { this.close(); return }
-    this.listTarget.innerHTML = this.suggestions
+    // #1677 (aus immoOS 6ad257b6 uebernommen): Was der Nutzer SIEHT, wird hier eingefroren. `pick` und
+    // Enter lasen bisher `this.suggestions[i]` — trifft zwischen Anzeige und
+    // Klick eine neue Suchantwort ein, zeigt derselbe Index dann auf eine
+    // ANDEREN Eintrag oder ins Leere. Der Klick wählte also still den falschen
+    // Eintrag oder gar nichts (im Fork zweimal als „flatterhafter" Systemtest
+    // aufgetreten — es war kein Flattern, es war dieser Fehler).
+    this.rendered = this.suggestions.slice()
+    this.listTarget.innerHTML = this.rendered
       .map((item, i) => this.wrapItem(item, i))
       .join("")
     this.listTarget.classList.remove("hidden")
+  }
+
+  // Der Eintrag, der an Position i WIRKLICH in der Liste steht.
+  sichtbaresItem(i) {
+    return sichtbaresItem(this.rendered, this.suggestions, i)
   }
 
   wrapItem(item, i) {
@@ -87,6 +100,11 @@ export default class extends Controller {
 
   close() {
     this.suggestions = []
+    // `rendered` bleibt ABSICHTLICH stehen: Zwischen mousedown auf einem
+    // Vorschlag und dessen Verarbeitung kann der Blur-Timer schließen — dann
+    // wäre die Auswahl weg, obwohl der Nutzer sie gerade getroffen hat.
+    // Ausgelöst wird `pick` ohnehin nur von einem Listeneintrag, den es dann
+    // noch gibt.
     this.listTarget.classList.add("hidden")
     this.listTarget.innerHTML = ""
   }
@@ -107,7 +125,7 @@ export default class extends Controller {
       this.render()
     } else if (event.key === "Enter" || event.key === "Tab") {
       event.preventDefault()
-      this.commit(this.suggestions[this.index])
+      this.commit(this.sichtbaresItem(this.index))
     } else if (event.key === "Escape") {
       event.preventDefault()
       this.close()
@@ -117,7 +135,7 @@ export default class extends Controller {
   pick(event) {
     event.preventDefault()
     const i = parseInt(event.currentTarget.dataset.autocompleteIndex, 10)
-    this.commit(this.suggestions[i])
+    this.commit(this.sichtbaresItem(i))
   }
 
   onBlur() {

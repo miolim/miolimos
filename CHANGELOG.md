@@ -55,6 +55,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Picking a suggestion could select the wrong entry, or none, under load
+  (#1677, from immoOS). Click and Enter looked the entry up by index in the
+  *current* result list — if a newer search response had arrived since the
+  list was drawn, the same index pointed at someone else. The list the user
+  sees is now frozen for the pick. Affects the topic, title and source pickers.
 - E-invoice amounts are consistent to the cent (#1675). XML amounts were
   formatted via floating point (64.125 → 64.12) while the gross total used
   decimal rounding (→ 64.13): for 0.75 h × 85.50 € the embedded XML said

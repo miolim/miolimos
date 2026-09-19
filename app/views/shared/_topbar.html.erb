@@ -7,9 +7,14 @@
     in beiden Zonen stehen, die Slots (fixed, zentriert) liegen weiter
     in shared/_quick_create_bar. %>
 <% topbar_layout = current_actor&.pref_topbar_layout || ActorPreferences.default_topbar_layout %>
-<header class="focus-chrome-hide border-b border-slate-200 bg-white h-12 flex items-center px-4 gap-3 shrink-0"
-        data-controller="keyboard blade-counts quick-create stack-overview"
+<%# #1670: `relative` trägt den Tasten-Hinweis, der sich beim Halten von
+    STRG+ALT bzw. STRG+UMSCHALT über die Leiste legt (ganz unten in dieser
+    Datei). %>
+<header class="focus-chrome-hide relative border-b border-slate-200 bg-white h-12 flex items-center px-4 gap-3 shrink-0"
+        data-controller="keyboard blade-counts quick-create stack-overview tastenhinweis"
         data-stack-overview-hier-value="<%= t("shared.topbar.stack_here") %>"
+        data-tastenhinweis-fokus-value="<%= t("shared.topbar.tastenhinweis.fokus") %>"
+        data-tastenhinweis-verschieben-value="<%= t("shared.topbar.tastenhinweis.verschieben") %>"
         data-ui-label="Topbar (Kopfleiste)">
   <%# #262: Mobile-Indikator — Anzahl Blades LINKS der sichtbaren Card.
       #262 follow-up: Platz ist immer reserviert (min-w-4), Pfeile sind
@@ -130,6 +135,22 @@
       </div>
       <div data-stack-overview-target="liste" class="overflow-y-auto min-h-0"></div>
     </div>
+  </div>
+
+  <%# #1670 (Übernahme aus immoOS #1667): Der Tasten-Hinweis legt sich ÜBER die
+      Leiste, statt die Symbole wegzunehmen: sonst sprängen Suchfeld und Zonen
+      in der Breite. `pointer-events-none`, damit ein Klick, der die Taste
+      gerade loslässt, nicht ins Leere geht.
+
+      Nur auf Seiten mit Kartenstapel (CSS-Gate .topbar-tastenhinweis, wie bei
+      den Verlauf-Pfeilen) — anderswo tun die Tasten nichts. %>
+  <div data-tastenhinweis-target="hinweis"
+       class="topbar-tastenhinweis hidden absolute inset-0 z-20 flex items-center justify-center gap-2 px-4 pointer-events-none">
+    <span class="flex items-center gap-0.5 shrink-0">
+      <%= icon "arrow_left", size: "w-5 h-5" %>
+      <%= icon "arrow_right", size: "w-5 h-5" %>
+    </span>
+    <span data-tastenhinweis-target="text" class="text-sm font-medium truncate"></span>
   </div>
 </header>
 

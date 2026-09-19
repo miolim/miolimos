@@ -339,6 +339,25 @@ body:not(.has-blade-stack) .topbar-trail {
   display: none !important;
 }
 
+/* #1670 (Übernahme aus immoOS #1667): Der Tasten-Hinweis über der Topbar.
+   Dasselbe Gate wie bei den Verlauf-Pfeilen — ohne Kartenstapel tun die
+   Tasten nichts, also darf auch nichts angekündigt werden.
+
+   Die Deckfarbe steht hier als eigene Regel und NICHT als `bg-white/95` im
+   Markup: Der Dark-Mode-Remap (#772) nimmt die Deckkraft-Varianten nicht mit,
+   der Hinweis bliebe im Dunkelmodus weiß. */
+body:not(.has-blade-stack) .topbar-tastenhinweis {
+  display: none !important;
+}
+.topbar-tastenhinweis {
+  background: #ffffff;
+  color: #6d28d9;               /* violet-700 */
+}
+.dark .topbar-tastenhinweis {
+  background: #1e293b;          /* slate-800 — derselbe Grund wie .dark .bg-white */
+  color: #c4b5fd;               /* violet-300 */
+}
+
 /* #1057 (aus immoos #965, Hans): Einträge, die als Card im aktuellen Stack
    geöffnet sind, in roter Schrift hervorheben — seit #1067 die EINZIGE
    Kennzeichnung (Chevron und Bold sind entfernt). Die
@@ -485,6 +504,21 @@ body:not(.has-blade-stack) .topbar-trail {
 }
 .stack-card[data-active="true"] .stack-spine {
   background: #4ade80;          /* emerald-400 — Detail focused */
+}
+
+/* #1670 (Hans in immoOS #1667): „Zusätzlich soll bei STRG+UMSCHALT die Farbe
+   des Spines der fokussierten Card lila werden, damit deren Bewegung durch den
+   Stack deutlich wird." Das Umschalten setzt `data-tastenmodus` ans
+   Wurzelelement (tastenhinweis_controller).
+
+   Die Regel muss ALLE Spine-Farben schlagen — auch die für Listen-, Render- und
+   Referenz-Cards, die eine Attributstufe mehr tragen. Das `html` davor gibt
+   genau diese eine Stufe, ohne `!important` zu brauchen. */
+html[data-tastenmodus="verschieben"] .stack-card[data-active="true"] .stack-spine {
+  background: #a78bfa;          /* violet-400 */
+}
+html[data-tastenmodus="verschieben"].dark .stack-card[data-active="true"] .stack-spine {
+  background: #6d28d9;          /* violet-700 — wie die anderen aktiven Spines im Dunkelmodus */
 }
 .stack-card[data-uuid^="list:"] .stack-spine {
   background: #eff6ff;          /* sky-50 — List default */

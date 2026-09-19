@@ -23,7 +23,15 @@ class TopbarLayoutRenderTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, I18n.t("shared.topbar.diagnostic_label")
     # Der quick-create-Controller sitzt auf dem Header (#1109), die Slots
     # sind weiter im Scope.
-    assert_includes @response.body, 'data-controller="keyboard blade-counts quick-create stack-overview"'
+    #
+    # #1670: Die Zusage prüfte bisher die GANZE Controller-Liste wörtlich —
+    # jeder neue Controller am Header machte sie rot, und zwar erst im
+    # Deploy-Gate nach der vollen Suite. Geprüft wird jetzt, was die Zusage
+    # meint: dass diese vier am Header hängen, egal wer noch dazukommt.
+    kopfzeile = @response.body[/<header[^>]*data-controller="([^"]*)"/, 1].to_s.split
+    %w[keyboard blade-counts quick-create stack-overview].each do |c|
+      assert_includes kopfzeile, c, "#{c} fehlt am <header>"
+    end
     assert_includes @response.body, 'data-quick-create-target="slot"'
   end
 

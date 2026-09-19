@@ -2591,6 +2591,10 @@ en:
       stack_here: "here"
       cards_right: "Cards to the right"
       open_nav: "Open navigation"
+      # #1670: what the arrow keys do while the modifier is held.
+      tastenhinweis:
+        fokus: "Move card focus"
+        verschieben: "Move card within the stack"
       search: "Search"
       inspector_title: "Label mode: show element labels + click to copy (Cmd/Ctrl+.)"
       inspector_label: "Label mode"

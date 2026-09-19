@@ -2620,6 +2620,10 @@ de:
       stack_here: "hier"
       cards_right: "Karten rechts"
       open_nav: "Navigation öffnen"
+      # #1670: was die Pfeiltasten tun, solange der Modifier gehalten wird.
+      tastenhinweis:
+        fokus: "Kartenfokus wechseln"
+        verschieben: "Karte im Stapel verschieben"
       search: "Suche"
       inspector_title: "Beschriftungs-Modus: Element-Labels anzeigen + per Klick kopieren (Cmd/Ctrl+.)"
       inspector_label: "Beschriftungs-Modus"

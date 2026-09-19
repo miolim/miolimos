@@ -7,15 +7,16 @@
       <%= agent.active? ? t("settings.agents.common.active") : t("settings.agents.common.inactive") %>
     </span>
     <%# #613 St.2: Bearbeiten als Blade. %>
-    <button type="button" data-controller="blade-link"
-            data-blade-link-kind-value="settings_sub" data-blade-link-id-value="agents:<%= agent.id %>:edit"
-            data-action="click->blade-link#append"
-            class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer"><%= t("actions.edit") %></button>
-    <%= button_to t("settings.agents.common.trigger_inbox_run"), trigger_inbox_run_settings_agent_path(agent),
+    <%= ui_button :agent_bearbeiten,
+          data: { controller: "blade-link", action: "click->blade-link#append",
+                  blade_link_kind_value: "settings_sub",
+                  blade_link_id_value: "agents:#{agent.id}:edit" },
+          class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer" %>
+    <%= ui_button_to :agent_inbox_lauf, trigger_inbox_run_settings_agent_path(agent),
           method: :post,
           class: "text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer",
           form: { class: "inline m-0 p-0" } %>
-    <%= button_to t("actions.delete"), settings_agent_path(agent), method: :delete,
+    <%= ui_button_to :agent_loeschen, settings_agent_path(agent), method: :delete,
           class: "text-xs px-2 py-1 rounded text-rose-600 hover:bg-rose-50",
           form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.agents.common.delete_confirm", name: agent.name) } } %>
   </div>
@@ -81,14 +82,11 @@
         <code class="flex-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 break-all">
           <%= fresh_token %>
         </code>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= fresh_token %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_token_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_token_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: fresh_token,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_token_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
     </div>
   <% end %>
@@ -134,11 +132,11 @@
                 <% elsif t.expired? %>
                   <span>abgelaufen</span>
                 <% else %>
-                  <%= button_to "Zurückziehen",
+                  <%= ui_button_to :agent_token_zurueckziehen,
                         revoke_token_settings_agent_path(agent, token_id: t.id), method: :post,
                         class: "text-xs px-2 py-0.5 rounded border border-slate-200 hover:bg-rose-50 hover:text-rose-700 cursor-pointer",
                         form: { class: "inline m-0 p-0",
-                                data: { turbo_confirm: "Dieses Token gilt danach nicht mehr. Fortfahren?" } } %>
+                                data: { turbo_confirm: t("settings.agents.common.revoke_token_confirm") } } %>
                 <% end %>
               </td>
             </tr>
@@ -156,7 +154,7 @@
       <%= select_tag :expires_in_days,
             options_for_select([["90 Tage", 90], ["180 Tage", 180], ["1 Jahr", 365], ["unbegrenzt", 0]], 90),
             class: "rounded border border-slate-200 px-2 py-1 text-xs" %>
-      <%= submit_tag "Token erzeugen",
+      <%= ui_button :agent_token_erzeugen, type: :submit,
             class: "text-xs px-3 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
     <% end %>
   </div>
@@ -232,18 +230,16 @@
         <span class="text-xs text-slate-600 flex-1">
           <%= t("settings.agents.common.step1_label_html", file: tag.code(workflow_file, class: "font-mono")) %>
         </span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= create_file_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_cmd_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_datei_befehl_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: create_file_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_cmd_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap"><%= create_file_cmd %></pre>
       <details class="text-[11px] text-slate-500">
-        <summary class="cursor-pointer hover:text-slate-700"><%= t("settings.agents.common.file_content_preview") %></summary>
+        <%= ui_button :agent_dateiinhalt_vorschau, tag: :summary,
+              class: "cursor-pointer hover:text-slate-700" %>
         <pre class="mt-1 text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap"><%= memory_file_content %></pre>
       </details>
     </div>
@@ -255,14 +251,11 @@
           <%= t("settings.agents.common.step2_label_html", file: tag.code(memory_index, class: "font-mono")) %>
           <span class="text-slate-400"><%= t("settings.agents.common.idempotent_note") %></span>
         </span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= index_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_index_cmd_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_index_befehl_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: index_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_index_cmd_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto whitespace-pre-wrap"><%= index_cmd %></pre>
     </div>
@@ -316,14 +309,11 @@
           <%= t("settings.agents.common.step25_label") %>
           <span class="text-slate-400"><%= t("settings.agents.common.step25_hint") %></span>
         </span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= claude_settings_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_permission_block_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_rechte_block_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: claude_settings_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_permission_block_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <p class="text-[11px] text-slate-500">
         <%= t("settings.agents.common.step25_help_html", settings_file: tag.code("#{claude_workdir}/.claude/settings.local.json"), workdir: tag.code("cd #{claude_workdir}"), app_dir: tag.code("cd #{Rails.root}")) %>
@@ -334,14 +324,11 @@
         <span class="text-xs text-slate-600 flex-1">
           <%= t("settings.agents.common.alt_tmux_label") %>
         </span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= restricted_tmux_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_restricted_tmux_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_tmux_eingeschraenkt_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: restricted_tmux_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_restricted_tmux_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto"><%= restricted_tmux_cmd %></pre>
     </div>
@@ -350,14 +337,11 @@
     <div class="space-y-1">
       <div class="flex items-center gap-2">
         <span class="text-xs text-slate-600 flex-1"><%= t("settings.agents.common.step3_label") %></span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= tmux_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_tmux_cmd_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_tmux_befehl_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: tmux_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_tmux_cmd_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto"><%= tmux_cmd %></pre>
     </div>
@@ -368,14 +352,11 @@
         <span class="text-xs text-slate-600 flex-1">
           <%= t("settings.agents.common.step4_label") %> <span class="text-slate-400"><%= t("settings.agents.common.idempotent_note_session") %></span>
         </span>
-        <button type="button"
-                data-controller="copy-clipboard"
-                data-action="click->copy-clipboard#copy"
-                data-copy-clipboard-content-value="<%= cron_cmd %>"
-                data-copy-clipboard-toast-value="<%= t("settings.agents.common.toast_crontab_cmd_copied") %>"
-                class="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.agents.common.copy") %>
-        </button>
+        <%= ui_button :agent_crontab_befehl_kopieren,
+                  data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                          copy_clipboard_content_value: cron_cmd,
+                          copy_clipboard_toast_value: t("settings.agents.common.toast_crontab_cmd_copied") },
+                  class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
       </div>
       <pre class="text-xs bg-slate-50 border border-slate-200 rounded p-2 overflow-auto whitespace-pre-wrap"><%= cron_cmd %></pre>
     </div>

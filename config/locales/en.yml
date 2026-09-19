@@ -1437,6 +1437,10 @@ en:
         inactive: "inactive"
         trigger_inbox_run: "Trigger inbox run"
         delete_confirm: "Delete agent %{name}?"
+        # #1672: were hardcoded in the template.
+        revoke_token: "Revoke"
+        revoke_token_confirm: "This token will stop working. Continue?"
+        issue_token: "Issue token"
         email_label: "Email:"
         description_label: "Description:"
         last_heartbeat_label: "Last heartbeat:"

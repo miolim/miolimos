@@ -1443,6 +1443,10 @@ de:
         inactive: "inaktiv"
         trigger_inbox_run: "Inbox-Run triggern"
         delete_confirm: "Agent %{name} löschen?"
+        # #1672: standen hartkodiert im Template.
+        revoke_token: "Zurückziehen"
+        revoke_token_confirm: "Dieses Token gilt danach nicht mehr. Fortfahren?"
+        issue_token: "Token erzeugen"
         email_label: "E-Mail:"
         description_label: "Beschreibung:"
         last_heartbeat_label: "Letzter Heartbeat:"

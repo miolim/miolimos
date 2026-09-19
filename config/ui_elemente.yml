@@ -447,3 +447,34 @@ wartepunkt_schnell_hinzufuegen:
 wartepunkt_thema_loesen:
   icon: x
   label: awaitings.unlink_topic
+
+# ── Agenten-Einstellungen (#1672 Etappe 2) ───────────────────────────────
+# Sieben Kopier-Knöpfe, sieben Einträge: Jeder kopiert etwas anderes (Token,
+# Datei-Befehl, Index-Befehl, Rechte-Block, zwei tmux-Varianten, crontab).
+# „Ein Eintrag je BEFEHL" heißt hier gerade nicht „einer je Symbol".
+agent_bearbeiten:
+  label: actions.edit
+agent_inbox_lauf:
+  label: settings.agents.common.trigger_inbox_run
+agent_loeschen:
+  label: actions.delete
+agent_token_zurueckziehen:
+  label: settings.agents.common.revoke_token
+agent_token_erzeugen:
+  label: settings.agents.common.issue_token
+agent_dateiinhalt_vorschau:
+  label: settings.agents.common.file_content_preview
+agent_token_kopieren:
+  label: settings.agents.common.copy
+agent_datei_befehl_kopieren:
+  label: settings.agents.common.copy
+agent_index_befehl_kopieren:
+  label: settings.agents.common.copy
+agent_rechte_block_kopieren:
+  label: settings.agents.common.copy
+agent_tmux_eingeschraenkt_kopieren:
+  label: settings.agents.common.copy
+agent_tmux_befehl_kopieren:
+  label: settings.agents.common.copy
+agent_crontab_befehl_kopieren:
+  label: settings.agents.common.copy

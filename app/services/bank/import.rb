@@ -9,8 +9,9 @@ module Bank
     # #1014 (Hans): imported_ids = die tatsächlich neu angelegten Umsätze
     # dieses Auszugs → in der Umsatzliste als „neu" markieren. #1014 (B):
     # statement = der angelegte Kontoauszug-Datensatz (nil, wenn nichts Neues).
+    # #1675: unlesbar = CSV-Zeilen mit gefüllter, aber nicht lesbarer Betragszelle.
     Result = Struct.new(:imported, :skipped, :format, :imported_ids, :statement,
-                        :pruefung, :layout, keyword_init: true)
+                        :pruefung, :layout, :unlesbar, keyword_init: true)
 
     # #996 (Hans): Ergebnis der Konto-Erkennung eines Uploads — Format, die im
     # Auszug hinterlegte Konto-IBAN/-Inhaber, Anzahl Buchungen und das passende
@@ -99,8 +100,10 @@ module Bank
     def call
       return import_pdf if pdf?
 
-      rows = camt? ? CamtImport.parse(@content) : CsvImport.parse(@content)
-      insert(rows, camt? ? :camt : :csv)
+      return insert(CamtImport.parse(@content), :camt) if camt?
+
+      rows, unlesbar = CsvImport.lesen(@content)
+      insert(rows, :csv).tap { |ergebnis| ergebnis.unlesbar = unlesbar }
     end
 
     private

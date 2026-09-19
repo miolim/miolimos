@@ -178,6 +178,34 @@ class Bank::ImportTest < ActiveSupport::TestCase
     assert_equal [0, 1], [ergebnis.imported, ergebnis.skipped]
   end
 
+  # #1675: Eine Zeile mit unlesbarem Betrag fiel beim Import UNGEZÄHLT weg —
+  # „3 neu, 0 bereits vorhanden", und niemand erfuhr von der vierten.
+  test "CSV: eine Zeile mit unlesbarem Betrag wird gezaehlt, nicht verschwiegen" do
+    csv = <<~CSV
+      Buchungstag;Verwendungszweck;Betrag
+      02.03.2026;Miete;850,00
+      03.03.2026;Kontoführung;4,90-
+      04.03.2026;Kaputt;zwölf Euro
+    CSV
+    ergebnis = Bank::Import.call(@konto, csv)
+    assert_equal 2, ergebnis.imported
+    assert_equal 1, ergebnis.unlesbar, "die unlesbare Zeile muss im Ergebnis stehen"
+    assert_equal [850, -4.9].map(&:to_d), @konto.bank_transactions.order(:booked_on).pluck(:amount)
+  end
+
+  # Manche Exporte führen den Betrag OHNE Vorzeichen und daneben eine Spalte
+  # Soll/Haben. Die Kopfzeilen-Erkennung hielt „Soll/Haben" selbst für die
+  # Betragsspalte oder las den Betrag als positiv — Abbuchungen als Eingänge.
+  test "CSV: Betrag ohne Vorzeichen plus Soll/Haben-Spalte ergibt das richtige Vorzeichen" do
+    csv = <<~CSV
+      Buchungstag;Verwendungszweck;Umsatz;Soll/Haben
+      02.03.2026;Miete Meier;850,00;H
+      03.03.2026;Stadtwerke;119,00;S
+    CSV
+    Bank::Import.call(@konto, csv)
+    assert_equal [850, -119].map(&:to_d), @konto.bank_transactions.order(:booked_on).pluck(:amount)
+  end
+
   # ── Auszug als Herkunft ───────────────────────────────────────────────
 
   test "der Auszug hält Zeitraum und Zählung und nimmt seine Umsätze mit" do

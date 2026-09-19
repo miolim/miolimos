@@ -35,4 +35,27 @@ class DezimalbetragTest < ActiveSupport::TestCase
     assert_nil Dezimalbetrag.parse("-")
     assert_nil Dezimalbetrag.parse("abc")
   end
+  # #1675: Bank-Exporte schreiben das Minus gern HINTEN („12,50-") oder
+  # typografisch („−12,50", U+2212). Das erste ergab nil — die CSV-Zeile fiel
+  # beim Import still weg —, das zweite wurde zum PLUS: eine Abbuchung als
+  # Eingang.
+  test "Minus hinten und typografisches Minus sind negative Betraege" do
+    assert_equal(-12.5.to_d, Dezimalbetrag.parse("12,50-"))
+    assert_equal(-1234.56.to_d, Dezimalbetrag.parse("1.234,56 -"))
+    assert_equal(-12.5.to_d, Dezimalbetrag.parse("−12,50"))   # U+2212
+    assert_equal(-12.5.to_d, Dezimalbetrag.parse("–12,50"))   # Halbgeviertstrich
+  end
+
+  # „1,234.56" (englische Gruppierung) wurde zu 1,23456: Der Dezimaltrenner ist
+  # der LETZTE der beiden Trenner, nicht immer das Komma.
+  test "bei Komma UND Punkt ist der letzte Trenner der Dezimaltrenner" do
+    assert_equal 1234.56.to_d, Dezimalbetrag.parse("1,234.56")
+    assert_equal 1_234_567.89.to_d, Dezimalbetrag.parse("1,234,567.89")
+    assert_equal 1234.56.to_d, Dezimalbetrag.parse("1.234,56")
+  end
+
+  test "ein Minus mittendrin bleibt Muell" do
+    assert_nil Dezimalbetrag.parse("12-50")
+  end
+
 end

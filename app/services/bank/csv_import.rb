@@ -8,23 +8,33 @@ module Bank
     HEADERS = {
       booked_on:         /buchung|buchungstag|datum|valuta|booking/i,
       value_date:        /wert|valuta/i,
-      amount:            /betrag|umsatz|amount|soll.?haben/i,
+      amount:            /betrag|umsatz|amount/i,
+      # #1675: „Soll/Haben" ist KEINE Betragsspalte, sondern das Vorzeichen zu
+      # einem Betrag ohne Vorzeichen (S = Abbuchung). Stand vorher oben im
+      # Betrags-Muster — Abbuchungen solcher Exporte kamen als Eingänge an.
+      direction:         /soll.?haben|s\/h|kennzeichen/i,
       purpose:           /verwendung|zweck|buchungstext|vwz|purpose|text/i,
       counterparty_name: /name|beguenstigt|empf|auftraggeber|zahlungspflicht|beteiligt/i,
       counterparty_iban: /iban|kontonummer/i
     }.freeze
 
-    def self.parse(content)
+    def self.parse(content) = lesen(content).first
+
+    # #1675: liefert [Umsätze, Anzahl unlesbarer Zeilen]. Unlesbar heißt: Die
+    # Betragszelle ist gefüllt, ergibt aber keinen Betrag. Vorher fielen solche
+    # Zeilen ungezählt weg. Leere Betragszellen (Summen-/Fußzeilen) zählen nicht.
+    def self.lesen(content)
       content = content.encode("UTF-8", invalid: :replace, undef: :replace) unless content.valid_encoding?
       delim = content.count(";") >= content.count(",") ? ";" : ","
       rows = read_rows(content, delim)
-      return [] if rows.length < 2
+      return [[], 0] if rows.length < 2
 
       header = rows.first
       cols = map_columns(header)
-      return [] if cols[:amount].nil?
+      return [[], 0] if cols[:amount].nil?
 
-      rows[1..].filter_map { |cells| row_to_tx(cells, header, cols) }
+      gelesen = rows[1..].map { |cells| row_to_tx(cells, header, cols) }
+      [gelesen.grep(Hash), gelesen.count(:unlesbar)]
     end
 
     # Kopfzeile finden (Präambeln überspringen): erste Zeile, die ≥ 2 bekannte
@@ -74,7 +84,8 @@ module Bank
     def self.row_to_tx(cells, header, cols)
       at = ->(k) { i = cols[k]; i && cells[i] }
       amount = parse_amount(at.(:amount))
-      return nil if amount.nil?
+      return (at.(:amount).present? ? :unlesbar : nil) if amount.nil?
+      amount = -amount if amount.positive? && at.(:direction).to_s =~ /\A\s*(s|soll|d|debit)\b/i
       {
         amount: amount,
         currency: "EUR",

@@ -14,12 +14,21 @@
 #   "700"      → 700
 #   "-12,50"   → -12.5
 #   "1.234,56 €" → 1234.56 (Währung/Beiwerk wird abgestreift)
+#
+# #1675 — drei Formen aus Bank-Exporten, die still falsch herauskamen:
+#   "12,50-"   → -12.5     (Minus HINTEN; ergab nil, die CSV-Zeile fiel weg)
+#   "−12,50"   → -12.5     (typografisches Minus U+2212; wurde zum PLUS)
+#   "1,234.56" → 1234.56   (Komma UND Punkt: der LETZTE ist der Dezimaltrenner;
+#                            ergab 1,23456)
 module Dezimalbetrag
   def self.parse(value)
-    s = value.to_s.strip.gsub(/[^\d,.\-]/, "")
+    s = value.to_s.strip.tr("−–", "--").gsub(/[^\d,.\-]/, "")
     return nil if s.blank? || s == "-"
-    if s.include?(",")
-      s = s.delete(".").tr(",", ".")
+    s = "-#{s.chomp('-')}" if s.end_with?("-") && !s.start_with?("-")
+    if s.include?(",") && s.include?(".")
+      s = s.rindex(".") > s.rindex(",") ? s.delete(",") : s.delete(".").tr(",", ".")
+    elsif s.include?(",")
+      s = s.tr(",", ".")
     elsif s.match?(/\A-?\d{1,3}(\.\d{3})+\z/)
       s = s.delete(".")
     end

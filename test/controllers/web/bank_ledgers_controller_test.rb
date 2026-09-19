@@ -55,6 +55,15 @@ class BankLedgersControllerTest < ActionDispatch::IntegrationTest
     assert_equal BigDecimal("-119"), @konto.bank_transactions.sole.amount
   end
 
+  # #1675: Eine Zeile mit unlesbarem Betrag fiel ungezählt weg. Gezählt nützt
+  # sie nur, wenn man die Zahl auch SIEHT.
+  test "der Import meldet Zeilen mit unlesbarem Betrag" do
+    hochladen(CSV + "03.03.2026;Kaputt;Niemand;;n/a EUR\n")
+    post import_bank_ledger_path(@konto), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    assert_includes @response.body, I18n.t("bank.import.unreadable", count: 1)
+  end
+
   test "ein zweiter Import derselben Datei legt nichts doppelt an" do
     hochladen(CSV)
     post import_bank_ledger_path(@konto), headers: { "Accept" => "text/vnd.turbo-stream.html" }

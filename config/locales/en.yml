@@ -1982,6 +1982,7 @@ en:
       confirm: "Import"
       force: "Import anyway"
       done: "%{imported} new, %{skipped} already present."
+      unreadable: "%{count} row(s) with an unreadable amount were NOT imported — please check the file."
       auto_matched: "%{count} matched automatically"
       pdf_unchecked_note: "Imported without the balance check (difference %{diff})"
       pdf_corrected_note: "Corrected by hand while reading in"

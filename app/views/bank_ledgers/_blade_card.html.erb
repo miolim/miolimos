@@ -53,6 +53,12 @@
             · <%= t("bank.import.auto_matched", count: zugeordnet) %>
           <% end %>
         </div>
+        <%# #1675: unlesbare Zeilen fielen vorher ungezählt weg. %>
+        <% if ergebnis.unlesbar.to_i.positive? %>
+          <p class="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+            <%= t("bank.import.unreadable", count: ergebnis.unlesbar) %>
+          </p>
+        <% end %>
       <% end %>
 
       <% if vorschau %>

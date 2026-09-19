@@ -49,6 +49,12 @@ release is cut, this section is renamed to the new version and a fresh
   reference either — a standing order carries the same one every month and was
   skipped from the second month on. Transactions imported under the old rule
   are still recognised on re-import.
+- Amount parsing understands a trailing minus (`12,50-`), the typographic
+  minus (`−12,50`, previously read as a POSITIVE amount) and English grouping
+  (`1,234.56`, previously 1.23456) (#1675). CSV bank import reads an unsigned
+  amount together with a debit/credit column (`Soll/Haben`) correctly, and
+  rows whose amount cannot be read are now reported instead of silently
+  dropped.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

@@ -10,7 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 162 Dateien, 351 Bedienelemente.
+# Stand: 159 Dateien, 342 Bedienelemente.
 app/views/bank_ledgers/_blade_card.html.erb
 app/views/bank_ledgers/_list_blade_card.html.erb
 app/views/calendar/_item_row.html.erb
@@ -30,11 +30,8 @@ app/views/inbox_items/_list_blade_card.html.erb
 app/views/inbox_items/_row.html.erb
 app/views/inbox_items/_run_picker.html.erb
 app/views/inbox_items/_topics_chips.html.erb
-app/views/invoices/_blade_card.html.erb
 app/views/invoices/_invoice_line_blade_card.html.erb
-app/views/invoices/_invoice_lines.html.erb
 app/views/invoices/_list_blade_card.html.erb
-app/views/invoices/_payment_obligations.html.erb
 app/views/invoices/_row.html.erb
 app/views/invoices/_time_import.html.erb
 app/views/invoices/show.html.erb

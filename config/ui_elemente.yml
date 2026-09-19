@@ -697,3 +697,29 @@ sidebar_gruppe_klappen:
   label: preferences.sidebar_heading_toggle
 thema_in_leiste_oeffnen:
   label: nav.topics
+
+# ── Rechnungen (#1672 Etappe 10) ─────────────────────────────────────────
+rechnung_vorschau:
+  icon: external_link
+  label: documents.show.preview
+rechnung_pdf_oeffnen:
+  icon: file_pdf
+  label: documents.show.pdf
+rechnung_signiertes_pdf:
+  icon: file_check
+  label: documents.list.signed_pdf
+rechnung_zugferd_pdf:
+  icon: file_code
+  label: documents.list.zugferd_pdf
+rechnung_xrechnung_xml:
+  label: documents.list.xrechnung_xml
+rechnung_loeschen:
+  icon: trash
+  label: documents.trash.delete
+zahlungspflicht_hinzufuegen:
+  label: invoices.obligations.add
+zahlungspflicht_entfernen:
+  icon: x
+  label: invoices.obligations.remove
+position_hinzufuegen:
+  label: documents.invoice.add_position

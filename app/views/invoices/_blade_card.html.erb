@@ -23,49 +23,37 @@
           Beleg — Render/Signatur/ZUGFeRD gibt es nur für ausgehende. %>
       <% if invoice.ausgehend? %>
       <%# Vorschau (gerendertes Dokument im neuen Tab). %>
-      <%= link_to invoice_path(invoice), target: "_blank", rel: "noopener",
-            title: t("documents.show.preview"), "aria-label": t("documents.show.preview"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-        <%= icon "external_link" %>
-      <% end %>
+      <%= ui_link :rechnung_vorschau, invoice_path(invoice), target: "_blank", rel: "noopener",
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" %>
       <%# PDF — #1025 (aus immoos übernommen): als Stack-Card öffnen (dort weiter „im Tab öffnen"). %>
-      <button type="button"
-              <%= tag.attributes(data: pdf_card_data(rendered_pdf_invoice_path(invoice), title: invoice.display_name)) %>
-              title="<%= t("documents.show.pdf") %>" aria-label="<%= t("documents.show.pdf") %>"
-              class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 bg-transparent border-0 cursor-pointer">
-        <%= icon "file_pdf" %>
-      </button>
+      <%= ui_button :rechnung_pdf_oeffnen,
+            data: pdf_card_data(rendered_pdf_invoice_path(invoice), title: invoice.display_name),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 bg-transparent border-0 cursor-pointer" %>
       <%# #547: AES-signiertes PDF — nur wenn das Signier-Setup vorhanden ist. %>
       <% if DocumentSigner.available? %>
-        <%= link_to signed_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
-              title: t("documents.list.signed_pdf_title"), "aria-label": t("documents.list.signed_pdf"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-          <%= icon "file_check" %>
-        <% end %>
+        <%= ui_link :rechnung_signiertes_pdf, signed_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
+              title: t("documents.list.signed_pdf_title"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" %>
       <% end %>
       <%# #541: ZUGFeRD (Hybrid-PDF) + XRechnung (reines XML) — nur bei
           Rechnungen, wenn das Setup da ist. %>
       <% if invoice.rechnung? && ZugferdGenerator.available? %>
-        <%= link_to zugferd_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
-              title: t("documents.list.zugferd_pdf_title"), "aria-label": t("documents.list.zugferd_pdf"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" do %>
-          <%= icon "file_code" %>
-        <% end %>
+        <%= ui_link :rechnung_zugferd_pdf, zugferd_pdf_invoice_path(invoice), target: "_blank", rel: "noopener",
+              title: t("documents.list.zugferd_pdf_title"),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0" %>
         <%# xRechnung hat kein Logo/Icon → „XML" im Rahmen (Hans). %>
-        <%= link_to xrechnung_xml_invoice_path(invoice),
-              title: t("documents.list.xrechnung_xml_title"), "aria-label": t("documents.list.xrechnung_xml"),
+        <%= ui_link :rechnung_xrechnung_xml, xrechnung_xml_invoice_path(invoice),
+              title: t("documents.list.xrechnung_xml_title"),
               class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 shrink-0 inline-flex items-center" do %>
           <span class="text-[8px] font-bold leading-none tracking-tight border border-current rounded-sm px-1 py-[3px]">XML</span>
         <% end %>
       <% end %>
       <% end %>
       <%# #787: Rechnung löschen (Soft-Delete → Papierkorb). %>
-      <%= button_to invoice_path(invoice), method: :delete,
+      <%= ui_button_to :rechnung_loeschen, invoice_path(invoice), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("invoices.trash.confirm") } },
-            title: t("invoices.trash.delete_title"), "aria-label": t("documents.trash.delete"),
-            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" do %>
-        <%= icon "trash" %>
-      <% end %>
+            title: t("invoices.trash.delete_title"),
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer shrink-0" %>
     <% } %>
 
     <div class="flex items-center gap-2">

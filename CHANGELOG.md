@@ -15,6 +15,8 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+## [0.6.0] - 2026-09-19
+
 ### Added
 
 - The people list can show and sort names as “Last name, First name”
@@ -159,7 +161,22 @@ release is cut, this section is renamed to the new version and a fresh
   transaction's fingerprint. Year rollover (December → January, value date in
   the previous year, statements without an opening date) is now covered by
   tests.
-- **Security:** fetching web addresses (web clip, Markdown import, title
+- A full knowledge index run (Settings → Knowledge import after a successful
+  import, `rake knowledge:reindex`) no longer treats replies without an export
+  file as orphans. Replies migrated from task comments never had a file, and the
+  run would have hard-deleted them. The same run also no longer crashes on
+  items without a title (#1675).
+- Replies that arrive while the connection is briefly down are no longer
+  missed (#1653). Live updates only work while the websocket is connected, and
+  nothing is replayed afterwards — so a reply posted during a deploy (which
+  restarts the server), while the laptop slept or on a network change stayed
+  invisible until a manual reload. The reply list now reloads itself after a
+  reconnect and after a longer pause in the background; a half-typed reply is
+  untouched.
+
+### Security
+
+- Fetching web addresses (web clip, Markdown import, title
   lookup, contact extraction) goes through one guarded fetcher, `SafeHttp`
   (#1675): internal addresses are refused — loopback, private networks,
   link-local incl. cloud metadata, also as the target of a redirect — the
@@ -167,11 +184,11 @@ release is cut, this section is renamed to the new version and a fresh
   relative redirects are resolved everywhere (the Markdown import still had
   the bug fixed for the web clip earlier). Before, any URL supplied by a user,
   an agent or a mail was fetched and its body ended up in a readable entry.
-- **Security:** icons fetched from the Lucide CDN are rebuilt from an
+- Icons fetched from the Lucide CDN are rebuilt from an
   allowlist of shape elements and attributes before being written as a view
   partial, and the package version is pinned instead of `@latest` (#1675).
   The file is server-executed ERB; it used to be written unfiltered.
-- **Security:** Settings → Users and Settings → Agents are now reserved for
+- Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent
   (agents see everything), change an admin's e-mail address and take the
@@ -179,10 +196,10 @@ release is cut, this section is renamed to the new version and a fresh
   Everyone can still edit their own profile (name, e-mail, password); role
   and active flag are admin-only. The rule also holds for cards restored from
   a `?stack=` URL. Installations with non-admin users should upgrade.
-- **Security:** the people list and the pinned list only show entries the
+- The people list and the pinned list only show entries the
   user may see (#1677). Both load their entries in the view and did so
   without the visibility scope — a member saw every contact.
-- **Security:** the sub-addresses of a task or knowledge item now respect
+- The sub-addresses of a task or knowledge item now respect
   visibility (#1675). The main pages did, but about a dozen nested controllers
   (replies, comments, attachments, tags, mentions, sources, subtasks,
   dependencies, topics, history, anchors, highlights) loaded their parent
@@ -198,18 +215,37 @@ release is cut, this section is renamed to the new version and a fresh
   got a 403 while the file and git history had already changed. The API's
   `on_behalf_of` now also filters the single-record reads for awaitings,
   communications, inbox items and relations.
-- A full knowledge index run (Settings → Knowledge import after a successful
-  import, `rake knowledge:reindex`) no longer treats replies without an export
-  file as orphans. Replies migrated from task comments never had a file, and the
-  run would have hard-deleted them. The same run also no longer crashes on
-  items without a title (#1675).
-- Replies that arrive while the connection is briefly down are no longer
-  missed (#1653). Live updates only work while the websocket is connected, and
-  nothing is replayed afterwards — so a reply posted during a deploy (which
-  restarts the server), while the laptop slept or on a network change stayed
-  invisible until a manual reload. The reply list now reloads itself after a
-  reconnect and after a longer pause in the background; a half-typed reply is
-  untouched.
+
+### ⚠️ Upgrade notes
+
+- **Non-admin users lose access they should never have had** (#1675). If your
+  instance has members or guests, review this before upgrading:
+  - Settings → Users and Settings → Agents are admin-only. Members and guests
+    can still edit their own profile (name, e-mail, password).
+  - The nested pages of a task or knowledge item (replies, comments,
+    attachments, tags, mentions, topics, history …) now answer 404 for records
+    the user cannot see and 403 for changes to records the user may only read.
+    **Viewers and guests can no longer reply or comment** in topics where they
+    only have read access — writing a reply counts as a change.
+  - Putting a task, awaiting, event, mail or document into a topic requires
+    write access to that topic.
+  Instances where every user is an admin are not affected.
+- **A plain click on a wikilink now replaces the cards to its right** (#1674)
+  instead of appending the target at the end of the stack. Shift+click → “at
+  the end” gives the previous behaviour.
+- **Users who created content can no longer be deleted**, and **topics that
+  carry time entries, invoices, documents, events or portal accesses can no
+  longer be deleted** (#1675) — deactivate them instead. Both used to end in an
+  error page.
+- **Operator action:** run `bin/rails db:migrate` as usual — one additive
+  migration (`CreateAgentUsages`, #1660). A new recurring job
+  (`inbox_stuck_reaper`, every 30 minutes) is picked up from
+  `config/recurring.yml` on restart; pending bank statement uploads are kept
+  in `tmp/bank_uploads` (created on demand).
+- **Forks:** person/organisation fields added in a fork belong in
+  `KnowledgeItem::Stammdaten` now (one line each); code that fetches URLs
+  should go through `SafeHttp`; controllers that load a parent record from the
+  URL should use `find_visible!`.
 
 ## [0.5.2] - 2026-09-16
 
@@ -1598,7 +1634,8 @@ this release (fresh-start history; prior development lived in a private repo).
   renderer and a `JSON.generate` encoding warning (binary Gmail bodies) that
   would raise with json 3.0 (#801).
 
-[Unreleased]: https://github.com/miolim/miolimos/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/miolim/miolimos/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/miolim/miolimos/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/miolim/miolimos/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/miolim/miolimos/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/miolim/miolimos/compare/v0.4.2...v0.5.0

@@ -52,7 +52,8 @@
             <div class="flex items-center gap-2">
               <%= color_field_tag "topic[color]", "#94a3b8",
                     class: "h-6 w-8 rounded border border-slate-300 cursor-pointer" %>
-              <%= submit_tag "Anlegen",
+              <%# #1672: Beschriftung war hartkodiert deutsch. %>
+              <%= ui_button :thema_anlegen_absenden, type: :submit,
                     class: "flex-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
             </div>
           <% end %>
@@ -61,8 +62,9 @@
     <% end %>
     <% status_toggle = capture do %>
       <%# #817: inaktive ein-/ausblenden (Standard: nur aktive). %>
-      <%= link_to (show_inactive ? t("topics.hide_inactive") : t("topics.show_inactive")),
+      <%= ui_link :thema_inaktive_umschalten,
             all_list_card_topics_path(show_inactive: show_inactive ? nil : 1),
+            title: (show_inactive ? t("topics.hide_inactive") : t("topics.show_inactive")),
             data: { turbo_frame: "topics_list_frame" },
             class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded cursor-pointer
                     #{show_inactive ? 'bg-slate-200 text-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}" %>

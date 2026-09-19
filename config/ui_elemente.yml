@@ -1232,3 +1232,21 @@ quelle_relevanz_setzen:
   label: sources.row.add_to_topic
 quelle_erreicht_setzen:
   label: sources.row.add_to_topic
+thema_quelle_zuordnung_entfernen:
+  label: topics.remove_assignment
+thema_aufgabe_schnell_hinzufuegen:
+  label: tasks.add
+thema_anlegen_absenden:
+  label: topics.create_topic
+thema_inaktive_umschalten:
+  label: topics.show_inactive
+gliederung_waehlen:
+  label: topics.add_tree
+gliederung_anlegen_klappen:
+  label: topics.add_tree
+knoten_rolle_umschalten:
+  label: topics.toggle_role
+knoten_ist_markieren:
+  label: topics.mark_actual
+knoten_junktor_umschalten:
+  label: topics.toggle_junctor

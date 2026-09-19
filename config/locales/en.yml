@@ -180,6 +180,8 @@ en:
     content_filter_body: "With content"
     content_filter: "Content filter"
     add_member: "+ Member"                     # #1672: were hardcoded
+    add_tree: "+ Outline"
+    create_topic: "Create"
     add_portal_access: "+ Access"
     portal_activate: "activate"
     portal_deactivate: "deactivate"

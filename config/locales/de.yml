@@ -181,6 +181,8 @@ de:
     content_filter_body: "Mit Inhalt"
     content_filter: "Inhalts-Filter"
     add_member: "+ Mitglied"                   # #1672: waren hartkodiert
+    add_tree: "+ Baum"
+    create_topic: "Anlegen"
     add_portal_access: "+ Zugang"
     portal_activate: "aktivieren"
     portal_deactivate: "deaktivieren"

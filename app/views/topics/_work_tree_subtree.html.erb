@@ -66,16 +66,14 @@
             den vollen Gliederungs-Path (z.B. 1.2.3.). Content: ¶.
             Whitespace-nowrap + auto-Breite, damit lange Paths nicht
             in der Pille verstuemmelt werden. %>
-        <button type="button"
-                data-action="click->work-tree#toggleRole"
-                title="<%= t("topics.toggle_role") %>"
-                class="shrink-0 text-[11px] tabular-nums rounded px-1.5 py-0.5 cursor-pointer whitespace-nowrap
-                       <%= node.role == 'heading' ? 'bg-emerald-100 text-emerald-800 font-medium' : 'bg-slate-100 text-slate-600' %>">
+        <%= ui_button :knoten_rolle_umschalten,
+              data: { action: "click->work-tree#toggleRole" },
+              class: "shrink-0 text-[11px] tabular-nums rounded px-1.5 py-0.5 cursor-pointer whitespace-nowrap #{node.role == 'heading' ? 'bg-emerald-100 text-emerald-800 font-medium' : 'bg-slate-100 text-slate-600'}" do %>
           <%= badge_text %>
-        </button>
+        <% end %>
         <%# #592: IST-Punkt an ODER-Kindern (exklusiv je Verzweigung). %>
         <% if parent_junctor == "or" %>
-          <%= button_to topic_work_node_path(topic.slug, node), method: :patch,
+          <%= ui_button_to :knoten_ist_markieren, topic_work_node_path(topic.slug, node), method: :patch,
                 params: { chosen: node.chosen? ? "0" : "1" },
                 form: { class: "inline-block m-0 p-0 leading-none shrink-0 mt-0.5" },
                 title: node.chosen? ? t("topics.unmark_actual") : t("topics.mark_actual"),
@@ -99,7 +97,7 @@
         <%# #592: Junktor-Badge — wie verfeinern die KINDER dieses Element.
             Immer sichtbar (Hans: Interface war nicht auffindbar);
             Default UND, Klick schaltet um. %>
-        <%= button_to topic_work_node_path(topic.slug, node), method: :patch,
+        <%= ui_button_to :knoten_junktor_umschalten, topic_work_node_path(topic.slug, node), method: :patch,
               params: { junctor: (node.junctor.presence || "and") == "and" ? "or" : "and" },
               form: { class: "inline-block m-0 p-0 leading-none shrink-0" },
               title: t("topics.toggle_junctor"),

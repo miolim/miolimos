@@ -68,7 +68,7 @@
                       class: "text-[10px] px-1.5 py-0.5 rounded border cursor-pointer #{active ? active_cls + ' font-medium' : 'border-slate-200 text-slate-400 hover:bg-slate-100'}" %>
               <% end %>
             </div>
-            <%= button_to source_topic_path(st.source.slug, st.topic_id),
+            <%= ui_button_to :thema_quelle_zuordnung_entfernen, source_topic_path(st.source.slug, st.topic_id),
                   method: :delete,
                   form: { class: "inline-block m-0 p-0 leading-none",
                           data: { turbo_confirm: t("topics.remove_assignment_confirm") } },

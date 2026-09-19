@@ -154,6 +154,21 @@ Rails.application.routes.draw do
   # aufbauen kann (analog zu /tasks/list_card etc.). Vorher fehlte als
   # einzigem list:-Typ der Endpoint, der Restore-Fetch lief in 404.
   get "/dashboard/list_card", to: "dashboard#list_card", as: :dashboard_list_card
+
+  # #1677 (aus immoOS #1658 übernommen): Hilfe-Card zu einer Programm-Card. Der
+  # Schlüssel trägt Doppelpunkt (list:persons) und Punkt (ki.master_data) —
+  # beides ist in einem Pfadsegment erlaubt, der Constraint hält ihn trotzdem
+  # eng. Die drei festen Adressen MÜSSEN vor "help/:key" stehen — sonst wäre
+  # „icons" ein Hilfe-Schlüssel.
+  get   "help/icons",         to: "help_cards#icons",         as: :help_icons
+  # Welcher Übersetzungsschlüssel steckt hinter einer sichtbaren Beschriftung?
+  # Für den Beschriftungs-Modus und die Suche am Schreibfeld.
+  get   "help/bezeichnungen", to: "help_cards#bezeichnungen", as: :help_bezeichnungen
+  get   "help/symbole",       to: "help_cards#symbole",       as: :help_symbole
+  get   "help/:key/card", to: "help_cards#card",   as: :help_card,  constraints: { key: %r{[a-z0-9_:.]+} }
+  patch "help/:key",      to: "help_cards#update", as: :help,       constraints: { key: %r{[a-z0-9_:.]+} }
+  # Eine eigene, lesbare Adresse je Hilfe (für „Link kopieren").
+  get   "help/:key",      to: "help_cards#show",   as: :help_seite, constraints: { key: %r{[a-z0-9_:.]+} }
   # #393 (Hans, 2026-05-28): Bulk-Mark-as-read fuer alle ungelesenen
   # Reply-KIs der angegebenen Tasks. Setzt einen ActorView-Stempel pro
   # Task, sodass das Dashboard sie nicht mehr als unread zaehlt.

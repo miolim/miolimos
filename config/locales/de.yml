@@ -544,6 +544,67 @@ de:
   kontakt_anlegen:
     person: "als Person anlegen"
     organisation: "als Organisation anlegen"
+  # #1677 (aus immoOS #1658 übernommen): Hilfe-Cards — das Fragezeichen im
+  # Kartenrücken öffnet die Hilfe zur Karten-ART (nicht zum einzelnen Datensatz).
+  hilfe:
+    icons:
+      bezeichnungen: "Feld- und Abschnittsbezeichnungen"
+      bezeichnung_suche: "Bezeichnung suchen (z. B. Fällig) …"
+      laedt: "Wird geladen …"
+      einsetzen: "Symbol einsetzen"
+      klick_kopiert: "Ein Klick kopiert den Marker — danach im Text einfügen."
+      suche: "Symbol suchen …"
+      bedienelemente: "Bedienelemente des Programms"
+      symbole: "Alle Symbole"
+    titel: "Hilfe"
+    eigener_bereich: "Unsere Notiz"
+    eigener_platzhalter: "Was bei uns dazu gilt — für alle sichtbar."
+    bearbeiten: "Bearbeiten"
+    fertig: "Bearbeitung beenden und speichern"
+    notiz_leer: "Noch keine Notiz."
+    titel_mit_bezug: "Hilfe: %{bezug}"
+    markdown_hinweis: "Markdown ist erlaubt: **fett**, Listen, ## Überschrift, [[Wissenseintrag]]."
+    programm_bereich: "So funktioniert es"
+    programm_platzhalter: "Erklärung des Programms (nur Administratoren)."
+    programm_hinweis_admin: "Diesen Bereich sehen alle, ändern können ihn nur Administratoren."
+    noch_leer: "Hier steht noch keine Erklärung."
+    spine_leer: "Hilfe — noch nichts hinterlegt"
+    spine_vorhanden: "Hilfe zu dieser Karte"
+    bezug_mit_reiter: "%{art} · Reiter %{reiter}"
+    # Wie die Karten-Art in der Hilfe heißt. Fehlt ein Eintrag, steht dort die
+    # technische Art — ein Fork ergänzt hier seine eigenen Karten.
+    arten:
+      task: "Aufgabe"
+      ki: "Wissenseintrag"
+      topic: "Thema"
+      awaiting: "Wartepunkt"
+      communication: "Kommunikation"
+      document: "Dokument"
+      invoice: "Rechnung"
+      source: "Quelle"
+      inboxitem: "Posteingangs-Eintrag"
+      timeentry: "Zeitbuchung"
+      bankledger: "Bankkonto"
+      settings: "Einstellungen"
+      list_tasks: "Liste der Aufgaben"
+      list_knowledge_items: "Liste des Wissens"
+      list_persons: "Liste der Personen"
+      list_topics: "Liste der Themen"
+      list_awaitings: "Liste der Wartepunkte"
+      list_communications: "Liste der Kommunikation"
+      list_documents: "Liste der Dokumente"
+      list_invoices: "Liste der Rechnungen"
+      list_sources: "Liste der Quellen"
+      list_inbox_items: "Posteingang"
+      list_time_entries: "Liste der Zeitbuchungen"
+      list_calendar: "Kalender"
+      list_dashboard: "Dashboard"
+      list_settings: "Einstellungen"
+    # Reiternamen, wo der technische Name nicht für sich spricht:
+    # hilfe.reiter.<art>.<reiter>. Fehlt ein Eintrag, steht der Reitername da.
+    reiter:
+      ki:
+        master_data: "Stammdaten"
   knowledge:
     # #849 (aus immoos übernommen): Tab-Leiste am Person/Org-Detail.
     person_tabs:
@@ -1887,7 +1948,16 @@ de:
       start_failed: "Recherche konnte nicht gestartet werden."
       error: "Fehler: %{message}"
       pending_title: "Recherche läuft (Task #%{id})"
+    # #1677 (aus immoOS #1658): Hilfe-Cards — Zeiger ins Programm, Symbol-Auswahl.
+    hilfe:
+      nicht_sichtbar: "Diese Stelle ist gerade nicht geöffnet."
+      zeiger_allein: "Zum Zeigen muss die Card daneben offen sein, zu der die Hilfe gehört."
+      icons:
+        kopiert: "Kopiert: %{marker} — jetzt an der gewünschten Stelle einfügen."
+    icon_picker:
+      als_bereich: "als Bereich"
     ui_inspector:
+      mehrdeutig: "%{anzahl} Treffer — bitte im Schreibfeld prüfen."
       copied: "Kopiert: %{label}"
       copy_failed: "Kopieren fehlgeschlagen — bitte manuell notieren."
       region_main_window: "Hauptfenster"

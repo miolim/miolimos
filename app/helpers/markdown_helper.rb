@@ -4,7 +4,11 @@ module MarkdownHelper
   # später ggf. weitere). Bewusst minimal: kein HTML-Filter raw, kein
   # Inline-HTML — wir rendern Plain-Markdown und sanitisieren das
   # Ergebnis mit dem Standard-Sanitizer von Rails.
-  def render_inline_markdown(text, item: nil, highlight_filter: nil)
+  #
+  # `hilfe_marker: true` (#1677) schaltet die Hilfe-Marker ein — siehe
+  # hilfe_marker_ersetzen. Bewusst nur auf Wunsch: In Aufgaben, Antworten und
+  # Wissenseinträgen bleibt `:ui:xyz:` schlichter Text.
+  def render_inline_markdown(text, item: nil, highlight_filter: nil, hilfe_marker: false)
     return "".html_safe if text.blank?
     @inline_md_renderer ||= Redcarpet::Markdown.new(
       Redcarpet::Render::HTML.new(filter_html: true, no_styles: true,
@@ -63,7 +67,81 @@ module MarkdownHelper
     if highlight_filter.blank? && item
       clean = KnowledgeMarkdown.inject_backlink_indicators_for(clean, item).html_safe
     end
+    # #1677: Marker NACH dem Sanitizer, der <svg> sonst entfernte (dasselbe
+    # Verfahren wie bei den Backlink-Indikatoren).
+    clean = hilfe_marker_ersetzen(clean) if hilfe_marker
     clean
+  end
+
+  # #1677 (aus immoOS #1658 übernommen; Hans dort): „Könnten die Icons im
+  # Programm alle eine ID bekommen? … Die ID kennzeichnet den Icon-Ort."
+  #
+  #   `:ui:karte_schliessen:`  → Symbol des Bedienelements (folgt dem Programm)
+  #   `:icon:flame:`           → schlichtes Symbol
+  #   `:feld:<schlüssel>:`     → aktuelle Feldbeschriftung, fett
+  #   `:bereich:<schlüssel>:`  → Abschnittsbeschriftung, fett und kursiv
+  #
+  # Unbekanntes bleibt als Text stehen: Ein Tippfehler soll sichtbar sein und
+  # nicht spurlos verschwinden.
+  #
+  # Zwei Abweichungen vom Fork, beide bewusst: (1) nur auf Wunsch (oben), und
+  # (2) ersetzt wird NUR IN TEXTKNOTEN außerhalb von <code>/<pre>. Der Fork
+  # ersetzte per gsub im fertigen HTML — ein Marker in einem Link-Ziel oder in
+  # einem Code-Beispiel zerbrach dort das Markup bzw. das Beispiel.
+  ICON_MARKER_RE = /:(ui|icon):([a-z0-9_-]{1,60}):/
+  TEXT_MARKER_RE = /:(feld|bereich):([a-z0-9_.]{1,80}):/
+  HILFE_MARKER_RE = Regexp.union(ICON_MARKER_RE, TEXT_MARKER_RE)
+  private_constant :ICON_MARKER_RE, :TEXT_MARKER_RE, :HILFE_MARKER_RE
+
+  def hilfe_marker_ersetzen(html)
+    return html if html.blank? || !html.include?(":")
+
+    fragment = Nokogiri::HTML5.fragment(html)
+    fragment.xpath(".//text()[not(ancestor::code) and not(ancestor::pre)]").each do |knoten|
+      next unless knoten.content.match?(HILFE_MARKER_RE)
+
+      neu = ERB::Util.html_escape(knoten.content).gsub(HILFE_MARKER_RE) { |marker| hilfe_marker_html(marker) || marker }
+      knoten.replace(Nokogiri::HTML5.fragment(neu))
+    end
+    fragment.to_html.html_safe
+  end
+
+  def hilfe_marker_html(marker)
+    if (m = ICON_MARKER_RE.match(marker))
+      art, schluessel = m[1], m[2]
+      name  = art == "ui" ? UiElemente.icon_fuer(schluessel) : schluessel
+      return nil unless name && icon_vorhanden?(name)
+
+      titel = art == "ui" && UiElemente[schluessel] ? t(UiElemente[schluessel][:label], default: schluessel) : nil
+      # Farbe aus .hilfe-bezeichnung (eine Stelle für alles); -0.125em setzt das
+      # Symbol auf die Mittellinie der Schrift statt auf die Grundlinie.
+      icon(name, size: "w-[1.15em] h-[1.15em]",
+           class: "hilfe-bezeichnung hilfe-symbol hilfe-zeigbar inline-block align-[-0.125em] mx-0.5",
+           "data-hilfe-art": art, "data-hilfe-schluessel": schluessel,
+           **(titel ? { title: titel } : {})).to_s
+    elsif (m = TEXT_MARKER_RE.match(marker))
+      art, schluessel = m[1], m[2]
+      text = I18nBeschriftungen.text(schluessel)
+      return nil if text.blank?
+
+      # Der Marker trägt sein Ziel; das Suchen übernimmt der hilfe-zeiger-Controller.
+      sicher = ERB::Util.html_escape(text)
+      ziel   = %(data-hilfe-art="#{art}" data-hilfe-schluessel="#{ERB::Util.html_escape(schluessel)}")
+      if art == "bereich"
+        %(<strong class="hilfe-bezeichnung hilfe-bereich hilfe-zeigbar" #{ziel}><em>#{sicher}</em></strong>)
+      else
+        %(<strong class="hilfe-bezeichnung hilfe-feld hilfe-zeigbar" #{ziel}>#{sicher}</strong>)
+      end
+    end
+  end
+
+  def icon_vorhanden?(name)
+    return false unless name.to_s.match?(/\A[a-z0-9_-]{1,60}\z/)
+
+    @icon_vorhanden ||= {}
+    @icon_vorhanden.fetch(name) do
+      @icon_vorhanden[name] = Rails.root.join("app/views/shared/icons/_#{name}.html.erb").exist?
+    end
   end
 
   # #450 (Hans, 2026-06-01): Highlight-Counts pro Farbe fuer das Filter-UI

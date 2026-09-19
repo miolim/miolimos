@@ -15,6 +15,7 @@
 import { EditorView, Decoration, WidgetType, ViewPlugin } from "@codemirror/view"
 import { RangeSetBuilder } from "@codemirror/state"
 import { syntaxTree } from "@codemirror/language"
+import { symbol, elementSymbol, bezeichnung, bekannt, nachladen } from "lib/cm6_marker_daten"
 
 // ─── Regex-Patterns ──────────────────────────────────────────────
 // Wikilinks: `[[Title]]`, `[[Title|Alias]]`, `[[Title|https://…]]`,
@@ -146,6 +147,49 @@ function fetchTaskLabel(id) {
 // #534: Pille für eine Aufgaben-Referenz. Zeigt „#id Titel" (sobald
 // aufgelöst), sonst „#id". Nicht-interaktiv (wie Headings) — Klick setzt
 // nur den Cursor, damit die Source editierbar wird.
+// immoOS #1658 R10: Marker der Hilfe-Sprache —
+//   :ui:blade_copy:   Bedienelement (Symbol, das die Funktion HEUTE trägt)
+//   :icon:flame:      schlichtes Symbol
+//   :feld:<key>:      Feldbeschriftung
+//   :bereich:<key>:   Abschnittsbeschriftung
+// Steht der Cursor darin, bleibt die Rohform stehen — wie bei Wikilinks.
+const HILFE_MARKER_RE = /:(ui|icon|feld|bereich):([a-z0-9_.-]{1,80}):/g
+
+class HilfeMarkerWidget extends WidgetType {
+  constructor(art, schluessel, inhalt) {
+    super()
+    this.art = art
+    this.schluessel = schluessel
+    this.inhalt = inhalt // SVG-Quelltext oder Beschriftung
+  }
+  eq(other) {
+    return other.art === this.art && other.schluessel === this.schluessel &&
+           other.inhalt === this.inhalt
+  }
+  toDOM() {
+    const el = document.createElement("span")
+    el.title = `:${this.art}:${this.schluessel}:`
+    if (this.art === "ui" || this.art === "icon") {
+      el.className = "cm6-hilfe-symbol"
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      svg.setAttribute("viewBox", "0 0 24 24")
+      svg.setAttribute("fill", "none")
+      svg.setAttribute("stroke", "currentColor")
+      svg.setAttribute("stroke-width", "1.5")
+      svg.setAttribute("stroke-linecap", "round")
+      svg.setAttribute("stroke-linejoin", "round")
+      // Der Inhalt kommt aus dem eigenen Icon-Verzeichnis des Servers.
+      svg.innerHTML = this.inhalt
+      el.appendChild(svg)
+    } else {
+      el.className = this.art === "bereich" ? "cm6-hilfe-bereich" : "cm6-hilfe-feld"
+      el.textContent = this.inhalt
+    }
+    return el
+  }
+  ignoreEvent() { return false }
+}
+
 class TaskRefPillWidget extends WidgetType {
   constructor(id, alias, status, title) {
     super()
@@ -323,6 +367,35 @@ function buildDecorations(view) {
     const alias = m[4]?.trim()
     const label = alias && !/^https?:\/\//i.test(alias) ? alias : title
     wlRanges.push({ from, to, label, title })
+  }
+
+  // 1a2) Hilfe-Marker (#1677, aus immoOS #1658 R10) — Symbole und Beschriftungen.
+  const hilfeMarkerRanges = []
+  const fehlendeSymbole = []
+  const fehlendeElemente = []
+  const fehlendeTexte = []
+  HILFE_MARKER_RE.lastIndex = 0
+  // #1677: nur im Schreibfeld einer Hilfe-Card. Der Server rendert die Marker
+  // ebenfalls nur dort (render_inline_markdown hilfe_marker: true) — sonst
+  // zeigte der Editor in einer Aufgabe Symbole, die nach dem Speichern wieder
+  // schlichter Text wären. (Im Fork gelten die Marker in allen Texten.)
+  const inHilfe = !!view.dom.closest?.('.stack-card[data-uuid^="help:"]')
+  for (const m of (inHilfe ? doc.matchAll(HILFE_MARKER_RE) : [])) {
+    const art = m[1]
+    const schluessel = m[2]
+    hilfeMarkerRanges.push({ from: m.index, to: m.index + m[0].length, art, schluessel })
+    if (art === "icon") {
+      if (!bekannt("symbol", schluessel)) fehlendeSymbole.push(schluessel)
+    } else if (art === "ui") {
+      if (!bekannt("element", schluessel)) fehlendeElemente.push(schluessel)
+    } else if (!bekannt("text", schluessel)) {
+      fehlendeTexte.push(schluessel)
+    }
+  }
+  if (fehlendeSymbole.length || fehlendeElemente.length || fehlendeTexte.length) {
+    nachladen({ symbolNamen: [...new Set(fehlendeSymbole)],
+                elementSchluessel: [...new Set(fehlendeElemente)],
+                textSchluessel: [...new Set(fehlendeTexte)] })
   }
 
   // 1b) Aufgaben-Refs `[[#id]]` (#534)
@@ -514,6 +587,21 @@ function buildDecorations(view) {
       deco: Decoration.replace({ widget: new BlockAnchorWidget(r.id) })
     })
   }
+  // #1658 R10: Hilfe-Marker. Was noch nicht geladen ist, bleibt als Rohform
+  // stehen — lieber die Syntax als ein leeres Kästchen.
+  for (const r of hilfeMarkerRanges) {
+    if (cursorIntersects(r.from, r.to)) continue
+    // Ein Bedienelement zeigt das Icon, das seine Funktion gerade trägt; den
+    // Namen dazu kennt nur der Server (Verzeichnis UiElemente).
+    const inhalt = r.art === "icon" ? symbol(r.schluessel)
+                 : r.art === "ui"   ? elementSymbol(r.schluessel)
+                 : bezeichnung(r.schluessel)
+    if (!inhalt) continue
+    all.push({
+      from: r.from, to: r.to,
+      deco: Decoration.replace({ widget: new HilfeMarkerWidget(r.art, r.schluessel, inhalt) })
+    })
+  }
   for (const r of refRanges) {
     if (cursorIntersects(r.from, r.to)) continue
     all.push({
@@ -564,6 +652,7 @@ export const miolimDecorations = ViewPlugin.fromClass(class {
     }
     document.addEventListener("cm6:wikilink-resolved", this._onResolved)
     document.addEventListener("cm6:taskref-resolved", this._onResolved)  // #534
+    document.addEventListener("cm6:marker-resolved", this._onResolved)   // #1658
   }
   update(u) {
     if (u.docChanged || u.selectionSet || u.viewportChanged) {
@@ -572,7 +661,8 @@ export const miolimDecorations = ViewPlugin.fromClass(class {
   }
   destroy() {
     document.removeEventListener("cm6:wikilink-resolved", this._onResolved)
-    document.removeEventListener("cm6:taskref-resolved", this._onResolved)  // #534
+    document.removeEventListener("cm6:taskref-resolved", this._onResolved)
+    document.removeEventListener("cm6:marker-resolved", this._onResolved)  // #534
   }
 }, { decorations: v => v.decorations })
 
@@ -614,6 +704,29 @@ export const miolimDecorationTheme = EditorView.theme({
     margin: "0 1px",
     fontSize: "0.95em",
     fontWeight: "500"
+  },
+  // immoOS #1658 R10: Hilfe-Marker im Editor. Beschriftungen sehen aus wie im
+  // fertigen Text (fett bzw. fett-kursiv, dieselbe Farbe wie .hilfe-bezeichnung);
+  // Symbole sitzen auf der Schriftlinie und erben die Textfarbe.
+  ".cm6-hilfe-symbol": {
+    display: "inline-block",
+    verticalAlign: "-0.125em",
+    lineHeight: "1",
+    color: "rgb(55 48 163)"                         // indigo-800, wie die Wörter
+  },
+  ".cm6-hilfe-symbol svg": {
+    width: "1.1em",
+    height: "1.1em",
+    display: "inline-block"
+  },
+  ".cm6-hilfe-feld": {
+    color: "rgb(55 48 163)",                        // indigo-800
+    fontWeight: "700"
+  },
+  ".cm6-hilfe-bereich": {
+    color: "rgb(55 48 163)",
+    fontWeight: "700",
+    fontStyle: "italic"
   },
   // #534: Aufgaben-Ref-Pille `[[#id]]` — sky, analog zum Read-Mode-Link
   // (wikilink-task, text-sky-700).

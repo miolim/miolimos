@@ -540,6 +540,67 @@ en:
   kontakt_anlegen:
     person: "create as person"
     organisation: "create as organization"
+  # #1677 (from immoOS #1658): help cards — the question mark in a card's spine
+  # opens the help for that KIND of card (not for the single record).
+  hilfe:
+    icons:
+      bezeichnungen: "Field and section labels"
+      bezeichnung_suche: "Search label (e.g. due) …"
+      laedt: "Loading …"
+      einsetzen: "Insert symbol"
+      klick_kopiert: "A click copies the marker — then paste it into the text."
+      suche: "Search symbol …"
+      bedienelemente: "Controls of the program"
+      symbole: "All symbols"
+    titel: "Help"
+    eigener_bereich: "Our note"
+    eigener_platzhalter: "What applies for us — visible to everyone."
+    bearbeiten: "Edit"
+    fertig: "Finish editing and save"
+    notiz_leer: "No note yet."
+    titel_mit_bezug: "Help: %{bezug}"
+    markdown_hinweis: "Markdown is allowed: **bold**, lists, ## heading, [[knowledge item]]."
+    programm_bereich: "How it works"
+    programm_platzhalter: "Explanation of the program (administrators only)."
+    programm_hinweis_admin: "Everyone can read this part, only administrators can change it."
+    noch_leer: "No explanation yet."
+    spine_leer: "Help — nothing here yet"
+    spine_vorhanden: "Help for this card"
+    bezug_mit_reiter: "%{art} · tab %{reiter}"
+    # What the kind of card is called in the help. Without an entry the technical
+    # kind is shown — a fork adds its own cards here.
+    arten:
+      task: "Task"
+      ki: "Knowledge item"
+      topic: "Topic"
+      awaiting: "Awaiting"
+      communication: "Communication"
+      document: "Document"
+      invoice: "Invoice"
+      source: "Source"
+      inboxitem: "Inbox item"
+      timeentry: "Time entry"
+      bankledger: "Bank account"
+      settings: "Settings"
+      list_tasks: "Task list"
+      list_knowledge_items: "Knowledge list"
+      list_persons: "People list"
+      list_topics: "Topic list"
+      list_awaitings: "Awaiting list"
+      list_communications: "Communication list"
+      list_documents: "Document list"
+      list_invoices: "Invoice list"
+      list_sources: "Source list"
+      list_inbox_items: "Inbox"
+      list_time_entries: "Time entry list"
+      list_calendar: "Calendar"
+      list_dashboard: "Dashboard"
+      list_settings: "Settings"
+    # Tab names where the technical name does not speak for itself:
+    # hilfe.reiter.<kind>.<tab>. Without an entry the tab name is shown.
+    reiter:
+      ki:
+        master_data: "Master data"
   knowledge:
     # #849 (adopted from immoos): tab bar on the person/org detail.
     person_tabs:
@@ -1870,7 +1931,16 @@ en:
       start_failed: "Research could not be started."
       error: "Error: %{message}"
       pending_title: "Research running (task #%{id})"
+    # #1677 (from immoOS #1658): help cards — pointer into the program, symbol picker.
+    hilfe:
+      nicht_sichtbar: "That place is not open right now."
+      zeiger_allein: "To point at it, the card this help belongs to must be open next to it."
+      icons:
+        kopiert: "Copied: %{marker} — paste it where you want it."
+    icon_picker:
+      als_bereich: "as section"
     ui_inspector:
+      mehrdeutig: "%{anzahl} matches — please check in the editor."
       copied: "Copied: %{label}"
       copy_failed: "Copy failed — please note it down manually."
       region_main_window: "Main window"

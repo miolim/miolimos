@@ -54,6 +54,7 @@ module BladeRefsHelper
     when "src"       then { link: ref_url("/sources/#{rest}"), wikilink: "[[&#{rest}]]" }
     when "topic"     then { link: ref_url("/topics/#{rest}") }
     when "inboxitem" then { link: ref_url("/inbox/#{rest}") }
+    when "help"      then { link: ref_url("/help/#{rest}") }   # #1677 (aus immoOS #1658)
     when "list"      then { link: list_ref_url(rest) }
     else
       { link: ref_url("#{URL_BASE.fetch(kind, '/dashboard')}?stack=#{ERB::Util.url_encode(sid)}") }

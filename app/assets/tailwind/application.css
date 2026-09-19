@@ -548,6 +548,88 @@ html[data-tastenmodus="verschieben"].dark .stack-card[data-active="true"] .stack
   background: #f87171;          /* red-400 */
 }
 
+/* #1677 (aus #1658 (immoOS) übernommen): Hilfe-Cards — Marker im Text, Zeiger ins
+   Programm, Überschriften in der Hilfe, bernsteinfarbener Rücken. */
+/* #1658 (immoOS) R6 (Hans): „Felder bitte fett, Bereiche fett und kursiv.
+   Könnte man zusätzlich fest für beides eine Farbe rendern?"
+
+   Eine Bezeichnung im Fließtext ist ein Zitat vom Bildschirm — sie soll als
+   solches lesbar sein, ohne wie ein Link auszusehen (der führt woandershin,
+   das hier nicht). Gedecktes Indigo, im Dunkelmodus heller. Die Farbe steht
+   an dieser EINEN Stelle. */
+.hilfe-bezeichnung { color: #3730a3; }            /* indigo-800 */
+.dark .hilfe-bezeichnung { color: #a5b4fc; }      /* indigo-300 */
+/* #1658 R11 (Hans): Symbole tragen dieselbe Farbe wie die Wörter — sie sagen
+   dasselbe („das da auf dem Bildschirm"), also sehen sie gleich aus. Das SVG
+   erbt die Farbe über currentColor. */
+.hilfe-symbol { color: inherit; vertical-align: -0.125em; }
+
+/* #1658 R11 (Hans): Marker im Hilfetext zeigen auf die Stelle im Programm.
+   Dass sie anklickbar sind, muss man sehen — aber leise: gepunktete Linie
+   statt Link-Unterstreichung, damit der Fließtext ruhig bleibt. */
+.hilfe-zeigbar { cursor: pointer; text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
+.hilfe-zeigbar:hover { text-decoration-style: solid; }
+/* #1658 R15 (Hans): „Der Rahmen um die Icons in den Hilfetexten soll weg."
+   Er sollte zeigen, dass das Symbol anklickbar ist, machte den Fließtext aber
+   unruhig — bei mehreren Symbolen in einem Absatz sah es aus wie ein Formular.
+   Der Hinweis bleibt, aber erst beim Darüberfahren. */
+svg.hilfe-zeigbar { text-decoration: none; border-radius: 2px; }
+svg.hilfe-zeigbar:hover { background: rgba(79, 70, 229, 0.12); }
+
+/* #1658 R12 (Hans): „Das Hinscrollen und das Pulsieren reichen aus." Die
+   Markierung verblasst am Ende von selbst, statt stehen zu bleiben. */
+.hilfe-gezeigt {
+  border-radius: 3px;
+  animation: hilfe-gezeigt-puls 0.9s ease-out 2, hilfe-gezeigt-rahmen 2.5s ease-out forwards;
+}
+@keyframes hilfe-gezeigt-rahmen {
+  0%   { outline: 2px solid #4f46e5; outline-offset: 2px; }
+  70%  { outline: 2px solid #4f46e5; outline-offset: 2px; }
+  100% { outline: 2px solid rgba(79, 70, 229, 0); outline-offset: 2px; }
+}
+@keyframes hilfe-gezeigt-puls {
+  0%   { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.45); }
+  100% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+}
+
+/* #1658 (immoOS) R4: In der Hilfe-Card stehen die Markdown-Überschriften UNTER
+   einem Abschnittstitel („Unsere Notiz", „So funktioniert es", 15px). Mit der
+   allgemeinen Markdown-Größe (h2 = 18px) schriee der Inhalt lauter als seine
+   Überschrift — die Gliederung stünde auf dem Kopf. Deshalb hier eine Stufe
+   kleiner. */
+.stack-card[data-uuid^="help:"] .markdown-body h1 { font-size: 0.9375rem; margin-top: 0.75rem; }
+.stack-card[data-uuid^="help:"] .markdown-body h2 { font-size: 0.875rem; margin-top: 0.75rem; }
+.stack-card[data-uuid^="help:"] .markdown-body h3,
+.stack-card[data-uuid^="help:"] .markdown-body h4 { font-size: 0.8125rem; margin-top: 0.5rem; }
+
+/* #1658 R11 (Hans): „Die Überschriften beim Rendern bitte mit Unterstreichung
+   versehen." Eine feine Linie unter der Zeile — sie gliedert den Text, ohne
+   ihn wie einen Link aussehen zu lassen. */
+.stack-card[data-uuid^="help:"] .markdown-body h1,
+.stack-card[data-uuid^="help:"] .markdown-body h2,
+.stack-card[data-uuid^="help:"] .markdown-body h3 {
+  border-bottom: 1px solid rgb(203 213 225);        /* slate-300 */
+  padding-bottom: 0.15rem;
+}
+.dark .stack-card[data-uuid^="help:"] .markdown-body h1,
+.dark .stack-card[data-uuid^="help:"] .markdown-body h2,
+.dark .stack-card[data-uuid^="help:"] .markdown-body h3 {
+  border-bottom-color: rgb(71 85 105);              /* slate-600 */
+}
+
+/* #1658 (immoOS) R4 (Hans): „Und vielleicht eine eigene Spine-Farbe für die
+   Hilfe." Bernstein — deutlich weg vom Gruen der Detail-Cards und vom Blau
+   der Listen, in derselben Focus-Abstufung wie alle anderen. */
+.stack-card[data-uuid^="help:"] .stack-spine {
+  background: #fffbeb;          /* amber-50 */
+}
+.stack-card[data-uuid^="help:"] .stack-spine:hover {
+  background: #fef3c7;          /* amber-100 */
+}
+.stack-card[data-uuid^="help:"][data-active="true"] .stack-spine {
+  background: #fbbf24;          /* amber-400 */
+}
+
 /* #913 (Hans, 2026-07-08): Bei Fokus (data-active) faerbt sich der Spine
    kraeftig (emerald/sky/red-400) — die hellgrauen Icons, die Aufgabennummer
    (#id) und das Label kontrastieren dann zu schwach. Deshalb im aktiven
@@ -569,6 +651,16 @@ html[data-tastenmodus="verschieben"].dark .stack-card[data-active="true"] .stack
 .stack-card[data-active="true"] .stack-spine .spine-status-icon.text-orange-500 * { color: #f97316; }  /* orange-500 */
 .stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600,
 .stack-card[data-active="true"] .stack-spine .spine-status-icon.text-emerald-600 * { color: #059669; }  /* emerald-600 */
+
+/* #1658 (immoOS) R3 (Hans): „Vielleicht kann man das Icon noch etwas anders
+   anzeigen, wenn tatsächlich Text enthalten ist." Genau dieser Unterschied
+   verschwand auf der aktiven Card — die Schwarz-Regel oben übermalte ihn,
+   und die aktive Card ist die, auf die man schaut. Das Fragezeichen trägt
+   deshalb dieselbe Ausnahme wie die Status-Icons. */
+.stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-sky-600,
+.stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-sky-600 * { color: #0284c7; }  /* sky-600 */
+.stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-slate-300,
+.stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-slate-300 * { color: #cbd5e1; }  /* slate-300 */
 
 /* #1412 (Hans): Der Instanz-Zaehler behaelt seine weisse Schrift, auch auf
    der fokussierten Card. Die #913-Regel oben faerbt ALLE Spine-Inhalte
@@ -896,6 +988,10 @@ html.dark .theme-icon-sun  { display: flex; }
 .dark .stack-card[data-uuid^="render:topic:"][data-active="true"] .stack-spine,
 .dark .stack-card[data-uuid^="refs:ki:"][data-active="true"] .stack-spine,
 .dark .stack-card[data-uuid^="refs:topic:"][data-active="true"] .stack-spine { background: #b91c1c; }  /* red-700 */
+/* #1658 (immoOS) R4: Bernstein auch im Dark-Mode, gleiche Abstufung. */
+.dark .stack-card[data-uuid^="help:"] .stack-spine { background: #3a2f16; }
+.dark .stack-card[data-uuid^="help:"] .stack-spine:hover { background: #4d3d17; }
+.dark .stack-card[data-uuid^="help:"][data-active="true"] .stack-spine { background: #b45309; }  /* amber-700 */
 
 /* #913 Dark-Gegenstueck: aktive Spines sind hier dunkel (700er) — Inhalte
    weiss statt schwarz. Hoehere Spezifitaet (.dark …) schlaegt die Light-Regel. */
@@ -913,6 +1009,14 @@ html.dark .theme-icon-sun  { display: flex; }
 .dark .stack-card[data-active="true"] .stack-spine .spine-status-icon * {
   color: #fff;
 }
+
+/* #1658 (immoOS) R3: Das Fragezeichen behält auch im Dark-Mode seinen
+   Unterschied — er ist sein ganzer Zweck. Auf dem kräftigen aktiven Spine
+   hellere Töne als im Light-Mode, sonst säuft das Blau ab. */
+.dark .stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-sky-600,
+.dark .stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-sky-600 * { color: #7dd3fc; }  /* sky-300 */
+.dark .stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-slate-300,
+.dark .stack-card[data-active="true"] .stack-spine .spine-hilfe-icon.text-slate-300 * { color: #94a3b8; }  /* slate-400 */
 
 /* Markdown-Code/Pre nutzen bg-slate-100 (jetzt #1e293b) — leicht abheben. */
 .dark .markdown-body code,

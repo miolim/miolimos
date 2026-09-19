@@ -1,0 +1,95 @@
+<%# #1677 (aus immoOS #1658 übernommen; Hans dort): Ein Hilfe-Bereich.
+
+    R10: „Stattdessen soll er sich verhalten, wie eine Antwort: Das Stifticon
+    wird zum Häkchen, mit dem ich die Bearbeitung beende. Ich kann andere Karten
+    aufrufen, ohne die Bearbeitung zu beenden."
+
+    Also dasselbe Gespann wie bei der Aufgaben-Beschreibung: `description-toggle`
+    schaltet zwischen Darstellung und Schreibfeld, der Stift öffnet, das Häkchen
+    beendet UND speichert. Bewusst KEIN Speichern beim Verlassen des Feldes —
+    nur so lässt sich nebenher eine andere Karte öffnen (so verhalten sich die
+    Antworten). Wer die Card mit offener Bearbeitung schließt, wird gefragt —
+    dafür markiert `dirty-mark` nur, gefragt wird vom Stapel. `dirty-warn` wäre
+    hier falsch: Es warnt bei JEDEM Turbo-Wechsel, und das Öffnen einer anderen
+    Karte ist einer. Getipptes liegt zusätzlich im Entwurfsspeicher.
+
+    Locals: help, bereich ("user"/"program"), titel, platzhalter, rows,
+            darf_schreiben, leer_text, frame_id, first. %>
+<% text = bereich == "program" ? help.program_body : help.user_body %>
+<% feld_id = "help_#{bereich}_#{help.key.gsub(/[^a-z0-9_]/, "_")}" %>
+
+<div data-controller="description-toggle" data-description-toggle-mode-value="preview">
+  <% knoepfe = capture do %>
+    <% if darf_schreiben %>
+      <%# Der Stift wird von außerhalb des Schreibfeldes geklickt — click genügt. %>
+      <button type="button" data-action="click->description-toggle#edit"
+              data-description-toggle-target="editBtn"
+              title="<%= t("hilfe.bearbeiten") %>" aria-label="<%= t("hilfe.bearbeiten") %>"
+              class="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100
+                     bg-transparent border-0 cursor-pointer [&_svg]:w-4 [&_svg]:h-4">
+        <%= ui_icon(:bearbeiten) %>
+      </button>
+      <%# Das Häkchen beendet die Bearbeitung und speichert. mousedown statt
+          click: sonst zieht der Browser erst den Fokus aus dem Feld. %>
+      <%= ui_button :hilfe_fertig, size: "w-4 h-4",
+            data: { action: "mousedown->description-toggle#save", description_toggle_target: "saveBtn" },
+            class: "hidden p-0.5 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer" %>
+    <% end %>
+  <% end %>
+  <%= render "shared/section_header", title: titel, first: first, add: knoepfe %>
+
+  <div data-description-toggle-target="preview">
+    <% if text.present? %>
+      <div class="markdown-body text-[13px]">
+        <%= render_inline_markdown(text, hilfe_marker: true) %>
+      </div>
+    <% else %>
+      <p class="text-sm text-slate-400 italic"><%= leer_text %></p>
+    <% end %>
+  </div>
+
+  <% if darf_schreiben %>
+    <%= form_with url: help_path(key: help.key), method: :patch, local: false,
+          data: { turbo_frame: frame_id, description_toggle_target: "form",
+                  controller: "dirty-mark" },
+          html: { class: "hidden" } do %>
+      <input type="hidden" name="bereich" value="<%= bereich %>">
+      <%# Derselbe Editor wie bei Aufgaben und Antworten: CodeMirror legt sich
+          über das Textfeld, das Textfeld bleibt beim Absenden die Quelle. %>
+      <div class="relative"
+           data-controller="draft-persist wikilink-autocomplete cm6-editor"
+           data-draft-persist-key-value="help.<%= help.key %>.<%= bereich %>"
+           data-wikilink-autocomplete-url-value="<%= suggest_knowledge_items_path %>"
+           data-cm6-editor-active-value="true">
+        <textarea name="text" id="<%= feld_id %>" rows="<%= rows %>"
+                  placeholder="<%= platzhalter %>"
+                  data-description-toggle-target="input"
+                  data-draft-persist-target="input"
+                  data-wikilink-autocomplete-target="input"
+                  data-cm6-editor-target="textarea"
+                  data-action="input->dirty-mark#mark"
+                  class="w-full text-[13px] bg-white border border-slate-200 rounded px-2 py-1
+                         min-h-24 resize-y [field-sizing:content]"><%= text %></textarea>
+        <ul data-wikilink-autocomplete-target="list"
+            class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-1"><%= t("hilfe.markdown_hinweis") %></p>
+      <% if bereich == "program" %>
+        <p class="text-[11px] text-slate-400"><%= t("hilfe.programm_hinweis_admin") %></p>
+      <% end %>
+      <%# #1658: Symbole einsetzen, ohne Namen zu kennen. Die Liste lädt erst
+          beim Aufklappen — 130 Symbole gehören nicht in jede Card. %>
+      <details class="mt-1">
+        <summary data-i18n-key="hilfe.icons.einsetzen"
+                 class="text-[11px] text-slate-500 hover:text-slate-700 cursor-pointer select-none list-none">
+          <%= t("hilfe.icons.einsetzen") %>
+        </summary>
+        <%= turbo_frame_tag "icon_auswahl_#{bereich}_#{help.key.gsub(/[^a-z0-9_]/, "_")}",
+              src: help_icons_path(bereich: HelpCard.basis_schluessel(help.key)),
+              loading: "lazy", class: "block mt-1" do %>
+          <span class="text-[11px] text-slate-400"><%= t("hilfe.icons.laedt") %></span>
+        <% end %>
+      </details>
+    <% end %>
+  <% end %>
+</div>

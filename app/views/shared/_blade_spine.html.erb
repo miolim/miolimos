@@ -48,5 +48,7 @@
   <%# #919: optionale Indikatoren am Spine-Fuss, direkt UEBER dem
       Schliessen-Kreuz (z.B. Task-Entwurfs-Stift). Nicht-interaktiv. %>
   <%= local_assigns[:footer_actions] %>
+  <%# #1677 (aus immoOS #1658): das Fragezeichen — Hilfe zu dieser Karten-Art. %>
+  <%= hilfe_spine_button(stack_id) %>
   <%= render "shared/blade_close_button" %>
 </aside>

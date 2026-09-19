@@ -45,6 +45,10 @@ class BladeStackLoader
       when :settings_page then { page: id, label: record }  # record = Label (#613)
       when :settings_sub  then { page: id.split(":", 2).first, sub: id.split(":", 2).last }
       when :inbox_item    then { item: record }  # #618
+      # #1677 (aus immoOS #1658): Hilfe-Card. `record` ist die HelpCard selbst
+      # (ggf. noch ungespeichert) — ohne diesen Zweig verschwände die Card bei
+      # jedem Neuladen.
+      when :help          then { help: record }
       end
     end
 
@@ -122,7 +126,8 @@ class BladeStackLoader
     tree_focus:    "tree_focus/blade",                    # #592 Z2
     settings_page: "settings/blades/card",                # #613
     settings_sub:  "settings/blades/sub_card",            # #613 Stufe 2
-    inbox_item:    "inbox_items/blade_card"               # #618
+    inbox_item:    "inbox_items/blade_card",              # #618
+    help:          "help_cards/blade_card"                # #1677 (aus immoOS #1658)
   }.freeze
 
   Item::LIST_PARTIALS = {
@@ -177,6 +182,7 @@ class BladeStackLoader
     "invoiceline"   => :invoice_line,
     "settings"      => :settings_page,  # #613: Einstellungs-Seiten-Blade
     "settingssub"   => :settings_sub,    # #613 Stufe 2: Unterseiten-Blade
+    "help"          => :help,            # #1677 (aus immoOS #1658): Hilfe-Card
     "inboxitem"     => :inbox_item,      # #618: Inbox-Detail-Blade
     "list"          => :list
   }.freeze
@@ -188,7 +194,7 @@ class BladeStackLoader
     tokens = stack_param.to_s.split(",").map(&:strip).reject(&:blank?)
     return [] if tokens.empty?
 
-    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], search_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], list: [] }
+    by_kind = { ki: [], ki_refs: [], task: [], topic: [], topic_list: [], tag_list: [], search_list: [], topic_render: [], topic_refs: [], source: [], awaiting: [], communication: [], document: [], invoice: [], invoice_line: [], tree_focus: [], settings_page: [], settings_sub: [], inbox_item: [], help: [], list: [] }
     classified = tokens.map do |t|
       kind, id, meta =
         if t.start_with?("list:topic:")
@@ -296,6 +302,12 @@ class BladeStackLoader
         spec = Settings::BladesController::PAGES[id]
         spec && Settings::BladesController.page_visible?(id, actor) &&
           Item.new(kind: :settings_page, id: id, record: spec[:label], meta: meta)
+      elsif kind == :help
+        # #1677 (aus immoOS #1658): kein Fremdschlüssel — der Schlüssel IST die
+        # Karten-Art (task, list:persons, ki.master_data). Eine Hilfe, zu der
+        # noch nichts geschrieben wurde, ist trotzdem eine gültige Card: Dort
+        # entsteht der Text.
+        HelpCard::KEY_RE.match?(id) && Item.new(kind: :help, id: id, record: HelpCard.fuer(id), meta: meta)
       elsif kind == :settings_sub
         # #613 Stufe 2: Seite muss bekannt sein; Existenz des Records
         # prüft das selbst-ladende Partial (verschwundene leise raus).

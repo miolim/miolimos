@@ -1,0 +1,6 @@
+<%# immoOS #1658: Antwort auf den Lazy-Frame der Symbol-Auswahl. Der Frame
+    trägt je Bereich und Card eine eigene Kennung — Turbo nennt sie im Header,
+    also antworten wir unter genau dieser. %>
+<%= turbo_frame_tag(request.headers["Turbo-Frame"].presence || "icon_auswahl") do %>
+  <%= render "help_cards/icon_auswahl" %>
+<% end %>

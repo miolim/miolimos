@@ -932,6 +932,40 @@ ALTER SEQUENCE public.events_id_seq OWNED BY public.events.id;
 
 
 --
+-- Name: help_cards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.help_cards (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    user_body text,
+    program_body text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    program_digest character varying
+);
+
+
+--
+-- Name: help_cards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.help_cards_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: help_cards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.help_cards_id_seq OWNED BY public.help_cards.id;
+
+
+--
 -- Name: identifiers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2983,6 +3017,13 @@ ALTER TABLE ONLY public.events ALTER COLUMN id SET DEFAULT nextval('public.event
 
 
 --
+-- Name: help_cards id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.help_cards ALTER COLUMN id SET DEFAULT nextval('public.help_cards_id_seq'::regclass);
+
+
+--
 -- Name: identifiers id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3522,6 +3563,14 @@ ALTER TABLE ONLY public.documents
 
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: help_cards help_cards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.help_cards
+    ADD CONSTRAINT help_cards_pkey PRIMARY KEY (id);
 
 
 --
@@ -4533,6 +4582,13 @@ CREATE INDEX index_events_on_starts_at ON public.events USING btree (starts_at);
 --
 
 CREATE INDEX index_events_on_topic_id ON public.events USING btree (topic_id);
+
+
+--
+-- Name: index_help_cards_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_help_cards_on_key ON public.help_cards USING btree (key);
 
 
 --
@@ -6528,6 +6584,8 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260918120000'),
+('20260917200000'),
+('20260917190000'),
 ('20260915130000'),
 ('20260914061500'),
 ('20260901090000'),

@@ -56,6 +56,11 @@ const ROUTES = [
   { kind: "topic_props", prefix: "topicprops:",
     stackId: id => `topicprops:${id}`,
     url: rest => `/topics/${encodeURIComponent(rest)}/properties_card` },
+  // #1677 (aus immoOS #1658): Hilfe-Card — der Schlüssel ist die Karten-Art,
+  // optional mit Reiter (help:task, help:list:persons, help:ki.master_data).
+  { kind: "help", prefix: "help:",
+    stackId: id => `help:${id}`,
+    url: rest => `/help/${rest}/card` },
   // #613 Stufe 2: Unterseiten-Blade (settingssub:<page>:<sub>) — VOR
   // settings_page, damit der längere Prefix zuerst matcht.
   { kind: "settings_sub", prefix: "settingssub:",

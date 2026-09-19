@@ -560,7 +560,10 @@ module ApplicationHelper
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
       class:            classes,
-      "aria-hidden":    "true"
+      "aria-hidden":    "true",
+      # #1677 (aus immoOS #1658): der Bild-Name am Symbol — Ziel für `:icon:name:`
+      # aus einem Hilfetext und Quelle für den Beschriftungs-Modus.
+      "data-icon":      name.to_s
     }.merge(html_options)
     inner = render("shared/icons/#{name}")
     content_tag(:svg, inner, attrs)

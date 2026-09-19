@@ -1472,3 +1472,13 @@ ki_thema_loesen:
 # sich über die Umstellung herausgebildet hat, sagt eindeutig einen.
 verknuepfung_waehlen:
   label: knowledge.chip.pick_add
+# #1677 (aus immoOS #1658): Hilfe-Cards.
+hilfe:
+  icon: help_circle
+  label: hilfe.titel
+bearbeiten:
+  icon: pencil
+  label: hilfe.bearbeiten
+hilfe_fertig:
+  icon: check
+  label: hilfe.fertig

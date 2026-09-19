@@ -47,7 +47,9 @@
       Klick kopieren. Shortcut: Cmd/Ctrl + . %>
   <%= ui_button :beschriftungs_modus, size: "w-4 h-4",
         "aria-label": t("shared.topbar.inspector_label"), "aria-pressed": "false",
-        data: { controller: "ui-inspector", action: "click->ui-inspector#toggle",
+        # #1677 (aus immoOS #1658 R8): mousedown hält den Fokus im Schreibfeld —
+        # der Schalter wird aus dem Hilfe-Editor heraus geklickt.
+        data: { controller: "ui-inspector", action: "mousedown->ui-inspector#fokusHalten click->ui-inspector#toggle",
                 ui_label: "Beschriftungs-Modus (Schalter)" },
         class: "hidden md:block p-1.5 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer" %>
 <% when "diagnostic" %>

@@ -1,0 +1,52 @@
+<%# #1677 (aus immoOS #1658 übernommen; Hans dort): „Die Hilfe-Card hat zwei Bereiche: Oben ein Bereich,
+    den der Nutzer selbst bearbeiten kann; unten der Bereich, der vom Programm
+    geliefert wird. Ich, als Ersteller, will den unteren Bereich laufend
+    anpassen/ergänzen können."
+
+    Beide Bereiche stehen in derselben Card, unterscheiden sich aber im
+    Schreibrecht: oben jeder, unten nur Administratoren. Gelesen wird beides von
+    allen — eine Hilfe, die man nicht sieht, hilft nicht. Beides ist Markdown.
+
+    R4 (Hans): Der Bezug steht im Titel — „Hilfe: Grundstück · Reiter Details" —
+    und ebenso im Rücken. Hat eine Karte Reiter, gehört die Hilfe den REITERN;
+    eine Hilfe zur Karte als Ganzes gibt es dann nicht, und damit auch keinen
+    Rückfall auf sie.
+
+    Local: help (HelpCard, ggf. noch ungespeichert). %>
+<% stack_id = "help:#{help.key}" %>
+<% frame_id = "help_body_#{help.key.gsub(/[^a-z0-9_]/, "_")}" %>
+<% darf_programm = current_actor&.admin? %>
+<% titel = t("hilfe.titel_mit_bezug", bezug: hilfe_bezug_label(help.key)) %>
+<%# #1658 R11: Ein Klick auf eine Beschriftung oder ein Symbol im Text zeigt
+    die Stelle in den offenen Karten. %>
+<article id="stack_card_<%= stack_id %>" data-uuid="<%= stack_id %>"
+         data-controller="hilfe-zeiger" data-action="click->hilfe-zeiger#zeigen"
+         class="stack-card shrink-0 relative w-[28rem] max-w-[calc(100vw-3rem)]
+                bg-white border-l border-slate-200 first:border-l-0 flex">
+
+  <%= render "shared/blade_spine", stack_id: stack_id,
+        title: titel, icon_html: icon("help_circle"), label: titel %>
+
+  <div class="flex-1 min-w-0 min-h-0 overflow-y-auto p-3 space-y-3">
+    <%= render "shared/blade_toolbar", uuid: stack_id, close: true,
+          toolbar_class: "-mx-3 -mt-3 px-3 pt-2 pb-2 bg-white" %>
+
+    <header>
+      <div class="text-base font-semibold text-slate-800"><%= titel %></div>
+    </header>
+
+    <%= turbo_frame_tag frame_id, class: "block space-y-3" do %>
+      <%# ── Oben: die eigene Notiz ──────────────────────────────────── %>
+      <%= render "help_cards/bereich", help: help, bereich: "user", first: true,
+            titel: t("hilfe.eigener_bereich"), platzhalter: t("hilfe.eigener_platzhalter"),
+            rows: 4, darf_schreiben: !current_actor&.guest?, frame_id: frame_id,
+            leer_text: t("hilfe.notiz_leer") %>
+
+      <%# ── Unten: die Erklärung des Programms ──────────────────────── %>
+      <%= render "help_cards/bereich", help: help, bereich: "program", first: false,
+            titel: t("hilfe.programm_bereich"), platzhalter: t("hilfe.programm_platzhalter"),
+            rows: 8, darf_schreiben: darf_programm, frame_id: frame_id,
+            leer_text: t("hilfe.noch_leer") %>
+    <% end %>
+  </div>
+</article>

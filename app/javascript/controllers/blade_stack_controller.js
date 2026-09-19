@@ -16,6 +16,9 @@ import { overhangClips } from "lib/blade_stack_overhang"
 // #1648 (Hans): Auch der Wikilink-Klick fragt die Oeffnungsart — Umschalt
 // zeigt dasselbe Menue wie an allen anderen Klickwegen (#1642).
 import { oeffnungsart } from "lib/blade_open_menu"
+// #1677 (aus immoOS #1665): Die offene Hilfe-Card folgt dem Reiter der Karte, zu
+// der sie gehört. Die Entscheidung steht in lib/help_tab — hier das Verdrahten.
+import { offenerReiter, hilfeBasis, hilfeTauschZiel } from "lib/help_tab"
 
 // Sliding-Panes-Stack à la Andy Matuschak / Obsidian Sliding Panes:
 // horizontal angeordnete Karteikarten, neue Cards rechts angefügt,
@@ -201,6 +204,10 @@ class BladeStackController extends Controller {
     // den Doppel-Tap-Zoom unterdruecken koennen.
     this._spineTouchHandler = (e) => this._onSpineTouchEnd(e)
     this.containerTarget.addEventListener("touchend", this._spineTouchHandler, { passive: false })
+    // #1677 (aus immoOS #1665): Reiterwechsel in irgendeiner Card — die offene
+    // Hilfe dazu zieht nach. Am Container, damit auch nachgeladene Cards erfasst sind.
+    this._hilfeReiterHandler = (e) => this._hilfeFolgtReiter(e)
+    this.containerTarget.addEventListener("simple-tabs:gewechselt", this._hilfeReiterHandler)
     // Initial-Markierung: letzte Card im Stack, falls eine offen ist.
     // #284 v2: nach Reload die aeusserst rechte Card sticky-aware ins
     // Viewport scrollen. v1 nutzte scrollIntoView({inline:"nearest"}) —
@@ -646,6 +653,9 @@ class BladeStackController extends Controller {
     }
     if (this._spineTouchHandler) {
       this.containerTarget.removeEventListener("touchend", this._spineTouchHandler)
+    }
+    if (this._hilfeReiterHandler) {
+      this.containerTarget.removeEventListener("simple-tabs:gewechselt", this._hilfeReiterHandler)
     }
     if (this._onWheel) {
       this.containerTarget.removeEventListener("wheel", this._onWheel)
@@ -2026,6 +2036,35 @@ class BladeStackController extends Controller {
       return
     }
     await this._tauscheCardInhalt(alt, ziel)
+  }
+
+  // #1677 (aus immoOS #1665 übernommen; Hans dort): „Wechselt man den Reiter, bleibt die Card aber
+  // stehen; man muss erneut auf das Fragezeichen klicken." — Jetzt nicht mehr.
+  //
+  // Der Reiterwechsel meldet sich (simple_tabs#_activate), der Stapel sieht
+  // nach, ob zu DIESER Karte gerade eine Hilfe offen ist, und tauscht ihren
+  // Inhalt. Keine Stack-Mutation: derselbe Platz, andere Erklärung.
+  //
+  // Drei Dinge, die der Handler NICHT tut: auf verschachtelte Reiterleisten
+  // hören (sie unterteilen denselben Bereich — so hält es auch das
+  // Fragezeichen, lib/help_tab), eine Hilfe aufmachen, die gar nicht offen
+  // ist, und eine fremde Hilfe anfassen (sie gehört einer anderen Karte).
+  async _hilfeFolgtReiter(event) {
+    const quelle = event.target?.closest?.("article.stack-card")
+    if (!quelle) return
+    // Nur die äußerste Reiterleiste der Karte zählt.
+    if (quelle.querySelector('[data-controller~="simple-tabs"]') !== event.target) return
+
+    // Die Karten-ART steht schon am Fragezeichen — der Server hat sie berechnet
+    // (HilfeHelper#hilfe_schluessel); sie hier ein zweites Mal aus der uuid zu
+    // erraten hieße, dieselbe Regel zweimal zu pflegen.
+    const basis  = quelle.querySelector("button.spine-hilfe-icon")?.dataset?.helpLinkIdValue
+    const offene = [...this.containerTarget.querySelectorAll('article.stack-card[data-uuid^="help:"]')]
+    const ziel   = hilfeTauschZiel(basis, offenerReiter(quelle), offene.map((k) => k.dataset.uuid))
+    if (!ziel) return
+
+    const karte = offene.find((k) => hilfeBasis(k.dataset.uuid) === basis)
+    if (karte) await this._tauscheCardInhalt(karte, ziel)
   }
 
   // Derselbe Platz im Stapel, anderer Inhalt (immoOS #1665: eigene Methode,

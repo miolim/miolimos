@@ -1,0 +1,59 @@
+<%# immoOS #1658 (Hans): Symbol-Auswahl fürs Schreibfeld der Hilfe.
+
+    Oben die BEDIENELEMENTE — sie folgen dem Programm: Wechselt das Icon einer
+    Funktion, wechselt es im Hilfetext mit. Darunter alle Symbole für
+    illustrative Zwecke.
+
+    Locals: keine. %>
+<div data-controller="icon-picker" data-icon-picker-bereich-value="<%= @bereich %>" class="space-y-2">
+  <%# #1658 R15 (Hans): Der Klick kopiert — das muss dort stehen, wo geklickt
+      wird, sonst wartet man auf etwas, das im Schreibfeld passieren soll. %>
+  <p class="text-[11px] text-slate-500"><%= t("hilfe.icons.klick_kopiert") %></p>
+
+  <input type="search" placeholder="<%= t("hilfe.icons.suche") %>"
+         data-icon-picker-target="suche" data-action="input->icon-picker#filtern"
+         class="w-full text-xs border border-slate-200 rounded px-2 py-1">
+
+  <%# #1658 R6: Feld- und Abschnittsbezeichnungen — gesucht wird nach dem Wort
+      auf dem Bildschirm, eingesetzt wird der Schlüssel dahinter. %>
+  <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide"><%= t("hilfe.icons.bezeichnungen") %></div>
+  <input type="search" placeholder="<%= t("hilfe.icons.bezeichnung_suche") %>"
+         data-icon-picker-target="textSuche" data-action="input->icon-picker#bezeichnungen"
+         class="w-full text-xs border border-slate-200 rounded px-2 py-1">
+  <div data-icon-picker-target="textTreffer" class="space-y-1 max-h-40 overflow-y-auto"></div>
+
+  <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide pt-1"><%= t("hilfe.icons.bedienelemente") %></div>
+  <div class="flex flex-wrap gap-1">
+    <%# #1677: Upstream führt im Katalog auch Bedienelemente OHNE Symbol (reine
+        Textknöpfe) — die lassen sich nicht als Symbol zitieren und fehlen hier. %>
+    <% UiElemente.elemente.each do |schluessel, eintrag| %>
+      <% next if eintrag[:icon].blank? %>
+      <% beschriftung = t(eintrag[:label], default: schluessel) %>
+      <button type="button" data-icon-picker-target="eintrag"
+              data-marker=":ui:<%= schluessel %>:"
+              data-suchtext="<%= "#{schluessel} #{beschriftung}".downcase %>"
+              data-action="click->icon-picker#einsetzen"
+              title="<%= beschriftung %> — :ui:<%= schluessel %>:"
+              class="flex items-center gap-1 px-1.5 py-1 rounded border border-slate-200
+                     bg-white hover:bg-sky-50 hover:border-sky-300 cursor-pointer
+                     text-slate-600 text-[11px] [&_svg]:w-4 [&_svg]:h-4">
+        <%= icon(eintrag[:icon]) %><span><%= beschriftung %></span>
+      </button>
+    <% end %>
+  </div>
+
+  <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide pt-1"><%= t("hilfe.icons.symbole") %></div>
+  <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto" data-icon-picker-target="raster">
+    <% hilfe_icon_namen.each do |name| %>
+      <button type="button" data-icon-picker-target="eintrag"
+              data-marker=":icon:<%= name %>:"
+              data-suchtext="<%= name %>"
+              data-action="click->icon-picker#einsetzen"
+              title=":icon:<%= name %>:"
+              class="p-1 rounded border border-transparent hover:bg-slate-100 hover:border-slate-300
+                     cursor-pointer text-slate-600 [&_svg]:w-4 [&_svg]:h-4">
+        <%= icon(name) %>
+      </button>
+    <% end %>
+  </div>
+</div>

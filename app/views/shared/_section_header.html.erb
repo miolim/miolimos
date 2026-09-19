@@ -1,0 +1,32 @@
+<%# immoOS #1135 (Hans): einheitlicher Bereichstitel innerhalb eines Tabs —
+    fett, etwas größer, OHNE Icon; optionaler Zähler in Klammern (ausgegraut);
+    optionales „Hinzufügen" als grünes Plus im Kreis, rechts; darüber ein
+    kräftigerer Trenner (außer beim ersten Bereich).
+
+    Locals:
+      title  — der Bereichstitel (Pflicht)
+      count  — optionaler Zähler (nil/blank = keiner)
+      add    — optionales, vorgefertigtes „Hinzufügen"-Steuerelement (z. B. per
+               capture erzeugtes grünes Plus / Formular), rechts ausgerichtet
+      first  — true beim ersten Bereich eines Tabs (kein Trenner darüber)
+      meta   — optionales Inline-HTML direkt nach dem Titel/Zähler (links,
+               z. B. Flächen-Aufschlüsselung, Status-Badge) %>
+<% unless local_assigns[:first] %>
+  <hr class="border-slate-300 my-3">
+<% end %>
+<%# immoOS #1658 R9: `i18n_key` nennt den Übersetzungsschlüssel der Überschrift.
+    Zwei Überschriften können denselben Text tragen (das Programm hat zweimal
+    „Adresse"); von außen sind sie nicht zu unterscheiden. Für den
+    Beschriftungs-Modus steht der Schlüssel deshalb im Markup — geraten wird
+    nur noch dort, wo er fehlt. %>
+<div class="flex items-center gap-2 mb-2">
+  <h3 class="font-semibold text-[15px] text-slate-800 leading-tight"
+      <%= tag.attributes("data-i18n-key": local_assigns[:i18n_key]) if local_assigns[:i18n_key].present? %>><%= title %></h3>
+  <% if local_assigns[:count].present? || local_assigns[:count] == 0 %>
+    <span class="text-slate-400 tabular-nums text-sm">(<%= count %>)</span>
+  <% end %>
+  <% if local_assigns[:meta].present? %><%= meta %><% end %>
+  <% if local_assigns[:add].present? %>
+    <div class="ml-auto flex items-center"><%= add %></div>
+  <% end %>
+</div>

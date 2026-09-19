@@ -43,5 +43,7 @@
   <% end %>
   <span class="text-xs <%= scheme[:label] %> font-medium whitespace-nowrap overflow-hidden text-ellipsis
                [writing-mode:vertical-rl] min-h-0 flex-1"><%= label %></span>
+  <%# #1677 (aus immoOS #1658): das Fragezeichen — Hilfe zu dieser Liste. %>
+  <%= hilfe_spine_button(local_assigns[:stack_id]) %>
   <%= render "shared/blade_close_button" %>
 </aside>

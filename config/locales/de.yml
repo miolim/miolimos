@@ -905,6 +905,10 @@ de:
         known_comm: "Kommunikation"
         known_personal: "Persönlich bekannt"
         known_toggle_title: "Bekanntheit: %{label} — klicken zum Wechseln"
+        # #1677 (aus immoOS #1656): Namensreihenfolge der Liste.
+        namen_vorname: "Vorname"
+        namen_nachname: "Nachname"
+        namen_toggle_title: "Sortierung: %{label} zuerst — klicken zum Wechseln"
         search_placeholder: "Personen durchsuchen …"
         empty: "Keine Personen oder Organisationen."
         no_results: "Keine Treffer."

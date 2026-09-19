@@ -7,18 +7,38 @@
   # #702 (Hans): Bekanntheits-Toggle Alle | Kommunikation | Persönlich
   # bekannt. „Kommunikation" umfasst die persönlich bekannten mit.
   known = params[:known].to_s.presence_in(%w[comm personal])
-  scope = KnowledgeItem.where(item_type: [:person, :organization])
+  # #1677: visible_to — die Liste lädt sich selbst (Stack-Restore) und lief
+  # damit an der Sichtbarkeit aus #602 vorbei: Ein Mitglied sah ALLE Kontakte.
+  sichtbar = KnowledgeItem.visible_to(current_actor).where(item_type: [:person, :organization])
+  scope = sichtbar
   case known
   when "personal"
     scope = scope.where(personally_known: true)
   when "comm"
     scope = scope.where("knowledge_items.personally_known = TRUE OR knowledge_items.uuid IN (SELECT mentioned_uuid FROM communication_mentions)")
   end
-  items = scope.order(Arel.sql("LOWER(title) ASC")).limit(200).to_a
-  total = KnowledgeItem.where(item_type: [:person, :organization]).count
+  # #1677 (aus immoOS #1656 übernommen; Hans dort): „Könnte man die
+  # Personenliste auch nach Nachname, Vorname anzeigen und sortieren lassen?" —
+  # als Umschalter neben der Bekanntheit, damit beide Reihenfolgen erreichbar
+  # bleiben. Sortiert wird nach demselben Feld, das angezeigt wird; ohne
+  # erfassten Nachnamen führt der Titel. Der Nachname zählt nur bei PERSONEN
+  # (#1656 R2): Organisationen tragen dort oft das letzte Wort ihres Titels
+  # („GmbH", „11") und stünden sonst unerklärlich ganz oben.
+  namen = params[:namen].to_s.presence_in(%w[nachname])
+  personen_typ = KnowledgeItem.item_types[:person].to_i
+  ordnung = if namen == "nachname"
+              "LOWER(COALESCE(NULLIF(BTRIM(CASE WHEN item_type = #{personen_typ} THEN last_name END), ''), title)) ASC, " \
+              "LOWER(COALESCE(first_name, '')) ASC"
+            else
+              "LOWER(title) ASC"
+            end
+  items = scope.order(Arel.sql(ordnung)).limit(200).to_a
+  total = sichtbar.count
   known_cfg = { nil        => { label: t("knowledge.list.persons.known_all"),      nxt: "comm" },
                 "comm"     => { label: t("knowledge.list.persons.known_comm"),     nxt: "personal" },
                 "personal" => { label: t("knowledge.list.persons.known_personal"), nxt: nil } }[known]
+  namen_cfg = { nil        => { label: t("knowledge.list.persons.namen_vorname"),  nxt: "nachname" },
+                "nachname" => { label: t("knowledge.list.persons.namen_nachname"), nxt: nil } }[namen]
 %>
 <article id="stack_card_<%= stack_id %>"
          data-uuid="<%= stack_id %>"
@@ -40,11 +60,20 @@
     <%# #703 (Hans): einheitlicher Topbereich. Add = Typ-Picker (Plus),
         Controls = Bekanntheits-Toggle (#702). %>
     <% known_toggle = capture do %>
-      <%= ui_link :person_bekanntheit_umschalten, list_card_persons_path(known: known_cfg[:nxt]),
+      <%= ui_link :person_bekanntheit_umschalten, list_card_persons_path(known: known_cfg[:nxt], namen: namen),
             data: { turbo_frame: "persons_list_body" },
             title: t("knowledge.list.persons.known_toggle_title", label: known_cfg[:label]),
             class: "inline-flex shrink-0 items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>
         <%= icon "user-check", size: "w-3.5 h-3.5" %><span class="hidden sm:inline"><%= known_cfg[:label] %></span>
+      <% end %>
+    <% end %>
+    <%# #1677 (aus immoOS #1656): Namensreihenfolge — „Vorname Nachname" | „Nachname, Vorname". %>
+    <% namen_toggle = capture do %>
+      <%= ui_link :person_namensfolge_umschalten, list_card_persons_path(known: known, namen: namen_cfg[:nxt]),
+            data: { turbo_frame: "persons_list_body" },
+            title: t("knowledge.list.persons.namen_toggle_title", label: namen_cfg[:label]),
+            class: "inline-flex shrink-0 items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border no-underline #{namen == "nachname" ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100" : "border-slate-200 hover:bg-slate-100 text-slate-600"}" do %>
+        <%= icon "arrow_up_down", size: "w-3.5 h-3.5" %><span class="hidden sm:inline"><%= namen_cfg[:label] %></span>
       <% end %>
     <% end %>
     <%= render "shared/list_header",
@@ -52,7 +81,7 @@
           count: items.size, total: total,
           add:      render("knowledge_items/type_picker", types: %w[person organization]),
           search:   render("shared/list_search", placeholder: t("knowledge.list.persons.search_placeholder")),
-          controls: known_toggle %>
+          controls: capture { concat known_toggle; concat namen_toggle } %>
 
     <% if items.empty? %>
       <p class="text-sm text-slate-400 italic py-3"><%= t("knowledge.list.persons.empty") %></p>
@@ -65,7 +94,7 @@
             <%# #840: Status (persönlich bekannt / Kommunikation) steckt im
                 Haupticon (Form+Farbe) — kein separates Badge mehr. %>
             <span class="shrink-0 text-slate-500"><%= knowledge_type_icon(ki, size: "w-4 h-4", known_via_comm: comm_known.include?(ki.uuid)) %></span>
-            <%= link_to ki.title,
+            <%= link_to ki.listenname(nachname_zuerst: namen == "nachname"),
                   knowledge_item_path(ki.uuid),
                   data: { action: "click->blade-stack#openFromList", target_uuid: ki.uuid },
                   class: "flex-1 hover:underline truncate text-slate-700" %>

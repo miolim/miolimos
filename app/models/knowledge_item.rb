@@ -448,4 +448,18 @@ class KnowledgeItem < ApplicationRecord
       title
     end
   end
+
+  # #1677 (aus immoOS #1656 übernommen; Hans dort): „Könnte man die
+  # Personenliste auch nach Nachname, Vorname anzeigen und sortieren lassen?" —
+  # die Listenform des Namens.
+  #
+  # Ohne erfassten Nachnamen bleibt es beim Titel. Ihn aus dem Titel zu raten
+  # (letztes Wort = Nachname) ginge bei „Dr. Anna von Müller" oder bei einer
+  # Organisation in der Personenliste schief; ein falsch einsortierter Name ist
+  # schlimmer als einer in der gewohnten Reihenfolge.
+  def listenname(nachname_zuerst: false)
+    return display_name unless nachname_zuerst && person? && last_name.present?
+
+    [last_name, first_name.presence].compact.join(", ")
+  end
 end

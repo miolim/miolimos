@@ -901,6 +901,10 @@ en:
         known_comm: "Communication"
         known_personal: "Personally known"
         known_toggle_title: "Familiarity: %{label} — click to switch"
+        # #1677 (from immoOS #1656): name order of the list.
+        namen_vorname: "First name"
+        namen_nachname: "Last name"
+        namen_toggle_title: "Sorted by %{label} first — click to switch"
         search_placeholder: "Search people …"
         empty: "No people or organizations."
         no_results: "No matches."

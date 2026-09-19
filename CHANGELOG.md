@@ -17,6 +17,10 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Added
 
+- The people list can show and sort names as “Last name, First name”
+  (#1677, from immoOS #1656) — a toggle next to the familiarity filter. People
+  without a recorded last name keep their title; organisations are never
+  sorted by a last name.
 - Settings → Token usage shows what the agent sessions consume (#1660): a
   total with cost per kind (input, output, cache written, cache read), broken
   down over time, by model and by task, for the last 7 to 365 days. Counted are
@@ -175,6 +179,9 @@ release is cut, this section is renamed to the new version and a fresh
   Everyone can still edit their own profile (name, e-mail, password); role
   and active flag are admin-only. The rule also holds for cards restored from
   a `?stack=` URL. Installations with non-admin users should upgrade.
+- **Security:** the people list and the pinned list only show entries the
+  user may see (#1677). Both load their entries in the view and did so
+  without the visibility scope — a member saw every contact.
 - **Security:** the sub-addresses of a task or knowledge item now respect
   visibility (#1675). The main pages did, but about a dozen nested controllers
   (replies, comments, attachments, tags, mentions, sources, subtasks,

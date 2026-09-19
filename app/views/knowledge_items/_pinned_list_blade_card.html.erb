@@ -2,7 +2,8 @@
 <%
   stack_id = "list:pinned"
   pin_ids  = KnowledgeItemPin.for_actor(current_actor).pluck(:knowledge_item_id)
-  items    = KnowledgeItem.where(uuid: pin_ids)
+  # #1677: visible_to — ein Pin überlebt den Verlust der Sichtbarkeit nicht als Titel in der Liste.
+  items    = KnowledgeItem.visible_to(current_actor).where(uuid: pin_ids)
                           .joins("INNER JOIN knowledge_item_pins ON knowledge_item_pins.knowledge_item_id = knowledge_items.uuid")
                           .where("knowledge_item_pins.actor_id = ?", current_actor.id)
                           .order("knowledge_item_pins.pinned_at DESC")

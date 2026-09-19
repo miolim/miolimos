@@ -1146,6 +1146,9 @@ person_reiter_waehlen:
 person_bekanntheit_umschalten:
   icon: user-check
   label: knowledge.list.persons.known_toggle_title
+person_namensfolge_umschalten:
+  icon: arrow_up_down
+  label: knowledge.list.persons.namen_toggle_title
 ki_antworten_klappen:
   icon: chevron_right
   label: knowledge.list.replies.title

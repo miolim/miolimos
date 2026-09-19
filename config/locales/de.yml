@@ -986,6 +986,7 @@ de:
         loading: "Version wird geladen …"
     chip:
       unlink: "Verbindung lösen"
+      pick_add: "%{label} hinzufügen"        # #1672: war hartkodiert
       unlink_short: "Lösen"
     index_title:    "Wissen"
     new:            "Neues Wissen"
@@ -2306,6 +2307,7 @@ de:
     color: "Farbe"
     description_placeholder: "Beschreibung …"
     items_with_tag_title: "Einträge mit Tag '%{tag}'"
+    items_with_tag: "Einträge mit diesem Tag"    # #1672
     tag_label: "Tag: %{tag}"
     tasks_heading: "Aufgaben (%{count})"
     knowledge_heading: "Wissen (%{count})"
@@ -2536,6 +2538,7 @@ de:
     purpose: "Verwendungszweck"
     purpose_placeholder: "z. B. Rechnung 2026-014"
     save_iban: "IBAN bei %{name} hinterlegen"
+    save_iban_short: "IBAN hinterlegen"          # #1672
     scan_hint: "In der Banking-App „Überweisung per Foto/QR\" wählen und scannen."
   task_comments:
     draft: "Entwurf"

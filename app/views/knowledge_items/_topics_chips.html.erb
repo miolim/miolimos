@@ -5,7 +5,7 @@
     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">
       <%= topic_dot topic %>
       <%= topic.name %>
-      <%= button_to knowledge_item_topic_path(knowledge_item_uuid: item.uuid, id: topic.slug),
+      <%= ui_button_to :ki_thema_loesen, knowledge_item_topic_path(knowledge_item_uuid: item.uuid, id: topic.slug),
             method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
             title: t("knowledge.chip.unlink"), "aria-label": t("knowledge.chip.unlink_short"),

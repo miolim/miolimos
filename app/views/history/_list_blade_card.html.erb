@@ -49,15 +49,15 @@
       <%# #462: Entitaets-Filter-Pills (nur geladene Typen). %>
       <% if present_types.size > 1 %>
         <div class="flex flex-wrap items-center gap-1 text-[11px]">
-          <button type="button" data-history-filter-target="pill" data-type=""
-                  data-action="click->history-filter#toggle"
-                  class="px-2 py-0.5 rounded"><%= t("history.filter_all") %></button>
+          <%= ui_button :verlauf_art_filtern,
+                data: { history_filter_target: "pill", type: "", action: "click->history-filter#toggle" },
+                class: "px-2 py-0.5 rounded" do %><%= t("history.filter_all") %><% end %>
           <% present_types.each do |t| %>
-            <button type="button" data-history-filter-target="pill" data-type="<%= t %>"
-                    data-action="click->history-filter#toggle"
-                    class="px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100">
+            <%= ui_button :verlauf_art_filtern, title: (type_labels[t] || t),
+                  data: { history_filter_target: "pill", type: t, action: "click->history-filter#toggle" },
+                  class: "px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100" do %>
               <%= type_labels[t] || t %>
-            </button>
+            <% end %>
           <% end %>
         </div>
       <% end %>

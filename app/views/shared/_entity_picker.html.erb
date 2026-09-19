@@ -64,13 +64,13 @@
     <%# Icon — bleibt an derselben Position, egal ob Trigger oder
         Input aktiv ist. Click auf Icon oeffnet ebenfalls das Input. %>
     <% if leading_icon %>
-      <button type="button"
-              data-action="click->entity-picker#openInput"
-              title="<%= label_text %>"
-              class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none"
-              aria-label="<%= label_text %> hinzufuegen">
+      <%# #1672: aria-label war hartkodiert deutsch. %>
+      <%= ui_button :verknuepfung_waehlen, title: label_text,
+            "aria-label": t("knowledge.chip.pick_add", label: label_text),
+            data: { action: "click->entity-picker#openInput" },
+            class: "shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none" do %>
         <%= icon leading_icon %>
-      </button>
+      <% end %>
       <%# #603 R4: Label erscheint beim Zeilen-Hover (statt trägem Tooltip). %>
       <% if icon_only %>
         <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 shrink-0 select-none"><%= label_text %></span>
@@ -83,12 +83,11 @@
         verspringen nicht. Bei icon_only (#559) entfällt der Text-Trigger
         ganz — das Icon ist der einzige Öffner. %>
     <% unless icon_only %>
-      <button type="button"
-              data-action="click->entity-picker#openInput"
-              data-entity-picker-target="trigger"
-              class="px-1 py-0.5 border border-transparent leading-snug text-sm text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent">
+      <%= ui_button :verknuepfung_waehlen, title: label_text,
+            data: { action: "click->entity-picker#openInput", entity_picker_target: "trigger" },
+            class: "px-1 py-0.5 border border-transparent leading-snug text-sm text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent" do %>
         <%= label_text %>
-      </button>
+      <% end %>
     <% end %>
 
     <%# Input-Box: erscheint nach Klick. Wenn offen, ist der Trigger

@@ -22,7 +22,7 @@
           <span class="text-xs text-slate-400 shrink-0">
             <%= t("knowledge.list.trash.deleted_ago", ago: time_ago_in_words(k.deleted_at)) %>
           </span>
-          <%= button_to t("knowledge.list.trash.restore"), restore_knowledge_item_path(uuid: k.uuid),
+          <%= ui_button_to :ki_wiederherstellen, restore_knowledge_item_path(uuid: k.uuid),
                 method: :post,
                 form: { class: "inline m-0 p-0" },
                 class: "text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer bg-transparent border-0" %>

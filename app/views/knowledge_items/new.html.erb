@@ -62,9 +62,9 @@
     </div>
 
     <div class="flex gap-2">
-      <%= f.submit t("actions.create"),
+      <%= ui_button :ki_anlegen_absenden, type: :submit,
             class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
-      <%= link_to t("actions.cancel"), knowledge_items_path,
+      <%= ui_link :ki_anlegen_abbrechen, knowledge_items_path,
             class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
     </div>
   <% end %>

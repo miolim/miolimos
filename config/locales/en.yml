@@ -982,6 +982,7 @@ en:
         loading: "Loading version …"
     chip:
       unlink: "Unlink"
+      pick_add: "Add %{label}"               # #1672: was hardcoded
       unlink_short: "Unlink"
     index_title:    "Knowledge"
     new:            "New knowledge"
@@ -2279,6 +2280,7 @@ en:
     color: "Color"
     description_placeholder: "Description …"
     items_with_tag_title: "Items with tag '%{tag}'"
+    items_with_tag: "Items with this tag"        # #1672
     tag_label: "Tag: %{tag}"
     tasks_heading: "Tasks (%{count})"
     knowledge_heading: "Knowledge (%{count})"
@@ -2509,6 +2511,7 @@ en:
     purpose: "Reference"
     purpose_placeholder: "e.g. Invoice 2026-014"
     save_iban: "Store IBAN for %{name}"
+    save_iban_short: "Store IBAN"                # #1672
     scan_hint: "In your banking app, choose „Transfer by photo/QR\" and scan."
   task_comments:
     draft: "Draft"

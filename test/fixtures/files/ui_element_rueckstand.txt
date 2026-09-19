@@ -10,17 +10,4 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 13 Dateien, 18 Bedienelemente.
-app/views/giro_codes/show.html.erb
-app/views/history/_list_blade_card.html.erb
-app/views/knowledge_items/_task_mentions_chips.html.erb
-app/views/knowledge_items/_template_placeholder_bar.html.erb
-app/views/knowledge_items/_topics_chips.html.erb
-app/views/knowledge_items/_type_picker.html.erb
-app/views/knowledge_items/_version_preview.html.erb
-app/views/knowledge_items/new.html.erb
-app/views/knowledge_items/trash.html.erb
-app/views/pdf_cards/_blade_card.html.erb
-app/views/shared/_entity_picker.html.erb
-app/views/tags/_manage_row.html.erb
-app/views/tree_focus/_panel.html.erb
+# Stand: 0 Dateien, 0 Bedienelemente.

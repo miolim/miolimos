@@ -3,7 +3,7 @@
     <div class="flex items-center gap-2 mb-2">
       <span class="text-[11px] font-mono text-slate-500"><%= sha[0,8] %></span>
       <span class="ml-auto">
-        <%= button_to t("knowledge.list.version.restore"),
+        <%= ui_button_to :version_wiederherstellen,
               restore_version_knowledge_item_path(uuid: item.uuid, sha: sha),
               method: :post,
               class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700",
@@ -14,9 +14,8 @@
 
     <% if frontmatter.present? %>
       <details class="mb-2">
-        <summary class="text-[11px] uppercase tracking-wider text-slate-500 cursor-pointer">
-          <%= t("knowledge.list.version.frontmatter") %>
-        </summary>
+        <%= ui_button :version_frontmatter_klappen, tag: :summary,
+              class: "text-[11px] uppercase tracking-wider text-slate-500 cursor-pointer" %>
         <pre class="text-[11px] font-mono whitespace-pre-wrap bg-slate-50 rounded border border-slate-100 px-2 py-1 mt-1"><%= YAML.dump(frontmatter).sub(/\A---\n/, "") %></pre>
       </details>
     <% end %>

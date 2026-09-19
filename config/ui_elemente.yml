@@ -1426,3 +1426,46 @@ prompt_vorlage_speichern:
   label: actions.save
 prompt_vorlage_abbrechen:
   label: actions.cancel
+
+# ── Letzte Reste (#1672 Etappe 31) ───────────────────────────────────────
+iban_merken:
+  label: giro_codes.save_iban_short
+verlauf_art_filtern:
+  label: history.filter_all
+platzhalter_kopieren:
+  label: knowledge.template_placeholders.copy_hint
+ki_art_menue_oeffnen:
+  icon: plus_circle
+  label: knowledge.new
+ki_art_waehlen:
+  label: knowledge.new
+version_wiederherstellen:
+  label: knowledge.list.version.restore
+version_frontmatter_klappen:
+  label: knowledge.list.version.frontmatter
+ki_anlegen_absenden:
+  label: actions.create
+ki_anlegen_abbrechen:
+  label: actions.cancel
+ki_wiederherstellen:
+  label: knowledge.list.trash.restore
+pdf_im_tab_oeffnen:
+  icon: file_output
+  label: pdf_cards.open_tab
+tag_liste_oeffnen:
+  label: tags.items_with_tag
+zweck_knoten_fokussieren:
+  label: topics.focus_node
+ki_aufgabe_loesen:
+  icon: x
+  label: knowledge.chip.unlink
+ki_thema_loesen:
+  icon: x
+  label: knowledge.chip.unlink
+# Der Verknüpfungs-Picker: EIN Befehl, 25 Aufrufstellen. Was verknüpft wird
+# (Thema, Tag, Quelle, Person, Unteraufgabe …), gibt der Aufrufer als
+# Beschriftung mit — derselbe Fall wie Gruppieren/Sortieren oder die
+# Dokument-Arten. Die frühere Planung sah 25 Einträge vor; die Regel, die
+# sich über die Umstellung herausgebildet hat, sagt eindeutig einen.
+verknuepfung_waehlen:
+  label: knowledge.chip.pick_add

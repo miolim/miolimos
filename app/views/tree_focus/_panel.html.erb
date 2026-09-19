@@ -11,9 +11,9 @@
   end
   level = ancestors.size + (parent ? 1 : 0) + 1
   nav = ->(node, label_html, klass, title = nil) {
-    link_to(label_html, tree_focus_card_path(entry, focus: node.id),
+    ui_link(:zweck_knoten_fokussieren, tree_focus_card_path(entry, focus: node.id),
             data: { turbo_frame: "tree_focus_frame_#{entry.id}" },
-            class: klass, title: title)
+            class: klass, title: title) { label_html }
   }
   junctor_badge = ->(node) {
     j = node.junctor.presence || "and"

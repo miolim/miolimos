@@ -27,14 +27,10 @@
     overflow-y-auto der Blade-Card abgeschnitten wird, wenn die
     Liste kurz ist. %>
 <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
-  <button type="button"
-          data-action="click->popover#toggle"
-          title="<%= t("knowledge.new") %>"
-          aria-label="<%= t("knowledge.new") %>"
-          class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer [&_svg]:w-4 [&_svg]:h-4">
-    <%# #703 (Hans): einheitliches circle-plus-Icon zum Hinzufügen. %>
-    <%= icon "plus_circle" %>
-  </button>
+  <%# #703 (Hans): einheitliches circle-plus-Icon zum Hinzufügen. %>
+  <%= ui_button :ki_art_menue_oeffnen, size: "w-4 h-4",
+        data: { action: "click->popover#toggle" },
+        class: "p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer" %>
   <div data-popover-target="content"
        class="hidden absolute <%= popover_align %> top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-56">
     <% types.each do |type| %>
@@ -55,8 +51,8 @@
             { action: "click->blade-stack#openNewCard click->popover#close" }
           end
       %>
-      <%= link_to link_target,
-            data: link_data,
+      <%= ui_link :ki_art_waehlen, link_target,
+            title: t("knowledge.item_types.#{type}"), data: link_data,
             class: "flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
         <span class="w-5 flex justify-center text-slate-500"><%= knowledge_type_icon(type) %></span>
         <span><%= t("knowledge.item_types.#{type}") %></span>

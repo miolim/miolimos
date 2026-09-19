@@ -88,7 +88,8 @@
         nicht (so) gespeichert ist. %>
     <% if @can_save_iban %>
       <div class="mt-3">
-        <%= button_to t("giro_codes.save_iban", name: @name), giro_code_save_iban_path,
+        <%= ui_button_to :iban_merken, giro_code_save_iban_path,
+        title: t("giro_codes.save_iban", name: @name),
               params: { contact_uuid: @contact_uuid, iban: @iban, bic: @bic,
                         amount: @amount, purpose: @purpose },
               data: { turbo_frame: "giro_tool" },

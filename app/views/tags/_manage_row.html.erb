@@ -3,18 +3,15 @@
     Rechts: Inline-Editor fuer Farbe + Beschreibung, Auto-Submit an
     tags#update (PATCH). Locals: t (Tag-Name), with_icon (Bool). %>
 <li data-tag="<%= t %>" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50">
-  <button type="button"
-          data-controller="blade-link"
-          data-blade-link-kind-value="tag_list"
-          data-blade-link-id-value="<%= t %>"
-          data-action="click->blade-link#append"
-          title="<%= I18n.t("tags.items_with_tag_title", tag: t) %>"
-          class="flex items-center gap-2 min-w-0 flex-1 text-left bg-transparent border-0 cursor-pointer">
+  <%= ui_button :tag_liste_oeffnen, title: I18n.t("tags.items_with_tag_title", tag: t),
+        data: { controller: "blade-link", action: "click->blade-link#append",
+                blade_link_kind_value: "tag_list", blade_link_id_value: t },
+        class: "flex items-center gap-2 min-w-0 flex-1 text-left bg-transparent border-0 cursor-pointer" do %>
     <span class="inline-flex items-center justify-center w-4 shrink-0 <%= with_icon ? 'text-slate-500' : 'text-slate-400 text-xs' %>">
       <% if with_icon %><%= tag_icon_html(t, size: "w-4 h-4") %><% else %>#<% end %>
     </span>
     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs truncate <%= tag_color_classes(t) %>"><%= t %></span>
-  </button>
+  <% end %>
 
   <%= form_with url: tag_update_path(tag: t), method: :patch, local: false,
         data: { turbo_stream: true }, class: "flex items-center gap-1 shrink-0" do |f| %>

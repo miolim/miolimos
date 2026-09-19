@@ -52,12 +52,10 @@
       das `hidden`-Class auf dem Actions-Wrapper. %>
   <div class="flex items-center justify-end gap-2 hidden"
        data-buttons-when-filled-target="actions">
-    <button type="submit" name="as_draft" value="1"
-            class="px-3 py-1 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50 cursor-pointer"
-            title="<%= t("task_comments.save_draft_title") %>">
-      <%= t("task_comments.save_draft") %>
-    </button>
-    <%= f.submit t("task_comments.post"),
+    <%= ui_button :kommentar_entwurf_sichern, type: :submit, name: "as_draft", value: "1",
+          title: t("task_comments.save_draft_title"),
+          class: "px-3 py-1 rounded border border-slate-300 text-slate-700 text-sm hover:bg-slate-50 cursor-pointer" %>
+    <%= ui_button :kommentar_absenden, type: :submit,
           class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
   </div>
 <% end %>

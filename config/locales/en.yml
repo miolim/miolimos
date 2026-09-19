@@ -2490,6 +2490,9 @@ en:
     scan_hint: "In your banking app, choose „Transfer by photo/QR\" and scan."
   task_comments:
     draft: "Draft"
+    toggle: "Toggle comment"                    # #1672
+    thread_title: "Toggle comments"
+    older: "Toggle older comments"
     publish: "Publish"
     link_copied: "Comment link copied."
     copy_link_title: "Copy link to this comment to the clipboard"

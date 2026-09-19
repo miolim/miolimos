@@ -982,3 +982,30 @@ nutzer_bearbeiten:
   label: actions.edit
 nutzer_loeschen:
   label: actions.delete
+
+# ── Aufgaben-Kommentare (#1672 Etappe 18) ────────────────────────────────
+kommentar_klappen:
+  icon: chevron_right
+  label: task_comments.toggle
+kommentar_veroeffentlichen:
+  label: task_comments.publish
+kommentar_bearbeiten:
+  icon: pencil
+  label: actions.edit
+kommentar_loeschen:
+  icon: trash
+  label: actions.delete
+kommentar_speichern:
+  label: actions.save
+kommentar_abbrechen:
+  label: actions.cancel
+kommentar_entwurf_sichern:
+  label: task_comments.save_draft
+kommentar_absenden:
+  label: task_comments.post
+kommentare_klappen:
+  icon: chevron_right
+  label: task_comments.thread_title
+aeltere_kommentare_klappen:
+  icon: chevron_right
+  label: task_comments.older

@@ -32,10 +32,8 @@
           class="hidden absolute z-10 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
     </div>
     <div class="flex items-center gap-2 text-xs">
-      <button type="submit" class="px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-        <%= t("actions.save") %>
-      </button>
-      <%= link_to t("actions.cancel"),
+      <%= ui_button :kommentar_speichern, type: :submit, class: "px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+      <%= ui_link :kommentar_abbrechen,
             task_comment_path(comment.task, comment),
             data: { turbo_frame: "task_comment_body_#{comment.id}" },
             class: "text-slate-500 hover:text-slate-900 hover:underline" %>

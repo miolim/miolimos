@@ -2517,6 +2517,9 @@ de:
     scan_hint: "In der Banking-App „Überweisung per Foto/QR\" wählen und scannen."
   task_comments:
     draft: "Entwurf"
+    toggle: "Kommentar ein-/ausklappen"          # #1672
+    thread_title: "Kommentare ein-/ausklappen"
+    older: "Ältere Kommentare ein-/ausklappen"
     publish: "Veröffentlichen"
     link_copied: "Kommentar-Link kopiert."
     copy_link_title: "Link zum Kommentar in die Zwischenablage kopieren"

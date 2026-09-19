@@ -939,7 +939,7 @@ ki_frontmatter_klappen:
 ki_body_klappen:
   icon: chevron_right
   label: knowledge.detail.description
-ki_suchmodus_umschalten:
+suchmodus_umschalten:
   label: knowledge.detail.search_mode
 ki_highlight_filtern:
   label: knowledge.detail.highlights_filter
@@ -1049,3 +1049,57 @@ aufgabe_loeschen:
   label: actions.delete
 aufgabe_wiederherstellen:
   label: tasks.trash.restore
+
+# ── Aufgaben-Detail (#1672 Etappe 20) ────────────────────────────────────
+aufgabe_beschreibung_klappen:
+  icon: chevron_right
+  label: tasks.description_label
+aufgabe_aktivitaet_klappen:
+  label: tasks.activity
+wartepunkt_aus_aufgabe_klappen:
+  label: tasks.create_awaiting
+wartepunkt_aus_aufgabe_anlegen:
+  label: tasks.new_awaiting
+aufgabe_backlinks_klappen:
+  icon: chevron_right
+  label: tasks.backlinks
+# Die Prioritaetsstufe kommt als Wert aus der Schleife — ein Eintrag.
+aufgabe_prioritaet_setzen:
+  label: tasks.priority_set
+aufgabe_erledigt_umschalten:
+  icon: check
+  label: tasks.toggle_done
+aufgabe_felder_umschalten:
+  icon: chevron_right
+  label: tasks.fields_cycle
+aufgabe_meilenstein_umschalten:
+  label: tasks.milestone
+aufgabe_speichern:
+  label: actions.save
+aufgabe_abbrechen:
+  label: actions.cancel
+aufgabe_zuweisung_umschalten:
+  label: tasks.assignee_mine
+aufgabe_status_umschalten:
+  label: tasks.status.open
+aufgabe_schnell_hinzufuegen:
+  label: tasks.add
+aufgaben_abschnitt_klappen:
+  icon: chevron_right
+  label: dashboard.agent.toggle_section
+aufgabe_veroeffentlichen:
+  icon: send
+  label: tasks.publish
+aufgabe_auf_entwurf:
+  icon: pause
+  label: tasks.to_draft
+aufgabe_antworten_klappen:
+  icon: chevron_right
+  label: tasks.replies
+aeltere_antworten_klappen:
+  icon: chevron_right
+  label: tasks.older_replies_toggle
+antwort_entwurf_sichern:
+  label: tasks.reply_save_draft
+antwort_senden:
+  label: tasks.reply_send

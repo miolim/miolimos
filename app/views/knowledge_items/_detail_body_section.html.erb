@@ -70,7 +70,7 @@
           data: { action: "click->reply-search#forceSearch" },
           class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
     <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
-    <%= ui_button :ki_suchmodus_umschalten,
+    <%= ui_button :suchmodus_umschalten,
           data: { reply_search_target: "mode", action: "click->reply-search#cycleMode" },
           class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5" do %><% end %>
     <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>

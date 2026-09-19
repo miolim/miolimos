@@ -102,7 +102,7 @@
         arbeitet, bekommt die Checkbox einen kraeftigen emerald-Rahmen
         statt slate-300. Sichtbar in der Liste auf einen Blick: „dran". %>
     <% wip_active = task.wip_actor_id.present? && !task.done? %>
-    <%= button_to toggle_done_task_path(task, topic_slug: topic&.slug),
+    <%= ui_button_to :aufgabe_erledigt_umschalten, toggle_done_task_path(task, topic_slug: topic&.slug),
           method: :post,
           form: { class: "inline shrink-0 m-0 p-0 leading-none" },
           class: "w-4 h-4 rounded flex items-center justify-center p-0 cursor-pointer
@@ -186,7 +186,7 @@
                   data: { action: "click->commitment-collapse#toggle" },
                   class: "p-0.5 rounded #{meta[:color]} bg-transparent border-0 cursor-pointer" %>
           <% else %>
-            <%= button_to set_commitment_task_path(task, commitment: meta[:key]),
+            <%= ui_button_to :"zusage_setzen_#{meta[:key]}", set_commitment_task_path(task, commitment: meta[:key]),
                   method: :post,
                   form: { class: "inline-flex m-0 p-0 leading-none",
                           data: { turbo_stream: true, commitment_collapse_target: "inactive" } },

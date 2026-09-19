@@ -23,7 +23,7 @@
             action: "input->task-template-picker#fetch focus->task-template-picker#fetch keydown->task-template-picker#keydown blur->task-template-picker#blur"
           },
           class: "flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
-    <%= f.submit t("tasks.add"), class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+    <%= ui_button :aufgabe_schnell_hinzufuegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
   <ul data-task-template-picker-target="list"
       class="hidden absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>

@@ -7,7 +7,7 @@
 <details class="space-y-2 group">
   <%# #603 (Hans): Trigger-Look wie die übrigen Picker — kein dauerhaft
       sichtbarer Eingabeschlitz; Klick klappt die Dialog-Form auf. %>
-  <summary class="cursor-pointer list-none" title="<%= t("tasks.create_awaiting") %>">
+  <%= ui_button :wartepunkt_aus_aufgabe_klappen, tag: :summary, class: "cursor-pointer list-none" do %>
     <%# #603 R4: Hover hebt die Zeile hervor + zeigt den Text; min-h-7
         gegen Höhen-Springen. %>
     <div class="group/erow min-h-7 flex items-center gap-3 text-xs rounded px-1.5 -mx-1.5 hover:bg-slate-50">
@@ -16,7 +16,7 @@
       </span>
       <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 select-none"><%= t("tasks.create_awaiting") %></span>
     </div>
-  </summary>
+  <% end %>
   <%= form_with url: create_awaiting_task_path(task), method: :post, local: true,
         class: "pl-6 space-y-2" do |f| %>
     <div>
@@ -29,7 +29,7 @@
       <%= f.date_field :follow_up_at, value: (Date.today + 7),
             class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
     </div>
-    <%= f.submit t("tasks.new_awaiting"),
+    <%= ui_button :wartepunkt_aus_aufgabe_anlegen, type: :submit,
           class: "text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
   <% end %>
 </details>

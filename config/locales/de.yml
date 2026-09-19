@@ -268,6 +268,12 @@ de:
       back_to_tasks: "Zurück zu Aufgaben"
       restore: "Wiederherstellen"
     no_longer_next_step: "Nicht mehr nächster Schritt"
+    backlinks: "Verweise auf diese Aufgabe"          # #1672
+    older_replies_toggle: "Ältere Antworten ein-/ausklappen"
+    toggle_done: "Erledigt umschalten"
+    priority_set: "Priorität setzen"
+    milestone_add: "Als Meilenstein in die Kunden-Roadmap aufnehmen"    # #1672: war hartkodiert
+    milestone_remove: "Meilenstein — aus der Kunden-Roadmap entfernen"
     set_next_step: "Als nächsten Schritt setzen"                   # #1672: war hartkodiert
     set_next_step_for: "Als nächsten Schritt für %{topic} setzen"
     index_title:      "Aufgaben"

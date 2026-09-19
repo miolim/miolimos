@@ -76,9 +76,9 @@
             <%= form_with model: task, url: task_path(task), method: :patch, local: false,
                   class: "inline-flex m-0 p-0 leading-none" do |f| %>
               <%= f.hidden_field :priority, value: key %>
-              <button type="submit" title="<%= t("tasks.priority.#{key}") %>"
-                      class="w-5 h-5 rounded border text-[11px] tabular-nums leading-none cursor-pointer
-                             <%= active ? active_cls : 'border-slate-200 text-slate-400 hover:bg-slate-50' %>"><%= num %></button>
+              <%= ui_button :aufgabe_prioritaet_setzen, type: :submit,
+                    title: t("tasks.priority.#{key}"),
+                    class: "w-5 h-5 rounded border text-[11px] tabular-nums leading-none cursor-pointer #{active ? active_cls : 'border-slate-200 text-slate-400 hover:bg-slate-50'}" do %><%= num %><% end %>
             <% end %>
           <% end %>
         </span>

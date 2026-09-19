@@ -21,9 +21,9 @@
   <%# #589 R5: grauer Titelbalken wie bei den übrigen Chevron-Sections
       (bleibt opak, weil sticky über dem scrollenden Text). %>
   <div class="sticky top-9 z-10 bg-slate-50 flex items-center gap-2 px-3 py-1.5 rounded-t border-b border-slate-100">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="flex items-center gap-2 text-left text-xs text-slate-600 hover:text-slate-900 shrink-0 cursor-pointer">
+    <%= ui_button :aufgabe_antworten_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "flex items-center gap-2 text-left text-xs text-slate-600 hover:text-slate-900 shrink-0 cursor-pointer" do %>
       <span data-disclosure-target="icon"
             class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
@@ -35,7 +35,7 @@
       <span id="task_replies_count_<%= task.id %>" class="text-slate-400">
         <%= "· #{replies.size}" if replies.any? %>
       </span>
-    </button>
+    <% end %>
     <% if replies.any? %>
       <input type="search" placeholder="<%= t("tasks.thread_search_placeholder") %>" autocomplete="off"
              data-reply-search-target="input"
@@ -46,9 +46,9 @@
           data: { action: "click->reply-search#forceSearch" },
           class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
         <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
-      <button type="button" data-reply-search-target="mode"
-              data-action="click->reply-search#cycleMode"
-              class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+      <%= ui_button :suchmodus_umschalten,
+            data: { reply_search_target: "mode", action: "click->reply-search#cycleMode" },
+            class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5" do %><% end %>
       <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
     <% end %>
   </div>
@@ -123,14 +123,14 @@
           links, Veröffentlichen (grün) rechts, rechtsbündig. %>
       <div class="flex items-center justify-end gap-2 hidden"
            data-buttons-when-filled-target="actions">
-        <button type="submit" name="draft" value="1"
-                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 cursor-pointer">
+        <%= ui_button :antwort_entwurf_sichern, type: :submit, name: "draft", value: "1",
+              class: "inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 cursor-pointer" do %>
           <%= icon "check", size: "w-3.5 h-3.5" %><%= t("tasks.reply_save_draft") %>
-        </button>
-        <button type="submit" name="draft" value=""
-                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer">
+        <% end %>
+        <%= ui_button :antwort_senden, type: :submit, name: "draft", value: "",
+              class: "inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700 cursor-pointer" do %>
           <%= icon "send", size: "w-3.5 h-3.5" %><%= t("tasks.reply_send") %>
-        </button>
+        <% end %>
       </div>
     <% end %>
   </div>

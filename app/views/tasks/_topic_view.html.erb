@@ -23,9 +23,9 @@
            data-disclosure-storage-key-value="<%= section_storage %>"
            class="bg-white rounded border border-slate-200 overflow-hidden">
     <header class="px-4 py-2 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center gap-2">
-      <button type="button"
-              data-action="click->disclosure#toggle"
-              class="flex items-center gap-2 hover:bg-slate-100 -ml-1 px-1 py-0.5 rounded">
+      <%= ui_button :aufgaben_abschnitt_klappen,
+            data: { action: "click->disclosure#toggle" },
+            class: "flex items-center gap-2 hover:bg-slate-100 -ml-1 px-1 py-0.5 rounded" do %>
         <span data-disclosure-target="icon"
               class="inline-block transition-transform <%= 'rotate-90' if expanded_default %> text-slate-400">
           <%= icon "chevron_right" %>
@@ -34,7 +34,7 @@
           <%= topic_dot topic %>
         <% end %>
         <h2 class="font-medium text-slate-900"><%= section_title %></h2>
-      </button>
+      <% end %>
       <span class="text-xs text-slate-500"
             data-controller="list-count"
             data-list-count-list-ids-value='<%= [section_id].to_json %>'><%= rows.size %></span>

@@ -267,6 +267,12 @@ en:
       back_to_tasks: "Back to tasks"
       restore: "Restore"
     no_longer_next_step: "No longer the next step"
+    backlinks: "Links to this task"                  # #1672
+    older_replies_toggle: "Toggle older replies"
+    toggle_done: "Toggle done"
+    priority_set: "Set priority"
+    milestone_add: "Add as a milestone to the client roadmap"           # #1672: was hardcoded
+    milestone_remove: "Milestone — remove from the client roadmap"
     set_next_step: "Set as next step"                              # #1672: was hardcoded
     set_next_step_for: "Set as next step for %{topic}"
     index_title:      "Tasks"

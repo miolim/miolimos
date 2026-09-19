@@ -40,10 +40,9 @@
          data-action="tri-disclosure:toggled->task-pickers-summary#refresh"
          data-tri-disclosure-storage-key-value="tasks.<%= task.id %>.details"
          class="border border-slate-200 rounded">
-  <button type="button"
-          data-action="click->tri-disclosure#cycle"
-          title="<%= t("tasks.fields_cycle") %>"
-          class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+  <%= ui_button :aufgabe_felder_umschalten,
+        data: { action: "click->tri-disclosure#cycle" },
+        class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
     <span data-tri-disclosure-target="icon"
           class="inline-block transition-transform text-slate-400">
       <%= icon "chevron_right" %>
@@ -65,7 +64,7 @@
           class="text-slate-400 truncate">
       <%= "· #{picker_summary}" if picker_summary %>
     </span>
-  </button>
+  <% end %>
 
   <div data-tri-disclosure-target="content"
        class="hidden px-3 pb-3 border-t border-slate-100 pt-3 space-y-3">

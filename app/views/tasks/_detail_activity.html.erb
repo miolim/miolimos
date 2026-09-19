@@ -3,9 +3,10 @@
 <% logs = task.audit_logs.includes(:actor).order(created_at: :desc).limit(10) %>
 <% if logs.any? %>
   <details class="border-t border-slate-100 pt-3 text-[13px]" <%= 'open' if local_assigns[:expanded] %>>
-    <summary class="text-xs text-slate-500 cursor-pointer list-none hover:text-slate-700">
+    <%= ui_button :aufgabe_aktivitaet_klappen, tag: :summary,
+          class: "text-xs text-slate-500 cursor-pointer list-none hover:text-slate-700" do %>
       <%= t("tasks.activity") %> (<%= logs.size %>)
-    </summary>
+    <% end %>
     <ul class="mt-2 space-y-1">
       <% logs.each do |log| %>
         <li class="text-xs text-slate-600 flex items-baseline gap-2">

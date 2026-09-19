@@ -2,11 +2,10 @@
     aktiv. Stable-ID für den Live-Replace aus tasks#toggle_milestone.
     Nur bei Aufgaben in einem Projekt (Topic mit Kunde). %>
 <% if task.topics.any?(&:project?) %>
-  <%= button_to toggle_milestone_task_path(task), method: :post,
+  <%= ui_button_to :aufgabe_meilenstein_umschalten, toggle_milestone_task_path(task), method: :post,
         form: { id: "task_milestone_btn_#{task.id}", class: "inline m-0 p-0 leading-none shrink-0",
                 data: { turbo_stream: true } },
-        title: task.client_milestone ? "Meilenstein — aus der Kunden-Roadmap entfernen"
-                                     : "Als Meilenstein in die Kunden-Roadmap aufnehmen",
+        title: task.client_milestone ? t("tasks.milestone_remove") : t("tasks.milestone_add"),
         "aria-label": t("tasks.milestone"),
         class: "p-1 rounded hover:bg-slate-100 bg-transparent border-0 cursor-pointer
                 #{task.client_milestone ? 'text-rose-600 hover:text-rose-700' : 'text-slate-500 hover:text-slate-900'}" do %>

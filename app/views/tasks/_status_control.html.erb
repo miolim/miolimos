@@ -19,20 +19,16 @@
         <%# #1010 (Hans): auch den ungespeicherten Titel mitnehmen (Blur-Save
             verliert sonst gegen das Publish-Rerender). %>
         <%= f.hidden_field :title, value: task.title %>
-        <button type="submit" data-task-publish
-                title="<%= t("tasks.publish") %>" aria-label="<%= t("tasks.publish") %>"
-                class="p-1 rounded text-emerald-600 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer shrink-0">
-          <%# #893 (Hans): gefüllt (fill) statt outline, damit „Veröffentlichen" präsenter ist — grün bleibt. %>
+        <%# #893 (Hans): gefüllt (fill) statt outline, damit „Veröffentlichen" präsenter ist — grün bleibt. %>
+        <%= ui_button :aufgabe_veroeffentlichen, type: :submit, "data-task-publish": "",
+              class: "p-1 rounded text-emerald-600 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer shrink-0" do %>
           <%= icon "send", fill: "currentColor" %>
-        </button>
+        <% end %>
       <% end %>
     <% else %>
-      <%= button_to unpublish_task_path(task), method: :post,
-            title: t("tasks.to_draft"), "aria-label": t("tasks.to_draft"),
+      <%= ui_button_to :aufgabe_auf_entwurf, unpublish_task_path(task), method: :post,
             class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0",
-            form: { class: "inline m-0 p-0" } do %>
-        <%= icon "pause" %>
-      <% end %>
+            form: { class: "inline m-0 p-0" } %>
     <% end %>
   <% end %>
 </span>

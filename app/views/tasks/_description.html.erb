@@ -28,15 +28,15 @@
          class="border border-slate-200 rounded">
   <%# #589 R5: grauer Titelbalken wie bei den übrigen Chevron-Sections. %>
   <div class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-t">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="flex items-center gap-2 text-left text-xs text-slate-600 flex-1 min-w-0 cursor-pointer">
+    <%= ui_button :aufgabe_beschreibung_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "flex items-center gap-2 text-left text-xs text-slate-600 flex-1 min-w-0 cursor-pointer" do %>
       <span data-disclosure-target="icon"
             class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
       </span>
       <span class="font-medium"><%= t("tasks.description_label") %></span>
-    </button>
+    <% end %>
     <%# #685 (Hans): Single-Section-Fokus — nur diese Beschreibung. %>
     <%= ui_button :abschnitt_fokussieren,
           "aria-label": t("tasks.focus_section_aria"),
@@ -52,9 +52,9 @@
           data: { action: "click->reply-search#forceSearch" },
           class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
         <%# #615 v3: Anzeige-Modus (Alles / ±1 / nur Treffer), rotierendes Icon. %>
-    <button type="button" data-reply-search-target="mode"
-           data-action="click->reply-search#cycleMode"
-           class="shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5"></button>
+    <%= ui_button :suchmodus_umschalten,
+          data: { reply_search_target: "mode", action: "click->reply-search#cycleMode" },
+          class: "shrink-0 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5" do %><% end %>
     <span data-reply-search-target="status" class="shrink-0 text-[11px] text-slate-400 tabular-nums"></span>
     <%# Edit-Icon im Preview-Mode. mousedown-Variante NICHT noetig hier,
         weil ein Klick auf das Pencil von ausserhalb der Textarea kommt

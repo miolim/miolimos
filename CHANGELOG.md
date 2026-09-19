@@ -36,6 +36,19 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- E-invoice amounts are consistent to the cent (#1675). XML amounts were
+  formatted via floating point (64.125 → 64.12) while the gross total used
+  decimal rounding (→ 64.13): for 0.75 h × 85.50 € the embedded XML said
+  64.12 + 12.18 but 76.31 gross, violating EN16931 BR-CO-15 — a validating
+  recipient rejects such an invoice. Line amounts are now rounded to the cent,
+  VAT is computed and rounded per rate, and PDF and XML show the same figures.
+- CAMT bank statement import no longer drops transactions (#1675): the
+  placeholder `NONREF` was treated as a unique bank reference, so only the
+  first such transaction of a statement was imported and the rest counted as
+  duplicates. The payer-chosen `EndToEndId` is no longer used as a unique
+  reference either — a standing order carries the same one every month and was
+  skipped from the second month on. Transactions imported under the old rule
+  are still recognised on re-import.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

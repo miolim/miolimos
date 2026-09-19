@@ -117,6 +117,67 @@ class Bank::ImportTest < ActiveSupport::TestCase
     assert_equal 2, zweite.skipped, "der erneute Import erkennt beide als Duplikat"
   end
 
+  # #1675: Deutsche Banken schreiben in <AcctSvcrRef> gern den Platzhalter
+  # NONREF. Die Ausnahmeliste kannte nur NOTPROVIDED — alle NONREF-Umsätze
+  # bekamen denselben Fingerabdruck „ref:NONREF", der erste wurde importiert,
+  # die übrigen galten als Dubletten („1 importiert, 40 übersprungen").
+  def camt_mit(*eintraege)
+    ntry = eintraege.map do |e|
+      ref = e[:ref] ? "<AcctSvcrRef>#{e[:ref]}</AcctSvcrRef>" : ""
+      e2e = e[:e2e] ? "<Refs><EndToEndId>#{e[:e2e]}</EndToEndId></Refs>" : ""
+      <<~N
+        <Ntry>
+          <Amt Ccy="EUR">#{e[:betrag]}</Amt><CdtDbtInd>CRDT</CdtDbtInd>
+          <BookgDt><Dt>#{e[:am]}</Dt></BookgDt>#{ref}
+          <NtryDtls><TxDtls>#{e2e}<RmtInf><Ustrd>#{e[:zweck]}</Ustrd></RmtInf></TxDtls></NtryDtls>
+        </Ntry>
+      N
+    end.join
+    <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">
+        <BkToCstmrStmt><Stmt>#{ntry}</Stmt></BkToCstmrStmt>
+      </Document>
+    XML
+  end
+
+  test "CAMT: der Platzhalter NONREF ist keine Referenz — jeder Umsatz zaehlt" do
+    auszug = camt_mit({ ref: "NONREF", betrag: "850.00", am: "2026-03-02", zweck: "Miete Meier" },
+                      { ref: "NONREF", betrag: "920.00", am: "2026-03-02", zweck: "Miete Schulz" },
+                      { ref: "nonref", betrag: "40.00",  am: "2026-03-03", zweck: "Nachzahlung" })
+    erste = Bank::Import.call(@konto, auszug)
+    assert_equal 3, erste.imported, "drei Umsätze — NONREF hat zwei davon verschluckt"
+    assert_equal 0, erste.skipped
+
+    zweite = Bank::Import.call(@konto, auszug)
+    assert_equal [0, 3], [zweite.imported, zweite.skipped], "der Doppelimport bleibt erkannt"
+  end
+
+  # Die EndToEndId vergibt der ZAHLER. Ein Dauerauftrag trägt jeden Monat
+  # dieselbe — als „eindeutige Bankreferenz" genommen, fiel er ab dem zweiten
+  # Monat als Dublette weg.
+  test "CAMT: dieselbe EndToEndId in zwei Monaten sind zwei Umsaetze" do
+    maerz = camt_mit({ e2e: "DAUERAUFTRAG-MIETE", betrag: "850.00", am: "2026-03-02", zweck: "Miete" })
+    april = camt_mit({ e2e: "DAUERAUFTRAG-MIETE", betrag: "850.00", am: "2026-04-02", zweck: "Miete" })
+
+    assert_equal 1, Bank::Import.call(@konto, maerz).imported
+    assert_equal 1, Bank::Import.call(@konto, april).imported, "der April-Eingang wurde als Dublette verworfen"
+    assert_equal 0, Bank::Import.call(@konto, april).imported, "derselbe Auszug noch einmal bleibt eine Dublette"
+    assert_equal "DAUERAUFTRAG-MIETE", @konto.bank_transactions.last.bank_ref, "die Referenz bleibt zur Ansicht erhalten"
+  end
+
+  # Bestand aus der Zeit davor trägt den Fingerabdruck „ref:<EndToEndId>".
+  # Derselbe Auszug, neu eingelesen, darf ihn nicht ein zweites Mal anlegen.
+  test "CAMT: ein nach alter Regel importierter Umsatz wird beim Neu-Import wiedererkannt" do
+    @konto.bank_transactions.create!(booked_on: Date.new(2026, 3, 2), amount: 850, currency: "EUR",
+                                     purpose: "Miete", bank_ref: "DAUERAUFTRAG-MIETE",
+                                     fingerprint: "ref:DAUERAUFTRAG-MIETE", source: "camt")
+    maerz = camt_mit({ e2e: "DAUERAUFTRAG-MIETE", betrag: "850.00", am: "2026-03-02", zweck: "Miete" })
+
+    ergebnis = Bank::Import.call(@konto, maerz)
+    assert_equal [0, 1], [ergebnis.imported, ergebnis.skipped]
+  end
+
   # ── Auszug als Herkunft ───────────────────────────────────────────────
 
   test "der Auszug hält Zeitraum und Zählung und nimmt seine Umsätze mit" do

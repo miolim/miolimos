@@ -9,8 +9,13 @@ class InvoiceLine < ApplicationRecord
 
   scope :ordered, -> { order(:position, :id) }
 
+  # #1675: Der Positionsbetrag ist ein GELDBETRAG und wird auf Cent gerundet
+  # (kaufmännisch; BigDecimal rundet ab ,5 auf). EN16931 rechnet genau so
+  # (BT-131), und alle Summen bauen darauf auf: Vorher blieb 0,75 h × 85,50 € als
+  # 64,125 stehen — das PDF zeigte 64,13, die XML 64,12, und die Summen der
+  # e-Rechnung gingen um einen Cent nicht auf (BR-CO-15).
   def net
-    (quantity || 0) * (unit_price || 0)
+    ((quantity || 0) * (unit_price || 0)).round(2)
   end
 
   def tax_amount

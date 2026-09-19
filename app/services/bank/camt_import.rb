@@ -3,7 +3,10 @@
 # Hashes. Vorzeichen: CRDT (Gutschrift) = +Einzahlung, DBIT = −Auszahlung.
 module Bank
   class CamtImport
-    NO_REF = %w[NOTPROVIDED NOTAVAILABLE].freeze
+    # #1675: NONREF ist der Platzhalter deutscher Banken für „keine Referenz".
+    # Er fehlte hier — alle NONREF-Umsätze teilten sich einen Fingerabdruck,
+    # und ab dem zweiten galt jeder als Dublette.
+    NO_REF = %w[NOTPROVIDED NOTAVAILABLE NONREF].freeze
 
     def self.parse(xml)
       require "nokogiri"
@@ -43,7 +46,8 @@ module Bank
         purpose: (txd || n).xpath(".//RmtInf/Ustrd").map { |u| u.text.strip }.join(" ").squish.presence,
         counterparty_name: find(txd, n, ".//RltdPties/#{party}/Nm", ".//#{party}/Nm"),
         counterparty_iban: find(txd, n, ".//RltdPties/#{acct}/Id/IBAN", ".//#{acct}/Id/IBAN"),
-        bank_ref: bank_ref(n, txd)
+        bank_ref: bank_ref(n, txd),
+        end_to_end_id: end_to_end_id(txd)
       }
     end
 
@@ -55,13 +59,26 @@ module Bank
       nil
     end
 
+    # Die Referenz der BANK (AcctSvcrRef) — sie ist je Umsatz eindeutig und
+    # trägt deshalb den Fingerabdruck. Ein Platzhalter auf Buchungsebene sticht
+    # eine echte Referenz in den Details nicht aus.
     def self.bank_ref(n, txd)
-      ref = n.at_xpath("./AcctSvcrRef")&.text ||
-            txd&.at_xpath(".//Refs/AcctSvcrRef")&.text ||
-            txd&.at_xpath(".//Refs/EndToEndId")&.text
-      ref = ref.to_s.strip
-      return nil if ref.blank? || NO_REF.include?(ref.upcase)
-      ref
+      [n.at_xpath("./AcctSvcrRef")&.text, txd&.at_xpath(".//Refs/AcctSvcrRef")&.text]
+        .map { |r| echte_referenz(r) }.compact.first
+    end
+
+    # #1675: Die EndToEndId vergibt der ZAHLER — ein Dauerauftrag trägt jeden
+    # Monat dieselbe. Sie stand oben als letzter Rückfall in bank_ref und wurde
+    # damit zur „eindeutigen" Referenz: Ab dem zweiten Monat fiel der Eingang
+    # als Dublette weg. Jetzt eigenes Feld, nur noch zur Ansicht und zum
+    # Wiedererkennen von Bestand (Bank::Import#alt_importiert?).
+    def self.end_to_end_id(txd)
+      echte_referenz(txd&.at_xpath(".//Refs/EndToEndId")&.text)
+    end
+
+    def self.echte_referenz(raw)
+      ref = raw.to_s.strip
+      ref unless ref.blank? || NO_REF.include?(ref.upcase)
     end
 
     # #1337: über Bank::Datum, wie CSV und PDF auch. Ein gelesenes Datum wird

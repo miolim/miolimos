@@ -122,7 +122,11 @@ class Invoice < ApplicationRecord
 
   # ── Beträge ───────────────────────────────────────────────────────────
   def net_total   = invoice_lines.sum(&:net)
-  def tax_total   = vat_exempt? ? 0 : invoice_lines.sum(&:tax_amount)
+  # #1675: Die Steuer entsteht JE STEUERSATZ aus dem Gruppen-Netto und wird dort
+  # auf Cent gerundet (EN16931 BR-CO-17); die Gesamtsteuer ist die Summe dieser
+  # Gruppen (BR-CO-14). Vorher wurde je Position ungerundet gerechnet und erst
+  # das Brutto gerundet — Netto + Steuer ergaben dann nicht immer das Brutto.
+  def tax_total   = tax_breakdown.sum { |g| g[:tax] }
 
   # #1434 (aus immoos #1195 übernommen): Brutto ist ein GELDBETRAG und wird
   # auf Cent gerundet.
@@ -142,7 +146,7 @@ class Invoice < ApplicationRecord
     return [] if vat_exempt?
     invoice_lines.group_by { |l| l.tax_rate || 0 }.map do |rate, lines|
       net = lines.sum(&:net)
-      { rate: rate, net: net, tax: net * rate / 100 }
+      { rate: rate, net: net, tax: (net * rate / 100).round(2) }
     end.sort_by { |g| g[:rate] }
   end
 

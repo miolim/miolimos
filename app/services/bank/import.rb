@@ -164,13 +164,17 @@ module Bank
 
       booked = []
       rows.each do |r|
+        if alt_importiert?(r)
+          skipped += 1
+          next
+        end
         fp = fingerprint(r, seen)
         rec = @ledger.bank_transactions.build(
           booked_on: r[:booked_on], value_date: r[:value_date], amount: r[:amount],
           currency: r[:currency].presence || "EUR", purpose: r[:purpose],
           counterparty_name: r[:counterparty_name],
           counterparty_iban: r[:counterparty_iban].to_s.gsub(/\s+/, "").upcase.presence,
-          bank_ref: r[:bank_ref], fingerprint: fp, source: fmt
+          bank_ref: r[:bank_ref].presence || r[:end_to_end_id], fingerprint: fp, source: fmt
         )
         begin
           if rec.save
@@ -206,6 +210,17 @@ module Bank
     # Nummer bei mehreren identischen Umsätzen innerhalb desselben Auszugs (so
     # dass ein erneuter Import derselben Datei deterministisch dieselben
     # Fingerprints erzeugt → alle als Duplikat erkannt).
+    # #1675: Bis dahin trug ein CAMT-Umsatz ohne Bankreferenz den Fingerabdruck
+    # „ref:<EndToEndId>". Seit die EndToEndId nicht mehr als eindeutig gilt,
+    # bekäme derselbe Umsatz beim Neu-Import einen Hash-Fingerabdruck — und
+    # stünde doppelt im Konto. Bestand nach alter Regel wird deshalb an
+    # Referenz + Tag + Betrag wiedererkannt.
+    def alt_importiert?(r)
+      return false if r[:bank_ref].present? || r[:end_to_end_id].blank?
+      @ledger.bank_transactions.exists?(fingerprint: "ref:#{r[:end_to_end_id]}",
+                                        booked_on: r[:booked_on], amount: r[:amount])
+    end
+
     def fingerprint(r, seen)
       if r[:bank_ref].present?
         "ref:#{r[:bank_ref]}"

@@ -70,7 +70,9 @@ class ZugferdGenerator
     c.to_s.length == 2 ? c.to_s.upcase : "DE"
   end
 
-  def self.dec(v) = format("%.2f", v.to_f)
+  # #1675: über BigDecimal runden, NICHT über Fließkomma — `format("%.2f", 64.125)`
+  # ergibt "64.12" (der Float liegt knapp darunter), die Dezimalrechnung 64,13.
+  def self.dec(v) = format("%.2f", v.to_d.round(2))
 
   def self.run(args, payload)
     # #541: BR-CO-26 — ohne USt-IdNr ODER Steuernummer kann der Käufer den

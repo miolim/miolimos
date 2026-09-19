@@ -95,9 +95,16 @@ module PrintableResource
     load_printable
     @field = params[:field].to_s
     value  = params[:value].to_s.strip
+    # #1677 (aus immoOS #1661): Findet die Suche nichts, legt derselbe Griff an —
+    # der Aussteller vorbelegt als Organisation, der Empfänger als Person.
+    neu = params[:create_with].to_s.strip
     case @field
-    when "issuer"    then @printable.update!(issuer_uuid:    resolve_ki(value, issuer_link_scope))
-    when "recipient" then @printable.update!(recipient_uuid: resolve_ki(value, KnowledgeItem.persons_and_orgs))
+    when "issuer"
+      uuid = neu.present? ? person_anlegen(neu, :organization)&.uuid : resolve_ki(value, issuer_link_scope)
+      @printable.update!(issuer_uuid: uuid)
+    when "recipient"
+      uuid = neu.present? ? person_anlegen(neu, :person)&.uuid : resolve_ki(value, KnowledgeItem.persons_and_orgs)
+      @printable.update!(recipient_uuid: uuid)
     # #1675: nur in ein Thema, in dem der Nutzer Inhalte ablegen darf.
     when "topic"     then @printable.update!(topic_id:       (find_visible_topic!(value, write: true).id if value.present?))
     else

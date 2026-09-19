@@ -23,12 +23,20 @@
                          placeholder
       - create_label   — z.B. "Thema anlegen"
       - allow_create   — optional, default true
+      - create_types   — optional, Arten, die neu angelegt werden dürfen
+                         (#1677, aus immoOS #1661): ["person"],
+                         ["organization"] oder beide. Die erste ist die
+                         Vorbelegung. Leer = wie bisher (eine Anlege-Zeile).
       - icon           — optional Name eines Icons in shared/icons
       - chips_position — IGNORIERT (#389-Refactor); nur fuer
                          Rueckwaertskompat im Aufruferssignatur
 %>
 <%
   allow_create = local_assigns.fetch(:allow_create, true)
+  # #1677 (aus immoOS #1661; Hans dort: „Nachfrage mit Schalter … und
+  # entsprechendem Default je nach Feld."): eine eigene Zeile je Art in der
+  # Vorschlagsliste — ein Klick statt Umschalten und Bestätigen.
+  create_types = Array(local_assigns[:create_types]).presence
   leading_icon = local_assigns[:icon]
   label_text   = local_assigns[:label].presence || placeholder
   # #559 (Hans): close_after_pick = Einzelwert-Picker schließen nach Auswahl;
@@ -51,6 +59,8 @@
      data-entity-picker-param-name-value="<%= param_name %>"
      data-entity-picker-create-label-value="<%= create_label %>"
      data-entity-picker-allow-create-value="<%= allow_create %>"
+     <%= tag.attributes("data-entity-picker-create-types-value": create_types.to_json) if create_types %>
+     data-entity-picker-typ-labels-value="<%= { "person" => t("kontakt_anlegen.person"), "organization" => t("kontakt_anlegen.organisation") }.to_json %>"
      data-entity-picker-close-after-pick-value="<%= close_after_pick %>">
 
   <%# #603 R4 (Hans): ganze Zeile klickbar + Hover zeigt den Label-Text

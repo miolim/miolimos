@@ -41,6 +41,33 @@ class PersonKiResolver
     end
   end
 
+  # #1677 (aus immoOS #1661 übernommen; Hans dort): „Können alle Stellen, wo Personen ausgewählt werden, so
+  # gebaut werden, dass dort auch neue Personen angelegt werden?"
+  #
+  # DIE Stelle, an der aus einem getippten Namen ein Eintrag wird. Vorher stand
+  # die Namenszerlegung dreimal im Programm (Aufgaben-Kontakte,
+  # Wissens-Kontakte, hier) — leicht unterschiedlich, was dazu führte, dass
+  # dieselbe Eingabe je nach Feld anders zerlegt wurde.
+  #
+  # Bei einer PERSON wird der letzte Wortteil zum Nachnamen, der Rest zum
+  # Vornamen („Anna Maria Bergmann" → „Anna Maria" / „Bergmann"). Eine
+  # ORGANISATION bekommt den Text als Titel und keine Namensteile — „Stadtwerke
+  # Eutin GmbH" hat keinen Nachnamen.
+  def self.aus_text!(text, item_type:, actor:)
+    titel = text.to_s.strip
+    return nil if titel.empty?
+
+    art = item_type.to_s == "organization" ? :organization : :person
+    item = FileProxy.create(actor: actor, title: titel, item_type: art, content: "")
+    return item unless art == :person
+
+    teile = titel.split(/\s+/)
+    vorname = teile.size > 1 ? teile[0..-2].join(" ") : nil
+    nachname = teile.last
+    item.update!(first_name: vorname, last_name: nachname) if vorname || nachname
+    item
+  end
+
   # Lookup ohne Anlage — gibt nil zurück, wenn kein Person/Org-KI mit
   # dem Slug existiert. Vergleich per parameterize gegen die Title-
   # Variante; das ist O(n), wird aber selten aufgerufen (nur beim

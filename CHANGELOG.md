@@ -15,6 +15,16 @@ _Changes landing on `main` but not yet released are collected here. When a
 release is cut, this section is renamed to the new version and a fresh
 `Unreleased` is started — see [docs/releasing.md](docs/releasing.md)._
 
+### Added
+
+- Contacts can be created right where they are picked (#1677, from immoOS
+  #1661). When the search finds nobody, the picker offers “create as person”
+  and “create as organization”; the default follows the field — issuer of a
+  document or invoice and customer of a topic default to an organization,
+  the recipient to a person. A person's name is split into first and last
+  name in one place now (it used to be done slightly differently in three);
+  an organization never gets name parts.
+
 ## [0.6.0] - 2026-09-19
 
 ### Added

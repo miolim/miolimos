@@ -22,6 +22,8 @@ import AutocompleteBase from "controllers/autocomplete_base"
 export default class extends AutocompleteBase {
   static targets = ["input", "list", "trigger", "inputBox"]
   static values = {
+    createTypes: Array,
+    typLabels: Object,
     url:         String,
     addUrl:      String,
     paramName:   { type: String, default: "target_id" },
@@ -96,7 +98,11 @@ export default class extends AutocompleteBase {
 
     let items = this.suggestions
     if (q && !exact && this.allowCreateValue) {
-      items = items.concat([{ _create: true, label: q }])
+      // #1677 (aus immoOS #1661): Gibt das Feld Arten vor, bekommt jede eine eigene Zeile —
+      // „als Person anlegen" / „als Organisation anlegen". Ohne Vorgabe
+      // bleibt es bei der einen Zeile wie bisher.
+      const arten = this.hasCreateTypesValue && this.createTypesValue.length ? this.createTypesValue : [null]
+      items = items.concat(arten.map((art) => ({ _create: true, label: q, art: art })))
     }
 
     if (items.length === 0) { this.close(); return }
@@ -110,8 +116,11 @@ export default class extends AutocompleteBase {
   renderItem(item, isActive) {
     const cls = isActive ? "bg-emerald-50 text-emerald-900" : "hover:bg-slate-50"
     if (item._create) {
+      const zusatz = item.art && this.hasTypLabelsValue
+        ? this.typLabelsValue[item.art] || this.createLabelValue
+        : this.createLabelValue
       return `<li class="px-3 py-1.5 text-sm cursor-pointer border-t border-slate-100 ${cls}">
-        <span class="text-emerald-700">+</span> &quot;${this.escapeHtml(item.label)}&quot; ${this.escapeHtml(this.createLabelValue)}
+        <span class="text-emerald-700">+</span> &quot;${this.escapeHtml(item.label)}&quot; ${this.escapeHtml(zusatz)}
       </li>`
     }
     return `<li class="px-3 py-1.5 text-sm cursor-pointer ${cls}">
@@ -151,6 +160,7 @@ export default class extends AutocompleteBase {
     const body = new URLSearchParams()
     if (item._create) {
       body.set("create_with", item.label)
+      if (item.art) body.set("create_type", item.art)
     } else if (item.slug) {
       body.set(this.paramNameValue, item.slug)
     } else if (item.id) {

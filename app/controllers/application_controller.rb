@@ -80,6 +80,22 @@ class ApplicationController < ActionController::Base
     Current.actor = current_actor
   end
 
+  # #1677 (aus immoOS #1661 übernommen; Hans dort): „Können alle Stellen, wo
+  # Personen ausgewählt werden, so gebaut werden, dass dort auch neue Personen
+  # angelegt werden?"
+  #
+  # Der Griff, den alle Auswahlfelder benutzen. `art` ist die Vorbelegung des
+  # Feldes (Aussteller → Organisation, Empfänger → Person); der Picker darf sie
+  # überschreiben (`create_type`). Fehlt das Recht, Wissens-Einträge anzulegen,
+  # gibt es nil statt einer Fehlerseite — der Aufrufer behandelt das wie „nicht
+  # gefunden".
+  def person_anlegen(text, art)
+    PersonKiResolver.aus_text!(text, item_type: params[:create_type].presence || art,
+                                     actor: Current.actor)
+  rescue AccessGate::Unauthorized
+    nil
+  end
+
   # #1675: DIE Stelle, an der ein Controller ein Eltern- oder Zielobjekt aus
   # der URL holt (`/tasks/:task_id/replies`, `predecessor_id=…`). Vorher stand
   # in rund einem Dutzend verschachtelter Controller je ein eigenes

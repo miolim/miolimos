@@ -40,7 +40,8 @@
           chips_locals: { printable: invoice, field: "issuer", record: invoice.issuer },
           suggest_url: suggest_links_invoices_path(kind: "issuer", direction: invoice.direction),
           add_url: link_invoice_path(invoice, field: "issuer"),
-          param_name: "value", create_label: "", allow_create: false %>
+          param_name: "value", create_label: t("kontakt_anlegen.person"),
+          allow_create: true, create_types: %w[organization person] %>
   </div>
 
   <%# — Empfänger — %>
@@ -52,7 +53,8 @@
           chips_locals: { printable: invoice, field: "recipient", record: invoice.recipient },
           suggest_url: suggest_links_invoices_path(kind: "recipient"),
           add_url: link_invoice_path(invoice, field: "recipient"),
-          param_name: "value", create_label: "", allow_create: false %>
+          param_name: "value", create_label: t("kontakt_anlegen.person"),
+          allow_create: true, create_types: %w[person organization] %>
   </div>
 
   <%# #694 (Hans): Anschrift wählen, wenn der Empfänger MEHRERE Postadressen

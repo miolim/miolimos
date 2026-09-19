@@ -535,6 +535,11 @@ en:
     title:    "PDF"
     beleg:    "Document"
     open_tab: "Open in browser tab"
+  # #1677 (from immoOS #1661): create contacts where you pick them — the create
+  # rows of the pickers ("Emma" create as person / … organization).
+  kontakt_anlegen:
+    person: "create as person"
+    organisation: "create as organization"
   knowledge:
     # #849 (adopted from immoos): tab bar on the person/org detail.
     person_tabs:

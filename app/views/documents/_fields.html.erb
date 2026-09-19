@@ -41,7 +41,8 @@
           chips_locals: { printable: document, field: "issuer", record: document.issuer },
           suggest_url: suggest_links_documents_path(kind: "issuer"),
           add_url: link_document_path(document, field: "issuer"),
-          param_name: "value", create_label: "", allow_create: false %>
+          param_name: "value", create_label: t("kontakt_anlegen.person"),
+          allow_create: true, create_types: %w[organization person] %>
   </div>
 
   <%# — Empfänger / Empfangender — %>
@@ -53,7 +54,8 @@
           chips_locals: { printable: document, field: "recipient", record: document.recipient },
           suggest_url: suggest_links_documents_path(kind: "recipient"),
           add_url: link_document_path(document, field: "recipient"),
-          param_name: "value", create_label: "", allow_create: false %>
+          param_name: "value", create_label: t("kontakt_anlegen.person"),
+          allow_create: true, create_types: %w[person organization] %>
   </div>
 
   <%# #1171 (aus immoOS #1069): optionale Kurzform fürs Anschriftfeld

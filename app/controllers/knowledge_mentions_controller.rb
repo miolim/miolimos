@@ -26,17 +26,9 @@ class KnowledgeMentionsController < ApplicationController
 
   def resolve_mention_from_params
     if (text = params[:create_with].to_s.strip).present?
-      parts = text.split(/\s+/)
-      first = parts.size > 1 ? parts[0..-2].join(" ") : nil
-      last  = parts.last
-      ki = FileProxy.create(
-        actor:     Current.actor,
-        title:     text,
-        item_type: :person,
-        content:   ""
-      )
-      ki.update!(first_name: first, last_name: last) if first || last
-      ki
+      # #1677 (aus immoOS #1661): eine Stelle für alle — PersonKiResolver.aus_text!
+      PersonKiResolver.aus_text!(text, item_type: params[:create_type].presence || :person,
+                                       actor: Current.actor)
     else
       raw = params.require(:mentioned_uuid)
       # #1675: auch das ZIEL muss der Nutzer sehen dürfen.

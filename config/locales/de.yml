@@ -539,6 +539,11 @@ de:
     title:    "PDF"
     beleg:    "Beleg"
     open_tab: "Im Browser-Tab öffnen"
+  # #1677 (aus immoOS #1661): Kontakte dort anlegen, wo man sie auswählt — die
+  # Anlege-Zeilen der Auswahlfelder („Emma" als Person anlegen / … Organisation).
+  kontakt_anlegen:
+    person: "als Person anlegen"
+    organisation: "als Organisation anlegen"
   knowledge:
     # #849 (aus immoos übernommen): Tab-Leiste am Person/Org-Detail.
     person_tabs:

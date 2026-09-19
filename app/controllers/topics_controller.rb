@@ -337,7 +337,10 @@ class TopicsController < ApplicationController
   # #566: Kunde (Person/Org-KI) zuordnen — leerer value löst die Zuordnung.
   # Antwort ersetzt Chip + Topic-Blade (Portal-Sektion erscheint/verschwindet).
   def set_customer
-    @topic.update!(customer_uuid: params[:value].presence)
+    # #1677 (aus immoOS #1661): Ein Kunde, den es noch nicht gibt, entsteht
+    # hier — vorbelegt als Organisation, denn Kunden sind meist Firmen.
+    neu = params[:create_with].to_s.strip
+    @topic.update!(customer_uuid: neu.present? ? person_anlegen(neu, :organization)&.uuid : params[:value].presence)
     # #571: das Eigenschaften-Blade komplett neu rendern — Chip UND
     # Kundenportal-Sektion (erscheint/verschwindet mit der Zuordnung) leben
     # beide dort.

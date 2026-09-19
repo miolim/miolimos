@@ -1,4 +1,6 @@
 class Settings::AgentsController < Settings::BaseController
+  # #1675: Agenten verwalten nur Admins — siehe Settings::BaseController.
+  before_action :require_admin!
   before_action :set_agent, only: [:show, :edit, :update, :destroy,
                                     :trigger_inbox_run,
                                     :issue_token, :revoke_token]

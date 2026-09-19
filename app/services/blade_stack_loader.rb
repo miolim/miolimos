@@ -291,13 +291,17 @@ class BladeStackLoader
       elsif kind == :settings_page
         # #613: kein DB-Record — gegen die Seiten-Registry validieren;
         # record traegt das Anzeige-Label.
+        # #1675: Seiten, die der Nutzer nicht sehen darf, fallen leise raus —
+        # sonst umginge ein ?stack=settings:agents den Card-Endpoint.
         spec = Settings::BladesController::PAGES[id]
-        spec && Item.new(kind: :settings_page, id: id, record: spec[:label], meta: meta)
+        spec && Settings::BladesController.page_visible?(id, actor) &&
+          Item.new(kind: :settings_page, id: id, record: spec[:label], meta: meta)
       elsif kind == :settings_sub
         # #613 Stufe 2: Seite muss bekannt sein; Existenz des Records
         # prüft das selbst-ladende Partial (verschwundene leise raus).
-        page = id.split(":", 2).first
+        page, sub = id.split(":", 2)
         Settings::BladesController::PAGES.key?(page) &&
+          Settings::BladesController.sub_visible?(page, sub, actor) &&
           Item.new(kind: :settings_sub, id: id, record: id, meta: meta)
       else
         rec = records[kind][id]

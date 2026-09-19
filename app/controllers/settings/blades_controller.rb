@@ -14,7 +14,7 @@ class Settings::BladesController < Settings::BaseController
   PAGES = {
     "accounts"         => { label: "Accounts",         resource: "OauthCredential", icon: "mail" },
     "users"            => { label: "Benutzer",         resource: "Actor",           icon: "user" },
-    "agents"           => { label: "Agenten",          resource: "Actor",           icon: "bot" },
+    "agents"           => { label: "Agenten",          resource: "Actor",           icon: "bot", admin: true },
     "teams"            => { label: "Teams",            resource: "Team",            icon: "users" },
     "templates"        => { label: "Themen-Vorlagen",  resource: "Topic",           icon: "folder" },
     "task_templates"   => { label: "Aufgabenvorlagen", resource: "Actor",           icon: "check" },
@@ -34,9 +34,28 @@ class Settings::BladesController < Settings::BaseController
     "internetmarke"    => { label: "Frankierung",      resource: "Actor",           icon: "mail" }
   }.freeze
 
+  # #1675: DIE eine Stelle für „darf dieser Nutzer diese Einstellungs-Seite
+  # sehen?" — gefragt vom Card-Endpoint hier, vom Stack-Restore
+  # (BladeStackLoader) und von der Bereichs-Liste. Seiten mit `admin: true`
+  # gehören Admins. Das Recht „Actor" taugt dafür nicht, das hat jeder Mensch.
+  def self.page_visible?(page, actor)
+    spec = PAGES[page.to_s] or return false
+    !spec[:admin] || actor&.admin? || false
+  end
+
+  # Unterseiten erben die Regel ihrer Seite. Sonderfall Benutzer: Die Seite
+  # sehen alle (mit sich selbst darin), aber ein fremdes Profil oder „neu"
+  # öffnet nur ein Admin.
+  def self.sub_visible?(page, sub, actor)
+    return false unless page_visible?(page, actor)
+    return true  unless page.to_s == "users"
+    actor&.admin? || sub.to_s == "#{actor&.id}:edit"
+  end
+
   def card
     @page = params[:page].to_s
     @spec = PAGES[@page] or raise ActiveRecord::RecordNotFound
+    require_admin! unless self.class.page_visible?(@page, current_actor)
     loader = "load_#{@page}"
     send(loader) if respond_to?(loader, true)
     render partial: "settings/blades/card",
@@ -48,6 +67,7 @@ class Settings::BladesController < Settings::BaseController
   def sub_card
     @page = params[:page].to_s
     raise ActiveRecord::RecordNotFound unless PAGES.key?(@page)
+    require_admin! unless self.class.sub_visible?(@page, params[:sub], current_actor)
     render partial: "settings/blades/sub_card",
            locals: { page: @page, sub: params[:sub].to_s }, layout: false
   end

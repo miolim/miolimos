@@ -36,6 +36,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- **Security:** Settings → Users and Settings → Agents are now reserved for
+  admins (#1675). Both only checked the `Actor` capability, which every human
+  user holds — so a member or guest could issue an API token for any agent
+  (agents see everything), change an admin's e-mail address and take the
+  account over via password reset, or create, deactivate and delete users.
+  Everyone can still edit their own profile (name, e-mail, password); role
+  and active flag are admin-only. The rule also holds for cards restored from
+  a `?stack=` URL. Installations with non-admin users should upgrade.
 - A full knowledge index run (Settings → Knowledge import after a successful
   import, `rake knowledge:reindex`) no longer treats replies without an export
   file as orphans. Replies migrated from task comments never had a file, and the

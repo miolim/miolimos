@@ -5,10 +5,13 @@
     <header class="px-4 py-2 border-b border-slate-200 flex items-center justify-between">
       <h1 class="font-semibold"><%= t("settings.users.title") %></h1>
       <%# #613 St.2: als Blade statt Einzelfenster. %>
+      <%# #1675: Nutzer anlegen ist Admin-Sache; Nicht-Admins sehen hier nur ihr eigenes Profil. %>
+      <% if current_actor&.admin? %>
       <%= ui_button :nutzer_anlegen,
             data: { controller: "blade-link", action: "click->blade-link#append",
                     blade_link_kind_value: "settings_sub", blade_link_id_value: "users:new" },
             class: "text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 border-0 cursor-pointer" %>
+      <% end %>
     </header>
 
     <% if @users.empty? %>

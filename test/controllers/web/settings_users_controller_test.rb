@@ -2,9 +2,11 @@ require "test_helper"
 
 class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
   setup do
+    # #1675: Benutzer verwalten ist Admin-Sache — der Verwalter hier ist einer.
+    # Was Nicht-Admins (nicht) dürfen: settings_admin_only_1675_test.rb.
     @hans = HumanActor.create!(
       name: "Hans", email: "hans-su-#{SecureRandom.hex(3)}@t.local",
-      password: "secretsecret"
+      password: "secretsecret", role: :admin
     )
     grant(@hans, "Actor", %w[read create update delete])
     post "/login", params: { email: @hans.email, password: "secretsecret" }
@@ -75,10 +77,11 @@ class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not_equal old_digest, user.reload.password_digest
   end
 
-  # Der Kern der Änderung. `@hans` ist hier bewusst KEIN Admin — er hat volle
-  # Actor-Rechte, und genau die reichten vorher aus.
+  # Der Kern von #1520. `@hans` ist hier bewusst KEIN Admin — er hat volle
+  # Actor-Rechte, und genau die reichten vorher aus. #1675: Seither wird der
+  # ganze Vorgang abgewiesen (403), nicht nur das Passwortfeld.
   test "PATCH update: ohne Admin-Recht bleibt das fremde Passwort stehen" do
-    assert_not @hans.admin?, "Vorbedingung: der Nutzer ist Member mit vollen Actor-Rechten"
+    @hans.update!(role: :member)
     user = HumanActor.create!(
       name: "User", email: "kein-#{SecureRandom.hex(3)}@t.local",
       password: "originalpass"
@@ -89,26 +92,29 @@ class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
       human_actor: { name: user.name, email: user.email, password: "differentpass" }
     }
 
-    assert_redirected_to "/settings/users"
-    assert_equal I18n.t("settings.users.password_admin_only"), flash[:alert]
+    assert_response :forbidden
     assert_equal old_digest, user.reload.password_digest,
                  "das Passwort darf sich nicht geändert haben"
     assert user.authenticate("originalpass"), "und das alte muss weiter gelten"
   end
 
-  # Abgewiesen wird das PASSWORT, nicht der ganze Vorgang: Wer Benutzer
-  # verwalten darf, darf weiter Namen und Adresse pflegen. Hans hat genau
-  # eine Sache genannt — die Grenze steht hier, damit sie nicht unbemerkt
-  # weiter wandert.
-  test "PATCH update: die übrigen Felder bleiben auch ohne Admin-Recht änderbar" do
+  # #1520 hielt hier fest: „Abgewiesen wird das PASSWORT, nicht der ganze
+  # Vorgang — die übrigen Felder bleiben auch ohne Admin-Recht änderbar."
+  # #1675 (Hans, 19.09.2026) nimmt das zurück: Über das Feld E-Mail lief
+  # dieselbe Konto-Übernahme, nur einen Schritt länger (Adresse ändern, dann
+  # „Passwort vergessen"). Umgedreht statt gelöscht — wie schon sein Vorgänger.
+  test "PATCH update: ohne Admin-Recht sind auch die übrigen Felder eines anderen tabu" do
+    @hans.update!(role: :member)
     user = HumanActor.create!(
       name: "User", email: "feld-#{SecureRandom.hex(3)}@t.local",
       password: "originalpass"
     )
     patch "/settings/users/#{user.id}", params: {
-      human_actor: { name: "Umbenannt", email: user.email, password: "" }
+      human_actor: { name: "Umbenannt", email: "uebernahme@t.local", password: "" }
     }
-    assert_equal "Umbenannt", user.reload.name
+    assert_response :forbidden
+    assert_equal "User", user.reload.name
+    refute_equal "uebernahme@t.local", user.email
   end
 
   # Das eigene Passwort bleibt hier möglich — gebunden ist das Passwort

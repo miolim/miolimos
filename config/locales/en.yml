@@ -1126,6 +1126,7 @@ en:
 
   settings:
     title:       "Settings"
+    admin_only:  "This part of the settings is reserved for admins."
     pages:
       accounts:         "Accounts"
       users:            "Users"

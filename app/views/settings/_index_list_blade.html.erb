@@ -22,6 +22,8 @@
     </header>
     <ul class="divide-y divide-slate-100 text-[13px]">
       <% Settings::BladesController::PAGES.each do |key, spec| %>
+        <%# #1675: Admin-Bereiche stehen Nicht-Admins gar nicht erst zur Wahl. %>
+        <% next unless Settings::BladesController.page_visible?(key, current_actor) %>
         <li class="group hover:bg-slate-50 flex items-center">
           <%= ui_button :einstellungsseite_oeffnen, title: spec[:title],
                 data: { controller: "blade-link", action: "click->blade-link#append",

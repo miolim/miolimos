@@ -27,6 +27,10 @@
   <%# #602 S1/S3: System-Rolle — Admin sieht alles, Mitglied nur seine
       Themen (Mitgliedschaft / intern öffentlich / Eigenes), Gast sieht
       wie ein Mitglied, kann in seinen Themen aber NUR LESEN. %>
+  <%# #1675: Rolle und Aktiv-Status vergibt nur ein Admin — im eigenen Profil
+      eines Mitglieds stehen die Felder gar nicht erst (der Controller nähme
+      sie ohnehin nicht an). %>
+  <% if current_actor&.admin? %>
   <div>
     <%= f.label :role, t("settings.user_form.role_label"), class: "block text-xs text-slate-600 mb-1" %>
     <%= f.select :role,
@@ -39,6 +43,7 @@
     <%= f.check_box :active %>
     <%= f.label :active, t("settings.user_form.active_label"), class: "text-xs text-slate-600" %>
   </div>
+  <% end %>
 
   <div class="flex gap-2">
     <%= ui_button :nutzer_speichern, type: :submit,

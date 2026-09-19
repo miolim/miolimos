@@ -12,8 +12,10 @@ module Settings::BladeLoaders
     @credentials = OauthCredential.includes(:actor).order(:email_address)
   end
 
+  # #1675: Nicht-Admins sehen hier nur sich selbst (ihr Profil) — die
+  # Nutzerliste samt Adressen ist Verwaltung.
   def load_users
-    @users = HumanActor.order(:name)
+    @users = current_actor&.admin? ? HumanActor.order(:name) : HumanActor.where(id: current_actor&.id)
   end
 
   def load_agents

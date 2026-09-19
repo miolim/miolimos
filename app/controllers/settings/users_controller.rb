@@ -1,5 +1,8 @@
 class Settings::UsersController < Settings::BaseController
   before_action :set_user, only: [:edit, :update, :destroy, :reset_two_factor]
+  # #1675: Benutzer verwalten nur Admins. Ausnahme ist das EIGENE Profil
+  # (Name, E-Mail, Passwort) — das pflegt jeder selbst.
+  before_action :require_admin!, unless: :eigenes_profil?
 
   # #613: Einstellungen sind ein Blade-Stack — die alte Reiter-URL
   # leitet auf den Stack mit geöffnetem Bereichs-Blade.
@@ -82,11 +85,16 @@ class Settings::UsersController < Settings::BaseController
     @user = HumanActor.find(params[:id])
   end
 
+  # Nur edit/update am eigenen Datensatz — nie new/create/destroy.
+  def eigenes_profil?
+    action_name.in?(%w[edit update]) && @user.present? && @user == current_actor
+  end
+
   def user_params
-    permitted = [:name, :email, :password, :active]
+    permitted = [:name, :email, :password]
     # #602 S1: Rolle darf nur ein Admin vergeben — sonst könnte sich ein
-    # Mitglied selbst zum Admin machen.
-    permitted << :role if current_actor&.admin?
+    # Mitglied selbst zum Admin machen. #1675: dasselbe für den Aktiv-Status.
+    permitted += [:role, :active] if current_actor&.admin?
     params.require(:human_actor).permit(*permitted)
   end
 end

@@ -474,6 +474,48 @@ module ApplicationHelper
   # wegen eines fehlenden Katalogeintrags gar nicht mehr aufgeht, wäre der
   # schlechtere Tausch.
   def ui_button(schluessel, tag: :button, size: "w-5 h-5", stroke: 1.5, **html_options, &block)
+    eintrag, attrs, beschriftung = ui_element!(schluessel, html_options)
+    attrs[:type] = "button" if tag.to_sym == :button && !attrs.key?(:type)
+
+    content_tag(tag, ui_inhalt(eintrag, beschriftung, size, stroke, &block), attrs)
+  end
+
+  # #1672 (Hans): „Es wäre einfach gut und richtig, alles gleich zu behandeln;
+  # damit man nicht jedes Mal zu überlegen braucht."
+  #
+  # Die drei Helfer unten sind DERSELBE Katalog für die übrigen Bauformen. Die
+  # Bauformen werden dabei ausdrücklich NICHT verschmolzen — sie unterscheiden
+  # sich darin, ob und wie beim Klick eine Anfrage rausgeht, und das will man
+  # sehen (#1669):
+  #
+  #   ui_button     <button>/<summary>  — gar keine Anfrage, nur im Browser
+  #   ui_button_to  button_to           — ändert etwas (eigenes Formular, CSRF)
+  #   ui_link       link_to             — ruft eine Seite auf, verlinkbar
+  #
+  # Ein Knopf zum Absenden eines Formulars braucht KEINEN eigenen Helfer:
+  # `ui_button :kennung, type: :submit, form: "…"` ist genau das, und ein
+  # vierter Eingang wäre nur ein zweiter Name für dieselbe Sache.
+
+  # Ein Knopf, der etwas ändert — mit eigenem Formular (Rails baut es).
+  def ui_button_to(schluessel, url, size: "w-5 h-5", stroke: 1.5, **html_options, &block)
+    eintrag, attrs, beschriftung = ui_element!(schluessel, html_options)
+    inhalt = ui_inhalt(eintrag, beschriftung, size, stroke, &block)
+
+    button_to(url, attrs) { inhalt }
+  end
+
+  # Ein Link, der wie ein Bedienelement auftritt (Seitenaufruf, verlinkbar).
+  def ui_link(schluessel, url, size: "w-5 h-5", stroke: 1.5, **html_options, &block)
+    eintrag, attrs, beschriftung = ui_element!(schluessel, html_options)
+
+    link_to(url, attrs) { ui_inhalt(eintrag, beschriftung, size, stroke, &block) }
+  end
+
+  # Katalog-Eintrag + die gemeinsamen Attribute. Nur fuer die drei Helfer oben. Unbekannte Kennung: Fehler in
+  # Entwicklung und Test (kann nicht ausgeliefert werden), in der Produktion nur
+  # eine Meldung im Protokoll — eine Card, die wegen eines fehlenden Eintrags
+  # gar nicht mehr aufgeht, wäre der schlechtere Tausch.
+  def ui_element!(schluessel, html_options)
     eintrag = UiElemente[schluessel]
     unless eintrag
       unless Rails.env.production?
@@ -492,10 +534,18 @@ module ApplicationHelper
       "aria-label": html_options.delete(:"aria-label").presence || beschriftung,
       "data-ui-icon": schluessel.to_s
     }.merge(html_options)
-    attrs[:type] = "button" if tag.to_sym == :button && !attrs.key?(:type)
 
-    inhalt = block ? capture(&block) : icon(eintrag[:icon], size: size, stroke: stroke)
-    content_tag(tag, inhalt, attrs)
+    [eintrag, attrs, beschriftung]
+  end
+
+  # Was im Bedienelement steht. Ein Eintrag OHNE Symbol trägt seinen Namen als
+  # Text — so kommen auch die beschrifteten Befehle in denselben Katalog, ohne
+  # dass man ihnen ein Symbol andichten müsste.
+  def ui_inhalt(eintrag, beschriftung, size, stroke, &block)
+    return capture(&block) if block
+    return icon(eintrag[:icon], size: size, stroke: stroke) if eintrag[:icon].present?
+
+    beschriftung
   end
 
   def icon(name, size: "w-5 h-5", stroke: 1.5, **html_options)

@@ -19,7 +19,64 @@ class UiButtonPruefung
     (rohe_stellen(quelle) + offene_button_to(quelle)).uniq.sort
   end
 
-  def self.rohe_stellen(quelle)
+  # ── #1672: alle Bedienelemente, nicht nur die namenlosen ──────────────────
+  #
+  # Hans: „Es wäre einfach gut und richtig, alles gleich zu behandeln; damit
+  # man nicht jedes Mal zu überlegen braucht."
+  #
+  # `offene_stellen` oben bleibt, was es war (der Riegel aus #1669, der schon
+  # scharf ist). Diese Methode ist der weitere Riegel: Sie findet JEDES
+  # Bedienelement ohne Kennung — auch die beschrifteten, und auch die drei
+  # Bauformen, die kein `<button>` im Quelltext sind.
+  #
+  # Die Grenze ist nicht mehr „hat es einen Namen?", sondern „steht es im
+  # Template?": Was aus INHALT entsteht (Wikilinks im Text eines Eintrags),
+  # kann kein Katalogeintrag sein — davon gibt es beliebig viele, und sie
+  # gehören dem Nutzer, nicht dem Programm.
+  def self.alle_offenen_stellen(quelle)
+    (rohe_stellen(quelle, nur_namenlose: false) +
+     offene_rails_helfer(quelle)).uniq.sort
+  end
+
+  # `button_to` / `link_to`-als-Knopf / `f.submit` — Bedienelemente, die Rails
+  # erst zur Laufzeit baut und die in der `<button>`-Suche unsichtbar sind.
+  #
+  # Ein `link_to` zählt nur, wenn es AUSSIEHT wie ein Bedienelement (Rahmen,
+  # Polsterung). Ein Link im Fließtext ist keiner — und diese Unterscheidung
+  # muss niemand abwägen, sie steht im `class`-Attribut.
+  def self.offene_rails_helfer(quelle)
+    zeilen = []
+    quelle.enum_for(:scan, /\b(button_to|link_to|f\.submit|submit_tag)\b/).each do
+      m = Regexp.last_match
+      art = m[1]
+      next if ui_helfer_davor?(quelle, m.begin(0))
+
+      aufruf = quelle[m.begin(0), 600]
+      ende = aufruf.index("%>") || aufruf.length
+      aufruf = aufruf[0...ende]
+      next if art == "link_to" && !knopfartig?(aufruf)
+
+      zeilen << quelle[0...m.begin(0)].count("\n") + 1
+    end
+    zeilen
+  end
+
+  # `ui_button_to` und `ui_link` enthalten `button_to`/`link_to` nicht als
+  # Text — aber der Aufruf `ui_link :x` steht im Template, und die Suche oben
+  # trifft ihn nicht. Diese Prüfung fängt nur den Fall ab, dass jemand den
+  # Helfer-Namen schreibt und die Regex auf dem Teilwort anschlägt.
+  def self.ui_helfer_davor?(quelle, pos)
+    pos >= 3 && quelle[pos - 3, 3] == "ui_"
+  end
+
+  # Sieht der Link aus wie ein Bedienelement? Rahmen oder Polsterung im class.
+  def self.knopfartig?(aufruf)
+    klasse = aufruf[/class:\s*(["'])(.*?)\1/m, 2] ||
+             aufruf[/class=(["'])(.*?)\1/m, 2] || ""
+    klasse.match?(/\brounded\b|\bp-[0-9]|\bpx-[0-9]|\bpy-[0-9]|\bborder\b/)
+  end
+
+  def self.rohe_stellen(quelle, nur_namenlose: true)
     quelle.enum_for(:scan, /<(button|summary)\b/).filter_map do
       m = Regexp.last_match
       art = m[1]
@@ -31,7 +88,7 @@ class UiButtonPruefung
       next unless schluss
 
       inhalt = quelle[(ende + 1)...schluss]
-      next unless ohne_namen?(attribute, inhalt)
+      next unless nur_namenlose ? ohne_namen?(attribute, inhalt) : ohne_kennung?(attribute, inhalt)
 
       quelle[0...m.begin(0)].count("\n") + 1
     end
@@ -76,6 +133,12 @@ class UiButtonPruefung
 
   # Bestandsname aus der Zeit, als nur Bild-Symbole zählten.
   singleton_class.send(:alias_method, :nur_symbol?, :ohne_namen?)
+
+  # #1672: JEDES Bedienelement braucht eine Kennung — ob es seinen Namen trägt
+  # oder nicht, ist keine Frage mehr, die jemand beantworten muss.
+  def self.ohne_kennung?(attribute, inhalt)
+    ANSPRECHBAR.none? { |a| attribute.include?(a) } && !inhalt.include?("ui_icon")
+  end
 
   # Die Symbol-Ausgabe heraus, den REST ansehen.
   def self.beschriftungsrest(inhalt)

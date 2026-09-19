@@ -62,4 +62,50 @@ class ApplicationHelperTest < ActionView::TestCase
     # keine ungeschützte all-breakpoint Variante mehr am Label
     assert_no_match(/sidebar:hidden(?!:)/, html.gsub("sidebar:md:hidden", ""))
   end
+
+  # ── #1672: derselbe Katalog für die übrigen Bauformen ────────────────────
+  #
+  # Die Bauformen bleiben getrennt (sie unterscheiden sich darin, ob und wie
+  # eine Anfrage rausgeht); vereinheitlicht ist die Namensseite.
+
+  test "ui_button nimmt Symbol und Beschriftung aus dem Katalog" do
+    html = ui_button(:karte_schliessen)
+    assert_includes html, 'data-ui-icon="karte_schliessen"'
+    assert_includes html, I18n.t("shared.close_button.close_card")
+    assert_includes html, "<svg"
+  end
+
+  test "ui_button_to baut einen Knopf mit eigenem Formular" do
+    html = ui_button_to(:karte_schliessen, "/irgendwo", method: :delete)
+    assert_includes html, "<form"
+    assert_includes html, 'data-ui-icon="karte_schliessen"'
+    assert_includes html, I18n.t("shared.close_button.close_card")
+  end
+
+  test "ui_link baut einen Link mit Kennung" do
+    html = ui_link(:karte_schliessen, "/irgendwo", class: "px-2 rounded")
+    assert_includes html, "<a "
+    assert_includes html, 'href="/irgendwo"'
+    assert_includes html, 'data-ui-icon="karte_schliessen"'
+  end
+
+  # Ein Eintrag OHNE Symbol trägt seinen Namen als Text — so kommen auch die
+  # beschrifteten Befehle in denselben Katalog, ohne dass man ihnen ein Symbol
+  # andichten müsste.
+  test "ein Eintrag ohne Symbol rendert seine Beschriftung als Text" do
+    datei = Rails.root.join("config/ui_elemente.helper_test.yml")
+    File.write(datei, { "nur_beschriftet_test" => { "label" => "actions.save" } }.to_yaml)
+    UiElemente.neu_laden!
+
+    html = ui_button(:nur_beschriftet_test)
+    assert_includes html, I18n.t("actions.save")
+    assert_not_includes html, "<svg"
+  ensure
+    File.delete(datei) if datei && File.exist?(datei)
+    UiElemente.neu_laden!
+  end
+
+  test "eine unbekannte Kennung ist im Test ein Fehler" do
+    assert_raises(UiElemente::Unbekannt) { ui_button(:gibt_es_nicht_12345) }
+  end
 end

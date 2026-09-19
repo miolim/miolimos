@@ -50,4 +50,43 @@ class UiButtonWachterTest < ActiveSupport::TestCase
                  "Diese Dateien sind umgestellt — bitte aus " \
                  "test/fixtures/files/ui_button_rueckstand.txt streichen:\n  #{erledigt.join("\n  ")}"
   end
+
+  # ── #1672: derselbe Riegel, aber für ALLE Bedienelemente ─────────────────
+  #
+  # Hans: „Es wäre einfach gut und richtig, alles gleich zu behandeln; damit
+  # man nicht jedes Mal zu überlegen braucht."
+  #
+  # Der Riegel oben bleibt bestehen und ist schärfer: Er verbietet namenlose
+  # Knöpfe auch in Dateien, die unten noch im Rückstand stehen. So kann der
+  # Altbestand abgearbeitet werden, ohne dass die schon gewonnene Zusage
+  # aufweicht.
+  ALLE_RUECKSTAND = File.readlines(Rails.root.join("test/fixtures/files/ui_element_rueckstand.txt"),
+                                   chomp: true).reject { |z| z.blank? || z.start_with?("#") }.freeze
+
+  def alle_stellen(pfad) = UiButtonPruefung.alle_offenen_stellen(File.read(pfad))
+
+  test "#1672: kein neues Bedienelement ohne Kennung" do
+    offen = {}
+    Dir.glob(Rails.root.join("app/views/**/*.erb")).sort.each do |pfad|
+      relativ = Pathname.new(pfad).relative_path_from(Rails.root).to_s
+      zeilen = alle_stellen(pfad)
+      offen[relativ] = zeilen if zeilen.any? && !ALLE_RUECKSTAND.include?(relativ)
+    end
+
+    assert_empty offen,
+                 "Bedienelemente ohne Kennung (bitte ui_button / ui_button_to / ui_link " \
+                 "verwenden, Katalog: config/ui_elemente.yml):\n" +
+                 offen.map { |datei, zeilen| "  #{datei}: Zeile #{zeilen.join(', ')}" }.join("\n")
+  end
+
+  test "#1672: der Rückstand enthält keine erledigten Dateien" do
+    erledigt = ALLE_RUECKSTAND.select do |relativ|
+      pfad = Rails.root.join(relativ)
+      pfad.exist? && alle_stellen(pfad).empty?
+    end
+
+    assert_empty erledigt,
+                 "Diese Dateien sind umgestellt — bitte aus " \
+                 "test/fixtures/files/ui_element_rueckstand.txt streichen:\n  #{erledigt.join("\n  ")}"
+  end
 end

@@ -103,4 +103,54 @@ class UiButtonPruefungTest < ActiveSupport::TestCase
     quelle = %(<%= button_to t("actions.save"), topic_path(t) %>)
     assert_empty offen(quelle)
   end
+
+  # ── #1672: der weitere Riegel — ALLE Bedienelemente ──────────────────────
+  #
+  # Hans: „alles gleich behandeln … damit man nicht jedes Mal zu überlegen
+  # braucht." Die Grenze ist nicht mehr „hat es einen Namen?", sondern „steht
+  # es im Template?".
+  def alle(quelle) = UiButtonPruefung.alle_offenen_stellen(quelle)
+
+  test "ein beschrifteter Knopf braucht jetzt auch eine Kennung" do
+    assert_equal [1], alle(%(<button type="submit">Speichern</button>))
+  end
+
+  test "mit Kennung ist auch der beschriftete Knopf in Ordnung" do
+    assert_empty alle(%(<button data-ui-icon="ki_speichern">Speichern</button>))
+  end
+
+  test "button_to zählt, egal wie es beschriftet ist" do
+    assert_equal [1], alle(%(<%= button_to t("actions.delete"), topic_path(t), method: :delete %>))
+  end
+
+  test "f.submit und submit_tag zählen ebenfalls" do
+    assert_equal [1], alle(%(<%= f.submit t("actions.save") %>))
+    assert_equal [1], alle(%(<%= submit_tag t("actions.save") %>))
+  end
+
+  # Ein Link ist nur dann ein Bedienelement, wenn er wie eines AUSSIEHT. Das
+  # steht im class-Attribut und muss nicht abgewogen werden.
+  test "ein link_to, das wie ein Knopf gestaltet ist, zählt" do
+    quelle = %(<%= link_to t("a.b"), pfad, class: "px-2 py-1 rounded border" %>)
+    assert_equal [1], alle(quelle)
+  end
+
+  test "ein Link im Fließtext zählt nicht" do
+    assert_empty alle(%(<%= link_to t("a.b"), pfad, class: "text-emerald-700 underline" %>))
+    assert_empty alle(%(<%= link_to t("a.b"), pfad %>))
+  end
+
+  # Die Helfer selbst dürfen nicht auf sich anschlagen.
+  test "die Helfer schlagen nicht auf sich selbst an" do
+    assert_empty alle(%(<%= ui_button_to :gliederung_loeschen, pfad, method: :delete %>))
+    assert_empty alle(%(<%= ui_link :thema_oeffnen, pfad, class: "px-2 rounded" %>))
+  end
+
+  # Der Riegel aus #1669 bleibt der schärfere: Er greift auch dort, wo der
+  # weitere noch Rückstand erlaubt.
+  test "der alte Riegel bleibt auf die namenlosen beschränkt" do
+    quelle = %(<button type="submit">Speichern</button>)
+    assert_empty offen(quelle), "beschriftet — für #1669 kein Fall"
+    assert_equal [1], alle(quelle), "für #1672 schon"
+  end
 end

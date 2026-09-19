@@ -15,8 +15,12 @@ class UiElementeTest < ActiveSupport::TestCase
   test "jedes Symbol des Katalogs existiert, jede Beschriftung in beiden Sprachen" do
     UiElemente.elemente.each do |schluessel, eintrag|
       assert_match UiElemente::SCHLUESSEL_RE, schluessel
-      pfad = Rails.root.join("app/views/shared/icons/_#{eintrag[:icon]}.html.erb")
-      assert pfad.exist?, "#{schluessel}: Symbol #{eintrag[:icon]} gibt es nicht"
+      # #1672: Ein Eintrag OHNE Symbol ist erlaubt — ein beschrifteter Befehl
+      # trägt seinen Namen als Text. Nur wer ein Symbol nennt, muss eines haben.
+      if eintrag[:icon].present?
+        pfad = Rails.root.join("app/views/shared/icons/_#{eintrag[:icon]}.html.erb")
+        assert pfad.exist?, "#{schluessel}: Symbol #{eintrag[:icon]} gibt es nicht"
+      end
       assert I18n.exists?(eintrag[:label], :de), "#{schluessel}: Beschriftung #{eintrag[:label]} fehlt in de.yml"
       assert I18n.exists?(eintrag[:label], :en), "#{schluessel}: Beschriftung #{eintrag[:label]} fehlt in en.yml"
     end

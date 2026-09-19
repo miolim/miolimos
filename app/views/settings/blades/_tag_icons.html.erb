@@ -29,15 +29,10 @@
       </template>
 
       <div class="flex items-center gap-2 mt-4">
-        <button type="button"
-                data-action="click->rows-editor#add"
-                class="text-xs px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer">
-          <%= t("settings.tag_icons.add_row") %>
-        </button>
-        <button type="submit"
-                class="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-          <%= t("settings.tag_icons.save") %>
-        </button>
+        <%= ui_button :tag_symbol_zeile_hinzufuegen, data: { action: "click->rows-editor#add" },
+              class: "text-xs px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer" %>
+        <%= ui_button :tag_symbole_speichern, type: :submit,
+              class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
         <span class="text-xs text-slate-500 ml-2">
           <%= t("settings.tag_icons.empty_hint") %>
         </span>

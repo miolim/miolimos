@@ -11,8 +11,8 @@
     <nav class="flex items-center gap-0.5 text-xs ml-2">
       <% [["", t("settings.llm.filter_all")], ["queued", t("settings.llm.filter_queued")], ["running", t("settings.llm.filter_running")], ["succeeded", t("settings.llm.filter_succeeded")], ["failed", t("settings.llm.filter_failed")]].each do |key, label| %>
         <% c = @counts_by_status[key].to_i %>
-        <%= link_to settings_blade_path("llm_activities", status: key.presence, kind: @kind_filter),
-              data: { turbo_frame: "llm_activities_blade_frame" },
+        <%= ui_link :llm_status_filtern, settings_blade_path("llm_activities", status: key.presence, kind: @kind_filter),
+              title: label, data: { turbo_frame: "llm_activities_blade_frame" },
               class: "px-2 py-0.5 rounded #{@status_filter.to_s == key ? 'font-medium text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}" do %>
           <%= label %><% if c > 0 %><span class="text-slate-400">&nbsp;(<%= c %>)</span><% end %>
         <% end %>
@@ -41,10 +41,10 @@
       <% @activities.each do |a| %>
         <li class="px-3 py-2 hover:bg-slate-50 flex items-center gap-3">
           <%# #613 St.2: Detail als Blade statt Einzelfenster. %>
-          <button type="button" data-controller="blade-link"
-                  data-blade-link-kind-value="settings_sub" data-blade-link-id-value="llm_activities:<%= a.id %>"
-                  data-action="click->blade-link#append"
-                  class="flex items-center gap-3 flex-1 min-w-0 text-left text-slate-900 bg-transparent border-0 cursor-pointer p-0">
+          <%= ui_button :llm_aktivitaet_oeffnen,
+                data: { controller: "blade-link", action: "click->blade-link#append",
+                        blade_link_kind_value: "settings_sub", blade_link_id_value: "llm_activities:#{a.id}" },
+                class: "flex items-center gap-3 flex-1 min-w-0 text-left text-slate-900 bg-transparent border-0 cursor-pointer p-0" do %>
           <% if true # Block-Ende des früheren link_to-do bleibt gepaart %>
             <%# Status-Pill %>
             <%
@@ -71,7 +71,7 @@
               <%= compact_age(a.created_at) %>
             </span>
           <% end %>
-          </button>
+          <% end %>
         </li>
       <% end %>
     </ul>

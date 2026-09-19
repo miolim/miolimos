@@ -58,9 +58,10 @@
   </div>
 
   <div class="flex items-center gap-2">
-    <%= f.submit (template.persisted? ? t("actions.save") : t("actions.create")),
+    <%= ui_button :prompt_vorlage_speichern, type: :submit,
+          title: (template.persisted? ? t("actions.save") : t("actions.create")),
           class: "px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
-    <%= link_to t("actions.cancel"),
+    <%= ui_link :prompt_vorlage_abbrechen,
           (template.persisted? ? prompt_template_path(template.slug) : prompt_templates_path),
           class: "px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50" %>
   </div>

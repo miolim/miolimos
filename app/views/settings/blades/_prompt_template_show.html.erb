@@ -4,11 +4,12 @@
           class: "text-xs text-slate-500 hover:text-slate-900" %>
     <span class="ml-auto flex items-center gap-2 text-xs">
       <%# #613 St.2: Bearbeiten als Blade. %>
-      <button type="button" data-controller="blade-link"
-              data-blade-link-kind-value="settings_sub" data-blade-link-id-value="prompt_templates:<%= template.slug %>:edit"
-              data-action="click->blade-link#append"
-              class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer"><%= t("actions.edit") %></button>
-      <%= button_to t("actions.delete"), prompt_template_path(template.slug), method: :delete,
+      <%= ui_button :prompt_vorlage_bearbeiten,
+            data: { controller: "blade-link", action: "click->blade-link#append",
+                    blade_link_kind_value: "settings_sub",
+                    blade_link_id_value: "prompt_templates:#{template.slug}:edit" },
+            class: "px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer" %>
+      <%= ui_button_to :prompt_vorlage_loeschen, prompt_template_path(template.slug), method: :delete,
             class: "px-2 py-1 rounded text-rose-700 hover:bg-rose-50",
             form: { class: "inline", data: { turbo_confirm: t("settings.prompt_templates.delete_confirm") } } %>
     </span>

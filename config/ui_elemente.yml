@@ -1376,3 +1376,53 @@ posteingang_lauf_starten:
 posteingang_thema_loesen:
   icon: x
   label: knowledge.chip.unlink
+
+# ── Einstellungen: LLM, Vorlagen, Tags (#1672 Etappe 30) ────────────────
+llm_status_filtern:
+  label: settings.llm.filter_all
+llm_aktivitaet_oeffnen:
+  label: settings.llm.title
+llm_erneut_versuchen:
+  label: settings.llm.retry
+llm_eingabe_klappen:
+  label: settings.llm.input
+llm_ausgabe_klappen:
+  label: settings.llm.output
+prompt_vorlage_anlegen:
+  label: settings.prompt_templates.new_button
+prompt_vorlage_oeffnen:
+  label: settings.prompt_templates.heading
+prompt_vorlage_bearbeiten:
+  label: actions.edit
+prompt_vorlage_loeschen:
+  label: actions.delete
+beziehungsart_speichern:
+  label: actions.save
+beziehungsart_hinzufuegen:
+  label: settings.relations.add
+signatur_entfernen:
+  label: settings.signature.remove
+signatur_hochladen:
+  label: settings.signature.upload
+tag_symbol_zeile_hinzufuegen:
+  label: settings.tag_icons.add_row
+tag_symbole_speichern:
+  label: settings.tag_icons.save
+aufgabenvorlage_loeschen:
+  label: actions.delete
+aufgabenvorlage_speichern:
+  label: actions.create
+themenvorlage_anlegen:
+  label: settings.topic_templates.new_button
+aufgabenvorlage_aktualisieren:
+  label: settings.task_templates.submit_update
+nutzer_speichern:
+  label: actions.save
+nutzer_abbrechen:
+  label: actions.cancel
+zweitfaktor_zuruecksetzen:
+  label: settings.two_factor.reset
+prompt_vorlage_speichern:
+  label: actions.save
+prompt_vorlage_abbrechen:
+  label: actions.cancel

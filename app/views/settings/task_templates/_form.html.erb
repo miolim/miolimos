@@ -34,7 +34,7 @@
   <div class="flex justify-end gap-2 pt-2">
     <%= link_to t("actions.cancel"), settings_task_templates_path,
           class: "text-xs text-slate-500 hover:text-slate-900 self-center" %>
-    <%= f.submit t("settings.task_templates.submit_update"),
+    <%= ui_button :aufgabenvorlage_aktualisieren, type: :submit,
           class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
   </div>
 <% end %>

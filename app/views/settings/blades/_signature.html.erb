@@ -10,7 +10,7 @@
       <%= image_tag current_actor.signature_image, alt: t("settings.signature.alt"), style: "max-height:80px;" %>
     </div>
     <div>
-      <%= button_to t("settings.signature.remove"), settings_signature_path, method: :delete,
+      <%= ui_button_to :signatur_entfernen, settings_signature_path, method: :delete,
             form: { data: { turbo_confirm: t("settings.signature.remove_confirm") } },
             class: "text-xs px-2 py-1 rounded border border-slate-200 text-rose-600 hover:bg-rose-50 cursor-pointer" %>
     </div>
@@ -25,9 +25,7 @@
     <div class="flex items-center gap-2">
       <input type="file" name="signature" accept="image/png,image/jpeg" required
              class="text-sm">
-      <button type="submit" class="text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-        <%= t("settings.signature.upload") %>
-      </button>
+      <%= ui_button :signatur_hochladen, type: :submit, class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
     </div>
   <% end %>
 </div>

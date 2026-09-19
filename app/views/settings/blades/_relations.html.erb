@@ -46,7 +46,7 @@
                 </td>
                 <td class="px-4 py-2 text-right tabular-nums text-slate-700"><%= rt.usage_count %></td>
                 <td class="px-4 py-2 flex gap-1 justify-end">
-                  <%= f.submit t("actions.save"), class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+                  <%= ui_button :beziehungsart_speichern, type: :submit, class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
                 </td>
               <% end %>
               <td class="hidden"></td>
@@ -84,7 +84,7 @@
                 {}, class: "w-full rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:border-slate-400" %>
         </div>
         <div class="flex gap-2">
-          <%= f.submit t("settings.relations.add"),
+          <%= ui_button :beziehungsart_hinzufuegen, type: :submit,
                 class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
         </div>
       <% end %>

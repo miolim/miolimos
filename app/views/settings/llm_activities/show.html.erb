@@ -23,7 +23,7 @@
       <h2 class="font-semibold"><%= @activity.kind.humanize %></h2>
 
       <% if @activity.status == "failed" %>
-        <%= button_to t("settings.llm.retry"), retry_settings_llm_activity_path(@activity),
+        <%= ui_button_to :llm_erneut_versuchen, retry_settings_llm_activity_path(@activity),
               method: :post,
               class: "ml-auto text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
       <% end %>
@@ -94,14 +94,14 @@
 
     <% if @activity.input_summary.present? %>
       <details class="rounded border border-slate-200 bg-slate-50">
-        <summary class="px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900"><%= t("settings.llm.input") %></summary>
+        <%= ui_button :llm_eingabe_klappen, tag: :summary, class: "px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900" %>
         <pre class="px-3 pb-3 pt-1 text-xs whitespace-pre-wrap text-slate-800 max-h-96 overflow-y-auto"><%= @activity.input_summary %></pre>
       </details>
     <% end %>
 
     <% if @activity.output_summary.present? %>
       <details class="rounded border border-slate-200 bg-slate-50" open>
-        <summary class="px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900"><%= t("settings.llm.output") %></summary>
+        <%= ui_button :llm_ausgabe_klappen, tag: :summary, class: "px-3 py-1.5 text-xs cursor-pointer text-slate-600 hover:text-slate-900" %>
         <pre class="px-3 pb-3 pt-1 text-xs whitespace-pre-wrap text-slate-800 max-h-96 overflow-y-auto"><%= @activity.output_summary %></pre>
       </details>
     <% end %>

@@ -55,18 +55,13 @@
         <%# #356 (Hans, 2026-05-25): Outdent/Indent jetzt LINKS der
             Gliederungs-Pille. Outline-Editor-Ergonomie: erst Hierarchie-
             Kontrollen (Ebene hoch/runter), dann das Ziffer-Etikett. %>
-        <button type="button"
-                data-action="click->work-tree#outdent"
-                title="<%= t("topics.outdent") %>"
-                class="shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
-          <span class="font-mono text-xs leading-none">‹</span>
-        </button>
-        <button type="button"
-                data-action="click->work-tree#indent"
-                title="<%= t("topics.indent") %>"
-                class="shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
-          <span class="font-mono text-xs leading-none">›</span>
-        </button>
+        <%# #1669: war ein Zeichen-Symbol (‹) ohne Namen; jetzt echtes Chevron. %>
+        <%= ui_button :ebene_heraus, size: "w-3.5 h-3.5",
+              data: { action: "click->work-tree#outdent" },
+              class: "shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer" %>
+        <%= ui_button :ebene_tiefer, size: "w-3.5 h-3.5",
+              data: { action: "click->work-tree#indent" },
+              class: "shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-700 hover:bg-slate-100 cursor-pointer" %>
         <%# Rolle-Toggle + Gliederungspunkt-Anzeige. Heading: zeigt
             den vollen Gliederungs-Path (z.B. 1.2.3.). Content: ¶.
             Whitespace-nowrap + auto-Breite, damit lange Paths nicht
@@ -111,18 +106,14 @@
               class: "text-[10px] px-1.5 py-0.5 rounded-full border cursor-pointer whitespace-nowrap
                       #{node.junctor == 'or' ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}" do %><%= node.junctor == "or" ? "ODER" : "UND" %><% end %>
         <%# #592 Z2: Fokusansicht auf diesen Knoten öffnen (Blade). %>
-        <button type="button"
-                data-controller="blade-link"
-                data-blade-link-kind-value="tree_focus"
-                data-blade-link-id-value="<%= node.id %>"
-                data-action="click->blade-link#append"
-                title="<%= t("topics.focus_node") %>"
-                class="shrink-0 p-1 rounded text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer">
-          <%= icon "expand", size: "w-3.5 h-3.5" %>
-        </button>
+        <%= ui_button :knoten_fokussieren, size: "w-3.5 h-3.5",
+              data: { controller: "blade-link", action: "click->blade-link#append",
+                      blade_link_kind_value: "tree_focus", blade_link_id_value: node.id },
+              class: "shrink-0 p-1 rounded text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 bg-transparent border-0 cursor-pointer" %>
         <%# #592: Kind per Titel anlegen/verknüpfen. %>
         <details class="relative inline-block shrink-0">
-          <summary class="list-none px-1 text-slate-400 hover:text-emerald-700 cursor-pointer [&_svg]:w-4 [&_svg]:h-4 inline-flex" title="<%= t("topics.add_child") %>"><%= icon "plus_circle" %></summary>
+          <%= ui_button :kind_element_anlegen, tag: :summary, size: "w-4 h-4",
+                class: "list-none px-1 text-slate-400 hover:text-emerald-700 cursor-pointer inline-flex" %>
           <div class="absolute right-0 top-5 z-30 bg-white border border-slate-200 rounded shadow-lg p-2 w-56">
             <%= form_with url: topic_work_nodes_path(topic.slug), method: :post, local: false do %>
               <%= hidden_field_tag :parent_id, node.id %>
@@ -132,12 +123,9 @@
             <% end %>
           </div>
         </details>
-        <button type="button"
-                data-action="click->work-tree#remove"
-                title="<%= t("topics.remove_node") %>"
-                class="shrink-0 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer">
-          <%= icon "trash", size: "w-3.5 h-3.5" %>
-        </button>
+        <%= ui_button :knoten_entfernen, size: "w-3.5 h-3.5",
+              data: { action: "click->work-tree#remove" },
+              class: "shrink-0 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer" %>
       </div>
       <% if node.children.any? %>
         <%= render "topics/work_tree_subtree",

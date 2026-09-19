@@ -73,14 +73,14 @@
       <header class="flex items-baseline gap-2 py-1"
               style="padding-left: <%= indent_px %>px;">
         <% if can_toggle %>
-          <button type="button"
-                  data-action="click->render-node#toggle"
-                  class="shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">
+          <%= ui_button :gliederungsknoten_klappen,
+                data: { action: "click->render-node#toggle" },
+                class: "shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer" do %>
             <span data-render-node-target="icon"
                   class="inline-block transition-transform">
               <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
             </span>
-          </button>
+          <% end %>
         <% else %>
           <%# Platzhalter, damit Knoten ohne Toggle bündig mit den
               toggle-baren stehen. %>

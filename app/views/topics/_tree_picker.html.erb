@@ -17,11 +17,13 @@
         <%# #600: Baum löschen (Knoten weg, KIs bleiben) — nur am gerade
             gewählten Baum, damit die Leiste nicht voller Mülleimer hängt. %>
         <% if current_tree&.id == t.id %>
-          <%= button_to "×", topic_tree_path(topic.slug, t), method: :delete,
+          <%# #1669: war ein Zeichen-Symbol (×) ohne Namen. `button_to` geht nicht
+              durch `ui_button` — die Kennung kommt deshalb über `ui_icon`. %>
+          <%= button_to topic_tree_path(topic.slug, t), method: :delete,
                 form: { class: "inline-block m-0 p-0 leading-none ml-0.5",
                         data: { turbo_confirm: t("topics.tree_delete_confirm", name: t.display_name, count: t.nodes.count) } },
                 title: t("topics.tree_delete"),
-                class: "px-1 text-slate-400 hover:text-rose-600 cursor-pointer" %>
+                class: "px-1 text-slate-400 hover:text-rose-600 cursor-pointer" do %><%= ui_icon :gliederung_loeschen, size: "w-3.5 h-3.5" %><% end %>
         <% end %>
       </span>
     <% end %>

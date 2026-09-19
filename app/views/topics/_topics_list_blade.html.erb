@@ -40,11 +40,9 @@
         „Neues Thema"-Popover (position:fixed gegen Card-Clipping). %>
     <% add_topic = capture do %>
       <div class="relative" data-controller="popover" data-popover-fixed-value="true">
-        <button type="button" data-action="click->popover#toggle"
-                title="<%= t("topics.new_topic") %>" aria-label="<%= t("topics.new_topic") %>"
-                class="shrink-0 p-0.5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer">
-          <%= icon "plus_circle", size: "w-4 h-4" %>
-        </button>
+        <%= ui_button :thema_anlegen, size: "w-4 h-4",
+              data: { action: "click->popover#toggle" },
+              class: "shrink-0 p-0.5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer" %>
         <div data-popover-target="content"
              class="hidden absolute top-full right-0 z-30 mt-1 w-56 bg-white border border-slate-200 rounded shadow-xl p-2">
           <%= form_with url: topics_path, method: :post, local: true, class: "space-y-1.5" do |f| %>

@@ -2604,8 +2604,6 @@ de:
       close: "Meldung schließen"
     stack_history:
       close: "Verlauf schließen"
-    sidebar_topic:
-      toggle_subtopics: "Unterthemen ein-/ausklappen"
     topbar:
       cards_left: "Karten links"
       # #1453 (aus immoos #1452): Tap auf die Zaehler zeigt, WELCHE

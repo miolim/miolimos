@@ -47,23 +47,17 @@
     <% if topic.has_tree? %>
       <span class="ml-auto inline-flex items-center gap-1">
         <%# #740 (Hans): nur Icon + Tooltip, kein Text-Label. %>
-        <button type="button"
-                data-action="click->blade-stack#openInStack"
-                data-target-uuid="render:topic:<%= topic.slug %>"
-                title="<%= t("topics.werk_render") %>"
-                aria-label="<%= t("topics.werk_render_short") %>"
-                class="inline-flex items-center p-1 rounded bg-red-700 text-white hover:bg-red-800 cursor-pointer">
-          <%= icon "list_tree", size: "w-4 h-4" %>
-        </button>
+        <%= ui_button :werk_ansicht_oeffnen, size: "w-4 h-4",
+              "aria-label": t("topics.werk_render_short"),
+              data: { action: "click->blade-stack#openInStack",
+                      target_uuid: "render:topic:#{topic.slug}" },
+              class: "inline-flex items-center p-1 rounded bg-red-700 text-white hover:bg-red-800 cursor-pointer" %>
         <% if (mz_root = roots.first) %>
-          <button type="button"
-                  data-action="click->blade-stack#openInStack"
-                  data-target-uuid="treefocus:<%= mz_root.id %>"
-                  title="<%= t("topics.mittel_zweck_render") %>"
-                  aria-label="<%= t("topics.mittel_zweck_render_short") %>"
-                  class="inline-flex items-center p-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer">
-            <%= icon "network", size: "w-4 h-4" %>
-          </button>
+          <%= ui_button :zweck_ansicht_oeffnen, size: "w-4 h-4",
+                "aria-label": t("topics.mittel_zweck_render_short"),
+                data: { action: "click->blade-stack#openInStack",
+                        target_uuid: "treefocus:#{mz_root.id}" },
+                class: "inline-flex items-center p-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
         <% end %>
       </span>
     <% end %>

@@ -185,9 +185,10 @@ antwort_bearbeiten:
 navigation_schliessen:
   icon: x
   label: shared.sidebar.close_nav
+# Derselbe Befehl in der Sidebar und auf der Themen-Card — eine Kennung.
 unterthemen_klappen:
   icon: chevron_right
-  label: shared.sidebar_topic.toggle_subtopics
+  label: topics.toggle_subtopics
 verlauf_schliessen:
   icon: x
   label: shared.stack_history.close
@@ -281,3 +282,47 @@ zusage_gruppe_later:
   icon: later
   label: tasks.sections.later
   dynamisch: true
+
+# ── Themen, Gliederungen, Leseansicht ─────────────────────────────────────
+inbox_import_thema:
+  icon: inbox
+  label: topics.inbox_import_title
+thema_bearbeiten:
+  icon: pencil
+  label: actions.edit
+thema_anlegen:
+  icon: plus_circle
+  label: topics.new_topic
+werk_ansicht_oeffnen:
+  icon: list_tree
+  label: topics.werk_render
+zweck_ansicht_oeffnen:
+  icon: network
+  label: topics.mittel_zweck_render
+leseansicht_aktualisieren:
+  icon: refresh
+  label: topics.reload_render
+inhalt_umschalten:
+  icon: chevron_right
+  label: topics.toggle_content_mode
+gliederungsknoten_klappen:
+  icon: chevron_right
+  label: topics.toggle_content_mode
+ebene_heraus:
+  icon: chevron_left
+  label: topics.outdent
+ebene_tiefer:
+  icon: chevron_right
+  label: topics.indent
+knoten_fokussieren:
+  icon: expand
+  label: topics.focus_node
+kind_element_anlegen:
+  icon: plus_circle
+  label: topics.add_child
+knoten_entfernen:
+  icon: trash
+  label: topics.remove_node
+gliederung_loeschen:
+  icon: x
+  label: topics.tree_delete

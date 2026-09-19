@@ -50,11 +50,9 @@
 <% tasks_toolbar = capture do %>
     <%# #484 Toggle-Nachtrag (Hans, 2026-06-03): Multi-Select als Icon in der
         Befehlszeile (bulk-select-Controller sitzt jetzt auf der Section). %>
-    <button type="button" data-action="bulk-select#toggleMode"
-            title="<%= t("tasks.multi_select") %>"
-            class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-      <%= icon "check", size: "w-3.5 h-3.5" %>
-    </button>
+    <%= ui_button :mehrfach_auswahl, size: "w-3.5 h-3.5",
+          data: { action: "bulk-select#toggleMode" },
+          class: "inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
     <%# #484 (Hans, 2026-06-03): In-Place-Card-Reload via topic-tabs#switch
         (statt Full-Page-Navigation) — kein neuer Stack, kein Breiten-Flimmern.
         href bleibt Fallback (kein JS). %>

@@ -29,12 +29,9 @@
       <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
       <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
       <%# #360 (Hans, 2026-05-25): Per-Blade-Reload. %>
-      <button type="button"
-              data-action="click->blade-stack#reloadCard"
-              title="<%= t("tasks.reload_card") %>"
-              class="p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-        <%= icon "refresh", size: "w-3.5 h-3.5" %>
-      </button>
+      <%= ui_button :karte_neu_laden, size: "w-3.5 h-3.5",
+            data: { action: "click->blade-stack#reloadCard" },
+            class: "p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
     </header>
 
     <% if targets.empty? %>
@@ -56,15 +53,14 @@
                    data-ref-cycle-state-value="0"
                    class="ref-item px-3 py-2">
             <header class="flex items-baseline gap-2">
-              <button type="button"
-                      data-action="click->ref-cycle#cycle"
-                      title="<%= t("topics.toggle_content_mode") %>"
-                      class="shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">
+              <%= ui_button :inhalt_umschalten,
+                    data: { action: "click->ref-cycle#cycle" },
+                    class: "shrink-0 p-0.5 -ml-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer" do %>
                 <span data-ref-cycle-target="icon"
                       class="inline-block transition-transform">
                   <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
                 </span>
-              </button>
+              <% end %>
               <a href="<%= knowledge_item_path(t.uuid) %>"
                  data-action="click->blade-stack#openInStack"
                  data-target-uuid="<%= t.uuid %>"

@@ -2575,8 +2575,6 @@ en:
       close: "Dismiss message"
     stack_history:
       close: "Close stack history"
-    sidebar_topic:
-      toggle_subtopics: "Toggle subtopics"
     topbar:
       cards_left: "Cards to the left"
       # #1453 (aus immoos #1452): Tap auf die Zaehler zeigt, WELCHE

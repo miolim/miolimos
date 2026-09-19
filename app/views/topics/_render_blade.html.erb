@@ -107,12 +107,9 @@
             Brauchts wenn der Work-Tree (in einem anderen Blade)
             modifiziert wurde und der Render-Blade noch den alten
             Stand zeigt. %>
-        <button type="button"
-                data-action="click->blade-stack#reloadCard"
-                title="<%= t("topics.reload_render") %>"
-                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-          <%= icon "refresh", size: "w-3.5 h-3.5" %>
-        </button>
+        <%= ui_button :leseansicht_aktualisieren, size: "w-3.5 h-3.5",
+              data: { action: "click->blade-stack#reloadCard" },
+              class: "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
       </div>
     </header>
 

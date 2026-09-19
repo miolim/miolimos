@@ -28,13 +28,9 @@
           <span class="text-sm flex-1 truncate <%= 'text-slate-400' if topic.inactive? %>"><%= topic.name %><% if topic.inactive? %> <span class="text-[10px] uppercase tracking-wider text-slate-400">· <%= t("topics.status.inactive") %></span><% end %></span>
         </button>
         <%# #509 (Hans, 2026-06-04): „+" hängt das Topic-Blade an statt zu ersetzen. %>
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                data-disclosure-target="icon"
-                class="shrink-0 p-1 text-slate-400 hover:text-slate-700 cursor-pointer inline-block transition-transform"
-                title="<%= t("topics.toggle_subtopics") %>" aria-label="<%= t("topics.toggle_subtopics") %>">
-          <%= icon "chevron_right" %>
-        </button>
+        <%= ui_button :unterthemen_klappen,
+              data: { action: "click->disclosure#toggle", disclosure_target: "icon" },
+              class: "shrink-0 p-1 text-slate-400 hover:text-slate-700 cursor-pointer inline-block transition-transform" %>
       </div>
       <ul data-disclosure-target="content" class="hidden space-y-0.5">
         <% subs.each do |sub| %>

@@ -508,3 +508,31 @@ posteingang_eintrag_bearbeiten:
   label: inbox_items.edit_entry
 posteingang_speichern:
   label: actions.save
+
+# ── Wissenseintrag: Kopfzeile (#1672 Etappe 4) ───────────────────────────
+ueberweisung_an_kontakt:
+  icon: banknote
+  label: knowledge.detail.transfer
+quelle_url_oeffnen:
+  icon: external_link
+  label: knowledge.detail.open_source
+html_ansicht_umschalten:
+  icon: code
+  label: knowledge.detail.toggle_render_mode
+ki_anheften:
+  label: knowledge.detail.pin
+aus_url_ergaenzen_start:
+  label: knowledge.detail.complete_from_url_go
+aus_text_ergaenzen_start:
+  label: knowledge.detail.complete_from_text_go
+ki_bearbeiten:
+  icon: pencil
+  label: actions.edit
+ki_loeschen:
+  icon: trash
+  label: actions.delete
+ki_abbrechen:
+  icon: x
+  label: actions.cancel
+ersetzung_rueckgaengig:
+  label: knowledge.detail.undo

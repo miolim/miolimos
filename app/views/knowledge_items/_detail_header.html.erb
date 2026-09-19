@@ -32,49 +32,41 @@
         das GiroCode-Formular mit dieser als Empfänger vorgewählt; die
         IBAN lässt sich dort gleich hinterlegen. %>
     <% if item.person? || item.organization? %>
-      <%= link_to giro_code_path(contact_uuid: item.uuid),
+      <%= ui_link :ueberweisung_an_kontakt, giro_code_path(contact_uuid: item.uuid), size: "w-4 h-4",
             title: t("knowledge.detail.giro_transfer_to", name: item.title),
             "aria-label": t("knowledge.detail.transfer"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer [&_svg]:w-4 [&_svg]:h-4" do %>
-        <%= icon "banknote" %>
-      <% end %>
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
     <% end %>
     <% external_url = item.bib_source&.url.presence %>
     <% if external_url %>
-      <%= link_to external_url, target: "_blank", rel: "noopener",
+      <%= ui_link :quelle_url_oeffnen, external_url, target: "_blank", rel: "noopener",
             title: t("knowledge.detail.open_source_url", url: external_url),
             "aria-label": t("knowledge.detail.open_source"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "external_link" %>
-      <% end %>
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
     <% end %>
 
     <% if mode == :preview %>
       <%# #705 (Hans): Body als HTML rendern (sandboxed iframe) ⇄ Markdown. %>
-      <%= button_to toggle_render_mode_knowledge_item_path(item.uuid),
-            method: :post,
+      <%= ui_button_to :html_ansicht_umschalten, toggle_render_mode_knowledge_item_path(item.uuid),
+            method: :post, size: "w-4 h-4",
             form: { class: "inline" },
             title: item.render_html? ? t("knowledge.detail.show_as_markdown") : t("knowledge.detail.render_as_html"),
             "aria-label": t("knowledge.detail.toggle_render_mode"),
-            class: "p-1 rounded cursor-pointer [&_svg]:w-4 [&_svg]:h-4 #{item.render_html? ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}" do %>
-        <%= icon "code" %>
-      <% end %>
+            class: "p-1 rounded cursor-pointer #{item.render_html? ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}" %>
       <% pinned_now = current_actor && KnowledgeItemPin.exists?(actor_id: current_actor.id, knowledge_item_id: item.uuid) %>
-      <button type="button"
-              data-controller="pin-toggle"
-              data-pin-toggle-uuid-value="<%= item.uuid %>"
-              data-pin-toggle-pinned-value="<%= pinned_now %>"
-              data-action="click->pin-toggle#toggle"
-              title="<%= pinned_now ? t("knowledge.detail.unpin") : t("knowledge.detail.pin_hint") %>"
-              aria-label="<%= t("knowledge.detail.pin") %>"
-              class="p-1 rounded hover:bg-amber-50 cursor-pointer <%= pinned_now ? 'text-amber-600' : 'text-slate-500' %>">
+      <%# Eigenes Pin-Symbol (gefuellt/ungefuellt) — deshalb als Block. %>
+      <%= ui_button :ki_anheften,
+            title: (pinned_now ? t("knowledge.detail.unpin") : t("knowledge.detail.pin_hint")),
+            data: { controller: "pin-toggle", action: "click->pin-toggle#toggle",
+                    pin_toggle_uuid_value: item.uuid, pin_toggle_pinned_value: pinned_now },
+            class: "p-1 rounded hover:bg-amber-50 cursor-pointer #{pinned_now ? 'text-amber-600' : 'text-slate-500'}" do %>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 <%= pinned_now ? 'fill-current' : '' %>"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="12" x2="12" y1="17" y2="22"/>
           <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
         </svg>
-      </button>
+      <% end %>
       <div data-controller="bulk-entity-import"
            data-bulk-entity-import-uuid-value="<%= item.uuid %>"
            class="hidden">
@@ -111,7 +103,7 @@
               <input type="url" name="url" required
                      placeholder="<%= t('knowledge.detail.complete_from_url_placeholder') %>"
                      class="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
-              <button type="submit" class="shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_url_go") %></button>
+              <%= ui_button :aus_url_ergaenzen_start, type: :submit, class: "shrink-0 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
             <% end %>
 
             <%# #1250 (Hans): zweiter Weg im selben Popover — kopierten Text
@@ -125,32 +117,23 @@
                 <textarea name="text" rows="4" required
                           placeholder="<%= t('knowledge.detail.complete_from_text_placeholder') %>"
                           class="w-full rounded border border-slate-200 px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
-                <button type="submit" class="self-end text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("knowledge.detail.complete_from_text_go") %></button>
+                <%= ui_button :aus_text_ergaenzen_start, type: :submit, class: "self-end text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
               <% end %>
             </div>
           </div>
         </div>
       <% end %>
-      <%= link_to edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
-            title: t("actions.edit"), "aria-label": t("actions.edit"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "pencil" %>
-      <% end %>
-      <%= button_to knowledge_item_path(item.uuid), method: :delete,
+      <%= ui_link :ki_bearbeiten, edit_knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
+      <%= ui_button_to :ki_loeschen, knowledge_item_path(item.uuid), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true,
                       turbo_confirm: t("knowledge.detail.delete_confirm") } },
-            title: t("actions.delete"), "aria-label": t("actions.delete"),
-            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
-        <%= icon "trash" %>
-      <% end %>
+            class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" %>
     <% else %>
       <%= ui_button :ki_speichern, type: "submit", form: edit_form,
             class: "p-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" %>
-      <%= link_to knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
-            title: t("actions.cancel"), "aria-label": t("actions.cancel"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "x" %>
-      <% end %>
+      <%= ui_link :ki_abbrechen, knowledge_item_path(item.uuid, in_stack: in_stack ? 1 : nil),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
     <% end %>
 <% } %>
 
@@ -203,10 +186,10 @@
       <% if item.superseded_at %><span class="text-amber-700 whitespace-nowrap">· <%= item.superseded_at.strftime("%Y-%m-%d") %></span><% end %>
       <% if item.superseded_by_actor %><span class="text-amber-700">· <%= item.superseded_by_actor.name %></span><% end %>
     </div>
-    <%= button_to supersede_knowledge_item_path(item.uuid), method: :delete,
+    <%= ui_button_to :ersetzung_rueckgaengig, supersede_knowledge_item_path(item.uuid), method: :delete,
           form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-          class: "shrink-0 text-xs underline hover:no-underline text-amber-800 bg-transparent border-0 cursor-pointer p-0",
-          title: t("knowledge.detail.undo_supersede") do %><%= t("knowledge.detail.undo") %><% end %>
+          title: t("knowledge.detail.undo_supersede"),
+          class: "shrink-0 text-xs underline hover:no-underline text-amber-800 bg-transparent border-0 cursor-pointer p-0" %>
   </div>
 <% end %>
 <% supersedes = item.supersedes.to_a %>

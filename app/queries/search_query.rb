@@ -64,6 +64,28 @@ class SearchQuery
   # Tastatureingabe die halbe Datenbank.
   def blank? = query.length < MIN_LENGTH
 
+  # #1677 (aus immoOS #1654 übernommen; Hans dort): „Wenn ich im Suchfeld in
+  # der Topbar nach WEG suche, gibt es keine Treffer bei den Personen."
+  #
+  # Ursache ist die deutsche Volltext-Konfiguration: „weg" ist dort ein
+  # STOPPWORT. `to_tsvector('german', 'WEG Am Speicher 11')` ergibt nur
+  # `'11' 'speich'`, und `websearch_to_tsquery('german', 'WEG')` ist LEER. Eine
+  # leere Anfrage trifft nichts, in keiner Sektion. Dasselbe gilt für jeden
+  # Namensbestandteil, der zufällig ein Funktionswort ist: „Am", „Zum", „Bei".
+  #
+  # Eine eigene Textsuch-Konfiguration ohne diese Stoppwörter hieße: neues
+  # Wörterbuch in der Datenbank, Neuaufbau aller `search_vector` — das steht in
+  # keinem Verhältnis. Stattdessen fällt die Suche GENAU DANN, wenn die Anfrage
+  # nur aus Stoppwörtern besteht, auf einen Textvergleich zurück. Er ist
+  # langsamer, greift aber nur dort, wo der Volltext ohnehin nichts liefern kann.
+  def nur_stoppwoerter?
+    return @nur_stoppwoerter if defined?(@nur_stoppwoerter)
+
+    @nur_stoppwoerter = ActiveRecord::Base.connection.select_value(
+      sql("SELECT websearch_to_tsquery('german', :q)::text = ''", q: query)
+    )
+  end
+
   def count(section)
     return 0 if blank?
     @counts[section] ||= scope(section).count
@@ -172,25 +194,29 @@ class SearchQuery
     end
   end
 
+  # #1677: Alle Bedingungen hier sind FERTIGE SQL-Strings (über `sql` gebunden)
+  # und gehen als EIN Argument an `where`. Vorher stand der — sauber gequotete —
+  # Suchtext im SQL-Text NEBEN benannten Bindewerten (`:cp`, `:l`, `?`); Rails
+  # hielt dann auch ein `:morgen` IM Suchtext für einen Platzhalter, und die
+  # Suche nach „termin :morgen" endete in einer Fehlerseite.
   def tasks_scope
-    if direct_task_id
-      Task.visible_to(actor).where("search_vector @@ #{tsq} OR tasks.id = ?", direct_task_id)
-    else
-      Task.visible_to(actor).where("search_vector @@ #{tsq}")
-    end
+    bedingung = volltext("tasks.title", "tasks.description")
+    bedingung += " OR #{sql('tasks.id = :id', id: direct_task_id)}" if direct_task_id
+    Task.visible_to(actor).where(bedingung)
   end
 
   # Personen/Organisationen: Volltext ODER Treffer in einem Kontaktweg
   # (E-Mail, Telefon …) — die stehen in contact_points, nicht im KI-Body.
   def contacts_scope
     KnowledgeItem.visible_to(actor).persons_and_orgs
-                 .where("search_vector @@ #{tsq} OR uuid IN (:cp)", cp: contact_point_uuids)
+                 .where("#{volltext('knowledge_items.title', 'knowledge_items.body')} OR " +
+                        sql("knowledge_items.uuid IN (:cp)", cp: contact_point_uuids))
   end
 
   def knowledge_items_scope
     KnowledgeItem.visible_to(actor)
                  .where.not(item_type: [:person, :organization, :reply])
-                 .where("search_vector @@ #{tsq}")
+                 .where(volltext("knowledge_items.title", "knowledge_items.body"))
   end
 
   # #395: Antworten (Reply-KIs) als eigene Sektion. Nur veröffentlichte —
@@ -198,7 +224,7 @@ class SearchQuery
   def replies_scope
     KnowledgeItem.visible_to(actor)
                  .where(item_type: :reply).where.not(published_at: nil)
-                 .where("search_vector @@ #{tsq}")
+                 .where(volltext("knowledge_items.title", "knowledge_items.body"))
   end
 
   # #1321: vorher nur `subject LIKE` — der Nachrichtentext war unsichtbar.
@@ -212,11 +238,13 @@ class SearchQuery
   # Unterquery wäre ein Brief nur über seinen Betreff auffindbar — und der
   # Textfund erschiene als Wissens-Treffer statt als Dokument.
   def documents_scope
-    Document.visible_to(actor).where(
+    felder = sql(
       "LOWER(COALESCE(subject, '')) LIKE :l OR LOWER(COALESCE(recipient_label, '')) LIKE :l " \
-      "OR LOWER(COALESCE(your_ref, '')) LIKE :l OR LOWER(COALESCE(our_ref, '')) LIKE :l " \
-      "OR body_ki_uuid IN (SELECT uuid FROM knowledge_items WHERE search_vector @@ #{tsq})",
-      l: like
+      "OR LOWER(COALESCE(your_ref, '')) LIKE :l OR LOWER(COALESCE(our_ref, '')) LIKE :l", l: like
+    )
+    Document.visible_to(actor).where(
+      "#{felder} OR body_ki_uuid IN (SELECT uuid FROM knowledge_items " \
+      "WHERE #{volltext('knowledge_items.title', 'knowledge_items.body')})"
     )
   end
 
@@ -263,6 +291,17 @@ class SearchQuery
   def tsq
     @tsq ||= ActiveRecord::Base.sanitize_sql_array(["websearch_to_tsquery('german', ?)", query])
   end
+
+  # Volltext-Bedingung mit Rückfallebene (#1654). `spalten` sind die Felder, in
+  # denen der Textvergleich sucht, wenn die Volltextsuche ausfällt.
+  def volltext(*spalten)
+    return "search_vector @@ #{tsq}" unless nur_stoppwoerter?
+
+    spalten.map { |spalte| sql("LOWER(COALESCE(#{spalte}, '')) LIKE :l", l: like) }.join(" OR ").then { |s| "(#{s})" }
+  end
+
+  # Fertig gebundenes SQL-Fragment — siehe tasks_scope.
+  def sql(fragment, **werte) = ActiveRecord::Base.sanitize_sql_array([fragment, werte])
 
   def like = @like ||= "%#{query.downcase}%"
 

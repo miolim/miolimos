@@ -55,6 +55,15 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- Search finds names that consist of German stop words (#1677, from immoOS
+  #1654). “WEG”, “Am”, “Bei”, “Zum” are dropped by the German full-text
+  configuration, so a query made only of such words was empty and matched
+  nothing in any section. In exactly that case the search now falls back to a
+  plain text comparison.
+- Search no longer fails on a query containing a colon before a word, such as
+  “termin :morgen” (#1677). The quoted search text sat in the SQL string next
+  to named bind values, and `:morgen` inside it was taken for a placeholder —
+  the search ended in an error page.
 - Picking a suggestion could select the wrong entry, or none, under load
   (#1677, from immoOS). Click and Enter looked the entry up by index in the
   *current* result list — if a newer search response had arrived since the

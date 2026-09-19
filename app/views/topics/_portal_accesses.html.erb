@@ -11,13 +11,15 @@
       <%# #570: Link-Versand entkoppelt vom Anlegen — expliziter Knopf
           (funktioniert auch als erneutes Senden nach Ablauf). %>
       <% if a.active? %>
-        <%= button_to t("topics.send_link"), send_link_portal_access_path(a), method: :post,
+        <%= ui_button_to :portal_link_senden, send_link_portal_access_path(a), method: :post,
               form: { class: "inline m-0 p-0 ml-auto", data: { turbo_stream: true } },
               title: t("topics.send_link_title"),
               class: "text-[11px] px-1.5 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
       <% end %>
-      <%= button_to a.active? ? "deaktivieren" : "aktivieren",
+      <%# #1672: Beschriftungen waren hartkodiert deutsch. %>
+      <%= ui_button_to :portal_zugang_umschalten,
             portal_access_path(a, active: a.active? ? 0 : 1), method: :patch,
+            title: (a.active? ? t("topics.portal_deactivate") : t("topics.portal_activate")),
             form: { class: "inline m-0 p-0 #{'ml-auto' unless a.active?}", data: { turbo_stream: true } },
             class: "text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
     </div>
@@ -26,7 +28,7 @@
         data: { turbo_stream: true }, class: "flex items-center gap-2" do %>
     <input type="email" name="email" required placeholder="<%= t("topics.portal_email_placeholder") %>"
            class="flex-1 min-w-0 border border-slate-200 rounded px-2 py-0.5 text-sm bg-white">
-    <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0">+ Zugang</button>
+    <%= ui_button :portal_zugang_hinzufuegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0" %>
   <% end %>
   <p class="text-[11px] text-slate-400"><%= t("topics.portal_label") %> <a href="https://<%= PortalMailer.portal_host %>/portal" target="_blank" class="underline"><%= PortalMailer.portal_host %>/portal</a> — der Anmelde-Link geht erst über „Link senden“ raus.
     · <%= link_to t("topics.export_zip"), topic_portal_export_path(topic), class: "underline hover:text-slate-600",

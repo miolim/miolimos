@@ -5,7 +5,7 @@
       <%= f.text_field :new_name, required: true,
             class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
     </div>
-    <%= f.submit t("topics.instantiate"),
+    <%= ui_button :thema_instanziieren, type: :submit,
           class: "text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer" %>
   <% end %>
 </div>

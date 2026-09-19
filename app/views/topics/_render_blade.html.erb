@@ -63,26 +63,24 @@
           Knoten. data-bulk-state-target=icon zeigt aktuell den naechsten
           Zustand an (collapse-down ⇄ collapse-up). %>
       <div class="flex items-center gap-1 ml-2">
-        <button type="button"
-                data-action="click->render-blade-toggles#toggleAllHeadings"
-                title="<%= t("topics.toggle_headings") %>"
-                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 cursor-pointer">
+        <%= ui_button :render_ueberschriften_klappen,
+              data: { action: "click->render-blade-toggles#toggleAllHeadings" },
+              class: "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 cursor-pointer" do %>
           H
           <span data-render-blade-toggles-target="iconHeading"
                 class="inline-block transition-transform">
             <%= icon "chevron_right", size: "w-3 h-3" %>
           </span>
-        </button>
-        <button type="button"
-                data-action="click->render-blade-toggles#toggleAllContent"
-                title="<%= t("topics.toggle_contents") %>"
-                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">
+        <% end %>
+        <%= ui_button :render_inhalte_klappen,
+              data: { action: "click->render-blade-toggles#toggleAllContent" },
+              class: "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer" do %>
           ¶
           <span data-render-blade-toggles-target="iconContent"
                 class="inline-block transition-transform rotate-90">
             <%= icon "chevron_right", size: "w-3 h-3" %>
           </span>
-        </button>
+        <% end %>
       </div>
 
       <%# #352 Hans-Follow: Reference-Blade auch aus Rendering-Blade
@@ -92,14 +90,12 @@
           ist der Default-Render-Pfad.
           #863: Entitäts-Icon (Refs) links zu den Toggles; nur das
           Card-Reload steht rechts hinter dem ml-auto-Spacer. %>
-      <button type="button"
-              data-action="click->blade-stack#openInStack"
-              data-target-uuid="refs:topic:<%= topic.slug %>"
-              title="<%= t("topics.refs_full_title") %>"
-              class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer">
+      <%= ui_button :render_verweise_oeffnen, size: "w-3 h-3",
+            data: { action: "click->blade-stack#openInStack", target_uuid: "refs:topic:#{topic.slug}" },
+            class: "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer" do %>
         <%= icon "book_open", size: "w-3 h-3" %>
         <%= t("topics.refs") %>
-      </button>
+      <% end %>
 
       <div class="ml-auto flex items-center gap-1">
         <%# #360 (Hans, 2026-05-25): Per-Blade-Reload. Holt den Render-

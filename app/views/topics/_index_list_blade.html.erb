@@ -124,7 +124,7 @@
         <%# #399 (Hans, 2026-05-28): Badge oberhalb des Icons. #484 (Hans,
             2026-06-03): Diskussion rechtsbündig (ml-auto am Diskussions-Reiter). %>
         <% (tabs + [discussion_tab]).each do |(key, label, icon_name, badge)| %>
-          <%= link_to topic_path(@topic, tab: key),
+          <%= ui_link :thema_reiter_waehlen, topic_path(@topic, tab: key),
                 title: label, "aria-label": label,
                 data: { action: "click->topic-tabs#switch",
                         "topic-tabs-url-param": list_card_topic_path(@topic, tab: key) },

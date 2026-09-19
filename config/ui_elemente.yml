@@ -1206,3 +1206,29 @@ thema_speichern:
   label: actions.save
 thema_abbrechen:
   label: actions.cancel
+thema_reiter_waehlen:
+  label: topics.open_full
+thema_instanziieren:
+  label: topics.instantiate
+thema_mitglied_entfernen:
+  label: topics.remove
+thema_mitglied_hinzufuegen:
+  label: topics.add_member
+portal_link_senden:
+  label: topics.send_link
+portal_zugang_umschalten:
+  label: topics.portal_activate
+portal_zugang_hinzufuegen:
+  label: topics.add_portal_access
+render_ueberschriften_klappen:
+  label: topics.toggle_headings
+render_inhalte_klappen:
+  label: topics.toggle_contents
+render_verweise_oeffnen:
+  icon: book_open
+  label: topics.refs_full_title
+# Relevanz und Erreichbarkeit einer Quelle: je ein Befehl, Stufe als Wert.
+quelle_relevanz_setzen:
+  label: sources.row.add_to_topic
+quelle_erreicht_setzen:
+  label: sources.row.add_to_topic

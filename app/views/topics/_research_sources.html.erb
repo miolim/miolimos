@@ -52,18 +52,18 @@
             <div class="shrink-0 flex items-center gap-0.5">
               <% rel_opts.each do |val, label, active_cls| %>
                 <% active = st.relevance == val %>
-                <%= button_to label,
+                <%= ui_button_to :quelle_relevanz_setzen,
                       source_topic_path(st.source.slug, st.topic_id),
-                      method: :patch, params: { relevance: val },
+                      method: :patch, params: { relevance: val }, title: label,
                       form: { class: "inline-block m-0 p-0 leading-none" },
                       class: "text-[10px] px-1.5 py-0.5 rounded border cursor-pointer #{active ? active_cls + ' font-medium' : 'border-slate-200 text-slate-400 hover:bg-slate-100'}" %>
               <% end %>
               <span class="mx-0.5 h-3 w-px bg-slate-200" aria-hidden="true"></span>
               <% reach_opts.each do |val, label, active_cls| %>
                 <% active = st.reached == val %>
-                <%= button_to label,
+                <%= ui_button_to :quelle_erreicht_setzen,
                       source_topic_path(st.source.slug, st.topic_id),
-                      method: :patch, params: { reached: val ? "1" : "0" },
+                      method: :patch, params: { reached: val ? "1" : "0" }, title: label,
                       form: { class: "inline-block m-0 p-0 leading-none" },
                       class: "text-[10px] px-1.5 py-0.5 rounded border cursor-pointer #{active ? active_cls + ' font-medium' : 'border-slate-200 text-slate-400 hover:bg-slate-100'}" %>
               <% end %>

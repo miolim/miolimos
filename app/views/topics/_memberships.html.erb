@@ -28,7 +28,7 @@
           <option value="owner"  <%= "selected" if m.owner?  %>><%= t("topics.role_owner") %></option>
         </select>
       <% end %>
-      <%= button_to t("topics.remove"), topic_membership_path(topic, m), method: :delete,
+      <%= ui_button_to :thema_mitglied_entfernen, topic_membership_path(topic, m), method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
             class: "text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
     </div>
@@ -45,7 +45,8 @@
           <option value="<%= a.id %>"><%= a.name %><%= " (Admin — sieht ohnehin alles)" if a.admin? %></option>
         <% end %>
       </select>
-      <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0">+ Mitglied</button>
+      <%# #1672: Beschriftung war hartkodiert deutsch. %>
+      <%= ui_button :thema_mitglied_hinzufuegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shrink-0" %>
     <% end %>
   <% end %>
   <p class="text-[11px] text-slate-400">Mitglieder sehen dieses Thema samt Aufgaben, Wissen, Kommunikation &amp; Co. — Admins sehen immer alles. Rollen-Schreibrechte folgen in Stufe 2.</p>

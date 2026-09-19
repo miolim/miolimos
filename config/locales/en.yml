@@ -179,6 +179,10 @@ en:
     content_filter_title: "Titles only"
     content_filter_body: "With content"
     content_filter: "Content filter"
+    add_member: "+ Member"                     # #1672: were hardcoded
+    add_portal_access: "+ Access"
+    portal_activate: "activate"
+    portal_deactivate: "deactivate"
     full_view:        "Full view"
     open_full:        "Open in full view"
     no_results:       "No matches."

@@ -99,6 +99,28 @@ class KnowledgeIndexerTest < ActiveSupport::TestCase
     end
   end
 
+  # #1675: Die aus Aufgaben-Kommentaren migrierten Antworten haben einen
+  # file_path, aber nie eine Datei bekommen. Der Waisen-Lauf hielt sie für
+  # „Datei gelöscht" und hätte sie hart vernichtet — ausgelöst durch jeden
+  # erfolgreichen Wissens-Import in den Einstellungen.
+  test "Antworten ohne Exportdatei ueberleben den Waisen-Lauf" do
+    with_isolated_miolimos_base do |base|
+      FileUtils.mkdir_p(base.join("knowledge"))
+      eltern = FileProxy.create(actor: @hans, title: "Eltern-Notiz", item_type: :note, content: "x")
+      antwort = KnowledgeItem.create!(uuid: SecureRandom.uuid, title: nil, item_type: :reply,
+                                      parent_uuid: eltern.uuid, creator_id: @hans.id,
+                                      body: "Ein alter Aufgaben-Kommentar",
+                                      file_path: "knowledge/replies/migrated-tc-1.md",
+                                      content_hash: SecureRandom.hex(8))
+
+      stats = KnowledgeIndexer.run
+
+      assert KnowledgeItem.exists?(antwort.uuid), "die Antwort wurde als Waise gelöscht"
+      assert_equal 0, stats.orphaned
+      assert_equal "Ein alter Aufgaben-Kommentar", antwort.reload.body
+    end
+  end
+
   test "creates missing topics from frontmatter slugs" do
     with_isolated_miolimos_base do |base|
       refute Topic.exists?(slug: "brand-new-topic")

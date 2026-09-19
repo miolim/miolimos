@@ -28,6 +28,11 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Fixed
 
+- A full knowledge index run (Settings → Knowledge import after a successful
+  import, `rake knowledge:reindex`) no longer treats replies without an export
+  file as orphans. Replies migrated from task comments never had a file, and the
+  run would have hard-deleted them. The same run also no longer crashes on
+  items without a title (#1675).
 - Replies that arrive while the connection is briefly down are no longer
   missed (#1653). Live updates only work while the websocket is connected, and
   nothing is replayed afterwards — so a reply posted during a deploy (which

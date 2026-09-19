@@ -228,7 +228,9 @@ class KnowledgeIndexer
     #   uuid → nil   (target was renamed or deleted)
     #   uuid → uuid' (target title is now owned by a different item)
     def rebuild_all
-      title_to_uuid = KnowledgeItem.pluck(:title, :uuid).to_h { |t, u| [t.downcase, u] }
+      # #1675: Antworten haben keinen Titel (nil) — ohne den Filter brach der
+      # ganze Lauf hier mit NoMethodError ab, NACH dem Waisen-Schritt.
+      title_to_uuid = KnowledgeItem.where.not(title: nil).pluck(:title, :uuid).to_h { |t, u| [t.downcase, u] }
 
       KnowledgeItemReference.find_each do |ref|
         next if ref.target_task_id.present?  # #953: Task-Refs sind final

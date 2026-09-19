@@ -288,8 +288,14 @@ class KnowledgeIndexer
   # in `seen_uuids` (die Dateien wurden nach `markdown_files` enumerated
   # erzeugt). Wir prüfen den Disk-Status, damit wir sie nicht direkt
   # wieder löschen.
+  #
+  # #1675: Antworten sind ausgenommen. Sie entstehen nie dadurch, dass jemand
+  # eine Datei in den Wissens-Ordner legt, sondern in der Datenbank — und die
+  # aus den Aufgaben-Kommentaren migrierten (20260527200649) haben nie eine
+  # Datei bekommen. Eine fehlende Datei heißt dort „nie exportiert", nicht
+  # „vom Nutzer gelöscht"; der Lauf hätte sie sonst samt Kaskaden vernichtet.
   def mark_orphans(seen_uuids)
-    candidates = KnowledgeItem.where.not(uuid: seen_uuids.to_a)
+    candidates = KnowledgeItem.where.not(uuid: seen_uuids.to_a).where.not(item_type: :reply)
     orphans = candidates.select do |ki|
       rel = ki.file_path.to_s
       next true if rel.empty?

@@ -140,7 +140,7 @@ class TaskRepliesController < ApplicationController
   end
 
   def set_parent_task
-    @parent_task = Task.find(params[:task_id])
+    @parent_task = find_visible!(Task, params[:task_id])   # #1675
   end
 
   def controller_resource_type        = "Task"

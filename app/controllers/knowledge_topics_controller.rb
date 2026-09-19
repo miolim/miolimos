@@ -12,7 +12,7 @@ class KnowledgeTopicsController < ApplicationController
   private
 
   def find_parent
-    KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
+    find_visible!(KnowledgeItem, params[:knowledge_item_uuid], write: true)   # #1675
   end
 
   def on_success(item)

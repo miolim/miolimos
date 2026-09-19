@@ -81,7 +81,7 @@ class TaskCommentsController < ApplicationController
   private
 
   def set_task
-    @task = Task.find(params[:task_id])
+    @task = find_visible!(Task, params[:task_id])   # #1675
   end
 
   def set_comment

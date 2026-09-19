@@ -31,6 +31,15 @@ class Topic < ApplicationRecord
       .or(where("topics.id IN (#{MEMBER_TREE_SQL})", actor.id))
   }
 
+  # #1675: die Scope-Frage am einzelnen Thema (für
+  # ApplicationController#find_visible!) — über den Scope gerechnet, damit es
+  # bei EINER Sichtbarkeitsregel bleibt.
+  def visible_to?(actor)
+    return true  if actor&.visibility_exempt?
+    return false if actor.nil?
+    self.class.unscoped.visible_to(actor).exists?(id: id)
+  end
+
   # #602 S2: INHALTE schreiben (via VisibleVia#writable_by?) dürfen
   # Admin/Agent, Ersteller und Mitglieder mit Rolle Bearbeiter/
   # Verantwortlicher. Nur-Betrachter und intern-Öffentliches ohne

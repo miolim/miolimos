@@ -80,6 +80,60 @@ class ApplicationController < ActionController::Base
     Current.actor = current_actor
   end
 
+  # #1675: DIE Stelle, an der ein Controller ein Eltern- oder Zielobjekt aus
+  # der URL holt (`/tasks/:task_id/replies`, `predecessor_id=…`). Vorher stand
+  # in rund einem Dutzend verschachtelter Controller je ein eigenes
+  # `Task.find(params[:task_id])` — und keines kannte die Sichtbarkeit aus
+  # #602. Ein Mitglied konnte fremde Antworten lesen, fremde Aufgaben
+  # kommentieren und sie in ein eigenes Thema ziehen.
+  #
+  #   nicht sichtbar              → 404 (wie die Hauptseiten; verrät nicht,
+  #                                 dass es das Objekt gibt)
+  #   sichtbar, aber nur lesbar   → bei schreibenden Requests 403
+  #
+  # `write:` sagt, ob der Aufruf das Objekt VERÄNDERT. Vorgabe: jedes Verb
+  # außer GET/HEAD. Ausnahmen nennt der Aufrufer ausdrücklich — `write: false`
+  # für ein POST mit Lese-Semantik oder für ein bloßes VerknüpfungsZIEL (wer
+  # etwas Eigenes mit einer fremden, lesbaren Aufgabe verknüpft, ändert die
+  # fremde nicht).
+  def find_visible!(scope, value, by: nil, write: nil)
+    klass = scope.respond_to?(:klass) ? scope.klass : scope
+    ensure_visible!(scope.find_by((by || klass.primary_key) => value), klass, write: write)
+  end
+
+  # Der Kern von find_visible! für ein schon geladenes Objekt (z.B. ein Thema,
+  # das per Slug ODER id gesucht wurde). nil zählt als „nicht sichtbar".
+  def ensure_visible!(record, klass = record.class, write: nil)
+    unless record&.visible_to?(current_actor)
+      raise ActiveRecord::RecordNotFound.new("Couldn't find #{klass.name}", klass.name)
+    end
+    write = !(request.get? || request.head?) if write.nil?
+    if write && !record.writable_by?(current_actor)
+      raise AccessGate::Unauthorized,
+            "#{current_actor&.name} darf #{klass.name} nicht ändern (nur Betrachter)"
+    end
+    record
+  end
+
+  # Ein auf anderem Weg gefundenes VerknüpfungsZIEL (Resolver, Slug-Suche)
+  # nur durchlassen, wenn der Nutzer es sehen darf — sonst nil.
+  def only_visible(record)
+    record if record&.visible_to?(current_actor)
+  end
+
+  # Themen kommen aus Pickern mal als Slug, mal als id.
+  def find_visible_topic!(raw, write: false)
+    ensure_visible!(Topic.find_by(slug: raw) || Topic.find_by(id: raw), Topic, write: write)
+  end
+
+  # Wie find_visible!, aber nil statt 404 — für optionale Ziele.
+  def find_visible(scope, value, **opts)
+    return nil if value.blank?
+    find_visible!(scope, value, **opts)
+  rescue ActiveRecord::RecordNotFound
+    nil
+  end
+
   def render_forbidden(exception)
     respond_to do |format|
       format.html { render "shared/forbidden", status: :forbidden, locals: { message: exception.message }, layout: "auth" }

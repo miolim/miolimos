@@ -10,8 +10,9 @@ class HighlightsController < ApplicationController
       return
     end
     needle    = "[[^#{anchor}]]"
-    ki_count   = KnowledgeItem.where("body LIKE ?", "%#{needle}%").count
-    task_count = Task.where("description LIKE ?", "%#{needle}%").count
+    # #1675: gezählt wird, was der Nutzer sehen darf.
+    ki_count   = KnowledgeItem.visible_to(current_actor).where("body LIKE ?", "%#{needle}%").count
+    task_count = Task.visible_to(current_actor).where("description LIKE ?", "%#{needle}%").count
     render json: { count: ki_count + task_count }
   end
 
@@ -62,12 +63,14 @@ class HighlightsController < ApplicationController
   # Findet die KI zu einem Highlight-Anker: bevorzugt ueber die vom Frontend
   # mitgeschickte UUID (?ki=), sonst ueber den (evtl. fehlenden) Anchor-Record.
   def item_for_anchor(anchor)
+    # #1675: nur, was der Nutzer sehen darf — und zum Ändern der Tags
+    # (update_tags, PATCH) auch schreiben. tags (GET) liest nur.
     if params[:ki].present?
-      item = KnowledgeItem.find_by(uuid: params[:ki])
+      item = find_visible(KnowledgeItem, params[:ki])
       return item if item
     end
     rec = KnowledgeItemAnchor.find_by(anchor: anchor)
-    rec && KnowledgeItem.find_by(uuid: rec.knowledge_item_uuid)
+    rec && find_visible(KnowledgeItem, rec.knowledge_item_uuid)
   end
 
   # Liest die `#tag`-Suffixe hinter `==…==^anchor` aus dem Body.

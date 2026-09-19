@@ -4,7 +4,7 @@
 # brauchen csl_type + Metadaten, das Anlegen gehört nach /sources.
 class TaskSourcesController < ApplicationController
   def create
-    task   = Task.find(params[:task_id])
+    task   = find_visible!(Task, params[:task_id])   # #1675
     source = Source.find_by(slug: params[:source_id]) ||
              Source.find_by(id: params[:source_id])
 
@@ -14,7 +14,7 @@ class TaskSourcesController < ApplicationController
   end
 
   def destroy
-    task   = Task.find(params[:task_id])
+    task   = find_visible!(Task, params[:task_id])   # #1675
     source = Source.find_by(slug: params[:id]) || Source.find_by(id: params[:id])
     TaskSource.find_by(task: task, source: source)&.destroy
     @unlinked_source = source

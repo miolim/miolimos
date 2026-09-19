@@ -146,7 +146,7 @@ class KnowledgeWikilinkResearchController < ApplicationController
   private
 
   def set_item
-    @item = KnowledgeItem.find(params[:knowledge_item_uuid] || params[:uuid])
+    @item = find_visible!(KnowledgeItem, params[:knowledge_item_uuid] || params[:uuid])   # #1675
   end
 
   # Liefert eindeutige [Name, URL]-Paare fuer [[Name|https://...]]-

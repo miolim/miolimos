@@ -21,7 +21,8 @@ class Api::V1::TaskAttachmentsControllerTest < ActionDispatch::IntegrationTest
       # Direkt ueber den Web-Pfad als Hans hochladen (loggt sich ein und legt die Datei an).
       hans_human = HumanActor.create!(name: "Uploader",
                                        email: "u-#{SecureRandom.hex(3)}@t.local",
-                                       password: "secretsecret")
+                                       password: "secretsecret",
+                                       role: :admin)   # #1675: lädt an einer FREMDEN Aufgabe hoch
       grant(hans_human, "Task", %w[read create update delete])
       post "/login", params: { email: hans_human.email, password: "secretsecret" }
       post "/tasks/#{task.id}/attachments",

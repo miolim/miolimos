@@ -43,7 +43,7 @@ class KnowledgeVersionsController < ApplicationController
   private
 
   def set_item
-    @item = KnowledgeItem.find(params[:uuid])
+    @item = find_visible!(KnowledgeItem, params[:uuid])   # #1675
   end
 
   def controller_resource_type

@@ -240,6 +240,19 @@ class KnowledgeItem < ApplicationRecord
     end
   end
 
+  # #1675: Eine Antwort ist sichtbar, wenn ihr Gespräch es ist. Sie erbt zwar
+  # beim Anlegen die Themen ihrer Aufgabe, aber nur als Momentaufnahme — hängt
+  # die Aufgabe später an einem anderen Thema oder an gar keinem (Privates),
+  # stimmt die eigene Verknüpfung nicht mehr. Die Antworten-Liste zeigt ohnehin
+  # alles unter dem Elternobjekt; die Einzelfrage muss dasselbe sagen. Deshalb
+  # zählt zusätzlich der Weg nach oben bis zum Gesprächsanfang.
+  def visible_to?(actor)
+    return true if super
+    return false unless reply?
+    wurzel = parent
+    wurzel.respond_to?(:visible_to?) && wurzel.visible_to?(actor)
+  end
+
   # #232/#564: Live-Updates fuer Antworten — Callbacks + Methoden liegen
   # gesammelt in KnowledgeItem::ReplyBroadcasts.
   include ReplyBroadcasts

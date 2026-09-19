@@ -4,7 +4,7 @@
 #   - create_with → neue Task wird mit Titel + parent_id angelegt
 class TaskSubtasksController < ApplicationController
   def create
-    parent = Task.find(params[:task_id])
+    parent = find_visible!(Task, params[:task_id])   # #1675
     child  = resolve_child(parent)
 
     respond_with_chips(parent, child)
@@ -13,7 +13,7 @@ class TaskSubtasksController < ApplicationController
   end
 
   def destroy
-    parent = Task.find(params[:task_id])
+    parent = find_visible!(Task, params[:task_id])   # #1675
     child  = parent.subtasks.find(params[:id])
     child.update!(parent_id: nil)
     @unlinked_child = child
@@ -28,7 +28,7 @@ class TaskSubtasksController < ApplicationController
               Task.create!(title: text, creator: current_actor, parent: parent)
             else
               raw = params.require(:child_id)
-              task = Task.find(raw)
+              task = find_visible!(Task, raw, write: true)   # #1675: wird umgehängt, also Schreibrecht
               task.update!(parent_id: parent.id)
               task
             end

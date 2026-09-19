@@ -54,6 +54,18 @@ module VisibleVia
     end
   end
 
+  # #1675: Dieselbe Frage wie der visible_to-Scope, am EINZELNEN Objekt —
+  # für Controller, die ein Eltern- oder Zielobjekt aus der URL holen
+  # (ApplicationController#find_visible!). Bewusst über den Scope gerechnet
+  # und nicht nachgebaut: Es gibt genau eine Sichtbarkeitsregel. `unscoped`,
+  # damit auch Papierkorb-Objekte ehrlich beantwortet werden.
+  def visible_to?(actor)
+    return true  if actor&.visibility_exempt?
+    return false if actor.nil?
+    pk = visibility_config[:primary_key]
+    self.class.unscoped.visible_to(actor).exists?(pk => self[pk])
+  end
+
   # Darf dieser Actor das Objekt ändern/löschen?
   def writable_by?(actor)
     return true if actor.nil? || actor.visibility_exempt?

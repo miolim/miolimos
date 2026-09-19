@@ -31,7 +31,7 @@ class KnowledgeItemTagsController < ApplicationController
   private
 
   def set_item
-    @item = KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
+    @item = find_visible!(KnowledgeItem, params[:knowledge_item_uuid])   # #1675
   end
 
   def render_chips

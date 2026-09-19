@@ -119,7 +119,7 @@ class KnowledgeRepliesController < ApplicationController
   private
 
   def set_parent_ki
-    @parent_ki = KnowledgeItem.find(params[:knowledge_item_uuid])
+    @parent_ki = find_visible!(KnowledgeItem, params[:knowledge_item_uuid])   # #1675
   end
 
   def controller_resource_type        = "KnowledgeItem"

@@ -3,8 +3,9 @@
 # Zyklus-/Self-/Duplikat-Checks sitzen im Model.
 class TaskDependenciesController < ApplicationController
   def create
-    task        = Task.find(params[:task_id])
-    predecessor = Task.find(params.require(:predecessor_id))
+    task        = find_visible!(Task, params[:task_id])   # #1675
+    # Der Vorgänger wird nicht verändert, muss aber sichtbar sein.
+    predecessor = find_visible!(Task, params.require(:predecessor_id), write: false)
 
     TaskDependency.create!(
       predecessor:     predecessor,
@@ -17,8 +18,8 @@ class TaskDependenciesController < ApplicationController
   end
 
   def destroy
-    task = Task.find(params[:task_id])
-    dep  = TaskDependency.find(params[:id])
+    task = find_visible!(Task, params[:task_id])   # #1675
+    dep  = TaskDependency.where(successor: task).or(TaskDependency.where(predecessor: task)).find(params[:id])
     @unlinked_predecessor = dep.predecessor
     dep.destroy!
     respond_with_task(task)

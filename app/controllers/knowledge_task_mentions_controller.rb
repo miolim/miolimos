@@ -5,7 +5,7 @@
 # `task_mentions`-Tabelle.
 class KnowledgeTaskMentionsController < ApplicationController
   def create
-    item = KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
+    item = find_visible!(KnowledgeItem, params[:knowledge_item_uuid])   # #1675
     task = resolve_task(item)
 
     TaskMention.find_or_create_by!(task: task, mentioned_uuid: item.uuid) if task
@@ -14,8 +14,8 @@ class KnowledgeTaskMentionsController < ApplicationController
   end
 
   def destroy
-    item = KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
-    task = Task.find_by(id: params[:id])
+    item = find_visible!(KnowledgeItem, params[:knowledge_item_uuid])   # #1675
+    task = find_visible(Task, params[:id], write: false)
     TaskMention.find_by(task_id: task&.id, mentioned_uuid: item.uuid)&.destroy
     @unlinked_task = task
 
@@ -43,7 +43,7 @@ class KnowledgeTaskMentionsController < ApplicationController
       end
     else
       raw = params.require(:task_id)
-      Task.find_by(id: raw)
+      find_visible(Task, raw, write: true)   # #1675: die Erwähnung hängt an der Aufgabe
     end
   end
 

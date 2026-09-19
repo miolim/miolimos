@@ -5,7 +5,7 @@
 # „Verknüpftes Wissen" im Task-Detail.
 class TaskMentionsController < ApplicationController
   def create
-    task = Task.find(params[:task_id])
+    task = find_visible!(Task, params[:task_id])   # #1675
     ki   = resolve_mention_from_params
 
     TaskMention.find_or_create_by!(task: task, mentioned_uuid: ki.uuid) if ki
@@ -14,7 +14,7 @@ class TaskMentionsController < ApplicationController
   end
 
   def destroy
-    task = Task.find(params[:task_id])
+    task = find_visible!(Task, params[:task_id])   # #1675
     ki   = KnowledgeItem.find_by(uuid: params[:id]) ||
            PersonKiResolver.find(params[:id])
     TaskMention.find_by(task: task, mentioned_uuid: ki&.uuid)&.destroy
@@ -34,7 +34,8 @@ class TaskMentionsController < ApplicationController
       quick_create(text)
     else
       raw = params.require(:mentioned_uuid)
-      KnowledgeItem.find_by(uuid: raw) || PersonKiResolver.find(raw)
+      # #1675: auch das ZIEL muss der Nutzer sehen dürfen.
+      only_visible(KnowledgeItem.find_by(uuid: raw) || PersonKiResolver.find(raw))
     end
   end
 

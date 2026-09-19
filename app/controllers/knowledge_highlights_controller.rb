@@ -49,7 +49,7 @@ class KnowledgeHighlightsController < ApplicationController
   private
 
   def set_item
-    @item = KnowledgeItem.find(params[:knowledge_item_uuid] || params[:uuid])
+    @item = find_visible!(KnowledgeItem, params[:knowledge_item_uuid] || params[:uuid])   # #1675: wrap schreibt in den Body
   end
 
   def controller_resource_type        = "KnowledgeItem"

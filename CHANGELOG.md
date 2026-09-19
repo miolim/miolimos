@@ -44,6 +44,15 @@ release is cut, this section is renamed to the new version and a fresh
   Everyone can still edit their own profile (name, e-mail, password); role
   and active flag are admin-only. The rule also holds for cards restored from
   a `?stack=` URL. Installations with non-admin users should upgrade.
+- **Security:** the sub-addresses of a task or knowledge item now respect
+  visibility (#1675). The main pages did, but about a dozen nested controllers
+  (replies, comments, attachments, tags, mentions, sources, subtasks,
+  dependencies, topics, history, anchors, highlights) loaded their parent
+  unscoped: a member could read the replies of a task they cannot see, comment
+  on it, or attach it to a topic of their own and thereby take it over. There
+  is now one place for this (`ApplicationController#find_visible!`): not
+  visible → 404, visible but read-only → 403 on any change; link targets
+  (predecessor, subtask, mentioned item, topic) must be visible too.
 - A full knowledge index run (Settings → Knowledge import after a successful
   import, `rake knowledge:reindex`) no longer treats replies without an export
   file as orphans. Replies migrated from task comments never had a file, and the

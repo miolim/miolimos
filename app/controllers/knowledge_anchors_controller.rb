@@ -111,7 +111,7 @@ class KnowledgeAnchorsController < ApplicationController
   private
 
   def set_item
-    @item = KnowledgeItem.find(params[:uuid])
+    @item = find_visible!(KnowledgeItem, params[:uuid])   # #1675
   end
 
   def body_ops

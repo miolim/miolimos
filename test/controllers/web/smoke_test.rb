@@ -7,7 +7,7 @@ class SmokeTest < ActionDispatch::IntegrationTest
   setup do
     @hans = HumanActor.create!(
       name: "Hans", email: "hans-smoke-#{SecureRandom.hex(3)}@t.local",
-      password: "secretsecret"
+      password: "secretsecret", role: :admin   # #1675: der Rundgang schließt Admin-Bereiche ein
     )
     %w[Task Topic Communication KnowledgeItem Actor OauthCredential Team].each do |rt|
       grant(@hans, rt, %w[read create update delete])

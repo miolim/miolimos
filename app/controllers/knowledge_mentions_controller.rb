@@ -39,12 +39,13 @@ class KnowledgeMentionsController < ApplicationController
       ki
     else
       raw = params.require(:mentioned_uuid)
-      KnowledgeItem.find_by(uuid: raw) || PersonKiResolver.find(raw)
+      # #1675: auch das ZIEL muss der Nutzer sehen dürfen.
+      only_visible(KnowledgeItem.find_by(uuid: raw) || PersonKiResolver.find(raw))
     end
   end
 
   def find_item
-    KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
+    find_visible!(KnowledgeItem, params[:knowledge_item_uuid])   # #1675
   end
 
   def respond_with_chips(item)

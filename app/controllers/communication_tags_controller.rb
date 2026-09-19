@@ -27,7 +27,7 @@ class CommunicationTagsController < ApplicationController
   private
 
   def set_communication
-    @communication = Communication.find(params[:communication_id])
+    @communication = find_visible!(Communication, params[:communication_id])   # #1675
   end
 
   def render_chips

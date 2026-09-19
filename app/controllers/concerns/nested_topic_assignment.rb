@@ -49,28 +49,36 @@ module NestedTopicAssignment
   def resolve_topic_from_params
     if (text = params[:create_with].to_s.strip).present?
       slug = text.parameterize
-      Topic.find_by(slug: slug) || Topic.create!(
-        slug: slug, name: text, creator: current_actor,
-        status: :active, template: false
-      )
+      # #1675: Ein vorhandenes Thema gleichen Slugs nur nehmen, wenn der Nutzer
+      # dort Inhalte ablegen darf — sonst hängte „Quick-Create" still etwas in
+      # ein fremdes Thema.
+      if (vorhanden = Topic.find_by(slug: slug))
+        ensure_visible!(vorhanden, Topic, write: true)
+      else
+        Topic.create!(slug: slug, name: text, creator: current_actor,
+                      status: :active, template: false)
+      end
     else
-      raw = params.require(:topic_id)
-      Topic.find_by(slug: raw) || Topic.find(raw)
+      # #1675: Etwas in ein Thema hängen heißt dort Inhalt ablegen — das Thema
+      # muss sichtbar UND für den Nutzer schreibbar sein.
+      find_visible_topic!(params.require(:topic_id), write: true)
     end
   end
 
   def destroy
     parent = find_parent
     # Nested-Route-Default :id enthält bei Topic den Slug → Fallback.
-    @unlinked_topic = Topic.find_by(slug: params[:id]) || Topic.find(params[:id])
+    @unlinked_topic = find_visible_topic!(params[:id])
     join_class.find_by(parent_key => parent, topic: @unlinked_topic)&.destroy
     on_success(parent)
   end
 
   private
 
+  # #1675: sichtbar UND schreibbar — sonst zog ein Mitglied eine fremde Aufgabe
+  # per POST /tasks/<id>/topics in ein eigenes Thema und besaß sie danach.
   def find_parent
-    nested_topic_options[:parent_class].find(params[nested_topic_options[:id_param]])
+    find_visible!(nested_topic_options[:parent_class], params[nested_topic_options[:id_param]], write: true)
   end
 
   def join_class

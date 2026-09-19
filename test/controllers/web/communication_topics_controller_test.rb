@@ -4,7 +4,7 @@ class CommunicationTopicsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @hans = HumanActor.create!(
       name: "Hans", email: "hans-ct-#{SecureRandom.hex(3)}@t.local",
-      password: "secretsecret"
+      password: "secretsecret", role: :admin   # #1675: fremde Mails verschlagwortet nur, wer sie sieht
     )
     grant(@hans, "Communication", %w[read update])
     grant(@hans, "Topic",         %w[read])

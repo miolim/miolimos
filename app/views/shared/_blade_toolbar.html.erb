@@ -37,14 +37,10 @@
   <% end %>
   <% if show_duplicate %>
     <%# #321 (Hans): Card-Duplizieren — appendet eine zweite Instanz an den Stack. %>
-    <button type="button"
-            data-action="click->blade-stack#duplicateCard"
-            data-target-uuid="<%= local_assigns[:uuid] %>"
-            title="<%= t("tasks.duplicate_card") %>" aria-label="<%= t("tasks.duplicate_card") %>"
-            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0">
-      <%# #1007 (Hans): copy-plus statt copy — unterscheidbar vom Kopieren-Icon. %>
-      <%= icon "copy-plus" %>
-    </button>
+    <%# #1007 (Hans): copy-plus statt copy — unterscheidbar vom Kopieren-Icon. %>
+    <%= ui_button :karte_duplizieren,
+          data: { action: "click->blade-stack#duplicateCard", target_uuid: local_assigns[:uuid] },
+          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer shrink-0" %>
   <% end %>
   <% if show_reload %>
     <%# #360 (Hans, 2026-05-25): Per-Blade-Reload — holt den Card-Inhalt frisch. %>

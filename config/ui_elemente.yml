@@ -645,3 +645,40 @@ antwort_speichern:
   label: actions.save
 antwort_veroeffentlichen:
   label: shared.reply.publish
+
+# ── Schnellanlage, Stapel-Auswahl, Kartenrücken (#1672 Etappe 8) ─────────
+# Fünf Anlege-Knöpfe, fünf Kennungen: Sie heißen alle „Anlegen", legen aber
+# Verschiedenes an (Aufgabe, Wartepunkt, Eintrag, Person, Import).
+schnellanlage_aufgabe_anlegen:
+  label: actions.create
+schnellanlage_wartepunkt_anlegen:
+  label: actions.create
+schnellanlage_ki_anlegen:
+  label: actions.create
+schnellanlage_person_anlegen:
+  label: actions.create
+schnellanlage_import_anlegen:
+  label: quick_create.fields.submit_inbox
+# Person/Organisation kommt als Wert aus der Schleife — ein Eintrag, Text
+# vom Aufrufer.
+schnellanlage_typ_waehlen:
+  label: quick_create.fields.type_person
+mehrfach_auswahl_umschalten:
+  icon: check
+  label: shared.bulk.multi_select
+stapel_anwenden:
+  label: shared.bulk.apply
+stapel_abbrechen:
+  label: actions.cancel
+thema_am_ruecken_oeffnen:
+  label: shared.blade_spine.open_topic
+karte_duplizieren:
+  icon: copy-plus
+  label: tasks.duplicate_card
+karten_links_uebersicht:
+  label: shared.topbar.cards_left
+karten_rechts_uebersicht:
+  label: shared.topbar.cards_right
+abmelden:
+  icon: power
+  label: nav.logout

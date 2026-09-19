@@ -22,12 +22,11 @@
   <%# #1453 (aus immoos #1452): „Bei Tap auf die Zahlen öffnet sich eine
       Ansicht mit allen Spines." Die Zahl sagt, WIE VIELE — der Tap sagt,
       WELCHE. %>
-  <button type="button" data-blade-counts-target="left"
-          data-action="click->stack-overview#oeffnen"
-          class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
-                 bg-transparent border-0 p-0 cursor-pointer"
-          title="<%= t("shared.topbar.stack_overview") %>"
-          aria-label="<%= t("shared.topbar.cards_left") %>">0</button>
+  <%= ui_button :karten_links_uebersicht, title: t("shared.topbar.stack_overview"),
+        "aria-label": t("shared.topbar.cards_left"),
+        data: { blade_counts_target: "left", action: "click->stack-overview#oeffnen" },
+        class: "md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
+                bg-transparent border-0 p-0 cursor-pointer" do %>0<% end %>
   <%= ui_button :navigation_oeffnen,
         data: { action: "click->mobile-nav#toggle" },
         class: "md:hidden p-1 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900" %>
@@ -104,19 +103,15 @@
     <span class="hidden sm:inline text-[13px]"><%= current_actor&.name %></span>
     <%# #302 follow-up (Hans): Abmelden als On/Off-Icon — auf Mobile
         sparen wir die Textbreite, Desktop bleibt's konsistent. %>
-    <%= button_to logout_path, method: :delete,
+    <%= ui_button_to :abmelden, logout_path, method: :delete, size: "w-4 h-4",
           form: { class: "inline" },
-          title: t("nav.logout"), "aria-label": t("nav.logout"),
-          class: "p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-rose-600 cursor-pointer" do %>
-      <%= icon "power", size: "w-4 h-4" %>
-    <% end %>
+          class: "p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-rose-600 cursor-pointer" %>
     <%# #262: Mobile-Indikator — Anzahl Blades RECHTS der sichtbaren Card. %>
-    <button type="button" data-blade-counts-target="right"
-            data-action="click->stack-overview#oeffnen"
-            class="md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
-                   bg-transparent border-0 p-0 cursor-pointer"
-            title="<%= t("shared.topbar.stack_overview") %>"
-            aria-label="<%= t("shared.topbar.cards_right") %>">0</button>
+    <%= ui_button :karten_rechts_uebersicht, title: t("shared.topbar.stack_overview"),
+          "aria-label": t("shared.topbar.cards_right"),
+          data: { blade_counts_target: "right", action: "click->stack-overview#oeffnen" },
+          class: "md:hidden text-xs font-bold text-slate-500 tabular-nums shrink-0 min-w-4 text-center
+                  bg-transparent border-0 p-0 cursor-pointer" do %>0<% end %>
   </div>
 
   <%# #1453: Die Übersicht selbst — ein Blatt über dem Stapel, nur mobil. Es

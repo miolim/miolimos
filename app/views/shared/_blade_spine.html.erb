@@ -32,14 +32,14 @@
   <%= local_assigns[:extra_actions] %>
   <%# #636: Topic-Farbpunkte — Klick öffnet das Thema als Blade. %>
   <% spine_topics.each do |t| %>
-    <button type="button"
-            data-controller="blade-link"
-            data-blade-link-kind-value="topic"
-            data-blade-link-id-value="<%= t.slug %>"
-            data-action="click->blade-link#append"
-            title="Thema: <%= t.name %>" aria-label="Thema <%= t.name %>"
-            class="shrink-0 w-3 h-3 rounded-full cursor-pointer border border-slate-300/60 hover:scale-125 transition-transform p-0"
-            style="background: <%= t.color.presence || '#94a3b8' %>"></button>
+    <%# #1672: Beschriftung war hartkodiert deutsch. %>
+    <%= ui_button :thema_am_ruecken_oeffnen,
+          title: t("shared.blade_spine.open_topic", name: t.name),
+          "aria-label": t("shared.blade_spine.open_topic_aria", name: t.name),
+          data: { controller: "blade-link", action: "click->blade-link#append",
+                  blade_link_kind_value: "topic", blade_link_id_value: t.slug },
+          class: "shrink-0 w-3 h-3 rounded-full cursor-pointer border border-slate-300/60 hover:scale-125 transition-transform p-0",
+          style: "background: #{t.color.presence || '#94a3b8'}" do %><% end %>
   <% end %>
   <%# `[writing-mode:vertical-rl]` lässt den Text nach unten laufen, OHNE
       rotate-180 (würde bottom-up umdrehen) — Start grenzt ans Icon an. %>

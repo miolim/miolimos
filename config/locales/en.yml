@@ -2586,6 +2586,9 @@ en:
       aria: "Copy link to clipboard"
       link_copied: "Link copied: %{ref}"
       wikilink_copied: "Wikilink copied: %{ref}"
+    blade_spine:
+      open_topic: "Topic: %{name}"        # #1672: was hardcoded
+      open_topic_aria: "Topic %{name}"
     close_button:
       stack_history: "Stack history"
       close_card: "Close card"

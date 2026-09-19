@@ -15,12 +15,12 @@
 %>
 <% if position == :top %>
   <div class="flex items-center justify-end mb-1">
-    <button type="button"
-            data-action="bulk-select#toggleMode"
-            class="text-xs text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer">
+    <%= ui_button :mehrfach_auswahl_umschalten,
+          data: { action: "bulk-select#toggleMode" },
+          class: "text-xs text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer" do %>
       <%= icon "check", size: "w-3.5 h-3.5" %>
       <span class="bulk-toggle-label"><%= t("shared.bulk.multi_select") %></span>
-    </button>
+    <% end %>
   </div>
 <% else %>
   <%
@@ -54,15 +54,11 @@
           { selected: topic&.id },
           class: "rounded border-slate-300 text-xs bg-white px-1.5 py-0.5" %>
     <span class="ml-auto flex items-center gap-1.5">
-      <button type="submit"
-              class="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer border-0">
-        <%= t("shared.bulk.apply") %>
-      </button>
-      <button type="button"
-              data-action="bulk-select#cancel"
-              class="px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer border-0">
-        <%= t("actions.cancel") %>
-      </button>
+      <%= ui_button :stapel_anwenden, type: :submit,
+            class: "px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer border-0" %>
+      <%= ui_button :stapel_abbrechen,
+            data: { action: "bulk-select#cancel" },
+            class: "px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer border-0" %>
     </span>
   <% end %>
 <% end %>

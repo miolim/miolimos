@@ -10,7 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 172 Dateien, 372 Bedienelemente.
+# Stand: 167 Dateien, 358 Bedienelemente.
 app/views/bank_ledgers/_blade_card.html.erb
 app/views/bank_ledgers/_list_blade_card.html.erb
 app/views/calendar/_item_row.html.erb
@@ -110,11 +110,7 @@ app/views/settings/llm_activities/show.html.erb
 app/views/settings/task_templates/_form.html.erb
 app/views/settings/users/_form.html.erb
 app/views/setup/new.html.erb
-app/views/shared/_blade_spine.html.erb
-app/views/shared/_blade_toolbar.html.erb
-app/views/shared/_bulk_select_bar.html.erb
 app/views/shared/_entity_picker.html.erb
-app/views/shared/_quick_create_bar.html.erb
 app/views/shared/_sidebar.html.erb
 app/views/shared/_sidebar_awaitings.html.erb
 app/views/shared/_sidebar_recent_topic_row.html.erb
@@ -124,7 +120,6 @@ app/views/shared/_stack_history_drawer.html.erb
 app/views/shared/_time_section.html.erb
 app/views/shared/_time_timer.html.erb
 app/views/shared/_toast.html.erb
-app/views/shared/_topbar.html.erb
 app/views/sources/_detail.html.erb
 app/views/sources/_form.html.erb
 app/views/sources/_inline_fields.html.erb

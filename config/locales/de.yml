@@ -2614,6 +2614,9 @@ de:
       aria: "Link in die Zwischenablage kopieren"
       link_copied: "Link kopiert: %{ref}"
       wikilink_copied: "Wikilink kopiert: %{ref}"
+    blade_spine:
+      open_topic: "Thema: %{name}"        # #1672: war hartkodiert
+      open_topic_aria: "Thema %{name}"
     close_button:
       stack_history: "Verlauf"
       close_card: "Karte schließen"

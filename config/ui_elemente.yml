@@ -1250,3 +1250,28 @@ knoten_ist_markieren:
   label: topics.mark_actual
 knoten_junktor_umschalten:
   label: topics.toggle_junctor
+
+# ── Druckstücke (#1672 Etappe 26) ────────────────────────────────────────
+pdf_stand_oeffnen:
+  label: documents.list.archive_current
+pdf_stand_freigeben:
+  label: documents.list.share
+pdf_stand_loeschen:
+  icon: trash
+  label: documents.trash.artifact_delete
+pdf_stand_archivieren:
+  label: documents.list.archive_current
+frankierung_entfernen:
+  icon: trash
+  label: printables.franking.remove
+frankierung_kaufen:
+  label: printables.franking.buy
+frankierung_test:
+  label: printables.franking.dummy
+infofeld_hinzufuegen:
+  label: documents.fields.add_field
+infofelder_speichern:
+  label: actions.save
+druckstueck_verknuepfung_loesen:
+  icon: x
+  label: knowledge.chip.unlink

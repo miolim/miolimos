@@ -16,27 +16,27 @@
       <% arts.each do |art| %>
         <li class="flex items-center gap-2">
           <%# #1025 (aus immoos übernommen): Stand als Stack-Card öffnen. %>
-          <button type="button"
-                  <%= tag.attributes(data: pdf_card_data(polymorphic_path([:artifact, printable], artifact_id: art.id),
-                                                         title: "#{printable.display_name.presence || t('pdf_cards.beleg')} · #{art.created_at.strftime('%d.%m.%Y')}")) %>
-                  class="hover:underline text-sky-700 tabular-nums bg-transparent border-0 cursor-pointer p-0"><%= art.created_at.strftime("%d.%m.%Y %H:%M:%S") %></button>
+          <%= ui_button :pdf_stand_oeffnen,
+                data: pdf_card_data(polymorphic_path([:artifact, printable], artifact_id: art.id),
+                                    title: "#{printable.display_name.presence || t('pdf_cards.beleg')} · #{art.created_at.strftime('%d.%m.%Y')}"),
+                class: "hover:underline text-sky-700 tabular-nums bg-transparent border-0 cursor-pointer p-0" do %><%= art.created_at.strftime("%d.%m.%Y %H:%M:%S") %><% end %>
           <span class="text-slate-400 text-xs"><%= art.signed ? t("documents.list.signed") : t("documents.list.unsigned") %><%= " · #{art.creator.name}" if art.creator %></span>
           <%# #536: Portal-Freigabe je Stand — nur wenn das Dokument an einem
               Projekt (Topic mit Kunde) hängt. %>
           <% if printable.topic&.project? %>
-            <%= button_to art.shared_with_client ? t("documents.list.in_portal") : t("documents.list.share"),
+            <%= ui_button_to :pdf_stand_freigeben,
                   polymorphic_path([:toggle_artifact_share, printable], artifact_id: art.id), method: :post,
+                  title: (art.shared_with_client ? t("documents.list.in_portal") : t("documents.list.share")),
                   form: { class: "inline m-0 p-0 ml-auto", data: { turbo_stream: true } },
                   title: art.shared_with_client ? t("documents.list.unshare_title") : t("documents.list.share_title"),
                   class: "text-[11px] px-1.5 py-0.5 rounded border cursor-pointer #{art.shared_with_client ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-400 hover:text-slate-600'}" %>
           <% end %>
           <%# #787 (Hans): finalen PDF-Stand löschen (hart; re-archivierbar). %>
-          <%= button_to polymorphic_path([:destroy_artifact, printable], artifact_id: art.id), method: :delete,
+          <%= ui_button_to :pdf_stand_loeschen, polymorphic_path([:destroy_artifact, printable], artifact_id: art.id),
+                method: :delete, size: "w-3.5 h-3.5",
                 form: { class: "inline m-0 p-0 #{'ml-auto' unless printable.topic&.project?}", data: { turbo_stream: true, turbo_confirm: t("documents.trash.artifact_confirm") } },
-                title: t("documents.trash.artifact_delete_title"), "aria-label": t("documents.trash.artifact_delete"),
-                class: "shrink-0 text-slate-300 hover:text-rose-600 cursor-pointer bg-transparent border-0 p-0.5 [&_svg]:w-3.5 [&_svg]:h-3.5" do %>
-            <%= icon "trash" %>
-          <% end %>
+                title: t("documents.trash.artifact_delete_title"),
+                class: "shrink-0 text-slate-300 hover:text-rose-600 cursor-pointer bg-transparent border-0 p-0.5" %>
         </li>
       <% end %>
     </ul>
@@ -57,7 +57,7 @@
     <% end %>
   <% else %>
     <% if printable.final? %>
-      <%= button_to t("documents.list.archive_current"), polymorphic_path([:archive_pdf, printable]), method: :post,
+      <%= ui_button_to :pdf_stand_archivieren, polymorphic_path([:archive_pdf, printable]), method: :post,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
             class: "mt-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer" %>
     <% else %>

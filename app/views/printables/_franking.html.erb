@@ -21,7 +21,7 @@
               <div class="text-slate-400 truncate"><%= t("printables.franking.voucher_id") %> <%= pv.voucher_id %></div>
             <% end %>
           </div>
-          <%= button_to franking_url, method: :delete,
+          <%= ui_button_to :frankierung_entfernen, franking_url, method: :delete,
                 form: { class: "inline m-0 p-0 ml-auto",
                         data: { turbo_confirm: pv.dummy? ? nil : t("printables.franking.remove_confirm_real") } },
                 title: t("printables.franking.remove"), "aria-label": t("printables.franking.remove"),
@@ -37,14 +37,10 @@
               <option value="<%= p[:code] %>"><%= p[:label] %> · <%= format("%.2f", p[:cents] / 100.0).tr(".", ",") %> €</option>
             <% end %>
           </select>
-          <button type="submit"
-                  class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-            <%= t("printables.franking.buy") %>
-          </button>
-          <button type="submit" name="dummy" value="1"
-                  class="text-xs px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
-            <%= t("printables.franking.dummy") %>
-          </button>
+          <%= ui_button :frankierung_kaufen, type: :submit,
+                class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
+          <%= ui_button :frankierung_test, type: :submit, name: "dummy", value: "1",
+                class: "text-xs px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer" %>
         <% end %>
         <% unless current_actor.internetmarke_credential %>
           <p class="text-[11px] text-slate-400"><%= t("printables.franking.credentials_hint") %></p>

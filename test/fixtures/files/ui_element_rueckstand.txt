@@ -10,7 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 62 Dateien, 106 Bedienelemente.
+# Stand: 58 Dateien, 96 Bedienelemente.
 app/views/giro_codes/show.html.erb
 app/views/history/_list_blade_card.html.erb
 app/views/inbox_items/_document_review.html.erb
@@ -36,10 +36,6 @@ app/views/password_resets/new.html.erb
 app/views/pdf_cards/_blade_card.html.erb
 app/views/portal/pages/nachrichten.html.erb
 app/views/portal/sessions/new.html.erb
-app/views/printables/_artifacts.html.erb
-app/views/printables/_franking.html.erb
-app/views/printables/_infofields.html.erb
-app/views/printables/_link_chip.html.erb
 app/views/prompt_templates/_form.html.erb
 app/views/prompt_templates/show.html.erb
 app/views/search/_list_blade_card.html.erb

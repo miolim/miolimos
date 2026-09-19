@@ -230,6 +230,51 @@ class GmailSyncTest < ActiveSupport::TestCase
     assert_equal 1, history_calls.size
   end
 
+  # #1675: Scheiterte das Holen EINER Mail an etwas Vorübergehendem (5xx, 429,
+  # Zeitüberschreitung), wurde der Fehler gezählt — und der Merkpunkt trotzdem
+  # weitergeschoben. Die Mail wurde nie wieder angefragt: Eine Kundenmail
+  # tauchte im Projekt nie auf, und nichts wies darauf hin.
+  test "inkrementell: ein voruebergehender Fehler haelt den Merkpunkt — der naechste Lauf holt die Mail nach" do
+    cred = build_cred(last_history_id: "900")
+    allow_sender!("a@b.io")
+    client = FakeGmailClient.new
+    client.history_pages = [ history_page(%w[m1 m2], top_history_id: 950) ]
+    client.get_message_handler = lambda do |id|
+      raise Google::Apis::ServerError, "backendError" if id == "m2"
+      fake_message(id: id, subject: "S #{id}", from: "a@b.io")
+    end
+
+    erster = GmailSync.sync(cred, client: client)
+    assert_equal 1, erster.created
+    assert_equal 1, erster.errors
+    assert_equal "900", cred.reload.last_history_id, "der Merkpunkt ist über die verlorene Mail hinweggerückt"
+
+    # Zweiter Lauf, Google antwortet wieder: m1 ist schon da, m2 kommt nach.
+    client.history_pages = [ history_page(%w[m1 m2], top_history_id: 950) ]
+    client.get_message_handler = ->(id) { fake_message(id: id, subject: "S #{id}", from: "a@b.io") }
+    zweiter = GmailSync.sync(cred, client: client)
+    assert_equal 1, zweiter.created
+    assert_equal 2, Communication.count
+    assert_equal "950", cred.reload.last_history_id
+  end
+
+  # Die Gegenseite: Eine Mail, die sich NIE lesen lässt (kaputt, inzwischen
+  # gelöscht), darf den Abgleich nicht für immer festhalten.
+  test "inkrementell: ein dauerhafter Fehler an einer Mail haelt den Merkpunkt nicht fest" do
+    cred = build_cred(last_history_id: "900")
+    allow_sender!("a@b.io")
+    client = FakeGmailClient.new
+    client.history_pages = [ history_page(%w[m1 m2], top_history_id: 950) ]
+    client.get_message_handler = lambda do |id|
+      raise Google::Apis::ClientError, "notFound: Requested entity was not found." if id == "m2"
+      fake_message(id: id, subject: "S", from: "a@b.io")
+    end
+
+    ergebnis = GmailSync.sync(cred, client: client)
+    assert_equal [1, 1], [ergebnis.created, ergebnis.errors]
+    assert_equal "950", cred.reload.last_history_id
+  end
+
   test "deduplicates messages by external_id on re-run" do
     cred = build_cred
     allow_sender!("a@b.io")

@@ -211,7 +211,17 @@ class GmailSync
       break unless page_token
     end
 
-    @credential.update!(last_history_id: latest_history_id) if latest_history_id.present?
+    # #1675: Der Merkpunkt rückt nur vor, wenn nichts VORÜBERGEHEND gescheitert
+    # ist. Sonst fragte der nächste Lauf erst hinter der verlorenen Mail weiter
+    # — sie käme nie an, und nichts wiese darauf hin. Bleibt er stehen, liefert
+    # Google dieselben Ereignisse noch einmal: Schon Geholtes wird übersprungen
+    # (external_id), das Fehlende nachgeholt.
+    if @voruebergehend_gescheitert
+      Rails.logger.warn("GmailSync(credential=#{@credential.id}): Merkpunkt bleibt bei " \
+                        "#{@credential.last_history_id} — #{result.errors} Mail(s) vorübergehend nicht geholt")
+    elsif latest_history_id.present?
+      @credential.update!(last_history_id: latest_history_id)
+    end
 
     result
   rescue Google::Apis::ClientError => e
@@ -277,6 +287,21 @@ class GmailSync
   rescue => e
     Rails.logger.error("GmailSync: failed to ingest #{message_id}: #{e.class} #{e.message}")
     result.errors += 1
+    @voruebergehend_gescheitert = true if voruebergehend?(e)
+  end
+
+  # #1675: Lohnt ein neuer Versuch beim nächsten Lauf? Ja bei allem, was an
+  # Google, am Netz oder am Zugang liegt. Nein bei einer Mail, die sich nie
+  # lesen lassen wird (kaputt, inzwischen gelöscht → ClientError) — die darf
+  # den Abgleich nicht für immer festhalten.
+  VORUEBERGEHEND = [
+    Google::Apis::ServerError, Google::Apis::RateLimitError, Google::Apis::TransmissionError,
+    Google::Apis::AuthorizationError, Signet::AuthorizationError, SyncError,
+    Timeout::Error, SocketError, SystemCallError, IOError
+  ].freeze
+
+  def voruebergehend?(error)
+    VORUEBERGEHEND.any? { |klasse| error.is_a?(klasse) }
   end
 
   # Person-KI je Teilnehmer-Adresse anlegen (oder finden) und als

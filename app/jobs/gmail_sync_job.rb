@@ -7,7 +7,12 @@
 class GmailSyncJob < ApplicationJob
   def perform
     OauthCredential.where(provider: "google", active: true).find_each do |cred|
-      GmailSync.sync(cred)
+      # #1675: Das Ergebnis wurde verworfen — Fehler beim Holen einzelner Mails
+      # standen nirgends. Jetzt wenigstens im Protokoll, je Konto.
+      ergebnis = GmailSync.sync(cred)
+      if ergebnis.respond_to?(:errors) && ergebnis.errors.to_i.positive?
+        Rails.logger.warn "GmailSyncJob(credential=#{cred.id}): #{ergebnis.errors} Mail(s) nicht geholt"
+      end
     rescue StandardError => e
       Rails.logger.warn "GmailSyncJob(credential=#{cred.id}): #{e.class}: #{e.message}"
     end

@@ -61,6 +61,16 @@ release is cut, this section is renamed to the new version and a fresh
   silently — neither by another purchase nor by a dummy stamp; remove it
   explicitly first. A paid stamp that comes back without a voucher id is kept
   instead of being discarded after payment.
+- Gmail sync no longer loses mails after a transient error (#1675). When
+  fetching a single message failed (5xx, rate limit, timeout, auth), the
+  error was counted but the history pointer still advanced, so that message
+  was never requested again. The pointer now stays put until the run is clean;
+  messages that can never be read (deleted, malformed) do not hold it back.
+  Per-account fetch errors are logged by the sync job.
+- Inbox items can no longer hang on “processing” forever (#1675): an unknown
+  processor or a vanished actor now ends visibly as failed, and a recurring
+  job marks items as failed whose worker died mid-run (e.g. during a deploy)
+  so they can be started again.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

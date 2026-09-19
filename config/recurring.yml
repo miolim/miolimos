@@ -18,6 +18,11 @@ production:
   gmail_sync:
     class: GmailSyncJob
     schedule: every 15 minutes
+  # #1675: Posteingangs-Einträge, die auf „processing" hängen geblieben sind
+  # (Worker beim Deploy gestorben), sichtbar als fehlgeschlagen markieren.
+  inbox_stuck_reaper:
+    class: InboxStuckReaperJob
+    schedule: every 30 minutes
   # #1660: Token-Verbrauch der Agenten aus den Sitzungsprotokollen einlesen.
   # Nachts, weil der Lauf alle Protokolle der letzten Wochen durchgeht.
   agent_usage_import:

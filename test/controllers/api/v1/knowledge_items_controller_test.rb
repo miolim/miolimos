@@ -456,6 +456,51 @@ class Api::V1::KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Neubau 1", person.reload.mailing_address(Date.new(2026, 7, 1)).line1
   end
 
+  # #1675: Die API ersetzte Adressen und Identifier per „alles löschen, neu
+  # anlegen". Jeder Lese-Merge-Schreib-Zyklus eines Agenten gab damit ALLEN
+  # Zeilen neue ids — Rechnungen und Dokumente zeigen aber auf diese ids
+  # (gewählte Anschrift, gezeigte Identifier): Die Rechnung hält die Anschrift
+  # per Fremdschlüssel fest (→ 500), das Dokument behielt einen toten Verweis.
+  test "Kontaktdaten-Update laesst unveraenderte Zeilen (und die Verweise darauf) stehen" do
+    person = build_item(title: "Rechnungsempfängerin", item_type: :person)
+    adresse    = person.postal_addresses.create!(line1: "Hauptstr. 1", postal_code: "20095", city: "Hamburg")
+    kundennr   = person.identifiers.create!(label: "Kundennr", value: "4711", position: 0)
+    rechnung   = Invoice.create!(kind: :rechnung, recipient_uuid: person.uuid, recipient_address_id: adresse.id,
+                                 shown_identifier_ids: [kundennr.id])
+
+    patch "/api/v1/knowledge_items/#{person.uuid}", headers: @headers, as: :json, params: {
+      postal_addresses: [
+        { line1: "Hauptstr. 1", postal_code: "20095", city: "Hamburg", billing: true },   # dieselbe, nur Flag neu
+        { line1: "Nebenweg 2", postal_code: "22765", city: "Hamburg" }                     # neu
+      ],
+      identifiers: [{ label: "Kundennr", value: "4711" }, { label: "Steuernummer", value: "12/345" }]
+    }
+    assert_response :success
+
+    assert_equal adresse.id, rechnung.reload.recipient_address_id
+    assert PostalAddress.exists?(adresse.id), "die unveränderte Adresse wurde gelöscht und neu angelegt"
+    assert adresse.reload.billing, "das geänderte Flag kam nicht an"
+    assert_equal [kundennr.id], rechnung.shown_identifier_ids
+    assert Identifier.exists?(kundennr.id)
+    assert_equal ["Hauptstr. 1", "Nebenweg 2"], person.reload.postal_addresses.order(:position).pluck(:line1)
+  end
+
+  test "Kontaktdaten-Update: eine entfernte Adresse hinterlaesst keinen toten Verweis und keine Fehlerseite" do
+    person  = build_item(title: "Umzieherin", item_type: :person)
+    adresse = person.postal_addresses.create!(line1: "Alt 1", postal_code: "20095", city: "Hamburg")
+    rechnung = Invoice.create!(kind: :rechnung, recipient_uuid: person.uuid, recipient_address_id: adresse.id)
+    brief    = Document.create!(kind: :brief, recipient_uuid: person.uuid, recipient_address_id: adresse.id)
+
+    patch "/api/v1/knowledge_items/#{person.uuid}", headers: @headers, as: :json, params: {
+      postal_addresses: [{ line1: "Neu 9", postal_code: "10115", city: "Berlin" }]
+    }
+    assert_response :success
+
+    assert_nil rechnung.reload.recipient_address_id, "die Rechnung fällt auf die Automatik zurück"
+    assert_nil brief.reload.recipient_address_id,    "das Dokument behielt einen Verweis ins Leere"
+    assert_equal ["Neu 9"], person.reload.postal_addresses.pluck(:line1)
+  end
+
   test "Nicht-Personen-KI hat leere Kontakt-Arrays" do
     note = build_item(title: "Nur Notiz", item_type: :note)
     get "/api/v1/knowledge_items/#{note.uuid}", headers: @headers

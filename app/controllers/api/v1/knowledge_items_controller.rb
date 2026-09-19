@@ -266,8 +266,9 @@ module Api
 
         item.transaction do
           if params.key?(:postal_addresses)
-            item.postal_addresses.destroy_all
-            Array(params[:postal_addresses]).each_with_index do |a, i|
+            ersetze_zeilen(item.postal_addresses, Array(params[:postal_addresses]),
+                           schluessel: ->(a) { [a[:line1], a[:line2], a[:postal_code], a[:city], a[:country]].map { |v| v.to_s.strip.downcase } },
+                           verweis: :recipient_address_id) do |a, i|
               # kind ist Enum (liegenschaft|post); nur setzen wenn angegeben,
               # sonst greift der Default. Ungültige Werte → ArgumentError → 422.
               attrs = { line1: a[:line1], line2: a[:line2], postal_code: a[:postal_code],
@@ -276,7 +277,7 @@ module Api
                         # #1073: Gueltigkeitszeitraum; fehlt/leer = offene Grenze.
                         valid_from: a[:valid_from].presence, valid_until: a[:valid_until].presence }
               attrs[:kind] = a[:kind] if a[:kind].present?
-              item.postal_addresses.create!(attrs)
+              attrs
             end
           end
           if params.key?(:contact_points)
@@ -288,12 +289,55 @@ module Api
             end
           end
           if params.key?(:identifiers)
-            item.identifiers.destroy_all
-            Array(params[:identifiers]).each_with_index do |d, i|
-              item.identifiers.create!(
-                label: d[:label], value: d[:value],
-                counterparty_uuid: d[:counterparty_uuid].presence, position: i)
+            ersetze_zeilen(item.identifiers, Array(params[:identifiers]),
+                           schluessel: ->(d) { [d[:label], d[:value]].map { |v| v.to_s.strip.downcase } },
+                           verweis: :shown_identifier_ids) do |d, i|
+              { label: d[:label], value: d[:value],
+                counterparty_uuid: d[:counterparty_uuid].presence, position: i }
             end
+          end
+        end
+      end
+
+      # #1675: Replace-Semantik OHNE „alles löschen, neu anlegen". Rechnungen
+      # und Dokumente zeigen per id auf Adressen und Identifier (gewählte
+      # Anschrift, gezeigte Identifier). Das alte destroy_all + create! gab bei
+      # jedem Lese-Merge-Schreib-Zyklus eines Agenten ALLEN Zeilen neue ids: Die
+      # Rechnung hält die Anschrift per Fremdschlüssel fest (→ 500), das
+      # Dokument behielt einen Verweis ins Leere. Jetzt: Was inhaltlich gleich
+      # bleibt (Schlüssel), behält seine Zeile und wird nur aktualisiert; Neues
+      # wird angelegt; was wirklich entfällt, wird gelöscht — und die Verweise
+      # darauf vorher ausdrücklich gelöst (der Beleg fällt auf die Automatik
+      # zurück) statt tot stehen zu bleiben. Die Web-Oberfläche arbeitet seit
+      # #532 aus demselben Grund mit stabilen ids.
+      def ersetze_zeilen(bestand, eingang, schluessel:, verweis:)
+        frei = bestand.to_a.group_by { |zeile| schluessel.call(zeile.attributes.symbolize_keys) }
+        behalten = []
+        eingang.each_with_index do |roh, i|
+          attrs = yield(roh, i)
+          zeile = frei[schluessel.call(roh)]&.shift
+          if zeile
+            zeile.update!(attrs)
+          else
+            zeile = bestand.create!(attrs)
+          end
+          behalten << zeile.id
+        end
+        entfallen = bestand.where.not(id: behalten)
+        verweise_loesen(verweis, entfallen.pluck(:id))
+        entfallen.destroy_all
+      end
+
+      def verweise_loesen(spalte, ids)
+        return if ids.empty?
+        [Invoice, Document].each do |modell|
+          next unless modell.column_names.include?(spalte.to_s)
+          if spalte == :shown_identifier_ids
+            modell.unscoped.where("shown_identifier_ids && ARRAY[?]::integer[]", ids).find_each do |beleg|
+              beleg.update_columns(shown_identifier_ids: beleg.shown_identifier_ids - ids)
+            end
+          else
+            modell.unscoped.where(spalte => ids).update_all(spalte => nil)
           end
         end
       end

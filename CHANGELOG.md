@@ -104,6 +104,12 @@ release is cut, this section is renamed to the new version and a fresh
   employer, logo, tags and aliases back from each file — anything changed only
   in the database in the meantime was lost. A file that actually changed
   still wins (the import case).
+- API: updating `postal_addresses` / `identifiers` of a person keeps the rows
+  that did not change (#1675). The old delete-all-and-recreate gave every row
+  a new id on each read-merge-write cycle, while invoices and documents point
+  at those ids — an invoice's foreign key turned the request into a 500, a
+  document kept a dead reference. Removed rows now release their references
+  explicitly (the document falls back to the automatic address).
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

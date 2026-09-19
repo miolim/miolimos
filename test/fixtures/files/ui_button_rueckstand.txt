@@ -2,7 +2,7 @@
 # Die Liste darf NUR schrumpfen — neue Dateien werden gleich mit ui_button
 # gebaut. Zwei Wächter halten das ehrlich (test/services/ui_button_wachter_test.rb).
 #
-# Stand: 56 Dateien, 97 Knöpfe.
+# Stand: 42 Dateien, 71 Knöpfe.
 app/views/communications/_detail_body.html.erb
 app/views/communications/_index_list_blade.html.erb
 app/views/dashboard/_agent_section.html.erb
@@ -23,21 +23,7 @@ app/views/knowledge_items/_stack_new_card.html.erb
 app/views/printables/_infofields.html.erb
 app/views/settings/blades/_preferences.html.erb
 app/views/settings/tag_icons/_row.html.erb
-app/views/shared/_append_dashboard_button.html.erb
-app/views/shared/_blade_close_button.html.erb
-app/views/shared/_blade_toolbar.html.erb
-app/views/shared/_blade_toolbar_close.html.erb
 app/views/shared/_entity_picker.html.erb
-app/views/shared/_list_toolbar.html.erb
-app/views/shared/_quick_create_bar.html.erb
-app/views/shared/_reply_card.html.erb
-app/views/shared/_sidebar.html.erb
-app/views/shared/_sidebar_topic_row.html.erb
-app/views/shared/_stack_history_drawer.html.erb
-app/views/shared/_time_timer.html.erb
-app/views/shared/_toast.html.erb
-app/views/shared/_topbar.html.erb
-app/views/shared/_topbar_item.html.erb
 app/views/sources/_form.html.erb
 app/views/sources/_inline_fields.html.erb
 app/views/task_comments/_comment.html.erb

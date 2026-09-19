@@ -17,11 +17,9 @@
   <div data-time-timer-target="bar" class="flex items-center gap-1.5"></div>
 
   <%# Start/Nachtragen-Button. %>
-  <button type="button" data-action="time-timer#togglePopup"
-          title="<%= t("shared.timer.track_time") %>" aria-label="<%= t("shared.timer.track_time") %>"
-          class="p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer">
-    <%= icon "timer", size: "w-4 h-4" %>
-  </button>
+  <%= ui_button :zeit_erfassen, size: "w-4 h-4",
+        data: { action: "time-timer#togglePopup" },
+        class: "p-1.5 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer" %>
 
   <%# Popup. %>
   <div data-time-timer-target="popup"
@@ -31,10 +29,9 @@
               class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer"><%= t("shared.timer.start_now") %></button>
       <button type="button" data-action="time-timer#setManualMode"
               class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 cursor-pointer"><%= t("shared.timer.add_manually") %></button>
-      <button type="button" data-action="time-timer#closePopup"
-              class="ml-auto p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer" aria-label="<%= t("shared.timer.close") %>">
-        <%= icon "x", size: "w-4 h-4" %>
-      </button>
+      <%= ui_button :zeit_fenster_schliessen, size: "w-4 h-4",
+            data: { action: "time-timer#closePopup" },
+            class: "ml-auto p-0.5 rounded text-slate-400 hover:text-slate-700 cursor-pointer" %>
     </div>
 
     <%# #533 1c: Card-Start-Modus — Subjekt-Zeile + Topic-Buttons der Aufgabe/KI. %>

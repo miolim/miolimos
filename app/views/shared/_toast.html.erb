@@ -28,8 +28,7 @@
     <% end %>
   <% end %>
 
-  <button type="button"
-          data-action="click->toast#dismiss"
-          aria-label="Schließen"
-          class="text-slate-400 hover:text-white text-lg leading-none">×</button>
+  <%= ui_button :meldung_schliessen, size: "w-4 h-4",
+        data: { action: "click->toast#dismiss" },
+        class: "text-slate-400 hover:text-white leading-none" %>
 </div>

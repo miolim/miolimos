@@ -44,14 +44,11 @@
         <div class="flex items-center gap-1 pt-1">
           <span class="text-[11px] text-slate-500 mr-1"><%= t("quick_create.fields.preset") %></span>
           <% %w[cat squirrel bird fish].each do |p| %>
-            <button type="button"
-                    data-task-quickadd-prefs-target="preset"
-                    data-preset="<%= p %>"
-                    data-action="click->task-quickadd-prefs#selectPreset"
-                    title="Preset <%= p %>" aria-label="Preset <%= p %>"
-                    class="p-1 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
-              <%= icon p, size: "w-4 h-4" %>
-            </button>
+            <%= ui_button :"preset_#{p}", size: "w-4 h-4",
+                  title: t("shared.quick_create.preset_aria", name: p),
+                  data: { task_quickadd_prefs_target: "preset", preset: p,
+                          action: "click->task-quickadd-prefs#selectPreset" },
+                  class: "p-1 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer" %>
           <% end %>
         </div>
         <%# Topic-Preset. Toplevel `topic_id`-Param wird vom Quickadd-Pfad

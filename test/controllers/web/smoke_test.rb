@@ -92,7 +92,11 @@ class SmokeTest < ActionDispatch::IntegrationTest
     get "/tasks"
     assert_response :success
     assert_includes @response.body, %(data-controller="theme")
-    assert_includes @response.body, %(data-action="click->theme#toggle")
+    # #1669: Der Knopf kommt jetzt aus `ui_button`, und content_tag schreibt das
+    # `>` im Attributwert als `&gt;`. Fürs Markup gleichwertig, für eine
+    # Textsuche nicht — deshalb hier gegen den entschärften Text prüfen, statt
+    # schlechteres HTML zu schreiben, damit die Suche glücklich wird.
+    assert_includes CGI.unescapeHTML(@response.body), %(data-action="click->theme#toggle")
   end
 
   test "theme-Cookie=dark rendert <html class=dark>, ohne Cookie nicht" do

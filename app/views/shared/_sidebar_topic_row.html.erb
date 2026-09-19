@@ -44,14 +44,9 @@
       <%# Chevron am Zeilenende — klappt Sub-Topics auf/zu. Im
           collapsed-Sidebar-Modus ausgeblendet, dort gibt's eh keinen
           horizontalen Platz. %>
-      <button type="button"
-              data-action="click->disclosure#toggle"
-              data-disclosure-target="icon"
-              class="shrink-0 p-1 text-slate-500 hover:text-white cursor-pointer group-data-[collapsed=true]/sidebar:md:hidden inline-block transition-transform"
-              title="Sub-Themen ein-/ausklappen"
-              aria-label="Sub-Themen ein-/ausklappen">
-        <%= icon "chevron_right" %>
-      </button>
+      <%= ui_button :unterthemen_klappen,
+            data: { action: "click->disclosure#toggle", disclosure_target: "icon" },
+            class: "shrink-0 p-1 text-slate-500 hover:text-white cursor-pointer group-data-[collapsed=true]/sidebar:md:hidden inline-block transition-transform" %>
     </div>
     <ul data-disclosure-target="content" class="hidden">
       <% subs.each do |sub| %>

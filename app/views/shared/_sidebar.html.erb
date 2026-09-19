@@ -52,15 +52,13 @@
     <%# #267: Mobile zeigt links oben ein X zum Schliessen der Slide-in-
         Sidebar; auf Desktop bleibt der Menü-Toggle (schmal/breit).
         Beide stehen im selben Slot, je nach Breakpoint sichtbar. %>
-    <button type="button"
-            data-action="click->mobile-nav#close"
-            aria-label="<%= t("shared.sidebar.close_nav") %>"
-            title="<%= t("shared.sidebar.close_nav") %>"
-            class="md:hidden pl-2 pr-2 flex items-center text-slate-400 hover:text-white cursor-pointer">
+    <%= ui_button :navigation_schliessen,
+          data: { action: "click->mobile-nav#close" },
+          class: "md:hidden pl-2 pr-2 flex items-center text-slate-400 hover:text-white cursor-pointer" do %>
       <span class="w-5 flex items-center justify-center shrink-0">
         <%= icon "x" %>
       </span>
-    </button>
+    <% end %>
     <button type="button"
             data-action="click->sidebar#toggle"
             aria-label="<%= t("shared.sidebar.toggle_nav_aria") %>"

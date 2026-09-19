@@ -86,13 +86,13 @@
           <% end %>
 
           <div class="flex items-center gap-2 pt-1">
-            <%= button_to import_bank_ledger_path(ledger), method: :post,
+            <%= ui_button_to :kontoauszug_importieren, import_bank_ledger_path(ledger), method: :post,
                   form: { class: "inline", data: { turbo_stream: true } },
-                  class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" do %><%= t("bank.import.confirm") %><% end %>
+                  class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
             <% unless vorschau.sicher? %>
-              <%= button_to import_bank_ledger_path(ledger, trotz_abweichung: 1), method: :post,
+              <%= ui_button_to :kontoauszug_trotzdem_importieren, import_bank_ledger_path(ledger, trotz_abweichung: 1), method: :post,
                     form: { class: "inline", data: { turbo_stream: true } },
-                    class: "text-xs px-2 py-0.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 cursor-pointer" do %><%= t("bank.import.force") %><% end %>
+                    class: "text-xs px-2 py-0.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 cursor-pointer" %>
             <% end %>
           </div>
         </div>
@@ -113,9 +113,9 @@
       <div class="flex items-center gap-2">
         <span class="text-[15px] font-semibold text-slate-600"><%= t("bank.transactions.heading") %></span>
         <span class="text-xs text-slate-400 tabular-nums"><%= txs.size %></span>
-        <%= button_to auto_match_bank_ledger_path(ledger), method: :post,
+        <%= ui_button_to :umsaetze_auto_zuordnen, auto_match_bank_ledger_path(ledger), method: :post,
               form: { class: "ml-auto inline", data: { turbo_stream: true } },
-              class: "text-xs px-2 py-0.5 rounded text-sky-700 hover:bg-sky-50 cursor-pointer" do %><%= t("bank.transactions.auto") %><% end %>
+              class: "text-xs px-2 py-0.5 rounded text-sky-700 hover:bg-sky-50 cursor-pointer" %>
       </div>
 
       <% if txs.empty? %>
@@ -146,19 +146,20 @@
                       label: s.payment_obligation.label.presence ||
                              s.payment_obligation.bearer.try(:display_name).presence ||
                              t("invoices.obligations.one")) %></span>
-                <%= button_to unassign_bank_transaction_path(tx, settlement_id: s.id), method: :delete,
+                <%# #1672: war ein Kreuz-Zeichen ohne Namen. %>
+                <%= ui_button_to :umsatz_zuordnung_loesen, unassign_bank_transaction_path(tx, settlement_id: s.id),
+                      method: :delete, size: "w-3.5 h-3.5",
                       form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-                      title: t("bank.transactions.unassign"),
-                      class: "text-slate-300 hover:text-rose-600 bg-transparent border-0 cursor-pointer" do %>×<% end %>
+                      class: "text-slate-300 hover:text-rose-600 bg-transparent border-0 cursor-pointer" %>
               </div>
             <% end %>
 
             <% if tx.no_assignment? %>
               <div class="flex items-center gap-2 text-[11px] pl-[4.5rem] text-slate-500">
                 <span><%= t("bank.transactions.no_assignment_note", note: tx.no_assignment_note.presence || "—") %></span>
-                <%= button_to no_assignment_bank_transaction_path(tx), method: :post,
+                <%= ui_button_to :umsatz_ohne_zuordnung_zurueck, no_assignment_bank_transaction_path(tx), method: :post,
                       form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-                      class: "text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer underline" do %><%= t("bank.transactions.undo") %><% end %>
+                      class: "text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer underline" %>
               </div>
             <% elsif tx.rest_offen? %>
               <div class="flex items-center gap-1 pl-[4.5rem]">
@@ -178,12 +179,12 @@
                   <input type="text" inputmode="decimal" name="amount"
                          placeholder="<%= number_with_precision(tx.restbetrag, precision: 2, separator: ',', delimiter: '') %>"
                          class="w-20 border border-slate-200 rounded px-1 py-0.5 text-[11px] text-right tabular-nums">
-                  <button type="submit" class="text-[11px] px-1.5 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer"><%= t("bank.transactions.assign") %></button>
+                  <%= ui_button :umsatz_zuordnen, type: :submit, class: "text-[11px] px-1.5 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" %>
                 <% end %>
-                <%= button_to no_assignment_bank_transaction_path(tx), method: :post,
+                <%= ui_button_to :umsatz_ohne_zuordnung, no_assignment_bank_transaction_path(tx), method: :post,
                       form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
                       title: t("bank.transactions.mark_no_assignment"),
-                      class: "text-[11px] px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 cursor-pointer" do %><%= t("bank.transactions.no_assignment") %><% end %>
+                      class: "text-[11px] px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 cursor-pointer" %>
               </div>
             <% end %>
           </div>

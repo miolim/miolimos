@@ -829,3 +829,46 @@ vorgabe_uebernehmen:
   label: preferences.default_take_over
 vorgabe_loeschen:
   label: preferences.default_clear
+
+# ── Bankkonten (#1672 Etappe 14) ─────────────────────────────────────────
+kontoauszug_importieren:
+  label: bank.import.confirm
+kontoauszug_trotzdem_importieren:
+  label: bank.import.force
+umsaetze_auto_zuordnen:
+  label: bank.transactions.auto
+umsatz_zuordnung_loesen:
+  icon: x
+  label: bank.transactions.unassign
+umsatz_ohne_zuordnung:
+  label: bank.transactions.no_assignment
+umsatz_ohne_zuordnung_zurueck:
+  label: bank.transactions.undo
+umsatz_zuordnen:
+  label: bank.transactions.assign
+bankkonto_anlegen:
+  label: bank.ledgers.add
+bankkonto_oeffnen:
+  label: bank.ledgers.title
+# Die sechs Abschnitts-Editoren teilen ein Abbrechen/Speichern-Paar: gleiche
+# Faehigkeit, gleiche Bauform, unterschiedlicher Abschnitt — aber WAS
+# gespeichert wird, ergibt sich aus dem Formular, nicht aus dem Befehl.
+abschnitt_bearbeiten_abbrechen:
+  label: actions.cancel
+abschnitt_speichern:
+  label: actions.save
+# Sechs Abschnitts-Editoren, EIN Klapp-Befehl: gleiches Symbol, gleiche
+# Faehigkeit. Welcher Abschnitt, sagt der Aufrufer als title.
+editor_abschnitt_klappen:
+  icon: chevron_right
+  label: knowledge.editors.contacts.title
+mail_schreiben:
+  icon: mail
+  label: knowledge.editors.contacts.compose_email
+mail_text_kopieren:
+  label: knowledge.editors.contacts.compose_copy
+mail_programm_oeffnen:
+  label: knowledge.editors.contacts.compose_open
+anrufen:
+  icon: phone
+  label: knowledge.editors.contacts.call

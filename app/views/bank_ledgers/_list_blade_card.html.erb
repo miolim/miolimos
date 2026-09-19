@@ -21,9 +21,9 @@
                 border-b border-slate-100 flex items-center gap-2">
       <span class="font-semibold text-sm"><%= t("bank.ledgers.title") %></span>
       <span class="text-xs text-slate-400 tabular-nums shrink-0"><%= ledgers.size %></span>
-      <%= button_to bank_ledgers_path, method: :post,
+      <%= ui_button_to :bankkonto_anlegen, bank_ledgers_path, method: :post,
             form: { class: "ml-auto inline" },
-            class: "text-xs px-2 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" do %><%= t("bank.ledgers.add") %><% end %>
+            class: "text-xs px-2 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" %>
     </div>
 
     <% if ledgers.empty? %>
@@ -31,10 +31,10 @@
     <% end %>
 
     <% ledgers.each do |l| %>
-      <button type="button"
-              data-controller="blade-link" data-blade-link-kind-value="bank_ledger"
-              data-blade-link-id-value="<%= l.id %>" data-action="click->blade-link#append"
-              class="w-full text-left px-2 py-1.5 rounded border border-slate-100 hover:bg-slate-50 cursor-pointer">
+      <%= ui_button :bankkonto_oeffnen, title: l.full_label,
+            data: { controller: "blade-link", blade_link_kind_value: "bank_ledger",
+                    blade_link_id_value: l.id, action: "click->blade-link#append" },
+            class: "w-full text-left px-2 py-1.5 rounded border border-slate-100 hover:bg-slate-50 cursor-pointer" do %>
         <div class="flex items-center gap-2">
           <span class="font-medium text-[13px] truncate"><%= l.full_label %></span>
           <span class="ml-auto tabular-nums text-[13px] <%= "text-rose-700" if l.balance.negative? %>">
@@ -47,7 +47,7 @@
             <span class="ml-auto shrink-0"><%= t("bank.ledgers.as_of", date: l(l.balance_on, format: :short)) %></span>
           <% end %>
         </div>
-      </button>
+      <% end %>
     <% end %>
   </div>
 </article>

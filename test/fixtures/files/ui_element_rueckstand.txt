@@ -10,9 +10,7 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 143 Dateien, 298 Bedienelemente.
-app/views/bank_ledgers/_blade_card.html.erb
-app/views/bank_ledgers/_list_blade_card.html.erb
+# Stand: 135 Dateien, 267 Bedienelemente.
 app/views/calendar/_item_row.html.erb
 app/views/calendar/_list_blade.html.erb
 app/views/calendar/_period.html.erb
@@ -30,24 +28,18 @@ app/views/invoices/_row.html.erb
 app/views/invoices/_time_import.html.erb
 app/views/invoices/show.html.erb
 app/views/invoices/trash.html.erb
-app/views/knowledge_items/_affiliations_editor.html.erb
-app/views/knowledge_items/_bank_account_editor.html.erb
 app/views/knowledge_items/_bib_source_field.html.erb
-app/views/knowledge_items/_contact_points_editor.html.erb
 app/views/knowledge_items/_contacts_chips.html.erb
 app/views/knowledge_items/_detail_body_section.html.erb
 app/views/knowledge_items/_detail_link_panels.html.erb
 app/views/knowledge_items/_detail_section.html.erb
 app/views/knowledge_items/_history_panel.html.erb
-app/views/knowledge_items/_identifiers_editor.html.erb
 app/views/knowledge_items/_list_row.html.erb
 app/views/knowledge_items/_merge_preview.html.erb
 app/views/knowledge_items/_person_backlinks.html.erb
 app/views/knowledge_items/_person_icon_menu.html.erb
 app/views/knowledge_items/_person_tabs.html.erb
 app/views/knowledge_items/_persons_list_blade.html.erb
-app/views/knowledge_items/_postal_address_editor.html.erb
-app/views/knowledge_items/_relationships_editor.html.erb
 app/views/knowledge_items/_replies_list.html.erb
 app/views/knowledge_items/_replies_section.html.erb
 app/views/knowledge_items/_stack.html.erb

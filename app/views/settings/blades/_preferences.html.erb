@@ -130,12 +130,12 @@
         <h2 class="text-sm font-semibold text-slate-900"><%= t("preferences.sidebar_layout_title") %></h2>
         <div class="flex items-center gap-3">
           <%# #1612 (Hans): freie Überschriften für die Sidebar. %>
-          <button type="button" data-action="sidebar-layout-editor#addHeading"
-                  class="text-xs text-emerald-700 hover:text-emerald-900 underline cursor-pointer"><%= t("preferences.sidebar_heading_add") %></button>
-          <button type="button" data-action="sidebar-layout-editor#reset"
-                  class="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer">
-            <%= t("preferences.sidebar_layout_reset") %>
-          </button>
+          <%= ui_button :sidebar_ueberschrift_hinzufuegen,
+                data: { action: "sidebar-layout-editor#addHeading" },
+                class: "text-xs text-emerald-700 hover:text-emerald-900 underline cursor-pointer" %>
+          <%= ui_button :sidebar_layout_zuruecksetzen,
+                data: { action: "sidebar-layout-editor#reset" },
+                class: "text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer" %>
         </div>
       </div>
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.sidebar_layout_help") %></p>
@@ -196,10 +196,9 @@
              data-sidebar-layout-editor-icons-value="<%= topbar_item_icons_svg.to_json %>">
       <div class="flex items-center justify-between mb-1">
         <h2 class="text-sm font-semibold text-slate-900"><%= t("preferences.topbar_layout_title") %></h2>
-        <button type="button" data-action="sidebar-layout-editor#reset"
-                class="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer">
-          <%= t("preferences.sidebar_layout_reset") %>
-        </button>
+        <%= ui_button :topbar_layout_zuruecksetzen,
+              data: { action: "sidebar-layout-editor#reset" },
+              class: "text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer" %>
       </div>
       <p class="text-xs text-slate-500 mb-3"><%= t("preferences.topbar_layout_help") %></p>
       <% topbar_layout = current_actor.pref_topbar_layout %>
@@ -233,7 +232,7 @@
         Override für Tests bleibt via ?cm6=0 möglich. %>
 
     <div class="px-4 py-3 flex justify-end">
-      <%= f.submit t("preferences.save"),
+      <%= ui_button :vorlieben_speichern, type: :submit,
             class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
     </div>
   <% end %>
@@ -266,11 +265,11 @@
       </p>
 
       <div class="flex items-center gap-2">
-        <%= button_to t("preferences.default_take_over"), set_default_settings_preferences_path,
+        <%= ui_button_to :vorgabe_uebernehmen, set_default_settings_preferences_path,
               method: :post, form: { data: { turbo: false } },
               class: "px-3 py-1 rounded border border-emerald-600 text-emerald-700 text-sm hover:bg-emerald-50 bg-transparent cursor-pointer" %>
         <% if vorgabe.any? %>
-          <%= button_to t("preferences.default_clear"), reset_default_settings_preferences_path,
+          <%= ui_button_to :vorgabe_loeschen, reset_default_settings_preferences_path,
                 method: :delete, form: { data: { turbo: false } },
                 class: "px-3 py-1 rounded border border-slate-300 text-slate-600 text-sm hover:bg-slate-50 bg-transparent cursor-pointer" %>
         <% end %>

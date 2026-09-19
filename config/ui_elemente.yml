@@ -803,3 +803,29 @@ zeit_dauer_speichern:
 # Der Reiter kommt als Wert aus der Liste — ein Eintrag, Text vom Aufrufer.
 zeit_reiter_waehlen:
   label: time_entries.tab_all
+
+# ── Einstellungen: Sicherheit und Vorlieben (#1672 Etappe 13) ────────────
+passwort_aendern:
+  label: passwords.self_submit
+zweitfaktor_codes_neu:
+  label: settings.two_factor.regenerate_codes
+zweitfaktor_abschalten:
+  label: settings.two_factor.disable
+zweitfaktor_bestaetigen:
+  label: settings.two_factor.confirm
+zweitfaktor_einrichtung_abbrechen:
+  label: settings.two_factor.cancel_setup
+zweitfaktor_einschalten:
+  label: settings.two_factor.enable
+sidebar_ueberschrift_hinzufuegen:
+  label: preferences.sidebar_heading_add
+sidebar_layout_zuruecksetzen:
+  label: preferences.sidebar_layout_reset
+topbar_layout_zuruecksetzen:
+  label: preferences.sidebar_layout_reset
+vorlieben_speichern:
+  label: preferences.save
+vorgabe_uebernehmen:
+  label: preferences.default_take_over
+vorgabe_loeschen:
+  label: preferences.default_clear

@@ -2687,6 +2687,7 @@ de:
       select_left: "Element links auswählen →"
     reply:
       draft: "Entwurf"
+      toggle: "Beitrag ein-/ausklappen"   # #1672
       publish: "Veröffentlichen"
       link_copied: "Link zur Antwort kopiert."
       copy_link: "Link kopieren"

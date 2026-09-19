@@ -2658,6 +2658,7 @@ en:
       select_left: "Select an item on the left →"
     reply:
       draft: "Draft"
+      toggle: "Toggle post"   # #1672
       publish: "Publish"
       link_copied: "Link to reply copied."
       copy_link: "Copy link"

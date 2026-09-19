@@ -611,3 +611,37 @@ agent_frischer_kontext:
 agent_einstellungen:
   icon: gear
   label: dashboard.agent.settings
+
+# ── Listen-Werkzeugleiste (#1672 Etappe 7) ───────────────────────────────
+# Die Gruppierungs-, Sortier- und Richtungs-Knoepfe entstehen aus Listen, die
+# der AUFRUFER mitgibt. Der Befehl ist jeweils „wähle eine Gruppierung" —
+# WELCHE ist das Argument, wie bei den Optionen eines Auswahlfelds. Deshalb
+# eine Kennung je Befehl und nicht je Option; die sichtbare Beschriftung
+# bleibt die des Aufrufers (Block-Form).
+liste_ohne_gruppierung:
+  label: shared.list_toolbar.no_grouping
+liste_gruppierung_waehlen:
+  label: shared.list_toolbar.group
+liste_richtung_waehlen:
+  label: shared.list_toolbar.sort
+liste_sortierung_waehlen:
+  label: shared.list_toolbar.sort
+liste_filter_oeffnen:
+  icon: filter
+  label: shared.list_toolbar.filter
+liste_filter_anwenden:
+  label: shared.list_toolbar.apply
+
+# ── Antwort-Karte (#1672 Etappe 7) ───────────────────────────────────────
+antwort_klappen:
+  icon: chevron_right
+  label: shared.reply.toggle
+antwort_link_kopieren:
+  label: shared.reply.copy_link
+antwort_loeschen:
+  icon: trash
+  label: actions.delete
+antwort_speichern:
+  label: actions.save
+antwort_veroeffentlichen:
+  label: shared.reply.publish

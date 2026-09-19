@@ -163,7 +163,8 @@ class InboxItemsController < ApplicationController
     return if raw.empty?
     raw.each do |id|
       topic = Topic.find_by(slug: id) || Topic.find_by(id: id.to_i)
-      next unless topic
+      # #1675: wie Unbekanntes wird auch Unsichtbares/Nur-Lesbares übergangen.
+      next unless topic&.visible_to?(current_actor) && topic.writable_by?(current_actor)
       InboxItemTopic.find_or_create_by!(inbox_item: item, topic: topic)
     end
   end

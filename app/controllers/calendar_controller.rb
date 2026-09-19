@@ -72,7 +72,8 @@ class CalendarController < ApplicationController
     rescue StandardError => e
       Rails.logger.warn("create_call: Personen-Verknüpfung fehlgeschlagen: #{e.class} #{e.message}")
     end
-    topic = params[:topic_id].present? ? Topic.find_by(id: params[:topic_id]) : nil
+    # #1675: nur in ein Thema, in dem der Nutzer Inhalte ablegen darf.
+    topic = params[:topic_id].present? ? find_visible_topic!(params[:topic_id], write: true) : nil
     CommunicationTopic.create!(communication: call, topic: topic) if topic
     Event.create!(title: "Anruf: #{wer}", starts_at: at, topic: topic,
                   creator: current_actor, communication: call,
@@ -126,6 +127,8 @@ class CalendarController < ApplicationController
   def event_params
     p = params.require(:event).permit(:title, :starts_at, :ends_at, :location, :description, :topic_id, :portal_visible)
     p[:topic_id] = nil if p[:topic_id].blank?
+    # #1675: ein Termin landet nur in einem Thema, in dem der Nutzer Inhalte ablegen darf.
+    find_visible_topic!(p[:topic_id], write: true) if p[:topic_id]
     p
   end
 

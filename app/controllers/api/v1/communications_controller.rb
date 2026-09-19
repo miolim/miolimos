@@ -27,7 +27,7 @@ module Api
       end
 
       def show
-        render_one(Communication.find(params[:id]), serializer: COMM_SERIALIZER)
+        render_one(visible(Communication).find(params[:id]), serializer: COMM_SERIALIZER)   # #1675: on_behalf_of auch am Einzelabruf
       end
     end
   end

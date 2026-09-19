@@ -103,7 +103,8 @@ class TasksController < ApplicationController
     Task.transaction do
       @task.save!
       if topic_id
-        topic = Topic.find(topic_id)
+        # #1675: Das Ziel-Thema muss sichtbar und für den Nutzer schreibbar sein.
+        topic = find_visible_topic!(topic_id, write: true)
         position = (topic.task_topics.maximum(:position) || 0) + 1
         TaskTopic.create!(task: @task, topic: topic, position: position)
       end
@@ -141,7 +142,7 @@ class TasksController < ApplicationController
     if (section_key = params[:section_target].presence)
       quickadd_topic_id = params[:quickadd_topic_id].presence
       target_list_id = if quickadd_topic_id
-                         topic = Topic.find_by(id: quickadd_topic_id)
+                         topic = only_visible(Topic.find_by(id: quickadd_topic_id))   # #1675
                          topic ? "tasks_topic_#{topic.slug}" : "tasks_topic_none"
                        elsif params[:topic_target].present?
                          "tasks_topic_none"
@@ -524,6 +525,14 @@ class TasksController < ApplicationController
                                              :tag_list)
     # "Eingang" ist im Select ein leerer String — DB-Wert ist NULL.
     permitted[:commitment] = nil if permitted[:commitment] == ""
+    # #1675: VerknüpfungsZIELE aus dem Formular nur annehmen, wenn der Nutzer
+    # sie sehen darf — sonst hinge er Eigenes an Fremdes und läse dessen Titel.
+    if permitted[:parent_id].present? && !find_visible(Task, permitted[:parent_id], write: false)
+      permitted.delete(:parent_id)
+    end
+    if permitted[:communication_id].present? && !find_visible(Communication, permitted[:communication_id], write: false)
+      permitted.delete(:communication_id)
+    end
     # tag_list ist ein virtuelles Komma-getrenntes String-Field im
     # Edit-Form; vom FormBuilder als task[tag_list] gepostet. In das
     # tatsächliche tags-Array konvertieren und das virtuelle Feld weg.

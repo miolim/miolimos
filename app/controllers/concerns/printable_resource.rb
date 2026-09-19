@@ -98,7 +98,8 @@ module PrintableResource
     case @field
     when "issuer"    then @printable.update!(issuer_uuid:    resolve_ki(value, issuer_link_scope))
     when "recipient" then @printable.update!(recipient_uuid: resolve_ki(value, KnowledgeItem.persons_and_orgs))
-    when "topic"     then @printable.update!(topic_id:       (Topic.find_by(slug: value)&.id if value.present?))
+    # #1675: nur in ein Thema, in dem der Nutzer Inhalte ablegen darf.
+    when "topic"     then @printable.update!(topic_id:       (find_visible_topic!(value, write: true).id if value.present?))
     else
       return head(:unprocessable_content) unless link_extra_field!(@field, value)
     end

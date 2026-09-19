@@ -63,7 +63,7 @@ class AwaitingsController < ApplicationController
       @awaiting.save!
       # Topic aus Quick-Add (topic_id, einzeln) oder Vollformular (topic_ids, Liste).
       if params[:topic_id].present?
-        topic = Topic.find(params[:topic_id])
+        topic = find_visible_topic!(params[:topic_id], write: true)   # #1675
         AwaitingTopic.find_or_create_by!(awaiting: @awaiting, topic: topic)
       end
       sync_topics_by_ids(@awaiting, params.dig(:awaiting, :topic_ids))
@@ -223,7 +223,16 @@ class AwaitingsController < ApplicationController
   def sync_topics_by_ids(awaiting, ids)
     return if ids.nil?
     clean = Array(ids).map(&:to_i).reject(&:zero?)
-    awaiting.topics = Topic.where(id: clean).to_a
+    # #1675: Das Formular kennt nur die Themen, die der Nutzer SIEHT. Ein
+    # schlichtes `topics = …` hätte deshalb (a) jedes unsichtbare Thema still
+    # abgehängt und (b) jedes beliebige per id angehängt. Jetzt: Unsichtbares
+    # bleibt unangetastet, schon Verknüpftes bleibt wählbar, NEU dazu kommt
+    # nur, wo der Nutzer Inhalte ablegen darf.
+    sichtbar   = Topic.visible_to(current_actor).where(id: clean).to_a
+    vorhanden  = awaiting.topics.to_a
+    unsichtbar = vorhanden.reject { |t| t.visible_to?(current_actor) }
+    gewaehlt   = sichtbar.select { |t| vorhanden.include?(t) || t.writable_by?(current_actor) }
+    awaiting.topics = (unsichtbar + gewaehlt).uniq
   end
 
   # Streams für „aktuell selektierter Wartepunkt ist weg" — Row aus der

@@ -152,6 +152,41 @@ class NestedVisibility1675Test < ActionDispatch::IntegrationTest
     assert_nil @task.reload.parent_id, "fremde Aufgabe als Unteraufgabe vereinnahmt"
   end
 
+  test "member legt nichts in einem Thema ab, das er nicht sieht oder nur lesen darf" do
+    login!(@mia)
+
+    assert_no_difference -> { TaskTopic.where(topic: @geheim).count } do
+      post "/tasks", params: { title: "Kuckucksei", topic_id: @geheim.id }
+    end
+    assert_response :not_found
+
+    # Sichtbar, aber nur lesbar (intern öffentlich, keine Mitgliedschaft): 403.
+    @geheim.update!(visibility: :internal_public)
+    assert_no_difference -> { TaskTopic.where(topic: @geheim).count } do
+      post "/tasks", params: { title: "Kuckucksei 2", topic_id: @geheim.id }
+    end
+    assert_response :forbidden
+
+    # Im eigenen Thema geht es weiter wie bisher.
+    assert_difference -> { TaskTopic.where(topic: @mias_thema).count }, 1 do
+      post "/tasks", params: { title: "Mias neue Aufgabe", topic_id: @mias_thema.id }
+    end
+  end
+
+  test "Themen-Abgleich am Wartepunkt haengt Unsichtbares nicht ab und Fremdes nicht an" do
+    wp = Awaiting.create!(creator: @mia, title: "Mias Wartepunkt", status: :open, follow_up_at: 1.week.from_now)
+    AwaitingTopic.create!(awaiting: wp, topic: @geheim)       # von einem Admin zugeordnet, für Mia unsichtbar
+    fremd = create_topic(creator: @hans, name: "Noch ein Geheimnis", slug: "fremd-#{SecureRandom.hex(3)}")
+    login!(@mia)
+
+    patch "/awaitings/#{wp.id}", params: { awaiting: { title: "Mias Wartepunkt", topic_ids: [@mias_thema.id, fremd.id] } }
+
+    ids = wp.reload.topic_ids
+    assert_includes ids, @geheim.id,     "das für Mia unsichtbare Thema wurde still abgehängt"
+    assert_includes ids, @mias_thema.id, "das eigene Thema fehlt"
+    refute_includes ids, fremd.id,       "ein fremdes Thema wurde per id angehängt"
+  end
+
   # ── Admin: unverändert ──────────────────────────────────────────────────
 
   test "admin arbeitet weiter ueber alle Unter-Adressen" do

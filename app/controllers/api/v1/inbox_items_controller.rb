@@ -17,7 +17,7 @@ module Api
       end
 
       def show
-        render_one(InboxItem.find(params[:id]), serializer: ITEM_SERIALIZER)
+        render_one(visible(InboxItem).find(params[:id]), serializer: ITEM_SERIALIZER)   # #1675: on_behalf_of auch am Einzelabruf
       end
 
       # Eingangspunkt für externe Clients (Browser-Add-on etc.). Akzeptiert

@@ -69,4 +69,26 @@ class Api::V1::OnBehalfOfTest < ActionDispatch::IntegrationTest
     get "/api/v1/tasks", params: { on_behalf_of: @mia.id }, headers: @headers
     assert_response :not_found
   end
+  # #1675: on_behalf_of galt nur an den LISTEN. Die Einzelabrufe daneben
+  # (Wartepunkt, Mail, Posteingang, Beziehungen eines Eintrags) gaben dem
+  # Agenten weiter alles heraus — und damit dem Mitglied, für das er fragt.
+  test "on_behalf_of filtert auch die Einzelabrufe" do
+    grant(@agent, "InboxItem", %w[read])
+    wp   = Awaiting.create!(creator: @hans, title: "API Geheim-Wartepunkt", status: :open, follow_up_at: 1.week.from_now)
+    AwaitingTopic.create!(awaiting: wp, topic: @geheim)
+    mail = Email.create!(external_id: "obo-#{SecureRandom.hex(4)}", subject: "Geheim", sent_at: Time.current, direction: :inbound)
+    CommunicationTopic.create!(communication: mail, topic: @geheim)
+    item = InboxItem.create!(creator: @hans, source_kind: "text", source_url: "", raw_content: "geheim", status: "pending")
+
+    { "/api/v1/awaitings/#{wp.id}" => "Wartepunkt",
+      "/api/v1/communications/#{mail.id}" => "Mail",
+      "/api/v1/inbox_items/#{item.id}" => "Posteingang",
+      "/api/v1/knowledge_items/#{@geheim_ki.uuid}/relations" => "Beziehungen" }.each do |pfad, was|
+      get pfad, headers: @headers
+      assert_response :success, "#{was}: ohne on_behalf_of bleibt die volle Agenten-Sicht"
+      get pfad, params: { on_behalf_of: @mia.id }, headers: @headers
+      assert_response :not_found, "#{was}: für Mia gefragt, trotzdem geliefert"
+    end
+  end
+
 end

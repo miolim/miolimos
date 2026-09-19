@@ -155,6 +155,7 @@ class FileProxy
                birth_name: nil,
                issuer: nil, logo: nil)
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
+      FileProxy.ensure_writable!(actor, knowledge_item)   # #1675: vor der ersten Dateioperation
 
       # #241 Plan B: existing body kommt aus DB, Frontmatter wird aus
       # DB-Spalten rekonstruiert. Datei dient nur noch als Export-
@@ -276,6 +277,7 @@ class FileProxy
     def append_session(actor:, knowledge_item:, addendum:, session_at: Date.current,
                        frontmatter_merge: {})
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
+      FileProxy.ensure_writable!(actor, knowledge_item)   # #1675: vor der ersten Dateioperation
 
       # #241 Plan B: existing body + Frontmatter aus DB rekonstruiert.
       full_path = BASE_PATH.join(knowledge_item.file_path)

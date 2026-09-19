@@ -33,6 +33,7 @@ class FileProxy
     #                                bib_source: "yt-abc123")
     def merge_frontmatter!(actor:, knowledge_item:, delete: [], **fields)
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
+      FileProxy.ensure_writable!(actor, knowledge_item)   # #1675
       fields_str = fields.transform_keys(&:to_s)
 
       unknown = fields_str.keys - ALLOWED_FIELDS.keys

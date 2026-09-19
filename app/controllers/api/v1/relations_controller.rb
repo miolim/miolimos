@@ -65,7 +65,7 @@ module Api
       private
 
       def load_source
-        @source = KnowledgeItem.find_by!(uuid: params[:knowledge_item_uuid])
+        @source = visible(KnowledgeItem).find_by!(uuid: params[:knowledge_item_uuid])   # #1675: on_behalf_of
       end
 
       def load_relation

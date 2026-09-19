@@ -350,7 +350,7 @@ class KnowledgeItemsController < ApplicationController
   # abgelöst durch successor_uuid (neu) markiert. Re-Export via FileProxy
   # für den git-Commit (Provenienz), dann Detail-Card neu rendern (Banner).
   def supersede
-    successor = KnowledgeItem.find_by(uuid: params[:successor_uuid].to_s)
+    successor = only_visible(KnowledgeItem.find_by(uuid: params[:successor_uuid].to_s))   # #1675
     if successor.nil?
       return render turbo_stream: helpers.toast_stream(message: "KI nicht gefunden"),
                     status: :unprocessable_entity

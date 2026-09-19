@@ -53,6 +53,13 @@ release is cut, this section is renamed to the new version and a fresh
   is now one place for this (`ApplicationController#find_visible!`): not
   visible → 404, visible but read-only → 403 on any change; link targets
   (predecessor, subtask, mentioned item, topic) must be visible too.
+  Putting something into a topic (task, awaiting, event, call, mail, inbox
+  item, document) additionally needs write access there. Saving an awaiting no
+  longer silently detaches the topics the user cannot see. `FileProxy` checks
+  write access before the first file operation — previously a read-only member
+  got a 403 while the file and git history had already changed. The API's
+  `on_behalf_of` now also filters the single-record reads for awaitings,
+  communications, inbox items and relations.
 - A full knowledge index run (Settings → Knowledge import after a successful
   import, `rake knowledge:reindex`) no longer treats replies without an export
   file as orphans. Replies migrated from task comments never had a file, and the

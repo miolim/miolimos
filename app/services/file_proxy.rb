@@ -18,6 +18,17 @@ class FileProxy
   BASE_PATH = Pathname.new(ENV.fetch("MIOLIMOS_DATA_PATH", File.expand_path("~/miolimos")))
 
   class FileNotFound < StandardError; end
+
+  # #1675: Der Schreib-Guard aus #602 sitzt als before_update am Modell — im
+  # FileProxy kommt er damit zu SPÄT: Datei und git-Commit sind da schon
+  # geschrieben, erst das abschließende update! wirft. Ein Nur-Lese-Mitglied
+  # bekam 403, die Datei war trotzdem geändert (bei Titelwechsel die alte
+  # gelöscht). Deshalb dieselbe Frage VOR der ersten Dateioperation.
+  def self.ensure_writable!(actor, knowledge_item)
+    return if knowledge_item.writable_by?(actor)
+    raise AccessGate::Unauthorized,
+          "#{actor&.name} darf KnowledgeItem ##{knowledge_item.uuid} nicht ändern (nur Betrachter)"
+  end
 end
 
 require_relative "file_proxy/paths"

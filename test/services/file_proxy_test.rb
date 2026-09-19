@@ -324,4 +324,28 @@ class FileProxyTest < ActiveSupport::TestCase
       refute org.issuer?, "issuer wurde nicht zurückgesetzt"
     end
   end
+  # #1675: Der Schreib-Guard (#602) sitzt am Modell und feuerte erst beim
+  # abschließenden update! — NACH File.write und git-Commit. Ein Nur-Lese-
+  # Mitglied bekam 403, Datei und Historie waren trotzdem geändert.
+  test "update: ohne Schreibrecht bleibt auch die DATEI unangetastet" do
+    with_isolated_miolimos_base do
+      thema = create_topic(creator: @hans, name: "Lesesaal", slug: "lesesaal-#{SecureRandom.hex(3)}")
+      ki = FileProxy.create(actor: @hans, title: "Hausordnung", item_type: :note,
+                            content: "Bitte leise sein.", topics: [thema.slug])
+      mia = create_human(name: "Mia Betrachterin", role: :member)
+      grant(mia, "KnowledgeItem", %w[read create update delete])
+      TopicMembership.create!(topic: thema, actor: mia, role: :viewer)
+      pfad   = FileProxy::BASE_PATH.join(ki.file_path)
+      vorher = File.read(pfad)
+
+      assert_raises(AccessGate::Unauthorized) do
+        FileProxy.update(actor: mia, knowledge_item: ki, title: "Mias Hausordnung", content: "Laut sein erlaubt.")
+      end
+
+      assert File.exist?(pfad), "die alte Datei wurde beim Titelwechsel schon weggeräumt"
+      assert_equal vorher, File.read(pfad), "die Datei wurde trotz Abweisung geschrieben"
+      assert_equal "Hausordnung", ki.reload.title
+    end
+  end
+
 end

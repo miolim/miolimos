@@ -40,8 +40,8 @@ class TimeEntriesController < ApplicationController
 
   # POST /time_entries  (mode=timer | manual)
   def create
-    topic    = params[:topic_id].present? ? Topic.find_by(id: params[:topic_id]) : nil
-    subject  = resolve_subject
+    topic    = only_visible(Topic.find_by(id: params[:topic_id]))   # #1675
+    subject  = only_visible(resolve_subject)
     note     = params[:note].to_s.strip.presence
     billable = ActiveModel::Type::Boolean.new.cast(params[:billable]) ? true : false
 

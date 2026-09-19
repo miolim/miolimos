@@ -91,7 +91,8 @@ class CommunicationsController < ApplicationController
       streams << helpers.toast_stream(
         message: t("communications.bulk_deleted", count: removed.size))
       render turbo_stream: streams
-    elsif (topic = Topic.find_by(id: params[:add_topic_id].presence&.to_i))
+    elsif params[:add_topic_id].present? &&
+          (topic = find_visible_topic!(params[:add_topic_id].to_i, write: true))   # #1675
       Communication.transaction do
         comms.each { |c| CommunicationTopic.find_or_create_by!(communication: c, topic: topic) }
       end

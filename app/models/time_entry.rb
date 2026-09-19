@@ -143,7 +143,18 @@ class TimeEntry < ApplicationRecord
   # #3/#4: Zeiten anpassen. minutes (allein) → die Buchung auf EIN Segment
   # dieser Dauer setzen (ab bisherigem/angegebenem Start). Sonst überspannen
   # started_at/ended_at die Buchung (erstes Segment-Start / letztes Segment-Ende).
+  # #1675: eine schon abgerechnete Zeit auf einer FINALEN Rechnung.
+  class Abgerechnet < StandardError; end
+
   def adjust_times!(started_at: nil, ended_at: nil, minutes: nil)
+    # #1675: Steht die Zeit schon auf einer Rechnungsposition, darf sie der
+    # Rechnung nicht still davonlaufen. Finale Rechnung: keine Änderung mehr
+    # (die Zahl ist draußen). Entwurf: ändern ja — und die Menge der Position
+    # zieht am Ende nach.
+    if invoice_line&.invoice&.locked?
+      raise Abgerechnet, "Diese Zeit ist auf der finalen Rechnung #{invoice_line.invoice.number.presence || "##{invoice_line.invoice_id}"} " \
+                         "abgerechnet und lässt sich nicht mehr ändern."
+    end
     transaction do
       if minutes
         base = started_at || self.started_at || Time.current
@@ -162,6 +173,7 @@ class TimeEntry < ApplicationRecord
           update!(ended_at: ended_at) if finished?
         end
       end
+      invoice_line&.recompute_quantity_from_times!
     end
     self
   end

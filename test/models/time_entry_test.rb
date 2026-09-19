@@ -145,4 +145,39 @@ class TimeEntryTest < ActiveSupport::TestCase
     assert_includes kunde.contact_points.billing, marked
     refute_includes kunde.contact_points.billing, unmarked
   end
+  # #1675: Eine Zeit, die schon auf einer Rechnungsposition steht, ließ sich
+  # nachträglich ändern — die Menge der Position zog nicht nach. Rechnung und
+  # Zeitnachweis liefen still auseinander; bei einer FINALEN Rechnung darf sich
+  # die abgerechnete Zeit gar nicht mehr bewegen.
+  def abgerechnete_zeit(status:)
+    zeit = TimeEntry.log_manual!(actor: @hans, started_at: Time.zone.parse("2026-09-01 09:00"),
+                                 minutes: 60, billable: true)
+    rechnung = Invoice.create!(kind: :rechnung, status: :entwurf)
+    position = rechnung.invoice_lines.create!(description: "Beratung", quantity: 1, unit: "Std",
+                                              unit_price: 100, tax_rate: 19, position: 0)
+    zeit.update!(invoice_line: position)
+    position.recompute_quantity_from_times!
+    rechnung.update!(status: status)
+    [zeit, position]
+  end
+
+  test "Zeit auf einer Entwurfs-Rechnung aendern zieht die Menge der Position nach" do
+    zeit, position = abgerechnete_zeit(status: :entwurf)
+    assert_equal 1, position.reload.quantity
+
+    zeit.adjust_times!(minutes: 90)
+
+    assert_equal BigDecimal("1.5"), position.reload.quantity,
+                 "Rechnung und Zeitnachweis laufen auseinander"
+  end
+
+  test "Zeit auf einer finalen Rechnung laesst sich nicht mehr aendern" do
+    zeit, position = abgerechnete_zeit(status: :final)
+
+    fehler = assert_raises(TimeEntry::Abgerechnet) { zeit.adjust_times!(minutes: 90) }
+    assert_match(/final/i, fehler.message)
+    assert_equal 60, zeit.reload.duration_minutes
+    assert_equal 1, position.reload.quantity
+  end
+
 end

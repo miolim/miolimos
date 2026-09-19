@@ -1583,6 +1583,8 @@ de:
     sidebar_layout_hidden: "Ausgeblendet"
     sidebar_layout_reset:  "Auf Standard zurücksetzen"
     # #1612: freie Überschriften in der Sidebar
+    sidebar_heading_toggle:  "Gruppe ein-/ausklappen"   # #1672
+    topic_with_next_step:    "%{name} (nächster Schritt gepflegt)"   # #1672: war hartkodiert
     sidebar_heading_add:     "Überschrift hinzufügen"
     sidebar_heading_default: "Neue Überschrift"
     sidebar_heading_name:    "Name der Überschrift"

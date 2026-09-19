@@ -8,7 +8,7 @@
   has_next = topic_has_next_step?(topic)
   subs     = topic.sub_topics.order(:name).to_a
   has_subs = subs.any?
-  row_title = has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name
+  row_title = has_next ? t("preferences.topic_with_next_step", name: topic.name) : topic.name
 %>
 <li data-topic="<%= topic.slug %>">
   <% if has_subs %>

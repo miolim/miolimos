@@ -15,19 +15,15 @@
   <% if heading_id %>
     <% token = ActorPreferences.sidebar_heading_token(heading_id) %>
     <% zu    = collapsed.include?(token) %>
-    <button type="button"
-            data-action="sidebar#toggleGroup"
-            data-sidebar-token-param="<%= token %>"
-            data-sidebar-heading="<%= token %>"
-            aria-expanded="<%= !zu %>"
-            aria-controls="sidebar-group-<%= token %>"
-            title="<%= headings[token] %>"
-            class="group/heading mt-1 flex items-center gap-1 w-full px-2 pt-1.5 pb-0.5 text-left text-[11px] uppercase tracking-wider text-slate-500 hover:text-slate-300 cursor-pointer bg-transparent border-0 border-t border-slate-800/60">
+    <%= ui_button :sidebar_gruppe_klappen, title: headings[token],
+          "aria-expanded": (!zu).to_s, "aria-controls": "sidebar-group-#{token}",
+          data: { action: "sidebar#toggleGroup", sidebar_token_param: token, sidebar_heading: token },
+          class: "group/heading mt-1 flex items-center gap-1 w-full px-2 pt-1.5 pb-0.5 text-left text-[11px] uppercase tracking-wider text-slate-500 hover:text-slate-300 cursor-pointer bg-transparent border-0 border-t border-slate-800/60" do %>
       <span class="truncate group-data-[collapsed=true]/sidebar:md:invisible"><%= headings[token] %></span>
       <span class="shrink-0 transition-transform group-aria-expanded/heading:rotate-90 group-data-[collapsed=true]/sidebar:md:invisible">
         <%= icon "chevron_right", size: "w-3 h-3" %>
       </span>
-    </button>
+    <% end %>
     <div id="sidebar-group-<%= token %>"
          data-sidebar-target="group"
          data-token="<%= token %>"

@@ -5,8 +5,7 @@
 <% awaiting_count   = Awaiting.open.count %>
 <% awaiting_overdue = Awaiting.overdue.count %>
 <div class="flex items-center">
-  <%= link_to awaitings_path,
-        title: t("nav.waiting"),
+  <%= ui_link :wartepunkte_liste_oeffnen, awaitings_path,
         data: sidebar_blade_daten("list", "awaitings",
                 { action: "click->sidebar#hoverCollapse click->mobile-nav#close",
                   "stack-reset-id": "list:awaitings" }),

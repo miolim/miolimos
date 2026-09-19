@@ -4,8 +4,8 @@
     Schnellzugriff-Liste nach Oeffnungs-Reihenfolge. Locals: topic. %>
 <% has_next = topic_has_next_step?(topic) %>
 <div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0">
-  <%= link_to topic_path(topic),
-        title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+  <%= ui_link :thema_in_leiste_oeffnen, topic_path(topic),
+        title: has_next ? t("preferences.topic_with_next_step", name: topic.name) : topic.name,
         data: sidebar_blade_daten("topic_list", topic.slug,
                 { action: "click->sidebar#hoverCollapse click->mobile-nav#close" }),
         class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{'bg-slate-800 text-white' if params[:slug] == topic.slug}" do %>

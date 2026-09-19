@@ -1566,6 +1566,8 @@ en:
     sidebar_layout_scroll: "Scroll area"
     sidebar_layout_hidden: "Hidden"
     sidebar_layout_reset:  "Reset to default"
+    sidebar_heading_toggle:  "Toggle group"   # #1672
+    topic_with_next_step:    "%{name} (next step set)"   # #1672: was hardcoded
     sidebar_heading_add:     "Add heading"
     sidebar_heading_default: "New heading"
     sidebar_heading_name:    "Heading name"

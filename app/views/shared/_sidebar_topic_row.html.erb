@@ -32,8 +32,8 @@
         !important, sobald die Sidebar collapsed ist. %>
     <div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0"
          style="padding-left: <%= depth * 0.75 %>rem">
-      <%= link_to topic_path(topic),
-            title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+      <%= ui_link :thema_in_leiste_oeffnen, topic_path(topic),
+            title: has_next ? t("preferences.topic_with_next_step", name: topic.name) : topic.name,
             data: klick_daten,
             class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
         <span class="w-5 flex items-center justify-center shrink-0">
@@ -61,7 +61,7 @@
   <div class="flex items-center group-data-[collapsed=true]/sidebar:!pl-0"
        style="padding-left: <%= depth * 0.75 %>rem">
     <%= link_to topic_path(topic),
-          title: has_next ? "#{topic.name} (nächster Schritt gepflegt)" : topic.name,
+          title: has_next ? t("preferences.topic_with_next_step", name: topic.name) : topic.name,
           data: klick_daten,
           class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1 min-h-7 rounded hover:bg-slate-800 #{"bg-slate-800 text-white" if is_active}" do %>
       <span class="w-5 flex items-center justify-center shrink-0">

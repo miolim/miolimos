@@ -59,16 +59,15 @@
         <%= icon "x" %>
       </span>
     <% end %>
-    <button type="button"
-            data-action="click->sidebar#toggle"
-            aria-label="<%= t("shared.sidebar.toggle_nav_aria") %>"
-            title="<%= t("shared.sidebar.toggle_nav") %>"
-            class="hidden md:flex pl-2 pr-2 items-center text-slate-400 hover:text-white cursor-pointer">
+    <%= ui_button :navigation_umschalten,
+          "aria-label": t("shared.sidebar.toggle_nav_aria"),
+          data: { action: "click->sidebar#toggle" },
+          class: "hidden md:flex pl-2 pr-2 items-center text-slate-400 hover:text-white cursor-pointer" do %>
       <%# #1598 (Hans): Menü-Icon statt Chevron — es dreht sich beim Umschalten nicht mehr. %>
       <span class="w-5 flex items-center justify-center shrink-0">
         <%= icon "menu" %>
       </span>
-    </button>
+    <% end %>
   </div>
 
   <%# Outer-Padding bleibt 0 in BEIDEN Modi — das Padding tragen die
@@ -127,8 +126,7 @@
       (1–23, Kalender/Ordner nur 2–22) und wirkte dadurch größer — deshalb
       18px in der unveränderten w-5-Spalte (Icon-Achse bleibt gleich). %>
   <div class="border-t border-slate-700 px-0 py-2 shrink-0 text-[13px]">
-    <%= link_to settings_path,
-          title: t("nav.settings"),
+    <%= ui_link :einstellungen_oeffnen, settings_path,
           data: { action: "click->sidebar#hoverCollapse click->mobile-nav#close" },
           class: "flex items-center gap-2 px-2 py-1 min-h-7 rounded text-slate-400 hover:bg-slate-800 hover:text-white" do %>
       <span class="w-5 flex items-center justify-center shrink-0">

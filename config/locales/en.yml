@@ -1986,6 +1986,7 @@ en:
       force: "Import anyway"
       done: "%{imported} new, %{skipped} already present."
       unreadable: "%{count} row(s) with an unreadable amount were NOT imported — please check the file."
+      upload_expired: "The uploaded statement is no longer available (left unconfirmed too long) — please upload it again."
       auto_matched: "%{count} matched automatically"
       pdf_unchecked_note: "Imported without the balance check (difference %{diff})"
       pdf_corrected_note: "Corrected by hand while reading in"

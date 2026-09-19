@@ -2003,6 +2003,7 @@ de:
       force: "Trotzdem importieren"
       done: "%{imported} neu, %{skipped} bereits vorhanden."
       unreadable: "%{count} Zeile(n) mit unlesbarem Betrag wurden NICHT übernommen — bitte die Datei prüfen."
+      upload_expired: "Der hochgeladene Auszug liegt nicht mehr vor (zu lange unbestätigt) — bitte noch einmal hochladen."
       auto_matched: "%{count} automatisch zugeordnet"
       pdf_unchecked_note: "Ohne Saldo-Prüfung importiert (Abweichung %{diff})"
       pdf_corrected_note: "Beim Einlesen von Hand korrigiert"

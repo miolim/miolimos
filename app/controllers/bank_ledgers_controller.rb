@@ -40,8 +40,15 @@ class BankLedgersController < ApplicationController
     redirect_to bank_ledgers_path(stack: "list:bank_ledgers"), status: :see_other
   end
 
-  # Stufe 1: prüfen, nichts schreiben. Das Ergebnis liegt als
-  # BankStatementUpload in der Session-Ablage, bis bestätigt wird.
+  # #1675: Der geprüfte, noch nicht bestätigte Auszug liegt als DATEI auf dem
+  # Server; die Session trägt nur den Schlüssel dazu. Vorher lag der ganze
+  # Inhalt in der Session — die ist ein Cookie mit 4 KB, und jeder echte Auszug
+  # ist größer (CookieOverflow beim Hochladen).
+  ABLAGE      = Rails.root.join("tmp", "bank_uploads")
+  ABLAGE_ALTER = 1.day
+
+  # Stufe 1: prüfen, nichts schreiben. Der Auszug wartet in der Ablage, bis
+  # bestätigt wird.
   def upload
     datei = params[:file]
     return render_card if datei.blank?
@@ -51,7 +58,7 @@ class BankLedgersController < ApplicationController
     @vorschau = Bank::Import.detect(inhalt)
     @rohtext  = inhalt
     session[:bank_upload] = { "ledger_id" => @ledger.id, "filename" => datei.original_filename,
-                              "content" => inhalt }
+                              "schluessel" => ablegen(inhalt) }
     render_card
   rescue Bank::PdfImport::Error => e
     @fehler = e.message
@@ -64,10 +71,18 @@ class BankLedgersController < ApplicationController
     upload = session[:bank_upload]
     return render_card if upload.blank? || upload["ledger_id"] != @ledger.id
 
-    @ergebnis = Bank::Import.call(@ledger, upload["content"], filename: upload["filename"],
+    inhalt = abholen(upload["schluessel"])
+    if inhalt.nil?
+      session.delete(:bank_upload)
+      @fehler = t("bank.import.upload_expired")
+      return render_card
+    end
+
+    @ergebnis = Bank::Import.call(@ledger, inhalt, filename: upload["filename"],
                                   trotz_abweichung: params[:trotz_abweichung].present?)
     # Nach dem Import zuordnen — nur eindeutige, betragsexakte Treffer.
     @zugeordnet = Bank::ObligationMatch.auto(@ledger) if @ergebnis.imported.positive?
+    wegraeumen(upload["schluessel"])
     session.delete(:bank_upload)
     render_card
   end
@@ -80,6 +95,35 @@ class BankLedgersController < ApplicationController
   private
 
   def set_ledger = @ledger = BankLedger.find(params[:id])
+
+  # Der Schlüssel ist zufällig und wird nie aus Nutzereingaben gebildet; beim
+  # Abholen zählt trotzdem nur die Hex-Form (kein Pfad aus der Session heraus).
+  def ablegen(inhalt)
+    FileUtils.mkdir_p(ABLAGE, mode: 0o700)
+    alte_wegraeumen
+    wegraeumen(session.dig(:bank_upload, "schluessel"))   # ein früherer, nie bestätigter Upload
+    schluessel = SecureRandom.hex(16)
+    File.binwrite(ABLAGE.join(schluessel), inhalt, perm: 0o600)
+    schluessel
+  end
+
+  def abholen(schluessel)
+    return nil unless schluessel.to_s.match?(/\A\h{32}\z/)
+    pfad = ABLAGE.join(schluessel)
+    File.exist?(pfad) ? File.binread(pfad).force_encoding("UTF-8") : nil
+  end
+
+  def wegraeumen(schluessel)
+    return unless schluessel.to_s.match?(/\A\h{32}\z/)
+    FileUtils.rm_f(ABLAGE.join(schluessel))
+  end
+
+  # Nie bestätigte Uploads bleiben nicht ewig liegen (es sind Kontodaten).
+  def alte_wegraeumen
+    Dir.glob(ABLAGE.join("*")).each do |pfad|
+      FileUtils.rm_f(pfad) if File.mtime(pfad) < ABLAGE_ALTER.ago
+    end
+  end
 
   def render_card
     @ledger.reload

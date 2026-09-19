@@ -110,6 +110,17 @@ release is cut, this section is renamed to the new version and a fresh
   at those ids — an invoice's foreign key turned the request into a 500, a
   document kept a dead reference. Removed rows now release their references
   explicitly (the document falls back to the automatic address).
+- Bank statements of real size can be uploaded (#1675). The checked but not
+  yet confirmed statement was kept in the session — a 4 KB cookie — so any
+  real file ended in `CookieOverflow`. It now waits in a server-side file
+  (`tmp/bank_uploads`, removed after import or after a day); the session only
+  holds a random key.
+- Deleting a topic no longer ends in an error page (#1675). Loose links go
+  with it; time entries, invoices, documents, events and portal accesses
+  block the deletion with a hint to deactivate the topic instead.
+- A time entry that is already billed can no longer drift away from its
+  invoice (#1675): on a draft invoice the line quantity follows the change,
+  on a final invoice the change is refused.
 - Long audio/video transcripts show their gaps (#1675). When a single
   10-minute chunk failed at Whisper (rate limit, timeout), it silently became
   empty text — a two-hour video could miss 20 or 70 minutes in the middle and

@@ -64,6 +64,40 @@ class BankLedgersControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, I18n.t("bank.import.unreadable", count: 1)
   end
 
+  # #1675: Der geprüfte, aber noch nicht bestätigte Auszug lag in der SESSION —
+  # und die ist ein Cookie mit 4 KB. Jeder echte Auszug ist größer: Der Upload
+  # endete in CookieOverflow. Alle Tests hier nutzten eine einzeilige CSV.
+  test "ein Auszug in echter Groesse laesst sich hochladen und importieren" do
+    zeilen = (1..400).map do |i|
+      "#{format('%02d', (i % 28) + 1)}.03.2026;Rechnung 2026-#{format('%04d', i)} Kunde Nummer #{i};Kunde #{i} GmbH;DE02120300000000202051;#{i},00"
+    end
+    gross = "Buchungstag;Verwendungszweck;Beguenstigter;IBAN;Betrag\n" + zeilen.join("\n") + "\n"
+    assert_operator gross.bytesize, :>, 30_000
+
+    hochladen(gross)
+    assert_response :success
+    assert_operator cookies.to_hash.values.sum { |v| v.to_s.bytesize }, :<, 4096, "der Auszug steckt im Cookie"
+
+    assert_difference -> { BankTransaction.count }, 400 do
+      post import_bank_ledger_path(@konto), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :success
+  end
+
+  test "der abgelegte Auszug gehoert zu genau diesem Konto und ist nach dem Import weg" do
+    anderes = BankLedger.create!(label: "Zweitkonto", iban: "DE02120300000000202051")
+    hochladen(CSV)
+    # Genau DIESE Datei prüfen, nicht den ganzen Ordner — die Tests laufen parallel.
+    abgelegt = BankLedgersController::ABLAGE.join(session[:bank_upload]["schluessel"])
+    assert File.exist?(abgelegt)
+    assert_no_difference -> { BankTransaction.count } do
+      post import_bank_ledger_path(anderes), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    post import_bank_ledger_path(@konto), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal 1, @konto.bank_transactions.count
+    refute File.exist?(abgelegt), "der Auszug blieb nach dem Import liegen"
+  end
+
   test "ein zweiter Import derselben Datei legt nichts doppelt an" do
     hochladen(CSV)
     post import_bank_ledger_path(@konto), headers: { "Accept" => "text/vnd.turbo-stream.html" }

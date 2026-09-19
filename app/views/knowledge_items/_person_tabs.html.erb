@@ -52,11 +52,11 @@
   <div data-controller="simple-tabs" class="space-y-3">
     <nav class="flex gap-1 border-b border-slate-200 text-sm">
       <% tabs.each do |name, label| %>
-        <button type="button" data-simple-tabs-target="tab" data-name="<%= name %>"
-                data-action="click->simple-tabs#show"
-                class="px-3 py-1.5 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer">
+        <%= ui_button :person_reiter_waehlen, title: label,
+              data: { simple_tabs_target: "tab", name: name, action: "click->simple-tabs#show" },
+              class: "px-3 py-1.5 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer" do %>
           <%= label %>
-        </button>
+        <% end %>
       <% end %>
     </nav>
 

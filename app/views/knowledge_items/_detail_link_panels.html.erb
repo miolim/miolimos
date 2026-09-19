@@ -100,15 +100,15 @@
   <section data-controller="disclosure"
            data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.outgoing"
            class="border border-slate-200 rounded">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <%= ui_button :ki_verweise_von_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
       <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400">
         <%= icon "chevron_right" %>
       </span>
       <span class="font-medium"><%= t("knowledge.detail.references_to") %></span>
       <span class="text-slate-400">· <%= outgoing_targets.size %></span>
-    </button>
+    <% end %>
     <div data-disclosure-target="content" class="hidden px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
       <% outgoing_targets.each do |tgt| %>
         <div class="text-[13px] flex items-center gap-2">
@@ -134,9 +134,9 @@
   <section data-controller="disclosure"
            data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.relations"
            class="border border-slate-200 rounded">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <%= ui_button :ki_verknuepfungen_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
       <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
       </span>
@@ -145,7 +145,7 @@
       <% if typed_orphaned.any? %>
         <span class="text-slate-400 italic"><%= t("knowledge.detail.orphaned_count", count: typed_orphaned.size) %></span>
       <% end %>
-    </button>
+    <% end %>
     <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-2">
       <% typed_incoming.each do |rel| %>
         <% src = KnowledgeItem.find_by(uuid: rel.source_uuid) %>

@@ -932,6 +932,7 @@ en:
         restore: "Restore this version"
         restore_confirm: "Overwrite current state with version %{sha}?"
         frontmatter: "Frontmatter"
+        title: "Open version"                       # #1672
       trash:
         title: "Knowledge trash"
         auto_delete_note: "Will be permanently deleted automatically after 30 days."
@@ -947,6 +948,7 @@ en:
         send: "Publish"
         save_draft: "Save"
         none_with_highlight: "— No replies with this highlight —"
+        older_toggle: "Toggle older replies"               # #1672
         older:
           one: "Older reply (%{count})"
           other: "Older replies (%{count})"

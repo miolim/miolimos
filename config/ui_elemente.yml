@@ -1130,3 +1130,42 @@ person_menue_oeffnen:
 person_bekannt_umschalten:
   icon: user-check
   label: knowledge.person_status.menu_title
+
+# ── Wissenseintrag: Verweise, Antworten, Stapel (#1672 Etappe 22) ───────
+ki_verweise_von_klappen:
+  icon: chevron_right
+  label: knowledge.detail.references_to
+ki_verknuepfungen_klappen:
+  icon: chevron_right
+  label: knowledge.detail.relations_to_note
+ki_version_oeffnen:
+  label: knowledge.list.version.title
+# Die Reiter der Personen-Card: ein Befehl, Text vom Aufrufer.
+person_reiter_waehlen:
+  label: knowledge.list.persons.known_toggle_title
+person_bekanntheit_umschalten:
+  icon: user-check
+  label: knowledge.list.persons.known_toggle_title
+ki_antworten_klappen:
+  icon: chevron_right
+  label: knowledge.list.replies.title
+ki_aeltere_antworten_klappen:
+  icon: chevron_right
+  label: knowledge.list.replies.older_toggle
+ki_antwort_senden:
+  label: knowledge.list.replies.send
+ki_antwort_entwurf_sichern:
+  label: knowledge.list.replies.save_draft
+ki_liste_klappen:
+  icon: chevron_right
+  label: knowledge.form.toggle_list
+ki_verlauf_oeffnen:
+  label: knowledge.form.open_history
+ki_verlauf_leeren:
+  label: knowledge.form.clear_history
+ki_details_klappen:
+  icon: chevron_right
+  label: knowledge.detail.details_cycle_hint
+ki_tag_entfernen:
+  icon: x
+  label: knowledge.chip.unlink

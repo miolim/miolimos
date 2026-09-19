@@ -936,6 +936,7 @@ de:
         restore: "Diese Version wiederherstellen"
         restore_confirm: "Aktuellen Stand mit Version %{sha} überschreiben?"
         frontmatter: "Frontmatter"
+        title: "Version öffnen"                     # #1672
       trash:
         title: "Wissens-Papierkorb"
         auto_delete_note: "Wird nach 30 Tagen automatisch endgültig gelöscht."
@@ -951,6 +952,7 @@ de:
         send: "Veröffentlichen"
         save_draft: "Speichern"
         none_with_highlight: "— Keine Antworten mit dieser Markierung —"
+        older_toggle: "Ältere Antworten ein-/ausklappen"   # #1672
         older:
           one: "Ältere Antwort (%{count})"
           other: "Ältere Antworten (%{count})"

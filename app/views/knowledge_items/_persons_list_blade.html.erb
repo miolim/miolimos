@@ -40,7 +40,7 @@
     <%# #703 (Hans): einheitlicher Topbereich. Add = Typ-Picker (Plus),
         Controls = Bekanntheits-Toggle (#702). %>
     <% known_toggle = capture do %>
-      <%= link_to list_card_persons_path(known: known_cfg[:nxt]),
+      <%= ui_link :person_bekanntheit_umschalten, list_card_persons_path(known: known_cfg[:nxt]),
             data: { turbo_frame: "persons_list_body" },
             title: t("knowledge.list.persons.known_toggle_title", label: known_cfg[:label]),
             class: "inline-flex shrink-0 items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 no-underline" do %>

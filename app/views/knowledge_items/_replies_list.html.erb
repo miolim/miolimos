@@ -43,15 +43,15 @@
         <li data-controller="disclosure"
             data-disclosure-storage-key-value="ki.<%= item.uuid %>.replies.older"
             class="border-b border-slate-100">
-          <button type="button"
-                  data-action="click->disclosure#toggle"
-                  class="w-full text-left flex items-center gap-2 py-2 px-1 text-xs text-slate-500 hover:bg-slate-50 rounded">
+          <%= ui_button :ki_aeltere_antworten_klappen,
+                data: { action: "click->disclosure#toggle" },
+                class: "w-full text-left flex items-center gap-2 py-2 px-1 text-xs text-slate-500 hover:bg-slate-50 rounded" do %>
             <span data-disclosure-target="icon"
                   class="inline-block transition-transform text-slate-400">
               <%= icon "chevron_right" %>
             </span>
             <span><%= t("knowledge.list.replies.older", count: older.size) %></span>
-          </button>
+          <% end %>
           <div data-disclosure-target="content" class="hidden pl-2">
             <ul class="text-[13px]">
               <% older.each do |reply| %>

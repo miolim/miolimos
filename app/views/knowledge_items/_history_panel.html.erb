@@ -18,7 +18,8 @@
         <ul class="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto text-[12px]">
           <% commits.each_with_index do |c, i| %>
             <li>
-              <%= link_to version_knowledge_item_path(uuid: item.uuid, sha: c.sha),
+              <%= ui_link :ki_version_oeffnen, version_knowledge_item_path(uuid: item.uuid, sha: c.sha),
+                    title: c.subject,
                     data: { turbo_frame: "ki_version_#{item.uuid}" },
                     class: "block px-3 py-1.5 hover:bg-slate-50 #{'bg-slate-50' if i.zero?}" do %>
                 <div class="font-mono text-[11px] text-slate-500"><%= c.short_sha %></div>

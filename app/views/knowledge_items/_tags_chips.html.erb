@@ -10,7 +10,7 @@
         <span class="inline-flex items-center opacity-70"><%= ic %></span>
       <% end %>
       <span><%= tag %></span>
-      <%= button_to knowledge_item_tag_path(knowledge_item_uuid: item.uuid, tag: tag),
+      <%= ui_button_to :ki_tag_entfernen, knowledge_item_tag_path(knowledge_item_uuid: item.uuid, tag: tag),
             method: :delete,
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
             title: t("knowledge.list.tags.remove_title"),

@@ -21,19 +21,13 @@
         <%# #1005 (Hans): Card an Dashboard-Stack anhängen — in allen Card-Köpfen. %>
         <%= render "shared/append_dashboard_button", size: "w-4 h-4" %>
         <% if item.status != "archived" %>
-          <%= button_to archive_inbox_item_path(item), method: :post,
+          <%= ui_button_to :posteingang_archivieren, archive_inbox_item_path(item), method: :post,
                 class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer",
-                title: t("inbox_items.archive"), "aria-label": t("inbox_items.archive"),
-                form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } } do %>
-            <%= icon "archive" %>
-          <% end %>
+                form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } } %>
         <% end %>
-        <%= button_to inbox_item_path(item), method: :delete,
+        <%= ui_button_to :posteingang_endgueltig_loeschen, inbox_item_path(item), method: :delete,
               class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer",
-              title: t("inbox_items.delete_permanently"), "aria-label": t("inbox_items.delete_permanently"),
-              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("inbox_items.delete_permanently_confirm") } } do %>
-          <%= icon "trash" %>
-        <% end %>
+              form: { class: "inline m-0 p-0", data: { turbo_frame: "_top", turbo_confirm: t("inbox_items.delete_permanently_confirm") } } %>
       </div>
     </header>
 
@@ -54,14 +48,12 @@
       <div class="flex items-center gap-1.5 text-xs text-slate-500 -mt-2">
         <span class="shrink-0"><%= icon "mail", size: "w-3.5 h-3.5" %></span>
         <span><%= t("inbox_items.from_email") %></span>
-        <button type="button"
-                data-controller="blade-link"
-                data-blade-link-kind-value="communication"
-                data-blade-link-id-value="<%= comm.id %>"
-                data-action="click->blade-link#append"
-                class="min-w-0 truncate underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0 text-left">
+        <%= ui_button :posteingang_mail_oeffnen,
+              data: { controller: "blade-link", action: "click->blade-link#append",
+                      blade_link_kind_value: "communication", blade_link_id_value: comm.id },
+              class: "min-w-0 truncate underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0 text-left" do %>
           <%= comm.subject.presence || t("inbox_items.no_subject") %>
-        </button>
+        <% end %>
       </div>
     <% end %>
 
@@ -84,19 +76,17 @@
         <ul class="space-y-1">
           <% dupes.each do |ki| %>
             <li>
-              <button type="button"
-                      data-controller="blade-link"
-                      data-blade-link-kind-value="ki"
-                      data-blade-link-id-value="<%= ki.uuid %>"
-                      data-action="click->blade-link#append"
-                      class="text-sm text-amber-900 underline hover:text-amber-700 cursor-pointer bg-transparent border-0 p-0 text-left inline-flex items-center gap-1">
+              <%= ui_button :posteingang_dublette_oeffnen,
+                    data: { controller: "blade-link", action: "click->blade-link#append",
+                            blade_link_kind_value: "ki", blade_link_id_value: ki.uuid },
+                    class: "text-sm text-amber-900 underline hover:text-amber-700 cursor-pointer bg-transparent border-0 p-0 text-left inline-flex items-center gap-1" do %>
                 <%= knowledge_type_icon(ki.item_type, size: "w-3.5 h-3.5") %><%= ki.title %>
-              </button>
+              <% end %>
             </li>
           <% end %>
         </ul>
         <div class="pt-1">
-          <%= button_to t("inbox_items.archive_as_duplicate"), archive_inbox_item_path(item, duplicate_of: dupes.first.uuid),
+          <%= ui_button_to :posteingang_als_dublette_archivieren, archive_inbox_item_path(item, duplicate_of: dupes.first.uuid),
                 method: :post,
                 form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
                 class: "text-xs px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
@@ -162,17 +152,19 @@
               war Whisper der einzige Weg). %>
           <div class="flex flex-wrap items-center gap-2 pt-1">
             <% if cf.fetch("whisper_available", true) %>
-              <%= button_to t("inbox_items.continue_transcribe_whisper",
-                    cost: number_with_precision(cf["estimated_eur"], precision: 2)),
+              <%= ui_button_to :posteingang_transkript_whisper,
                     process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_whisper: true),
                     method: :post,
+                    title: t("inbox_items.continue_transcribe_whisper",
+                             cost: number_with_precision(cf["estimated_eur"], precision: 2)),
                     class: "text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
             <% end %>
             <% if cf["diarize_available"] %>
-              <%= button_to t("inbox_items.continue_transcribe_diarize",
-                    cost: number_with_precision(cf["diarize_estimated_eur"], precision: 2)),
+              <%= ui_button_to :posteingang_transkript_diarisierung,
                     process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_diarize: true),
                     method: :post,
+                    title: t("inbox_items.continue_transcribe_diarize",
+                             cost: number_with_precision(cf["diarize_estimated_eur"], precision: 2)),
                     class: "text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer" %>
             <% end %>
             <%# #1410 (Hans): dritter Weg — die automatischen Untertitel.
@@ -180,10 +172,11 @@
                 zieht der Nachbearbeitungs-Pass ein. Der einzige Weg bei
                 Videos, deren Tonspur YouTube nicht herausgibt. %>
             <% if cf["subtitles_available"] %>
-              <%= button_to t("inbox_items.continue_transcribe_subtitles",
-                    lang: cf["subtitles_language"].to_s.upcase),
+              <%= ui_button_to :posteingang_transkript_untertitel,
                     process_now_inbox_item_path(item, processor_kind: cf["processor_kind"], confirm_subtitles: true),
                     method: :post,
+                    title: t("inbox_items.continue_transcribe_subtitles",
+                             lang: cf["subtitles_language"].to_s.upcase),
                     class: "text-sm px-3 py-1 rounded bg-slate-600 text-white hover:bg-slate-700 cursor-pointer" %>
             <% end %>
           </div>
@@ -205,12 +198,10 @@
     <% when "archived" %>
       <% if (dup_uuid = item.payload["duplicate_of"].presence) && (dup = KnowledgeItem.find_by(uuid: dup_uuid)) %>
         <p class="text-sm text-slate-500 italic"><%= t("inbox_items.archived_as_duplicate") %> →
-          <button type="button"
-                  data-controller="blade-link"
-                  data-blade-link-kind-value="ki"
-                  data-blade-link-id-value="<%= dup.uuid %>"
-                  data-action="click->blade-link#append"
-                  class="not-italic underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0"><%= dup.title %></button>
+          <%= ui_button :posteingang_dublette_oeffnen,
+                data: { controller: "blade-link", action: "click->blade-link#append",
+                        blade_link_kind_value: "ki", blade_link_id_value: dup.uuid },
+                class: "not-italic underline text-slate-600 hover:text-slate-900 cursor-pointer bg-transparent border-0 p-0" do %><%= dup.title %><% end %>
         </p>
       <% else %>
         <p class="text-sm text-slate-500 italic"><%= t("inbox_items.archived") %></p>
@@ -222,9 +213,8 @@
         Inbox-Item ändert daran nichts mehr). %>
     <% if %w[pending failed].include?(item.status) %>
       <details class="rounded border border-slate-200 bg-white">
-        <summary class="px-3 py-2 text-xs text-slate-500 cursor-pointer hover:text-slate-900">
-          <%= t("inbox_items.edit_entry") %>
-        </summary>
+        <%= ui_button :posteingang_eintrag_bearbeiten, tag: :summary,
+              class: "px-3 py-2 text-xs text-slate-500 cursor-pointer hover:text-slate-900" %>
         <%= form_with model: item, url: inbox_item_path(item), method: :patch,
               local: true, class: "px-3 pb-3 space-y-2" do |f| %>
           <%= f.text_field :title, value: item.display_title, placeholder: t("inbox_items.title_placeholder"),
@@ -245,7 +235,7 @@
                   class: "w-full text-xs font-mono rounded border border-slate-200 px-2 py-1" %>
           <% end %>
           <div class="flex items-center justify-end">
-            <%= f.submit t("actions.save"),
+            <%= ui_button :posteingang_speichern, type: :submit,
                   class: "text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
           </div>
         <% end %>

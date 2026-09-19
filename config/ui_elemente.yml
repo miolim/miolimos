@@ -478,3 +478,33 @@ agent_tmux_befehl_kopieren:
   label: settings.agents.common.copy
 agent_crontab_befehl_kopieren:
   label: settings.agents.common.copy
+
+# ── Posteingang (#1672 Etappe 3) ─────────────────────────────────────────
+posteingang_archivieren:
+  icon: archive
+  label: inbox_items.archive
+posteingang_endgueltig_loeschen:
+  icon: trash
+  label: inbox_items.delete_permanently
+# Sichtbarer Text ist der Titel des Ziels — die Beschriftung im Katalog ist
+# der Name des BEFEHLS und erscheint als Tooltip.
+posteingang_mail_oeffnen:
+  label: inbox_items.open_communication
+posteingang_dublette_oeffnen:
+  label: inbox_items.open_duplicate
+posteingang_als_dublette_archivieren:
+  label: inbox_items.archive_as_duplicate
+# Die drei Transkriptions-Wege: drei BEFEHLE, nicht einer mit Parameter —
+# sie kosten Verschiedenes und liefern Verschiedenes. Ihre Beschriftungen
+# tragen Platzhalter (Kosten, Sprache), der Aufruf reicht den fertigen
+# Text als title mit.
+posteingang_transkript_whisper:
+  label: inbox_items.archive
+posteingang_transkript_diarisierung:
+  label: inbox_items.archive
+posteingang_transkript_untertitel:
+  label: inbox_items.archive
+posteingang_eintrag_bearbeiten:
+  label: inbox_items.edit_entry
+posteingang_speichern:
+  label: actions.save

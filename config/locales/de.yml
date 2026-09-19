@@ -2347,6 +2347,10 @@ de:
     delete_permanently_confirm: "Wirklich endgültig löschen?"
     added_ago: "hinzugefügt vor %{age}"
     from_email: "aus E-Mail:"
+    # #1672: Tooltips fuer die zwei Knoepfe, deren sichtbarer Text der
+    # Titel des Ziels ist (also nicht der Name des Befehls).
+    open_communication: "E-Mail öffnen"
+    open_duplicate: "Eintrag öffnen"
     no_subject: "(ohne Betreff)"
     video_thumbnail_alt: "Video-Thumbnail"
     possible_duplicate: "Mögliche Dublette"

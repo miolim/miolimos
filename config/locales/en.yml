@@ -2319,6 +2319,10 @@ en:
     delete_permanently_confirm: "Really delete permanently?"
     added_ago: "added %{age} ago"
     from_email: "from email:"
+    # #1672: tooltips for the two buttons whose visible text is the
+    # target title rather than the command name.
+    open_communication: "Open email"
+    open_duplicate: "Open entry"
     no_subject: "(no subject)"
     video_thumbnail_alt: "Video thumbnail"
     possible_duplicate: "Possible duplicate"

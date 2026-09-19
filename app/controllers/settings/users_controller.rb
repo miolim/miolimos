@@ -75,6 +75,14 @@ class Settings::UsersController < Settings::BaseController
       redirect_to settings_users_path, alert: "Du kannst Dich nicht selbst löschen."
       return
     end
+    # #1675: Wer Inhalte angelegt hat, wird nicht gelöscht. Themen tragen
+    # creator_id NOT NULL — das „nullify" endete in einer Fehlerseite —, und die
+    # Wartepunkte des Nutzers wären still mitgelöscht worden. Der richtige Weg
+    # ist Deaktivieren: Anmeldung gesperrt, Urheberschaft bleibt.
+    if @user.hinterlaesst_inhalte?
+      redirect_to settings_users_path, alert: t("settings.users.delete_has_content", name: @user.name)
+      return
+    end
     @user.destroy!
     redirect_to settings_users_path, notice: "Benutzer gelöscht."
   end

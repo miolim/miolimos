@@ -138,6 +138,25 @@ class Settings::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/settings/users"
   end
 
+  # #1675: Wer Inhalte angelegt hat, ließ sich nicht sauber löschen — Themen
+  # tragen creator_id NOT NULL, das „nullify" endete in einer Fehlerseite (500);
+  # und seine Wartepunkte wären per dependent: :destroy mitgelöscht worden.
+  # Jetzt: abgewiesen mit dem Hinweis, stattdessen zu deaktivieren.
+  test "DELETE: ein Nutzer mit eigenen Inhalten wird nicht geloescht, sondern zum Deaktivieren verwiesen" do
+    user = HumanActor.create!(
+      name: "Autorin", email: "aut-#{SecureRandom.hex(3)}@t.local", password: "originalpass"
+    )
+    create_topic(creator: user, name: "Ihr Thema", slug: "ihr-#{SecureRandom.hex(3)}")
+    wp = Awaiting.create!(creator: user, title: "Ihr Wartepunkt", status: :open, follow_up_at: 1.week.from_now)
+
+    assert_no_difference -> { HumanActor.count } do
+      delete "/settings/users/#{user.id}"
+    end
+    assert_redirected_to "/settings/users"
+    assert_equal I18n.t("settings.users.delete_has_content", name: user.name), flash[:alert]
+    assert Awaiting.exists?(wp.id), "ihre Wartepunkte wurden mitgelöscht"
+  end
+
   test "DELETE on self redirects with alert and does not destroy" do
     assert_no_difference -> { HumanActor.count } do
       delete "/settings/users/#{@hans.id}"

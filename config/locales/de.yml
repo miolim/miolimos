@@ -1257,6 +1257,7 @@ de:
       # #1520 (Hans): „Passwort für andere Nutzer ändern bitte an Admin-Rechte binden."
       password_admin_only: "Nur Admins können das Passwort anderer Benutzer ändern. Dein eigenes änderst Du unter Einstellungen → Sicherheit."
       delete_confirm: "Benutzer %{name} löschen?"
+      delete_has_content: "%{name} hat Inhalte angelegt (Themen, Aufgaben, Wartepunkte oder Wissen) und wird deshalb nicht gelöscht. Stattdessen deaktivieren: Die Anmeldung ist dann gesperrt, die Urheberschaft bleibt erhalten."
     relations:
       vocab_title:     "Beziehungstypen-Vokabular"
       types:

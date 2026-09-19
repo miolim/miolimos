@@ -1251,6 +1251,7 @@ en:
       view_title:     "Read-only preview: miolimOS through this user's eyes"
       password_admin_only: "Only admins can change another user's password. You can change your own under Settings → Security."
       delete_confirm: "Delete user %{name}?"
+      delete_has_content: "%{name} has created content (topics, tasks, awaitings or knowledge) and is therefore not deleted. Deactivate the user instead: sign-in is blocked, authorship is kept."
     relations:
       vocab_title:     "Relationship type vocabulary"
       types:

@@ -42,6 +42,13 @@ class Actor < ApplicationRecord
 
   has_many :audit_logs, dependent: :nullify
 
+  # #1675: Hat dieser Akteur Inhalte angelegt, die an ihm hängen? Dann wird er
+  # deaktiviert statt gelöscht (Settings::UsersController#destroy).
+  def hinterlaesst_inhalte?
+    created_topics.exists? || created_tasks.exists? || awaitings.exists? ||
+      KnowledgeItem.unscoped.where(creator_id: id).exists?
+  end
+
   # #995: Portokassen-/API-Zugang für die Internetmarke (Einstellungen).
   has_one :internetmarke_credential, dependent: :destroy
 

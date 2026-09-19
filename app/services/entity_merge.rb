@@ -123,14 +123,15 @@ class EntityMerge
 
   def move_postal_addresses
     norm = ->(a) { [a.line1, a.line2, a.postal_code, a.city, a.country].map { |v| v.to_s.strip.downcase } }
-    existing = @target.postal_addresses.map(&norm).to_set
+    existing = @target.postal_addresses.index_by(&norm)
     @source.postal_addresses.to_a.each do |pa|
       key = norm.call(pa)
-      if existing.include?(key)
+      if existing.key?(key)
+        verweise_umziehen(:recipient_address_id, pa.id, existing[key].id)
         pa.destroy
       else
         pa.update_columns(knowledge_item_uuid: @target.uuid)
-        existing << key
+        existing[key] = pa
         @report[:postal_addresses] += 1
       end
     end
@@ -138,14 +139,15 @@ class EntityMerge
 
   def move_bank_accounts
     norm = ->(b) { b.iban.to_s.gsub(/\s+/, "").upcase }
-    existing = @target.bank_accounts.map(&norm).to_set
+    existing = @target.bank_accounts.index_by(&norm)
     @source.bank_accounts.to_a.each do |ba|
       key = norm.call(ba)
-      if existing.include?(key)
+      if existing.key?(key)
+        verweise_umziehen(:debtor_bank_account_id, ba.id, existing[key].id)
         ba.destroy
       else
         ba.update_columns(knowledge_item_uuid: @target.uuid)
-        existing << key
+        existing[key] = ba
         @report[:bank_accounts] += 1
       end
     end
@@ -153,15 +155,41 @@ class EntityMerge
 
   def move_identifiers
     existing = Identifier.where(knowledge_item_uuid: @target.uuid)
-                         .map { |i| [i.label.to_s.strip.downcase, i.value.to_s.strip.downcase] }.to_set
+                         .index_by { |i| [i.label.to_s.strip.downcase, i.value.to_s.strip.downcase] }
     Identifier.where(knowledge_item_uuid: @source.uuid).to_a.each do |ident|
       key = [ident.label.to_s.strip.downcase, ident.value.to_s.strip.downcase]
-      if existing.include?(key)
+      if existing.key?(key)
+        gezeigte_identifier_umziehen(ident.id, existing[key].id)
         ident.destroy
       else
         ident.update_columns(knowledge_item_uuid: @target.uuid)
-        existing << key
+        existing[key] = ident
         @report[:identifiers] += 1
+      end
+    end
+  end
+
+  # #1675: Wird eine Zeile der Quelle als Dublette verworfen, zeigen Rechnungen
+  # und Dokumente womöglich noch auf IHRE id (gewählte Anschrift, Lastschrift-
+  # Konto, gezeigte Identifier). Die Rechnung hält die Anschrift per
+  # Fremdschlüssel fest — der Merge brach mit einer Fehlerseite ab; das Dokument
+  # (ohne Fremdschlüssel) behielt einen toten Verweis und fiel still auf die
+  # Automatik zurück. Deshalb VOR dem Verwerfen auf das Gegenstück umziehen.
+  ID_VERWEISE = { recipient_address_id: [Invoice, Document], debtor_bank_account_id: [Document] }.freeze
+
+  def verweise_umziehen(spalte, von_id, nach_id)
+    ID_VERWEISE.fetch(spalte).each do |modell|
+      @report[:"#{modell.table_name}.#{spalte}"] +=
+        modell.unscoped.where(spalte => von_id).update_all(spalte => nach_id)
+    end
+  end
+
+  def gezeigte_identifier_umziehen(von_id, nach_id)
+    [Invoice, Document].each do |modell|
+      modell.unscoped.where("? = ANY(shown_identifier_ids)", von_id).find_each do |beleg|
+        neu = beleg.shown_identifier_ids.map { |id| id == von_id ? nach_id : id }.uniq
+        beleg.update_columns(shown_identifier_ids: neu)
+        @report[:"#{modell.table_name}.shown_identifier_ids"] += 1
       end
     end
   end

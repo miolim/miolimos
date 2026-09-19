@@ -190,6 +190,38 @@ class EntityMergeTest < ActiveSupport::TestCase
     end
   end
 
+  # #1675: Haben Quelle und Ziel dieselbe Anschrift, wird die der Quelle als
+  # Dublette verworfen. Hing daran eine Rechnung (recipient_address_id, mit
+  # Fremdschlüssel), brach der ganze Merge mit einer Fehlerseite ab; ein
+  # Dokument (ohne Fremdschlüssel) behielt einen toten Verweis und fiel still
+  # auf die Automatik-Adresse zurück. Dasselbe Muster bei Konto und Identifier.
+  test "Verweise auf verworfene Dubletten (Adresse, Konto, Identifier) ziehen auf das Gegenstueck des Ziels um" do
+    with_isolated_miolimos_base do
+      quelle = create_person("M. Meier")
+      ziel   = create_person("Max Meier")
+      adresse = { line1: "Hauptstr. 1", postal_code: "20095", city: "Hamburg", country: "Deutschland" }
+      a_quelle = quelle.postal_addresses.create!(adresse)
+      a_ziel   = ziel.postal_addresses.create!(adresse)
+      k_quelle = quelle.bank_accounts.create!(iban: "DE89 3704 0044 0532 0130 00")
+      k_ziel   = ziel.bank_accounts.create!(iban: "DE89370400440532013000")
+      i_quelle = quelle.identifiers.create!(label: "Kundennr", value: "4711", position: 0)
+      i_ziel   = ziel.identifiers.create!(label: "Kundennr", value: "4711", position: 0)
+
+      rechnung = Invoice.create!(kind: :rechnung, recipient_uuid: quelle.uuid, recipient_address_id: a_quelle.id,
+                                 shown_identifier_ids: [i_quelle.id])
+      brief    = Document.create!(kind: :brief, recipient_uuid: quelle.uuid, recipient_address_id: a_quelle.id,
+                                  debtor_bank_account_id: k_quelle.id, shown_identifier_ids: [i_quelle.id])
+
+      assert_nothing_raised { EntityMerge.merge!(source: quelle, target: ziel, actor: @hans) }
+
+      assert_equal a_ziel.id, rechnung.reload.recipient_address_id
+      assert_equal [i_ziel.id], rechnung.shown_identifier_ids
+      assert_equal a_ziel.id, brief.reload.recipient_address_id
+      assert_equal k_ziel.id, brief.debtor_bank_account_id
+      assert_equal [i_ziel.id], brief.shown_identifier_ids
+    end
+  end
+
   test "verweigert Selbst-Merge und Nicht-Person-Typen" do
     with_isolated_miolimos_base do
       person = create_person("P")

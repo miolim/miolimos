@@ -90,6 +90,14 @@ release is cut, this section is renamed to the new version and a fresh
   exported as UUID so a re-index cannot flip it either.
 - Invoice numbers of invoices in the trash are no longer handed out again
   (#1675) — restoring such an invoice produced a duplicate number.
+- Merging two people who share an address, bank account or identifier no
+  longer fails or leaves dead references (#1675): invoices and documents that
+  pointed at the discarded duplicate row are moved to its counterpart on the
+  target first. Previously an invoice's foreign key aborted the whole merge
+  with an error page.
+- A user who has created content (topics, tasks, awaitings, knowledge) can no
+  longer be deleted — the attempt ended in an error page and would have
+  deleted their awaitings. Deactivate such users instead (#1675).
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

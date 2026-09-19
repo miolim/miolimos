@@ -69,16 +69,20 @@ class KnowledgeItemUpdateForm
     end
   end
 
+  # #1677 (aus immoOS #1662 übernommen; Hans dort): `to_uuid` reist neben dem Namen mit. Der Name bleibt
+  # in der Frontmatter, weil die Datei lesbar sein soll (sie ist der Export);
+  # die Kennung trägt die Verbindung, damit eine Umbenennung sie nicht reißt.
   def normalize_relationships(arr)
     return nil if arr.nil?
     Array(arr).filter_map do |row|
-      row = permit_to_hash(row, %i[to kind from to_at])
+      row = permit_to_hash(row, %i[to to_uuid kind from to_at])
       next nil if row["to"].to_s.strip.empty? || row["kind"].to_s.strip.empty?
       {
-        "to"    => row["to"].to_s.strip,
-        "kind"  => row["kind"].to_s.strip,
-        "from"  => row["from"].presence,
-        "to_at" => row["to_at"].presence
+        "to"      => row["to"].to_s.strip,
+        "to_uuid" => row["to_uuid"].presence,
+        "kind"    => row["kind"].to_s.strip,
+        "from"    => row["from"].presence,
+        "to_at"   => row["to_at"].presence
       }.compact
     end
   end

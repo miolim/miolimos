@@ -167,6 +167,56 @@ class PersonOrgSyncTest < ActiveSupport::TestCase
     end
   end
 
+  # #1677 (aus immoOS #1662 übernommen; Hans dort): Die Beziehung hing bisher allein am Titel. Wird der
+  # Kontakt umbenannt, griff der nächste Abgleich ins Leere — dieselbe Schwäche
+  # wie beim Amtsgericht vor #1661.
+  test "#1662: die Kennung gilt vor dem Namen" do
+    with_isolated_miolimos_base do
+      a     = FileProxy.create(actor: @hans, title: "Alice", item_type: :person, content: "")
+      bob   = FileProxy.create(actor: @hans, title: "Bob", item_type: :person, content: "")
+      FileProxy.create(actor: @hans, title: "Bob Doppelgänger", item_type: :person, content: "")
+
+      # Der Name im Feld zeigt auf den Doppelgänger, die Kennung auf den
+      # gemeinten Bob — die Kennung gewinnt.
+      PersonOrgSync.sync(a, { "relationships" => [
+        { "to" => "Bob Doppelgänger", "to_uuid" => bob.uuid, "kind" => "Freund" }
+      ]})
+      assert_equal bob.uuid, a.outgoing_relationships.first.to_uuid
+    end
+  end
+
+  test "#1662: Umbenennen reißt die Beziehung nicht" do
+    with_isolated_miolimos_base do
+      a = FileProxy.create(actor: @hans, title: "Alice", item_type: :person, content: "")
+      b = FileProxy.create(actor: @hans, title: "Bob", item_type: :person, content: "")
+
+      PersonOrgSync.sync(a, { "relationships" => [
+        { "to" => "Bob", "to_uuid" => b.uuid, "kind" => "Freund" }
+      ]})
+      b.update!(title: "Robert Neuname")
+
+      # Derselbe Eintrag, aber der Name im Feld ist veraltet.
+      PersonOrgSync.sync(a, { "relationships" => [
+        { "to" => "Bob", "to_uuid" => b.uuid, "kind" => "Freund" }
+      ]})
+      assert_equal 1, a.outgoing_relationships.count
+      assert_equal b.uuid, a.outgoing_relationships.first.to_uuid
+    end
+  end
+
+  test "#1662: eine unbekannte Kennung fällt auf den Namen zurück" do
+    with_isolated_miolimos_base do
+      a = FileProxy.create(actor: @hans, title: "Alice", item_type: :person, content: "")
+      b = FileProxy.create(actor: @hans, title: "Bob", item_type: :person, content: "")
+
+      PersonOrgSync.sync(a, { "relationships" => [
+        { "to" => "Bob", "to_uuid" => SecureRandom.uuid, "kind" => "Freund" }
+      ]})
+      assert_equal b.uuid, a.outgoing_relationships.first.to_uuid,
+                   "eine erfundene Kennung darf keine Beziehung ins Nichts anlegen"
+    end
+  end
+
   test "sync_relationships removes entries that disappear" do
     with_isolated_miolimos_base do
       a = FileProxy.create(actor: @hans, title: "Alice",

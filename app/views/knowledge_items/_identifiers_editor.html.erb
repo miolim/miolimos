@@ -101,7 +101,7 @@
           <% Identifier::TYPE_SUGGESTIONS.each do |t| %><option value="<%= t %>"></option><% end %>
         </datalist>
         <datalist id="id-counterparty-suggestions-<%= item.uuid %>">
-          <% KnowledgeItem.persons_and_orgs.order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |t| %><% next if t == item.title %><option value="<%= t %>"></option><% end %>
+          <%# #1677: visible_to — die Vorschlagsliste verriet sonst jedem Mitglied alle Kontaktnamen. %><% KnowledgeItem.visible_to(current_actor).persons_and_orgs.order(Arel.sql("LOWER(title)")).limit(500).pluck(:title).each do |t| %><% next if t == item.title %><option value="<%= t %>"></option><% end %>
         </datalist>
 
         <div class="flex items-center gap-2 px-3 py-2 border-t border-slate-100 bg-slate-50/50">

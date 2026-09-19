@@ -54,6 +54,17 @@ class KnowledgeItemUpdateFormTest < ActiveSupport::TestCase
     assert_equal "spouse", out[:relationships][0]["kind"]
   end
 
+  # #1677 (aus immoOS #1662): Der Picker schickt die Kennung neben dem Namen mit; beide
+  # gehören in die Frontmatter (Name = lesbar, Kennung = tragfähig).
+  test "#1662: relationships nehmen to_uuid mit, wo eine mitkommt" do
+    out = args(relationships: [
+      { "to" => "Bob", "to_uuid" => "3f1c0e8a-1111-2222-3333-444455556666", "kind" => "Freund" },
+      { "to" => "Carol", "kind" => "Kollegin" }
+    ])
+    assert_equal "3f1c0e8a-1111-2222-3333-444455556666", out[:relationships][0]["to_uuid"]
+    assert_not out[:relationships][1].key?("to_uuid"), "ohne Kennung bleibt der Schlüssel weg"
+  end
+
   test "contact_points default kind to email and drop empty values" do
     out = args(contact_points: [
       { "label" => "Privat", "value" => " hi@example.com " },

@@ -645,7 +645,9 @@ module ApplicationHelper
   # (Stack-Mode mit N Persons → N×SELECT title FROM knowledge_items).
   def org_titles_for_datalist
     @org_titles_for_datalist ||=
-      KnowledgeItem.organizations.order(:title).pluck(:title)
+      # #1677: visible_to — die Liste steht in JEDER Personen-/Org-Card und
+      # verriet sonst jedem Mitglied die Namen aller Organisationen.
+      KnowledgeItem.visible_to(current_actor).organizations.order(:title).pluck(:title)
   end
 
   # #756 (Hans, 2026-06-23): viewport_frame_data entfernt — die Element-

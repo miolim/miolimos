@@ -1,0 +1,47 @@
+<%# #1677 (aus immoOS #1661 übernommen; Hans dort): Personen-Auswahl in einem FORMULAR — tippen filtert,
+    am Ende der Liste stehen „… Person anlegen" und „… Organisation anlegen".
+    Angelegt wird erst bei Bestätigung; die neue Card geht dann auf.
+
+    Anders als shared/entity_picker schreibt dieser nichts sofort weg: Er
+    gehört in Formulare, die erst am Ende abgeschickt werden (eine Beziehung
+    mit Art und Zeitraum). Er füllt ein verstecktes Feld mit der Kennung;
+    der getippte Name bleibt als Rückfall (ohne JavaScript, Schnittstelle).
+
+    Locals:
+      name       — Feldname für den getippten Namen (z. B. "owner_name")
+      uuid_name  — Feldname für die Kennung (z. B. "owner_uuid")
+      arten      — Reihenfolge der Anlege-Zeilen, erste = Vorbelegung; sie
+                   begrenzt auch die Suche (z. B. nur Organisationen)
+      tag        — optional: Kontakte mit diesem Tag stehen in der Trefferliste
+                   vorn — Gewichtung, kein Filter
+      value      — optionaler vorbelegter Name
+      uuid_value — Kennung dazu (beim Umhängen); wird verworfen, sobald jemand
+                   den Namen ändert, ohne einen Vorschlag zu wählen
+      absenden   — true in Inline-Formularen, die beim Verlassen speichern:
+                   Dann schickt der Picker das Formular selbst ab (nach der
+                   Auswahl bzw. beim Blur) statt per `onblur` am Feld
+      placeholder, required, css, extra (weitere Attribute am Textfeld) %>
+<%
+  arten       = Array(local_assigns.fetch(:arten, %w[person organization]))
+  css         = local_assigns.fetch(:css, "w-full border border-slate-200 rounded px-2 py-1")
+  beschriftung = arten.index_with { |a| t(a == "organization" ? "kontakt_anlegen.organisation" : "kontakt_anlegen.person") }
+%>
+<div data-controller="person-picker"
+     data-person-picker-absenden-value="<%= local_assigns[:absenden] ? true : false %>"
+     data-person-picker-url-value="<%= suggest_knowledge_items_path(item_type: arten.join(","), id_as_uuid: 1, tag: local_assigns[:tag].presence) %>"
+     data-person-picker-create-url-value="<%= knowledge_items_path %>"
+     data-person-picker-arten-value="<%= arten.to_json %>"
+     data-person-picker-labels-value="<%= beschriftung.to_json %>"
+     class="relative">
+  <input type="hidden" name="<%= uuid_name %>" value="<%= local_assigns[:uuid_value] %>"
+         data-person-picker-target="uuid">
+  <input type="text" name="<%= name %>" autocomplete="off"
+         <%= "required" if local_assigns[:required] %>
+         value="<%= local_assigns[:value] %>"
+         placeholder="<%= local_assigns[:placeholder] %>"
+         data-person-picker-target="input"
+         <%= local_assigns[:extra]&.html_safe %>
+         class="<%= css %>">
+  <ul data-person-picker-target="list"
+      class="hidden absolute z-20 left-0 right-0 bg-white border border-slate-200 rounded shadow-lg max-h-56 overflow-y-auto"></ul>
+</div>

@@ -39,9 +39,16 @@
     <div data-section-edit-target="edit" hidden>
       <%= form_with url: knowledge_item_path(item.uuid), method: :patch, local: false do |f| %>
         <% if in_stack %><%= f.hidden_field :in_stack, value: "1" %><% end %>
+        <%# #1677 (aus immoOS #1662 übernommen; Hans dort): Auch hier suchen und anlegen — der Verwandte
+            oder die Mutter-Organisation ist oft gerade der Kontakt, den es
+            noch nicht gibt. Die Kennung reist als eigener Schlüssel mit; der
+            Name bleibt daneben stehen, weil die Datei lesbar bleiben soll. %>
         <template data-rows-editor-target="template">
           <div data-row class="<%= row %>">
-            <input type="text" name="relationships[][to]" placeholder="<%= t("knowledge.editors.relationships.target_placeholder") %>" list="rel-suggestions-<%= item.uuid %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+            <%= render "shared/person_picker", name: "relationships[][to]", uuid_name: "relationships[][to_uuid]",
+                  arten: %w[person organization],
+                  placeholder: t("knowledge.editors.relationships.target_placeholder"),
+                  css: "w-full border border-slate-200 rounded px-1 py-0.5 text-xs" %>
             <input type="text" name="relationships[][kind]" placeholder="<%= t("knowledge.editors.relationships.kind_placeholder") %>" list="rel-kind-suggestions" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
             <input type="date" name="relationships[][from]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
             <input type="date" name="relationships[][to_at]" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
@@ -54,7 +61,10 @@
         <div data-rows-editor-target="rows">
           <% rels.each do |r| %>
             <div data-row data-existing="true" class="<%= row %>">
-              <input type="text" name="relationships[][to]" value="<%= r.to_person.title %>" list="rel-suggestions-<%= item.uuid %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
+              <%= render "shared/person_picker", name: "relationships[][to]", uuid_name: "relationships[][to_uuid]",
+                    arten: %w[person organization],
+                    value: r.to_person.title, uuid_value: r.to_uuid,
+                    css: "w-full border border-slate-200 rounded px-1 py-0.5 text-xs" %>
               <input type="text" name="relationships[][kind]" value="<%= r.kind %>" list="rel-kind-suggestions" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
               <input type="date" name="relationships[][from]" value="<%= r.start_at %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
               <input type="date" name="relationships[][to_at]" value="<%= r.end_at %>" class="border border-slate-200 rounded px-1 py-0.5 text-xs">
@@ -65,9 +75,8 @@
           <% end %>
         </div>
 
-        <datalist id="rel-suggestions-<%= item.uuid %>">
-          <% KnowledgeItem.where(item_type: [:person, :organization]).order(:title).pluck(:title).each do |t| %><option value="<%= t %>"></option><% end %>
-        </datalist>
+        <%# #1662: Die Namensliste ALLER Kontakte ist entfallen — gesucht wird
+            getippt über den Picker, der nur die Treffer holt. %>
         <datalist id="rel-kind-suggestions">
           <% kinds_default = ["Ehepartner:in","Kind","Elternteil","Geschwister","Kolleg:in","Mentor:in","Mentee","Freund:in","bekannt von","Co-Autor:in","Sparringspartner:in","Tochter-Org von","Mutter-Org von"] %>
           <% (kinds_default + (Relationship.distinct.pluck(:kind).compact - kinds_default)).each do |k| %><option value="<%= k %>"></option><% end %>

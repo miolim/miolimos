@@ -116,7 +116,12 @@ class PersonOrgSync
     seen = Set.new
 
     declared.each do |entry|
-      to_uuid  = resolve_uuid(entry["to"] || entry[:to])
+      # #1677 (aus immoOS #1662): Die Kennung gilt vor dem Namen — sie überlebt eine
+      # Umbenennung und unterscheidet zwei gleichnamige Kontakte. Der Name
+      # bleibt der Rückfall für Bestandsdateien und den Import, die nur ihn
+      # tragen.
+      to_uuid  = vorhandene_kennung(entry["to_uuid"] || entry[:to_uuid])
+      to_uuid ||= resolve_uuid(entry["to"] || entry[:to])
       next unless to_uuid
 
       kind     = (entry["kind"] || entry[:kind]).to_s.strip
@@ -139,6 +144,18 @@ class PersonOrgSync
   end
 
   UUID_RE = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+
+  # #1662: Nur eine Kennung, die es wirklich gibt — sonst entstünde eine
+  # Beziehung auf einen Kontakt, den niemand je gesehen hat (die Kennung kommt
+  # aus dem Formular). Ist sie unbekannt, greift der Name als Rückfall.
+  def vorhandene_kennung(ref)
+    return nil if ref.blank?
+
+    s = ref.to_s.strip.downcase
+    return nil unless s =~ UUID_RE
+
+    KnowledgeItem.where(item_type: %i[person organization]).exists?(uuid: s) ? s : nil
+  end
 
   def resolve_uuid(ref)
     return nil if ref.blank?

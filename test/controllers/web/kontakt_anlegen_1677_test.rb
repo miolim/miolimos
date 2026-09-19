@@ -88,4 +88,66 @@ class KontaktAnlegen1677Test < ActionDispatch::IntegrationTest
     assert_includes response.body, "data-entity-picker-create-types-value"
     assert_includes response.body, I18n.t("kontakt_anlegen.organisation")
   end
+
+  # ── Personen-Picker im Formular (aus immoOS #1661/#1662) ────────────────
+
+  test "Schnellanlage antwortet dem Picker als JSON mit der Kennung — der getippte Name wird der Titel" do
+    with_isolated_miolimos_base do
+      post "/knowledge_items",
+           params: { quick_create: "1", item_type: "person", title: "Emma Roth", first_name: "Emma", last_name: "Roth" },
+           headers: { "Accept" => "application/json" }
+      assert_response :success
+      antwort = JSON.parse(response.body)
+      person  = KnowledgeItem.find(antwort["uuid"])
+      assert_equal ["Emma Roth", "person"], [antwort["title"], antwort["item_type"]]
+      assert_equal ["Emma", "Roth"], [person.first_name, person.last_name]
+    end
+  end
+
+  # #1662: Die Kennung trägt die Verbindung — sie überlebt eine Umbenennung und
+  # unterscheidet zwei gleichnamige Kontakte. Der Name bleibt der Rückfall.
+  test "Beziehung: die Kennung aus dem Picker gewinnt gegen den Namen" do
+    with_isolated_miolimos_base do
+      anna   = FileProxy.create(actor: @hans, title: "Anna Bergmann", item_type: :person, content: "")
+      erste  = FileProxy.create(actor: @hans, title: "Max Meier", item_type: :person, content: "")
+      zweite = FileProxy.create(actor: @hans, title: "Max Meier", item_type: :person, content: "")
+
+      patch "/knowledge_items/#{anna.uuid}",
+            params: { relationships: [{ to: "Max Meier", to_uuid: zweite.uuid, kind: "Kolleg:in" }] },
+            headers: stream
+      assert_response :success
+      assert_equal [zweite.uuid], Relationship.where(from_uuid: anna.uuid).pluck(:to_uuid),
+                   "bei zwei gleichnamigen Kontakten entschied der Zufall (erster Treffer am Namen: #{erste.uuid[0, 8]})"
+    end
+  end
+
+  test "Beziehungs-Editor: Picker statt der Namensliste aller Kontakte" do
+    with_isolated_miolimos_base do
+      anna = FileProxy.create(actor: @hans, title: "Anna Bergmann", item_type: :person, content: "")
+      get "/knowledge_items/#{anna.uuid}/card"
+      assert_response :success
+      assert_includes response.body, 'data-controller="person-picker"'
+      refute_includes response.body, "rel-suggestions-", "die datalist mit ALLEN Kontaktnamen ist entfallen"
+    end
+  end
+
+  # Beim Übernehmen gefunden: Auch die Vorschlagslisten der Nachbar-Editoren
+  # (Identifier-Gegenpartei, Mutter-Organisation) betteten die Namen ALLER
+  # Kontakte in jede Personen-Card ein — ohne Sichtbarkeitsfilter (#602).
+  test "die Vorschlagslisten einer Personen-Card nennen einem Mitglied keine fremden Kontakte" do
+    with_isolated_miolimos_base do
+      mia = create_human(name: "Mia Member", role: :member, password: "secretsecret")
+      CapabilityDefaults.grant_full!(mia)
+      FileProxy.create(actor: @hans, title: "Geheimer Investor", item_type: :person, content: "")
+      FileProxy.create(actor: @hans, title: "Geheime Holding AG", item_type: :organization, content: "")
+      delete "/logout"
+      post "/login", params: { email: mia.email, password: "secretsecret" }
+      eigene = FileProxy.create(actor: mia, title: "Mias Kontakt", item_type: :person, content: "")
+
+      get "/knowledge_items/#{eigene.uuid}/card"
+      assert_response :success
+      refute_includes response.body, "Geheimer Investor"
+      refute_includes response.body, "Geheime Holding AG"
+    end
+  end
 end

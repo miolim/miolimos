@@ -171,6 +171,9 @@ class KnowledgeItemsController < ApplicationController
           render turbo_stream: streams
         end
         format.html { redirect_to knowledge_items_path(selected: @item.uuid) }
+        # #1677 (aus immoOS #1661): Der Personen-Picker in einem Formular braucht
+        # nur die Kennung — die Card öffnet er selbst, sobald er sie hat.
+        format.json { render json: { uuid: @item.uuid, title: @item.title, item_type: @item.item_type } }
       end
       return
     end
@@ -281,6 +284,16 @@ class KnowledgeItemsController < ApplicationController
         "OR LOWER(birth_name) LIKE :q",
         q: "%#{q}%"
       )
+    end
+    # #1677 (aus immoOS #821/#1661): Ein Feld darf sagen, welche Sorte Kontakt es
+    # meint — Kontakte mit diesem Tag stehen vorn. GEWICHTUNG, kein Filter: Ist
+    # noch nichts getaggt, stünde sonst gar nichts zur Auswahl.
+    if (tag = params[:tag].to_s.strip.downcase).presence
+      scope = scope.reorder(Arel.sql(
+        ActiveRecord::Base.sanitize_sql_array(
+          ["(EXISTS (SELECT 1 FROM unnest(tags) tg WHERE lower(tg) = ?)) DESC", tag]
+        )
+      )).order(file_updated_at: :desc)
     end
     results = scope.limit(10).pluck(:uuid, :title, :aliases)
     # #484 (Hans, 2026-06-03): wenn ein topic gegeben ist, markieren,

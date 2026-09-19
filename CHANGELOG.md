@@ -24,6 +24,19 @@ release is cut, this section is renamed to the new version and a fresh
   the recipient to a person. A person's name is split into first and last
   name in one place now (it used to be done slightly differently in three);
   an organization never gets name parts.
+- A person picker for forms (#1677, from immoOS #1661/#1662): type to search,
+  and if nobody is found, “create as person / organization” creates the
+  contact on click and opens its card. First use: the relationships editor of
+  a person — the relationship is now tied to the contact's id, so it survives
+  a rename and tells two people of the same name apart (the name stays as a
+  fallback for existing files and imports).
+
+### Security
+
+- The suggestion lists embedded in every person/organisation card (parent
+  organisation, identifier counterparty) and the former list of all contact
+  names in the relationships editor no longer reveal contacts the user may
+  not see (#1677).
 
 ## [0.6.0] - 2026-09-19
 

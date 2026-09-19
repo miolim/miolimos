@@ -46,16 +46,16 @@
             storage-key: jede neue Suche startet wieder eingeklappt. %>
         <section data-controller="disclosure" class="border border-slate-200 rounded">
           <header class="flex items-center">
-            <button type="button"
-                    data-action="click->disclosure#toggle"
-                    class="flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 rounded">
+            <%= ui_button :suchtreffer_klappen,
+                  data: { action: "click->disclosure#toggle" },
+                  class: "flex-1 min-w-0 flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 rounded" do %>
               <span data-disclosure-target="icon" class="inline-block transition-transform text-slate-400 shrink-0">
                 <%= icon "chevron_right" %>
               </span>
               <span class="text-slate-500 shrink-0"><%= search_section_icon(section) %></span>
               <span class="text-sm font-medium text-slate-700 truncate"><%= search_section_label(section) %></span>
               <span class="ml-auto text-xs text-slate-500 tabular-nums shrink-0"><%= search.count(section) %></span>
-            </button>
+            <% end %>
           </header>
           <div data-disclosure-target="content" class="hidden border-t border-slate-100">
             <%= turbo_frame_tag search_section_frame_id(payload, section),

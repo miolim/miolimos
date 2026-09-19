@@ -17,7 +17,7 @@
             autocomplete: "one-time-code", inputmode: "numeric",
             class: "w-full rounded border border-slate-200 px-3 py-1.5 font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
     </div>
-    <%= f.submit t("sessions.otp_submit"),
+    <%= ui_button :zweitfaktor_code_absenden, type: :submit,
           class: "w-full rounded bg-emerald-600 text-white font-medium py-1.5 hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
 

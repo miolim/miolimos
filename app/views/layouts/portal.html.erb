@@ -59,7 +59,7 @@
       <span class="muted">
         <% if portal_topic && !@export %>
           <%= portal_topic.name %> ·
-          <%= button_to t("portal.layout.sign_out"), portal_session_path, method: :delete,
+          <%= ui_button_to :portal_abmelden, portal_session_path, method: :delete,
                 form: { style: "display:inline" },
                 style: "background:none;border:0;padding:0;color:#6b7280;cursor:pointer;font:inherit;text-decoration:underline" %>
         <% elsif portal_topic %>

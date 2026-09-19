@@ -18,7 +18,7 @@
   <span class="flex-1 min-w-0"><%= message %></span>
 
   <% if undo_url %>
-    <%= button_to undo_url, method: undo_method,
+    <%= ui_button_to :meldung_rueckgaengig, undo_url, method: undo_method,
           form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
           class: "text-emerald-300 hover:text-emerald-200 underline text-sm bg-transparent border-0 cursor-pointer" do %>
       <% undo_payload.each do |key, value| %>

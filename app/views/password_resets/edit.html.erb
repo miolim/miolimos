@@ -23,7 +23,7 @@
       <%= f.password_field :password_confirmation, required: true, autocomplete: "new-password",
             class: "w-full rounded border border-slate-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400" %>
     </div>
-    <%= f.submit t("passwords.set_submit"),
+    <%= ui_button :passwort_setzen, type: :submit,
           class: "w-full rounded bg-emerald-600 text-white font-medium py-1.5 hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
 </div>

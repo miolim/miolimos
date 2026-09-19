@@ -41,7 +41,7 @@
                   px-4 py-1.5 text-[13px] flex items-center gap-3 shadow-lg">
         <span class="font-semibold"><%= t("shared.preview.label") %></span>
         <span class="truncate"><%= t("shared.preview.readonly", name: current_actor.name) %></span>
-        <%= button_to t("shared.preview.exit"), end_preview_path, method: :delete,
+        <%= ui_button_to :vorschau_beenden, end_preview_path, method: :delete,
               form: { class: "inline m-0 p-0 ml-auto" },
               class: "px-2 py-0.5 rounded bg-amber-950 text-amber-50 hover:bg-amber-900 cursor-pointer text-[12px]" %>
       </div>

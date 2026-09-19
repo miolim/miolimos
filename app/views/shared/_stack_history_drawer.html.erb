@@ -14,11 +14,12 @@
     <header class="px-3 py-2 border-b border-slate-200 flex items-center gap-2">
       <h2 class="font-semibold text-sm"><%= t("knowledge.form.stack_history") %></h2>
       <span data-stack-history-target="count" class="text-xs text-slate-500"></span>
-      <button type="button"
-              data-action="click->stack-history#clear"
-              class="ml-auto text-xs text-slate-500 hover:text-rose-600">
-        Verlauf leeren
-      </button>
+      <%# #1672: Beschriftung war hartkodiert deutsch. %>
+      <%= ui_button :ki_verlauf_leeren,
+            data: { action: "click->stack-history#clear" },
+            class: "ml-auto text-xs text-slate-500 hover:text-rose-600" do %>
+        <%= t("knowledge.form.clear_history") %>
+      <% end %>
       <%= ui_button :verlauf_schliessen, size: "w-4 h-4",
             data: { action: "click->stack-history#toggle" },
             class: "text-slate-500 hover:text-slate-900 leading-none" %>

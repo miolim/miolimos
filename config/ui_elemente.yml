@@ -1307,3 +1307,39 @@ agent_formular_speichern:
   label: actions.save
 agent_formular_abbrechen:
   label: actions.cancel
+
+# ── Anmeldung, Einrichtung, Portal (#1672 Etappe 28) ────────────────────
+anmelden:
+  label: sessions.submit
+zweitfaktor_code_absenden:
+  label: sessions.otp_submit
+passwort_setzen:
+  label: passwords.set_submit
+passwort_vergessen_absenden:
+  label: passwords.forgot_submit
+einrichtung_absenden:
+  label: setup.submit
+portal_nachricht_senden:
+  label: portal.nachrichten.send
+portal_link_anfordern:
+  label: portal.login.request_link
+vorschau_beenden:
+  label: shared.preview.exit
+portal_abmelden:
+  label: portal.layout.sign_out
+zeit_abschnitt_klappen:
+  icon: chevron_right
+  label: shared.timer.track_time
+zeit_modus_timer:
+  label: shared.timer.start_now
+zeit_modus_manuell:
+  label: shared.timer.add_manually
+zeit_erfassung_absenden:
+  label: shared.timer.start_timer
+meldung_rueckgaengig:
+  label: shared.toast.undo
+suchtreffer_klappen:
+  icon: chevron_right
+  label: nav.search_placeholder
+suche_im_stapel_oeffnen:
+  label: shared.topbar.search

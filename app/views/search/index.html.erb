@@ -26,7 +26,7 @@
         <%# Einstieg in die Ergebnis-Card. Auf einer Stack-Seite hängt
             blade-link sie an den Stack; sonst folgt der Klick dem href und
             baut den Stack auf dem Dashboard auf. %>
-        <%= link_to dashboard_path(stack: "list:dashboard,list:search:#{@payload}"),
+        <%= ui_link :suche_im_stapel_oeffnen, dashboard_path(stack: "list:dashboard,list:search:#{@payload}"),
               data: { controller: "blade-link",
                       "blade-link-kind-value": "search_list",
                       "blade-link-id-value": @payload,

@@ -15,7 +15,7 @@
 <div class="card">
   <%= form_with url: portal_nachrichten_path, method: :post, local: true, class: "stack" do %>
     <textarea name="body" placeholder="<%= t("portal.nachrichten.body_placeholder") %>" required></textarea>
-    <button class="primary" type="submit"><%= t("portal.nachrichten.send") %></button>
+    <%= ui_button :portal_nachricht_senden, type: :submit, class: "primary" %>
   <% end %>
 </div>
 <% end %>

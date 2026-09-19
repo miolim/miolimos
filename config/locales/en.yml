@@ -2630,6 +2630,7 @@ en:
     # #1669: buttons that used to carry a bare glyph or a hardcoded string.
     toast:
       close: "Dismiss message"
+      undo: "Undo"                # #1672
     stack_history:
       close: "Close stack history"
     topbar:

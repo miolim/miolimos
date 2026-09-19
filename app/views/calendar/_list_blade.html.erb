@@ -38,7 +38,7 @@
       <%# ── Schnell-Erfassung ── %>
       <div class="grid sm:grid-cols-2 gap-3 pt-3 mt-2 border-t border-slate-300 text-[13px]">
         <details class="border border-slate-200 rounded p-2">
-          <summary class="cursor-pointer text-slate-600 font-medium text-xs"><%= t("calendar.add_event") %></summary>
+          <%= ui_button :termin_anlegen_klappen, tag: :summary, class: "cursor-pointer text-slate-600 font-medium text-xs" %>
           <%= form_with url: calendar_events_path, method: :post, class: "space-y-1.5 mt-2",
                 data: { turbo_stream: true } do %>
             <input type="text" name="event[title]" required placeholder="<%= t("calendar.title_placeholder") %>"
@@ -61,12 +61,12 @@
               <input type="checkbox" name="event[portal_visible]" value="1" class="rounded border-slate-300">
               <%= t("calendar.show_in_portal") %>
             </label>
-            <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("actions.create") %></button>
+            <%= ui_button :termin_anlegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
           <% end %>
         </details>
 
         <details class="border border-slate-200 rounded p-2">
-          <summary class="cursor-pointer text-slate-600 font-medium text-xs"><%= t("calendar.add_call") %></summary>
+          <%= ui_button :anruf_anlegen_klappen, tag: :summary, class: "cursor-pointer text-slate-600 font-medium text-xs" %>
           <%= form_with url: calendar_calls_path, method: :post, class: "space-y-1.5 mt-2",
                 data: { turbo_stream: true } do %>
             <%# #598: Personen-Vorschläge; der Server verknüpft die
@@ -99,7 +99,7 @@
                 <option value="<%= tp.id %>"><%= tp.name %><%= " #{t("calendar.project_suffix")}" if tp.project? %></option>
               <% end %>
             </select>
-            <button type="submit" class="text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"><%= t("calendar.call_save") %></button>
+            <%= ui_button :anruf_anlegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
           <% end %>
         </details>
       </div>

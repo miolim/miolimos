@@ -80,8 +80,8 @@
                      class="border border-slate-200 rounded px-2 py-1 bg-white">
             </label>
             <div class="flex gap-2 pt-1">
-              <button type="submit" class="px-2 py-1 rounded bg-emerald-600 text-white"><%= t("documents.list.filter") %></button>
-              <%= link_to t("documents.list.reset"), list_card_invoices_path,
+              <%= ui_button :rechnungen_filtern_anwenden, type: :submit, class: "px-2 py-1 rounded bg-emerald-600 text-white" %>
+              <%= ui_link :rechnungen_filter_zuruecksetzen, list_card_invoices_path,
                     data: { turbo_frame: "invoices_list_frame" }, class: "px-2 py-1 rounded border border-slate-200 text-slate-600" %>
             </div>
           <% end %>
@@ -95,34 +95,31 @@
       </div>
 
       <%# #787: Papierkorb — gelöschte Rechnungen einsehen/wiederherstellen. %>
-      <%= link_to trash_invoices_path, data: { turbo_frame: "_top" },
-            title: t("invoices.trash.title"), "aria-label": t("invoices.trash.title"),
-            class: "p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 shrink-0 [&_svg]:w-4 [&_svg]:h-4" do %>
-        <%= icon "trash" %>
-      <% end %>
+      <%= ui_link :rechnungen_papierkorb, trash_invoices_path, size: "w-4 h-4",
+            data: { turbo_frame: "_top" }, title: t("invoices.trash.title"),
+            class: "p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 shrink-0" %>
 
       <%# Neue Rechnung / neues Angebot: Vordialog zur Typwahl. %>
       <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
-        <button type="button" data-action="click->popover#toggle"
-                title="<%= t("invoices.list.new_invoice") %>" aria-label="<%= t("invoices.list.new_invoice") %>"
-                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 shrink-0 [&_svg]:w-4 [&_svg]:h-4">
-          <%# #703 (Hans): einheitliches circle-plus-Icon. %>
-          <%= icon "plus_circle" %></button>
+        <%# #703 (Hans): einheitliches circle-plus-Icon. %>
+        <%= ui_button :rechnung_neu, size: "w-4 h-4",
+              data: { action: "click->popover#toggle" },
+              class: "p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 shrink-0" %>
         <div data-popover-target="content"
              class="hidden absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg py-1 min-w-52">
           <div class="px-3 py-1 text-[11px] uppercase tracking-wide text-slate-400"><%= t("invoices.list.new_invoice") %></div>
           <% labels.each do |k, lbl| %>
             <%# #871 (Hans): Turbo aktiv lassen — die create-Antwort hängt das
                 neue Blade als turbo_stream an den AKTUELLEN Stack an. %>
-            <%= button_to invoices_path(kind: k), method: :post,
-                  form: { class: "block" },
+            <%= ui_button_to :rechnung_art_anlegen, invoices_path(kind: k), method: :post,
+                  title: lbl, form: { class: "block" },
                   class: "w-full text-left flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
               <span class="w-5 flex justify-center text-slate-500"><%= icon "file_text" %></span><%= lbl %>
             <% end %>
           <% end %>
           <%# #946: Eingangsrechnung manuell erfassen (fremder Beleg, ohne
               Dokument-Import) — direction:eingehend, Nummer kommt vom Aussteller. %>
-          <%= button_to invoices_path(kind: "rechnung", direction: "eingehend"), method: :post,
+          <%= ui_button_to :eingangsrechnung_erfassen, invoices_path(kind: "rechnung", direction: "eingehend"), method: :post,
                 form: { class: "block" },
                 class: "w-full text-left flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 text-sm text-slate-700" do %>
             <span class="w-5 flex justify-center text-slate-500"><%= icon "inbox" %></span><%= t("invoices.list.new_incoming") %>

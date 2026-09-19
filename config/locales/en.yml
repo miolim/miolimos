@@ -2002,6 +2002,7 @@ en:
         eingehend: "Incoming"
       search_placeholder: "Search invoices …"
       new_invoice: "New invoice"
+      new_incoming: "Incoming invoice"   # #1672: fehlte gegenüber de.yml
       empty: "No invoices yet."
       empty_filtered: "No invoices (filtered)."
     trash:
@@ -2415,6 +2416,9 @@ en:
     google_push_active: "Google push active."
     week_abbr: "CW"
     today: "Today"
+    prev_period: "Previous period"   # #1672: was a glyph without a name
+    next_period: "Next period"
+    edit_event: "Edit event"
     view_day: "Day"
     view_week: "Week"
     view_month: "Month"

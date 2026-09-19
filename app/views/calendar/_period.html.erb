@@ -46,21 +46,24 @@
   nav = ->(a, v) { "#{base_path}#{base_path.include?("?") ? "&" : "?"}month=#{a.strftime("%Y-%m-%d")}&view=#{v}" }
 %>
 <div class="flex items-center gap-2 flex-wrap">
-  <%= link_to "‹", nav.call(prev_anchor, view), data: { turbo_frame: frame_id },
-        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600" %>
+  <%# #1672: waren Zeichen ohne Namen (‹ ›). %>
+  <%= ui_link :kalender_zeitraum_zurueck, nav.call(prev_anchor, view), size: "w-3.5 h-3.5",
+        data: { turbo_frame: frame_id },
+        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600 inline-flex items-center" %>
   <span class="text-sm font-medium tabular-nums min-w-36 text-center"><%= label %></span>
-  <%= link_to "›", nav.call(next_anchor, view), data: { turbo_frame: frame_id },
-        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600" %>
-  <%= link_to t("calendar.today"), nav.call(Date.current, view), data: { turbo_frame: frame_id },
+  <%= ui_link :kalender_zeitraum_vor, nav.call(next_anchor, view), size: "w-3.5 h-3.5",
+        data: { turbo_frame: frame_id },
+        class: "px-2 py-0.5 rounded hover:bg-slate-100 text-slate-600 inline-flex items-center" %>
+  <%= ui_link :kalender_heute, nav.call(Date.current, view), data: { turbo_frame: frame_id },
         class: "text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50" %>
   <span class="flex-1"></span>
   <%# #598: Reihenfolge Tag | Woche | Monat. %>
   <span class="inline-flex rounded border border-slate-200 overflow-hidden text-xs">
-    <%= link_to t("calendar.view_day"), nav.call(anchor, "day"), data: { turbo_frame: frame_id },
+    <%= ui_link :kalender_tagesansicht, nav.call(anchor, "day"), data: { turbo_frame: frame_id },
           class: "px-2 py-0.5 #{view == 'day' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
-    <%= link_to t("calendar.view_week"), nav.call(anchor, "week"), data: { turbo_frame: frame_id },
+    <%= ui_link :kalender_wochenansicht, nav.call(anchor, "week"), data: { turbo_frame: frame_id },
           class: "px-2 py-0.5 #{view == 'week' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
-    <%= link_to t("calendar.view_month"), nav.call(anchor, "month"), data: { turbo_frame: frame_id },
+    <%= ui_link :kalender_monatsansicht, nav.call(anchor, "month"), data: { turbo_frame: frame_id },
           class: "px-2 py-0.5 #{view == 'month' ? 'bg-slate-500 text-white' : 'text-slate-600 hover:bg-slate-50'}" %>
   </span>
 </div>

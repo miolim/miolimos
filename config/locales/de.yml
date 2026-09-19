@@ -2443,6 +2443,9 @@ de:
     google_push_active: "Google-Push aktiv."
     week_abbr: "KW"
     today: "Heute"
+    prev_period: "Vorheriger Zeitraum"   # #1672: war ein Zeichen ohne Namen
+    next_period: "Nächster Zeitraum"
+    edit_event: "Termin bearbeiten"
     view_day: "Tag"
     view_week: "Woche"
     view_month: "Monat"

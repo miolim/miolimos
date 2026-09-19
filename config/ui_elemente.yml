@@ -872,3 +872,51 @@ mail_programm_oeffnen:
 anrufen:
   icon: phone
   label: knowledge.editors.contacts.call
+
+# ── Kalender (#1672 Etappe 15) ───────────────────────────────────────────
+kalender_zeitraum_zurueck:
+  icon: chevron_left
+  label: calendar.prev_period
+kalender_zeitraum_vor:
+  icon: chevron_right
+  label: calendar.next_period
+kalender_heute:
+  label: calendar.today
+# Tag/Woche/Monat sind drei BEFEHLE, nicht einer mit Parameter: Sie zeigen
+# Verschiedenes, und eine Tour muss auf einen davon zeigen koennen.
+kalender_tagesansicht:
+  label: calendar.view_day
+kalender_wochenansicht:
+  label: calendar.view_week
+kalender_monatsansicht:
+  label: calendar.view_month
+termin_bearbeiten_klappen:
+  label: calendar.edit_event
+termin_speichern:
+  label: actions.save
+termin_loeschen:
+  label: actions.delete
+termin_anlegen_klappen:
+  label: calendar.add_event
+termin_anlegen:
+  label: actions.create
+anruf_anlegen_klappen:
+  label: calendar.add_call
+anruf_anlegen:
+  label: calendar.call_save
+rechnungen_filtern_anwenden:
+  label: documents.list.filter
+rechnungen_filter_zuruecksetzen:
+  label: documents.list.reset
+rechnungen_papierkorb:
+  icon: trash
+  label: documents.trash.title
+rechnung_neu:
+  icon: plus_circle
+  label: invoices.list.new_invoice
+rechnung_art_anlegen:
+  icon: file_text
+  label: invoices.list.new_invoice
+eingangsrechnung_erfassen:
+  icon: inbox
+  label: invoices.list.new_incoming

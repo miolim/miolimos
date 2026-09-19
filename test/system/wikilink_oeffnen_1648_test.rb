@@ -61,14 +61,43 @@ class WikilinkOeffnen1648Test < ApplicationSystemTestCase
                  "das Ziel steht direkt rechts der aufrufenden Card"
   end
 
-  test "ohne Umschalt hängt der Wikilink weiter ans Ende (#312)" do
+  # #1674 (Hans, 19.09.2026: „a" — überall dieselbe Regel). Bis dahin hielt dieser
+  # Test das Gegenteil fest: ohne Umschalt ans Stapel-Ende (#312). Umgedreht
+  # statt gelöscht — der Wikilink folgt jetzt der EINEN Öffnungsregel, wie jede
+  # Listenzeile und jeder Verweis (und wie in immoOS seit #1348).
+  test "ohne Umschalt ersetzt der Wikilink ab der aufrufenden Card" do
     stack_oeffnen
     wikilink_klicken
 
     assert_selector ".stack-card[data-uuid='#{@ziel.uuid}']", wait: 10
     assert_no_selector "#blade_open_menu", wait: 2
-    assert_equal [@quelle.uuid, @dritte.uuid, @ziel.uuid], uuids,
-                 "ganz hinten, der Stack bleibt stehen"
+    assert_equal [@quelle.uuid, @ziel.uuid], uuids,
+                 "die dritte Card weicht — wie bei jedem anderen Klick auch"
+  end
+
+  # Wer das Ziel weiter HINTEN haben will und den Stapel stehen lassen möchte
+  # (das alte #312-Verhalten), wählt es im Umschalt-Menü.
+  test "Menü-Wahl „ans Ende“ lässt den Stapel stehen und hängt hinten an" do
+    stack_oeffnen
+    wikilink_klicken(modifier: [:shift])
+    assert_selector "#blade_open_menu", wait: 5
+    find("#blade_open_menu button[data-open-art='ende']").click
+
+    assert_selector ".stack-card[data-uuid='#{@ziel.uuid}']", wait: 10
+    assert_equal [@quelle.uuid, @dritte.uuid, @ziel.uuid], uuids
+  end
+
+  # Cmd/Strg gehört dem Browser (neuer Tab) — der Stapel rührt sich nicht.
+  test "Strg+Klick öffnet nichts im Stapel" do
+    stack_oeffnen
+    vorher = uuids
+    page.execute_script(<<~JS, @quelle.uuid)
+      const a = document.querySelector(`.stack-card[data-uuid='${arguments[0]}'] a.wikilink`)
+      a.addEventListener("click", (e) => e.preventDefault(), { once: true })   // keinen Tab aufmachen
+      a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true }))
+    JS
+    assert_no_selector ".stack-card[data-uuid='#{@ziel.uuid}']", wait: 2
+    assert_equal vorher, uuids
   end
 
   test "Escape im Menü öffnet nichts" do

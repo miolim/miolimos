@@ -36,6 +36,14 @@ release is cut, this section is renamed to the new version and a fresh
 
 ### Changed
 
+- A plain click on a wikilink now follows the same rule as every other link
+  (#1674): it replaces everything to the right of the card it was clicked in.
+  Until now a wikilink was the one exception and appended its target at the
+  far end of the stack. Shift+click still asks via the menu — choose “at the
+  end” there for the old behaviour — and Cmd/Ctrl+click belongs to the
+  browser. A link may carry `data-target-query` to tell the target card where
+  it was opened from. This is the last block taken over from the immoOS fork
+  for `blade_stack_controller.js`; the wikilink branch is now shared code.
 - The scalar master-data fields of people and organisations (first/last name,
   birth name, gender, salutation, academic title, ORCID, legal form) are now
   declared in one place, `KnowledgeItem::Stammdaten` (#1675). Export, import,

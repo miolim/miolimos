@@ -842,6 +842,8 @@ class BladeStackController extends Controller {
 
   // Klick auf einen Wikilink innerhalb einer Card.
   async openInStack(event) {
+    // #1348: Cmd/Strg gehoert dem Browser („in neuem Tab öffnen").
+    if (event.metaKey || event.ctrlKey) return
     event.preventDefault()
     const link = event.currentTarget
     const uuid = link.dataset.targetUuid
@@ -857,11 +859,40 @@ class BladeStackController extends Controller {
       return
     }
 
+    // #1674 (aus immoOS #1348 uebernommen; Hans: „a" — ueberall dieselbe Regel):
+    // Auch der Wikilink folgt der EINEN Oeffnungsregel (lib/blade_open_menu) —
+    // schlichter Klick ersetzt alles rechts der aufrufenden Card, Umschalt
+    // fragt per Menue (ans Ende · rechts · links · ersetzen), Cmd/Strg gehoert
+    // dem Browser. Vorher hing die Ziel-Card am Stack-ENDE (#312), also weit
+    // weg vom Kontext — und anders als an jedem anderen Klickweg.
+    const sourceCard = link.closest(".stack-card")
+    if (sourceCard && !uuid.startsWith("refs:")) {
+      let url = this._urlForStackId(uuid) || this.cardUrlTemplateValue.replace("UUID", uuid)
+      // #1393 R3 (Hans): Ein Verweis darf sagen, WOVON aus er kommt — die
+      // Konto-Card zeigt dann einen Ausschnitt um diesen Umsatz statt der
+      // letzten 50 (in denen ein aelterer gar nicht vorkommt).
+      if (link.dataset.targetQuery) {
+        url += (url.includes("?") ? "&" : "?") + link.dataset.targetQuery
+      }
+      // #1348: dieselbe Belegung wie im blade-link-Controller. immoOS #1643
+      // (aus miolimOS #1642): das ist jetzt das Umschalt-Menue — ein Abbruch
+      // (Escape, Klick daneben) oeffnet nichts.
+      const art = await oeffnungsart(event)
+      if (!art || art === "browser") return
+      if (await this._oeffneNeben(uuid, url, sourceCard, art)) {
+        this.pushTrailState()
+        this._collapseListIfExpanded()
+        if (blockAnchor) this._springeZu(uuid, blockAnchor)
+        this.applyHighlighting?.()
+        this.refreshTrailControls?.()
+        this.syncUrl?.({ pushHistory: true })
+      }
+      return
+    }
+
     // #362 (Hans, 2026-05-25): Reference-Blade (refs:ki:* / refs:topic:*)
     // wird DIREKT RECHTS der aufrufenden Card geoeffnet — sonst landet
-    // die Referenz weit weg vom Kontext. Andere openInStack-Klicks
-    // (Wikilinks etc.) behalten das alte End-Append-Verhalten.
-    const sourceCard = link.closest(".stack-card")
+    // die Referenz weit weg vom Kontext.
     if (uuid.startsWith("refs:") && sourceCard) {
       await this.appendCardAfter(uuid, sourceCard)
       this.pushTrailState()
@@ -876,28 +907,12 @@ class BladeStackController extends Controller {
       return
     }
 
-    // #1648 (Hans): „Das Verhalten für Links sollte überall gleich sein. Auch
-    // Wikilinks sollte man über UMSCHALT Mausklick an der entsprechenden
-    // Position öffnen können." — Umschalt fragt deshalb dasselbe Menue wie
-    // ueberall (lib/blade_open_menu); Abbruch oeffnet nichts. OHNE Umschalt
-    // bleibt es beim Anhaengen ans Ende (#312, siehe unten).
-    const art = await oeffnungsart(event)
-    if (!art || art === "browser") return
-    if (event.shiftKey && sourceCard) {
-      const ziel = this._urlForStackId(uuid) || this.cardUrlTemplateValue.replace("UUID", uuid)
-      if (await this._oeffneNeben(uuid, ziel, sourceCard, art)) {
-        this.pushTrailState()
-        this._collapseListIfExpanded()
-        if (blockAnchor) {
-          const fresh = this.cardForUuid(uuid)
-          if (fresh) {
-            this.setActiveCard(fresh)
-            this.scrollToAnchorInCard(fresh, blockAnchor)
-          }
-        }
-      }
-      return
-    }
+    // #1674 (Hans, 19.09.2026: „a" — ueberall dieselbe Regel): Hier stand #1648
+    // mit einem zweiten Umschalt-Menue und dem Satz „OHNE Umschalt bleibt es
+    // beim Anhaengen ans Ende". Beides entfaellt: Der Weg oben (#1348, aus dem
+    // immoOS-Fork uebernommen) faengt jeden Wikilink AUS einer Card bereits ab,
+    // samt Menue. Hierher kommt nur noch ein Wikilink OHNE aufrufende Card;
+    // dort gibt es keinen Anker fuer „links/rechts daneben".
 
     // #312 follow-up (Hans): Wikilink-Klick laesst den Stack stehen
     // und appendet die Ziel-Card am ENDE — kein Substack-Truncate

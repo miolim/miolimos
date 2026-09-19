@@ -68,9 +68,9 @@
       </label>
     <% end %>
     <div class="flex flex-wrap items-center gap-2 pt-1">
-      <button type="submit" class="text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer">
-        <%= is_invoice ? t("inbox_items.document_review.confirm_invoice") : t("inbox_items.document_review.confirm_plain") %>
-      </button>
+      <%= ui_button :beleg_bestaetigen, type: :submit,
+            title: (is_invoice ? t("inbox_items.document_review.confirm_invoice") : t("inbox_items.document_review.confirm_plain")),
+            class: "text-sm px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" do %><%= is_invoice ? t("inbox_items.document_review.confirm_invoice") : t("inbox_items.document_review.confirm_plain") %><% end %>
       <%# #1537: Links, KEINE button_to. Ein `button_to` ist ein eigenes
           Formular, und diese beiden standen mitten im Bestätigen-Formular. Ein
           Formular im Formular gibt es im HTML nicht: Der Browser verwirft das
@@ -80,11 +80,11 @@
           „Erneut analysieren" ihn bestätigt statt neu zu lesen — beides
           lautlos, mit dem Ergebnis, das der Knopf gerade nicht verspricht.
           Ein Link darf im Formular stehen (wie #1409, #1459). %>
-      <%= link_to t("inbox_items.document_review.reanalyze"),
+      <%= ui_link :beleg_neu_analysieren,
             process_now_inbox_item_path(item, processor_kind: "document_import"),
             data: { turbo_method: :post },
             class: "text-sm px-3 py-1 rounded border border-amber-300 text-amber-800 hover:bg-amber-100 cursor-pointer no-underline inline-block" %>
-      <%= link_to t("inbox_items.document_review.discard"), archive_inbox_item_path(item),
+      <%= ui_link :beleg_verwerfen, archive_inbox_item_path(item),
             data: { turbo_method: :post },
             class: "text-sm px-3 py-1 rounded text-slate-500 hover:bg-slate-100 cursor-pointer no-underline inline-block" %>
     </div>

@@ -1343,3 +1343,36 @@ suchtreffer_klappen:
   label: nav.search_placeholder
 suche_im_stapel_oeffnen:
   label: shared.topbar.search
+
+# ── Rechnungen und Posteingang: Reste (#1672 Etappe 29) ─────────────────
+zeit_zuordnung_loesen:
+  label: documents.invoice.unassign
+zeiten_zuordnen_klappen:
+  label: documents.invoice.assign_times
+zeit_ziel_oeffnen:
+  label: documents.invoice.item
+zeiten_zuordnen:
+  label: documents.invoice.assign
+zeitimport_klappen:
+  label: documents.time_import.summary
+zeiten_als_positionen:
+  label: documents.time_import.import_as_lines
+rechnung_oeffnen:
+  label: invoices.list.new_invoice
+rechnung_drucken:
+  label: documents.show.print
+rechnung_wiederherstellen:
+  label: documents.trash.restore
+beleg_bestaetigen:
+  label: inbox_items.document_review.confirm_plain
+beleg_neu_analysieren:
+  label: inbox_items.document_review.reanalyze
+beleg_verwerfen:
+  label: inbox_items.document_review.discard
+posteingang_eintrag_oeffnen:
+  label: inbox_items.add_to_inbox
+posteingang_lauf_starten:
+  label: inbox_items.run
+posteingang_thema_loesen:
+  icon: x
+  label: knowledge.chip.unlink

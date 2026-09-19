@@ -10,7 +10,8 @@
       <% candidates = TimeEntry.for_topic(invoice.topic).invoiceable.recent.to_a %>
       <% if candidates.any? %>
         <details class="pt-2 border-t border-slate-100">
-          <summary class="cursor-pointer text-slate-500 font-medium select-none"><%= t("documents.time_import.summary") %> · <%= candidates.size %></summary>
+          <%= ui_button :zeitimport_klappen, tag: :summary,
+              class: "cursor-pointer text-slate-500 font-medium select-none" do %><%= t("documents.time_import.summary") %> · <%= candidates.size %><% end %>
           <%= form_with url: import_time_entries_invoice_path(invoice), method: :post, local: false, class: "mt-2 space-y-1.5" do %>
             <div class="flex items-center gap-2">
               <label class="text-slate-500"><%= t("documents.time_import.hourly_rate") %></label>
@@ -29,7 +30,7 @@
               <% end %>
             </div>
             <div class="flex">
-              <button type="submit" class="ml-auto text-xs px-3 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer"><%= t("documents.time_import.import_as_lines") %></button>
+              <%= ui_button :zeiten_als_positionen, type: :submit, class: "ml-auto text-xs px-3 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
             </div>
           <% end %>
         </details>

@@ -13,7 +13,7 @@
     <strong><%= @invoice.kind.titleize %><%= " · #{@invoice.display_name}" if @invoice.display_name %></strong>
     <span style="margin-left:auto;"></span>
     <a href="<%= rendered_pdf_invoice_path(@invoice) %>" class="pdf"><%= t("documents.show.download_pdf") %></a>
-    <button type="button" onclick="window.print()"><%= t("documents.show.print") %></button>
+    <%= ui_button :rechnung_drucken, onclick: "window.print()" %>
   </div>
 
   <div class="doc-canvas">

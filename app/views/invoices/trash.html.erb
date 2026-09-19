@@ -26,7 +26,7 @@
           <span class="text-xs text-slate-400 shrink-0">
             <%= t("documents.trash.deleted_ago", ago: time_ago_in_words(invoice.deleted_at)) %>
           </span>
-          <%= button_to t("documents.trash.restore"), restore_invoice_path(invoice), method: :post,
+          <%= ui_button_to :rechnung_wiederherstellen, restore_invoice_path(invoice), method: :post,
                 form: { class: "inline m-0 p-0", data: { turbo: false } },
                 class: "text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer bg-transparent border-0" %>
         </li>

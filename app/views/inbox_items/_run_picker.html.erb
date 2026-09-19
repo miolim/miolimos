@@ -42,10 +42,8 @@
       </label>
     <% end %>
 
-    <button type="submit"
-            class="text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-      <%= t("inbox_items.run") %>
-    </button>
+    <%= ui_button :posteingang_lauf_starten, type: :submit,
+          class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
   <p data-run-picker-target="hint" class="text-[11px] text-slate-500">
     <%= processors.find { |k| k.kind == suggested }&.description %>

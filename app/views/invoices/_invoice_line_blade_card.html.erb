@@ -99,7 +99,7 @@
           <span class="tabular-nums shrink-0"><%= number_with_precision(te.hours, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
           <span class="truncate text-slate-600 min-w-0 flex-1"><%= te.bill_label %></span>
           <% unless locked %>
-            <%= button_to t("documents.invoice.unassign"), unassign_time_invoice_line_path(line, time_entry_id: te.id), method: :delete,
+            <%= ui_button_to :zeit_zuordnung_loesen, unassign_time_invoice_line_path(line, time_entry_id: te.id), method: :delete,
                   form: { data: { turbo_stream: true } },
                   class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer" %>
           <% end %>
@@ -119,7 +119,8 @@
           <% item_groups = cands.select(&:subject_type).group_by { |te| [te.subject_type, te.subject_id_int, te.subject_uuid] } %>
           <% project_only = cands.reject(&:subject_type).sort_by { |te| te.started_at || Time.zone.at(0) }.reverse %>
           <details open class="pt-2 border-t border-slate-100">
-            <summary class="cursor-pointer text-slate-500 font-medium select-none"><%= t("documents.invoice.assign_times") %> · <%= cands.size %></summary>
+            <%= ui_button :zeiten_zuordnen_klappen, tag: :summary,
+              class: "cursor-pointer text-slate-500 font-medium select-none" do %><%= t("documents.invoice.assign_times") %> · <%= cands.size %><% end %>
             <div class="mt-1 space-y-1">
               <%# Item-Gruppen: ein Eintrag je Aufgabe/KI mit Stundensumme. %>
               <% item_groups.each do |_key, list| %>
@@ -134,14 +135,16 @@
                 <div class="flex items-center gap-2">
                   <span class="tabular-nums shrink-0"><%= number_with_precision(hrs, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
                   <% if link_kind && link_id %>
-                    <button type="button" class="truncate text-sky-700 hover:underline min-w-0 flex-1 text-left bg-transparent border-0 p-0 cursor-pointer"
-                            data-controller="blade-link" data-blade-link-kind-value="<%= link_kind %>"
-                            data-blade-link-id-value="<%= link_id %>" <%= "data-blade-link-anchor-value=#{link_anchor}".html_safe if link_anchor %>
-                            data-action="click->blade-link#append"><%= subj&.try(:title) || subj&.try(:subject) || t("documents.invoice.item") %> · <%= list.size %></button>
+                    <%= ui_button :zeit_ziel_oeffnen,
+                          title: (subj&.try(:title) || subj&.try(:subject) || t("documents.invoice.item")),
+                          data: { controller: "blade-link", action: "click->blade-link#append",
+                                  blade_link_kind_value: link_kind, blade_link_id_value: link_id,
+                                  **(link_anchor ? { blade_link_anchor_value: link_anchor } : {}) },
+                          class: "truncate text-sky-700 hover:underline min-w-0 flex-1 text-left bg-transparent border-0 p-0 cursor-pointer" do %><%= subj&.try(:title) || subj&.try(:subject) || t("documents.invoice.item") %> · <%= list.size %><% end %>
                   <% else %>
                     <span class="truncate text-slate-600 min-w-0 flex-1"><%= subj&.try(:title) || t("documents.invoice.item") %> · <%= list.size %></span>
                   <% end %>
-                  <%= button_to t("documents.invoice.assign"), assign_time_invoice_line_path(line, time_entry_ids: list.map(&:id)), method: :post,
+                  <%= ui_button_to :zeiten_zuordnen, assign_time_invoice_line_path(line, time_entry_ids: list.map(&:id)), method: :post,
                         form: { data: { turbo_stream: true } },
                         class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
                 </div>
@@ -151,7 +154,7 @@
                 <div class="flex items-center gap-2">
                   <span class="tabular-nums shrink-0"><%= number_with_precision(te.hours, precision: 2, separator: ",", delimiter: "", strip_insignificant_zeros: true) %> <%= t("documents.invoice.hours_short") %></span>
                   <span class="truncate text-slate-500 min-w-0 flex-1"><%= te.bill_label %> <span class="text-slate-400 text-[11px]">(<%= t("documents.invoice.project_only") %>)</span></span>
-                  <%= button_to t("documents.invoice.assign"), assign_time_invoice_line_path(line, time_entry_id: te.id), method: :post,
+                  <%= ui_button_to :zeiten_zuordnen, assign_time_invoice_line_path(line, time_entry_id: te.id), method: :post,
                         form: { data: { turbo_stream: true } },
                         class: "shrink-0 text-[11px] px-1.5 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
                 </div>

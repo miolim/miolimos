@@ -5,10 +5,10 @@
 <% inv = local_assigns.fetch(:inv) %>
 <% direction_badge = local_assigns.fetch(:direction_badge, true) %>
 <li>
-  <button type="button"
-          data-controller="blade-link" data-blade-link-kind-value="invoice"
-          data-blade-link-id-value="<%= inv.id %>" data-action="click->blade-link#append"
-          class="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 bg-transparent border-0 cursor-pointer">
+  <%= ui_button :rechnung_oeffnen, title: inv.display_name,
+        data: { controller: "blade-link", action: "click->blade-link#append",
+                blade_link_kind_value: "invoice", blade_link_id_value: inv.id },
+        class: "w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-slate-50 bg-transparent border-0 cursor-pointer" do %>
     <% if direction_badge && inv.eingehend? %>
       <span class="shrink-0 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200"><%= t("invoices.list.incoming") %></span>
     <% end %>
@@ -18,5 +18,5 @@
     <% end %>
     <span class="truncate min-w-0 flex-1"><%= inv.display_name.presence || t("documents.list.unnamed") %></span>
     <span class="tabular-nums shrink-0 text-slate-500"><%= document_euro(inv.gross_total) %></span>
-  </button>
+  <% end %>
 </li>

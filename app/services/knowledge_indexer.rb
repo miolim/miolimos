@@ -112,6 +112,19 @@ class KnowledgeIndexer
         :updated
       end
 
+    # #1675: Seit #241 ist die DATENBANK die Quelle, die Datei ihr Export. Hat
+    # sich die Datei seit dem letzten Export/Lauf nicht geändert (gleicher
+    # Hash), ist die Datenbank mindestens so aktuell — dann wird NICHTS
+    # zurückgeschrieben. Vorher überschrieb jeder Lauf Titel, Text, Namen,
+    # Arbeitgeber, Logo, Tags und Aliasse aus der alten Datei, und alles, was
+    # inzwischen nur in der Datenbank geändert war, ging verloren. Nur der Pfad
+    # wird nachgezogen (Datei verschoben, Inhalt gleich). Eine tatsächlich
+    # GEÄNDERTE Datei gewinnt weiterhin — das ist der Import-Fall.
+    if outcome == :unchanged
+      item.update_columns(file_path: relative_path, indexed_at: Time.current)
+      return { uuid: uuid, outcome: outcome }
+    end
+
     apply_attributes(item, frontmatter: frontmatter, title: title, relative_path: relative_path, hash: hash, default_type: infer_type(md_path))
     item.body = strip_h1(body)
     item.save!

@@ -121,6 +121,50 @@ class KnowledgeIndexerTest < ActiveSupport::TestCase
     end
   end
 
+  # #1675: Seit #241 ist die Datenbank die Quelle und die Datei ihr Export. Der
+  # Indexer-Lauf schrieb trotzdem bei JEDER Datei Titel, Text, Namen, Arbeitgeber,
+  # Tags und Aliasse aus der Datei zurück — auch wenn sie sich seit dem letzten
+  # Export gar nicht geändert hatte. Alles, was inzwischen nur in der Datenbank
+  # geändert wurde (Namens-Erkennung, Kontakt-Anreicherung, Titel von
+  # Antworten), war danach wieder weg.
+  test "eine unveraenderte Datei ueberschreibt nichts in der Datenbank" do
+    with_isolated_miolimos_base do
+      org    = FileProxy.create(actor: @hans, title: "Faro GmbH", item_type: :organization, content: "")
+      person = FileProxy.create(actor: @hans, title: "Petra Probe", item_type: :person, content: "Stand A")
+      KnowledgeIndexer.run   # Ausgangslage: Datei und Datenbank im Gleichschritt
+
+      # Änderungen NUR in der Datenbank — so, wie Resolver/Anreicherung sie machen.
+      person.update_columns(first_name: "Petra", last_name: "Probe", parent_org_uuid: org.uuid,
+                            tags: ["kunde"], aliases: ["P. Probe"])
+
+      stats = KnowledgeIndexer.run
+
+      person.reload
+      assert_equal ["Petra", "Probe"], [person.first_name, person.last_name], "die Namen wurden aus der alten Datei überschrieben"
+      assert_equal org.uuid, person.parent_org_uuid, "der Arbeitgeber wurde abgeräumt"
+      assert_equal [["kunde"], ["P. Probe"]], [person.tags, person.aliases]
+      assert_operator stats.unchanged, :>=, 2
+    end
+  end
+
+  # Die Gegenseite bleibt: Eine tatsächlich GEÄNDERTE Datei gewinnt — das ist
+  # der Import-Fall (Datei von Hand oder von außen bearbeitet).
+  test "eine geaenderte Datei gewinnt weiterhin" do
+    with_isolated_miolimos_base do |base|
+      uuid = SecureRandom.uuid
+      write_md(base, "knowledge/people/p.md",
+        frontmatter: { "id" => uuid, "type" => "person", "first_name" => "Alt" }, body: "# Petra Probe\n\nA")
+      KnowledgeIndexer.run
+      KnowledgeItem.find(uuid).update_columns(first_name: "NurDatenbank")
+
+      write_md(base, "knowledge/people/p.md",
+        frontmatter: { "id" => uuid, "type" => "person", "first_name" => "Neu" }, body: "# Petra Probe\n\nB")
+      KnowledgeIndexer.run
+
+      assert_equal "Neu", KnowledgeItem.find(uuid).first_name
+    end
+  end
+
   test "creates missing topics from frontmatter slugs" do
     with_isolated_miolimos_base do |base|
       refute Topic.exists?(slug: "brand-new-topic")

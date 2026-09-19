@@ -98,6 +98,12 @@ release is cut, this section is renamed to the new version and a fresh
 - A user who has created content (topics, tasks, awaitings, knowledge) can no
   longer be deleted — the attempt ended in an error page and would have
   deleted their awaitings. Deactivate such users instead (#1675).
+- A knowledge index run no longer overwrites the database from files that
+  have not changed (#1675). The database has been the source of truth since
+  the file became an export, but every run still wrote title, body, names,
+  employer, logo, tags and aliases back from each file — anything changed only
+  in the database in the meantime was lost. A file that actually changed
+  still wins (the import case).
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

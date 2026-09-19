@@ -185,14 +185,23 @@ module Bank
           umsaetze = []
           salden = []
           @seiten.each do |seite|
+            # #1675: Folgezeilen gehören nur zu einem OFFENEN Umsatz — dem zuletzt
+            # begonnenen auf DIESER Seite, solange keine Saldozeile dazwischenkam.
+            # Vorher hing alles ohne Betrag am letzten Umsatz überhaupt: die
+            # Fußzeile von Blatt 1 und der Kopf von Blatt 2 (samt der EIGENEN
+            # IBAN) landeten im Verwendungszweck und als Gegenpartei-IBAN des
+            # letzten Umsatzes vor dem Übertrag — und damit im Fingerabdruck.
+            offen = nil
             seite.zeilen.each do |zeile|
               betrag = betrag_von(zeile)
               if (s = saldo_von(zeile, seite.nr, betrag))
                 salden << s
+                offen = nil
               elsif (u = buchung_von(zeile, seite.nr, betrag))
                 umsaetze << u
-              elsif umsaetze.any? && betrag.nil?
-                anhaengen(umsaetze.last, zeile)
+                offen = u
+              elsif offen && betrag.nil?
+                anhaengen(offen, zeile)
               end
             end
           end

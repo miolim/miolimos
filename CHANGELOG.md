@@ -110,6 +110,13 @@ release is cut, this section is renamed to the new version and a fresh
   at those ids — an invoice's foreign key turned the request into a 500, a
   document kept a dead reference. Removed rows now release their references
   explicitly (the document falls back to the automatic address).
+- VR-Bank PDF statements with several pages: footer and header lines (the
+  bank's imprint, “Kontoauszug Blatt 2”, the account's own IBAN) are no longer
+  appended to the last transaction before the page break (#1675). They ended
+  up in its purpose, made the own IBAN the counterparty IBAN, and changed the
+  transaction's fingerprint. Year rollover (December → January, value date in
+  the previous year, statements without an opening date) is now covered by
+  tests.
 - **Security:** fetching web addresses (web clip, Markdown import, title
   lookup, contact extraction) goes through one guarded fetcher, `SafeHttp`
   (#1675): internal addresses are refused — loopback, private networks,

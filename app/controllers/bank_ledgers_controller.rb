@@ -122,6 +122,11 @@ class BankLedgersController < ApplicationController
   def alte_wegraeumen
     Dir.glob(ABLAGE.join("*")).each do |pfad|
       FileUtils.rm_f(pfad) if File.mtime(pfad) < ABLAGE_ALTER.ago
+    rescue Errno::ENOENT
+      # Zwischen Auflisten und Nachsehen hat ein anderer Request die Datei
+      # abgeholt oder weggeräumt (zwei Uploads zur selben Zeit; im Test die
+      # parallelen Worker) — dann ist hier nichts mehr zu tun.
+      next
     end
   end
 

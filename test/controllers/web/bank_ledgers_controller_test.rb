@@ -84,6 +84,25 @@ class BankLedgersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # #1677 (Fund am Deploy-Gate von v0.7.0): Das Aufräumen alter Uploads listet
+  # den Ordner und sieht dann jede Datei einzeln an. Räumt dazwischen ein anderer
+  # Request eine weg (zwei Uploads zur selben Zeit; im Test die parallelen
+  # Worker), darf der eigene Upload nicht mit einem 500 enden.
+  test "ein Upload uebersteht, dass eine alte Datei waehrend des Aufraeumens verschwindet" do
+    FileUtils.mkdir_p(BankLedgersController::ABLAGE)
+    verschwunden = BankLedgersController::ABLAGE.join("schon-weg-#{SecureRandom.hex(4)}").to_s
+    echt = Dir.method(:glob)
+    Dir.define_singleton_method(:glob) { |*a, **k, &b| echt.call(*a, **k, &b) + [ verschwunden ] }
+    begin
+      hochladen(CSV)
+    ensure
+      # Zurücksetzen, nicht entfernen: `glob` IST eine Singleton-Methode von Dir.
+      Dir.define_singleton_method(:glob, echt)
+    end
+    assert_response :success
+    assert File.exist?(BankLedgersController::ABLAGE.join(session[:bank_upload]["schluessel"]))
+  end
+
   test "der abgelegte Auszug gehoert zu genau diesem Konto und ist nach dem Import weg" do
     anderes = BankLedger.create!(label: "Zweitkonto", iban: "DE02120300000000202051")
     hochladen(CSV)

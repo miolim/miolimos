@@ -23,12 +23,9 @@
                  bg-transparent border-0 p-0 cursor-pointer"
           title="<%= t("shared.topbar.stack_overview") %>"
           aria-label="<%= t("shared.topbar.cards_left") %>">0</button>
-  <button type="button"
-          data-action="click->mobile-nav#toggle"
-          aria-label="<%= t("shared.topbar.open_nav") %>"
-          class="md:hidden p-1 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-    <%= icon "menu" %>
-  </button>
+  <%= ui_button :navigation_oeffnen,
+        data: { action: "click->mobile-nav#toggle" },
+        class: "md:hidden p-1 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900" %>
 
   <%# #1198 (Hans): Stack-Schritt-Navigation wie im Browser — Pfeile links
       neben dem Suchfeld. Sichtbar nur, wenn die Seite einen Card-Stack
@@ -41,18 +38,14 @@
     <%# #1198 v3 (Hans): Lucide-Pfeil-Icons statt Textglyphen; auf disabled
         KEIN cursor-not-allowed (der durchgestrichene Kreis las sich wie
         eine Fehlermeldung) — ausgegraut reicht. %>
-    <button type="button" id="topbar_trail_back" disabled
-            onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: -1 } }))"
-            title="<%= t("knowledge.form.trail_back_title") %>" aria-label="<%= t("knowledge.form.trail_back") %>"
-            class="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600">
-      <%= icon "arrow_left", size: "w-5 h-5" %>
-    </button>
-    <button type="button" id="topbar_trail_forward" disabled
-            onclick="window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: 1 } }))"
-            title="<%= t("knowledge.form.trail_forward_title") %>" aria-label="<%= t("knowledge.form.trail_forward") %>"
-            class="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600">
-      <%= icon "arrow_right", size: "w-5 h-5" %>
-    </button>
+    <%= ui_button :schritt_zurueck, id: "topbar_trail_back", disabled: true,
+          title: t("knowledge.form.trail_back_title"), "aria-label": t("knowledge.form.trail_back"),
+          onclick: "window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: -1 } }))",
+          class: "p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600" %>
+    <%= ui_button :schritt_vorwaerts, id: "topbar_trail_forward", disabled: true,
+          title: t("knowledge.form.trail_forward_title"), "aria-label": t("knowledge.form.trail_forward"),
+          onclick: "window.dispatchEvent(new CustomEvent('blade-stack:trail', { detail: { delta: 1 } }))",
+          class: "p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-600" %>
   </div>
 
   <%# #301: Suchfeld kollabiert auf Mobile zum Lupe-Icon. Desktop:
@@ -60,12 +53,9 @@
       Klick klappt das Feld als fixed Full-Width-Leiste unter der
       Topbar auf. %>
   <div data-controller="search-collapse" class="flex-1 md:max-w-lg">
-    <button type="button"
-            data-action="search-collapse#toggle"
-            aria-label="<%= t("shared.topbar.search") %>"
-            class="md:hidden p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-      <%= icon "search", size: "w-5 h-5" %>
-    </button>
+    <%= ui_button :suche_oeffnen,
+          data: { action: "search-collapse#toggle" },
+          class: "md:hidden p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900" %>
     <div data-search-collapse-target="panel"
          class="hidden md:block fixed md:static top-12 left-0 right-0 z-30
                 p-2 md:p-0 bg-white md:bg-transparent border-b md:border-0 border-slate-200">
@@ -133,9 +123,10 @@
     <div class="mx-3 mt-1 rounded-lg bg-white shadow-lg border border-slate-200 overflow-hidden max-h-[70vh] flex flex-col">
       <div class="px-3 py-2 border-b border-slate-200 flex items-center gap-2">
         <span class="text-[11px] uppercase tracking-wide text-slate-500 flex-1"><%= t("shared.topbar.stack_overview") %></span>
-        <button type="button" data-action="click->stack-overview#schliessen"
-                class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-transparent border-0 cursor-pointer [&_svg]:w-4 [&_svg]:h-4"
-                aria-label="<%= t("actions.cancel") %>"><%= icon "x" %></button>
+        <%= ui_button :offene_karten_schliessen, size: "w-4 h-4",
+              "aria-label": t("actions.cancel"),
+              data: { action: "click->stack-overview#schliessen" },
+              class: "p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 bg-transparent border-0 cursor-pointer" %>
       </div>
       <div data-stack-overview-target="liste" class="overflow-y-auto min-h-0"></div>
     </div>

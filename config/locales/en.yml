@@ -2570,6 +2570,13 @@ en:
       stack_history: "Stack history"
       close_card: "Close card"
       close: "Close"
+    # #1669: buttons that used to carry a bare glyph or a hardcoded string.
+    toast:
+      close: "Dismiss message"
+    stack_history:
+      close: "Close stack history"
+    sidebar_topic:
+      toggle_subtopics: "Toggle subtopics"
     topbar:
       cards_left: "Cards to the left"
       # #1453 (aus immoos #1452): Tap auf die Zaehler zeigt, WELCHE
@@ -2669,6 +2676,7 @@ en:
       ki_aria: "Create knowledge item"
       person_title: "Create person (g p)"
       person_aria: "Create person"
+      preset_aria: "Preset %{name}"   # #1669
       inbox_title: "Inbox import (g i)"
       inbox_aria: "Inbox import"
     forbidden_title: "Access denied"

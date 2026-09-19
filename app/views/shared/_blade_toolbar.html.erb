@@ -48,19 +48,17 @@
   <% end %>
   <% if show_reload %>
     <%# #360 (Hans, 2026-05-25): Per-Blade-Reload — holt den Card-Inhalt frisch. %>
-    <button type="button"
-            data-action="click->blade-stack#reloadCard"
-            title="<%= t("tasks.reload_card") %>" aria-label="<%= t("tasks.reload_card") %>"
-            class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0">
-      <%= icon "refresh" %>
-    </button>
+    <%= ui_button :karte_neu_laden,
+          data: { action: "click->blade-stack#reloadCard" },
+          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0" %>
   <% end %>
   <% if show_focus %>
     <%# #685 (Hans): Single-Blade-Fokus — nur dieses Blade, zentriert. %>
-    <button type="button"
-            data-focus-trigger="blade"
-            title="<%= t("tasks.focus_card") %>" aria-label="<%= t("tasks.focus_card_aria") %>"
-            class="focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4"><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span></button>
+    <%# Zwei Symbole in einem Knopf (hinein/heraus) — deshalb als Block. %>
+    <%= ui_button :karte_fokussieren,
+          "aria-label": t("tasks.focus_card_aria"),
+          data: { focus_trigger: "blade" },
+          class: "focus-view-trigger p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0 [&_svg]:w-4 [&_svg]:h-4" do %><span class="focus-enter-icon"><%= icon "expand" %></span><span class="focus-exit-icon hidden"><%= icon "reduce" %></span><% end %>
   <% end %>
   <% if show_close %>
     <%= render "shared/blade_toolbar_close" %>

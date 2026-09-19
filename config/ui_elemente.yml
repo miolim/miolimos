@@ -101,3 +101,121 @@ beziehung_hinzufuegen:
 beziehung_entfernen:
   icon: x
   label: knowledge.editors.relationships.remove
+
+# ── Karten- und Listen-Bedienung (an jeder Card gleich) ───────────────────
+karte_schliessen:
+  icon: x
+  label: shared.close_button.close_card
+karte_neu_laden:
+  icon: refresh
+  label: tasks.reload_card
+karte_fokussieren:
+  icon: expand
+  label: tasks.focus_card
+stapel_verlauf:
+  icon: history
+  label: shared.close_button.stack_history
+liste_gruppieren:
+  icon: group
+  label: shared.list_toolbar.group
+liste_sortieren:
+  icon: arrow_up_down
+  label: shared.list_toolbar.sort
+
+# ── Topbar (Kopfleiste) ───────────────────────────────────────────────────
+navigation_oeffnen:
+  icon: menu
+  label: shared.topbar.open_nav
+schritt_zurueck:
+  icon: arrow_left
+  label: knowledge.form.trail_back
+schritt_vorwaerts:
+  icon: arrow_right
+  label: knowledge.form.trail_forward
+suche_oeffnen:
+  icon: search
+  label: shared.topbar.search
+offene_karten_schliessen:
+  icon: x
+  label: shared.topbar.stack_overview
+dark_mode_umschalten:
+  icon: moon
+  label: shared.topbar.theme_title
+tastatur_hilfe:
+  icon: keyboard
+  label: shared.topbar.shortcuts_title
+beschriftungs_modus:
+  icon: locate
+  label: shared.topbar.inspector_title
+diagnose_schnappschuss:
+  icon: info
+  label: shared.topbar.diagnostic_title
+
+# ── Schnellanlage in der Topbar ───────────────────────────────────────────
+# Die Kennung entsteht aus dem Schleifenwert (`:"schnellanlage_#{slot}"`),
+# steht also nicht wörtlich im Quelltext — deshalb `dynamisch: true`.
+schnellanlage_task:
+  icon: tasks
+  label: shared.quick_create.task_title
+  dynamisch: true
+schnellanlage_awaiting:
+  icon: waiting
+  label: shared.quick_create.awaiting_title
+  dynamisch: true
+schnellanlage_ki:
+  icon: knowledge
+  label: shared.quick_create.ki_title
+  dynamisch: true
+schnellanlage_person:
+  icon: user
+  label: shared.quick_create.person_title
+  dynamisch: true
+schnellanlage_inbox:
+  icon: inbox
+  label: shared.quick_create.inbox_title
+  dynamisch: true
+
+# ── Weitere geteilte Bedienelemente ───────────────────────────────────────
+zum_dashboard_hinzufuegen:
+  icon: layers-plus
+  label: tasks.append_dashboard_card
+antwort_bearbeiten:
+  icon: pencil
+  label: actions.edit
+navigation_schliessen:
+  icon: x
+  label: shared.sidebar.close_nav
+unterthemen_klappen:
+  icon: chevron_right
+  label: shared.sidebar_topic.toggle_subtopics
+verlauf_schliessen:
+  icon: x
+  label: shared.stack_history.close
+meldung_schliessen:
+  icon: x
+  label: shared.toast.close
+zeit_erfassen:
+  icon: timer
+  label: shared.timer.track_time
+zeit_fenster_schliessen:
+  icon: x
+  label: shared.timer.close
+
+# Vier benannte Presets der Schnellanlage (#641). Die Kennung entsteht aus
+# dem Schleifenwert, das Symbol IST der Preset-Name.
+preset_cat:
+  icon: cat
+  label: quick_create.fields.preset
+  dynamisch: true
+preset_squirrel:
+  icon: squirrel
+  label: quick_create.fields.preset
+  dynamisch: true
+preset_bird:
+  icon: bird
+  label: quick_create.fields.preset
+  dynamisch: true
+preset_fish:
+  icon: fish
+  label: quick_create.fields.preset
+  dynamisch: true

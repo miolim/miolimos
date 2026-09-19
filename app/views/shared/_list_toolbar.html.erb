@@ -45,14 +45,9 @@
 
   <% if group_options&.any? %>
     <div class="relative">
-      <button type="button"
-              data-action="click->list-toolbar#toggleGroup"
-              title="<%= t("shared.list_toolbar.group") %>"
-              aria-label="<%= t("shared.list_toolbar.group") %>"
-              class="p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900
-                     <%= 'bg-slate-100 text-slate-900' if current_group.present? %>">
-        <span class="[&_svg]:w-4 [&_svg]:h-4"><%= icon "group" %></span>
-      </button>
+      <%= ui_button :liste_gruppieren, size: "w-4 h-4",
+            data: { action: "click->list-toolbar#toggleGroup" },
+            class: "p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900 #{'bg-slate-100 text-slate-900' if current_group.present?}" %>
       <div data-list-toolbar-target="groupMenu"
            class="hidden absolute right-0 mt-1 z-20 w-56 bg-white border border-slate-200 rounded shadow-lg p-1 text-sm">
         <%= form_with url: path, method: :get, local: true, class: "block", data: toolbar_form_data do |f| %>
@@ -78,14 +73,9 @@
 
   <% if sort_options&.any? %>
     <div class="relative">
-      <button type="button"
-              data-action="click->list-toolbar#toggleSort"
-              title="<%= t("shared.list_toolbar.sort") %>"
-              aria-label="<%= t("shared.list_toolbar.sort") %>"
-              class="p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900
-                     <%= 'bg-slate-100 text-slate-900' if current_sort.present? %>">
-        <span class="[&_svg]:w-4 [&_svg]:h-4"><%= icon "arrow_up_down" %></span>
-      </button>
+      <%= ui_button :liste_sortieren, size: "w-4 h-4",
+            data: { action: "click->list-toolbar#toggleSort" },
+            class: "p-1.5 rounded hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-900 #{'bg-slate-100 text-slate-900' if current_sort.present?}" %>
       <div data-list-toolbar-target="sortMenu"
            class="hidden absolute right-0 mt-1 z-20 w-56 bg-white border border-slate-200 rounded shadow-lg p-1 text-sm">
         <%= form_with url: path, method: :get, local: true, class: "block", data: toolbar_form_data do |f| %>

@@ -2598,6 +2598,14 @@ de:
       stack_history: "Verlauf"
       close_card: "Karte schließen"
       close: "Schliessen"
+    # #1669: Knöpfe, die bisher ein blosses Zeichen oder einen hartkodierten
+    # deutschen Text trugen.
+    toast:
+      close: "Meldung schließen"
+    stack_history:
+      close: "Verlauf schließen"
+    sidebar_topic:
+      toggle_subtopics: "Unterthemen ein-/ausklappen"
     topbar:
       cards_left: "Karten links"
       # #1453 (aus immoos #1452): Tap auf die Zaehler zeigt, WELCHE
@@ -2697,6 +2705,7 @@ de:
       ki_aria: "Eintrag anlegen"
       person_title: "Person anlegen (g p)"
       person_aria: "Person anlegen"
+      preset_aria: "Preset %{name}"   # #1669
       inbox_title: "Inbox-Import (g i)"
       inbox_aria: "Inbox-Import"
     forbidden_title: "Zugriff verweigert"

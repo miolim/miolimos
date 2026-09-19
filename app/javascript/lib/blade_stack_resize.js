@@ -20,6 +20,12 @@ _isDesktop() { return window.innerWidth >= 768 },
 // CSS-Default-Breite: die verbreiterte Card ragte rechts aus dem Fenster.
 _applySavedWidth(card) {
   if (this._mediaMobile?.matches) return
+  // #1674 (aus immoOS #1473 uebernommen, Hans dort): „Das Refresh sollte nur die
+  // Inhalte aktualisieren, nicht die Card-Breite zuruecksetzen." Eine Card, die
+  // ihre Breite SELBST fuehrt (`data-own-width`), bekommt vom Stack keine
+  // hineingeschrieben — sonst gewinnt, wer zufaellig zuletzt schreibt. Gleiche
+  // Regel wie im Mobile-Pfad (#1290).
+  if (card.dataset.ownWidth) return
   const kind  = this._cardKind(card)
   const saved = parseInt(localStorage.getItem(`blade.width.${kind}`), 10)
   const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
@@ -74,18 +80,26 @@ _setupResizeForCard(card) {
   //   1. localStorage (= zuletzt per Resize-Handle eingestellt)
   //   2. User-Pref aus cardWidthsValue (Settings/Vorlieben) in rem → px
   //   3. CSS-Default (im Partial via Tailwind w-[…rem])
-  const kind  = this._cardKind(card)
-  const saved = parseInt(localStorage.getItem(`blade.width.${kind}`), 10)
-  if (Number.isFinite(saved) && saved >= 280) {
-    card.style.width    = `${saved}px`
-    card.style.maxWidth = "none"
-  } else if (this.cardWidthsValue && this.cardWidthsValue[kind]) {
-    // rem → px via getComputedStyle (1rem = root font-size)
-    const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-    const px    = Math.round(this.cardWidthsValue[kind] * remPx)
-    if (px >= 280) {
-      card.style.width    = `${px}px`
+  //
+  // #1674 (aus immoOS #1473 uebernommen): Ausser die Card fuehrt ihre Breite
+  // selbst. Diese Methode laeuft beim Refresh aus dem MutationObserver — also
+  // NACH dem Stimulus-Connect der frischen Card. Sie schriebe damit als LETZTE
+  // und ueberschriebe die gerade gesetzte Breite. Das Handle bekommt die Card
+  // trotzdem.
+  if (!card.dataset.ownWidth) {
+    const kind  = this._cardKind(card)
+    const saved = parseInt(localStorage.getItem(`blade.width.${kind}`), 10)
+    if (Number.isFinite(saved) && saved >= 280) {
+      card.style.width    = `${saved}px`
       card.style.maxWidth = "none"
+    } else if (this.cardWidthsValue && this.cardWidthsValue[kind]) {
+      // rem → px via getComputedStyle (1rem = root font-size)
+      const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      const px    = Math.round(this.cardWidthsValue[kind] * remPx)
+      if (px >= 280) {
+        card.style.width    = `${px}px`
+        card.style.maxWidth = "none"
+      }
     }
   }
 

@@ -1980,6 +1980,66 @@ class BladeStackController extends Controller {
     this.refreshCard(uuid)
   }
 
+  // #1674 (aus immoOS #1348 uebernommen): Zur bereits offenen Card springen —
+  // aufklappen, hinscrollen, aktiv setzen. „Springen sticht alles" (Hans dort):
+  // Es entsteht keine zweite Kopie; wer die will, hat das Duplizieren-Icon.
+  _springeZu(stackId, anchor = null) {
+    const card = this.cardForUuid(stackId)
+    if (!card) return
+    this._expandCard(card)
+    this._scrollCardIntoFocus(card)
+    this.setActiveCard?.(card)
+    if (anchor) this.scrollToAnchorInCard(card, anchor)
+  }
+
+  // #1674 (aus immoOS #1483 uebernommen): Klick-Action
+  // `blade-stack#oeffneStattdessen` — diese Card wird durch eine ANDERE
+  // ersetzt, an derselben Stelle, in derselben Breite. Gedacht fuer „vor/
+  // zurueck" innerhalb einer Card (dort: zum naechsten Umsatz blaettern). Ein
+  // normaler Aufruf haengte stattdessen eine zweite Card an; nach zehnmal
+  // Blaettern haette man zehn Cards. Das Ziel steht in `data-target-uuid`.
+  async oeffneStattdessen(event) {
+    if (event) event.preventDefault()
+    const trigger = event.currentTarget
+    const alt     = trigger.closest(".stack-card")
+    const ziel    = trigger.dataset.targetUuid
+    if (!alt || !ziel) return
+    // Schon offen? Dann dorthin springen statt eine zweite Instanz zu bauen.
+    const offen = this.cardForUuid(ziel)
+    if (offen && offen !== alt) {
+      this._springeZu(ziel)
+      return
+    }
+    await this._tauscheCardInhalt(alt, ziel)
+  }
+
+  // Derselbe Platz im Stapel, anderer Inhalt (immoOS #1665: eigene Methode,
+  // damit nicht zwei Fassungen davon auseinanderlaufen).
+  //
+  // Wie beim Refresh (#1283): keine Stack-Mutation, also kein Trail-Schritt und
+  // kein Scroll-Sprung. Breite und Aktiv-Markierung bleiben beim Platz, nicht
+  // beim Inhalt.
+  async _tauscheCardInhalt(alt, ziel) {
+    const url = this._urlForStackId(ziel)
+    if (!url) return false
+    const res = await fetch(url, { headers: { "Accept": "text/html" } })
+    if (!res.ok) { this._showBladeError(`Card konnte nicht geladen werden (${res.status})`); return false }
+    const { nodes, card } = this._parseCardHtml(await res.text())
+    if (!card) return false
+    const warAktiv = alt.dataset.active === "true"
+    const breite   = alt.style.width
+    this._refreshingCard = true
+    alt.replaceWith(...nodes)
+    if (warAktiv) card.dataset.active = "true"
+    if (breite) { card.style.width = breite; card.style.maxWidth = "none" }
+    setTimeout(() => { this._refreshingCard = false }, 0)
+    this._applySavedWidth(card)
+    this.restickify()
+    this.applyHighlighting()
+    this.syncUrl({ pushHistory: false })
+    return true
+  }
+
   // #1198 v4: optional beforeNode — der Trail-Diff fügt fehlende Cards
   // an ihrer Position ein statt nur ans Ende (Back nach dem Schließen
   // einer mittleren Card).

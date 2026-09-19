@@ -8,13 +8,24 @@ export default class extends Controller {
   // #915 (Hans): optionaler storage-key — merkt den aktiven Reiter (sessionStorage)
   // und stellt ihn nach Re-Render/Reload wieder her, statt auf den ersten Reiter
   // zu springen. Ohne Key: bisheriges Verhalten (erster Reiter).
-  static values = { storageKey: String }
+  //
+  // #1674 (aus immoOS #1567 uebernommen): `initial` sagt, mit welchem Reiter die
+  // Card AUFGEHT, wenn sie zu einem bestimmten Zweck geoeffnet wurde. Er
+  // schlaegt das Gedaechtnis: Wer ueber einen gezielten Verweis kommt, will
+  // diesen Reiter sehen und nicht den, den er beim letzten Mal offen hatte.
+  //
+  // Und er wird gleich gemerkt: Sonst spraenge die Card beim naechsten
+  // Re-Render wieder auf den alten Reiter zurueck — die Query ist dann
+  // laengst weg.
+  static values = { storageKey: String, initial: String }
 
   connect() {
     const names  = this.tabTargets.map((t) => t.dataset.name)
+    const wunsch = this.hasInitialValue && names.includes(this.initialValue) ? this.initialValue : null
     const stored = this.hasStorageKeyValue ? sessionStorage.getItem(this._key()) : null
-    const target = stored && names.includes(stored) ? stored : names[0]
+    const target = wunsch || (stored && names.includes(stored) ? stored : names[0])
     if (target) this._activate(target)
+    if (wunsch && this.hasStorageKeyValue) sessionStorage.setItem(this._key(), wunsch)
   }
 
   show(event) {
@@ -48,5 +59,11 @@ export default class extends Controller {
       t.classList.toggle("border-transparent", !active)
       t.classList.toggle("text-slate-500", !active)
     })
+    // #1674 (aus immoOS #1665 uebernommen): Der Reiterwechsel sagt an, was
+    // jetzt offen ist — `simple-tabs:gewechselt`, mit dem Reiternamen im
+    // Detail. Wer darauf hoert, entscheidet selbst (dort: die Hilfe-Card folgt
+    // dem Reiter). Bewusst auch beim connect: So erfaehrt ein Zuhoerer auch den
+    // Reiter, den die Card sich gemerkt hat.
+    this.dispatch("gewechselt", { detail: { name } })
   }
 }

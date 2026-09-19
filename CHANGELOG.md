@@ -25,6 +25,14 @@ release is cut, this section is renamed to the new version and a fresh
   come from the agents' session transcripts and are imported nightly (or by
   hand with `bin/rails agent_usage:import`). List prices per model family are
   used and can be overridden per environment variable.
+- Card stack building blocks taken over from the immoOS fork (#1674), for
+  views and forks to build on: the click action `blade-stack#oeffneStattdessen`
+  replaces a card in place (same slot, same width, no scroll jump, jumps
+  instead if the target is already open); a card that manages its own width
+  (`data-own-width`) keeps it across a refresh; any code can ask the stack to
+  re-measure with a `blade-stack:relayout` window event; and `simple-tabs`
+  accepts an `initial` tab and announces every change as
+  `simple-tabs:gewechselt`.
 
 ### Fixed
 

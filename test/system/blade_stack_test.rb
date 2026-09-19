@@ -220,8 +220,10 @@ class BladeStackTest < ApplicationSystemTestCase
     page.execute_script(oeffnen, @beta.uuid, list_card_sel, "{}")
     assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']")
 
-    # Dann gamma mit UMSCHALT: beta bleibt, gamma kommt dazu.
+    # Dann gamma mit UMSCHALT: das Menue fragt, wohin (#1642) — vorher war
+    # Umschalt unmittelbar „rechts daneben" (#1509).
     page.execute_script(oeffnen, @gamma.uuid, list_card_sel, '{"shiftKey":true}')
+    aus_menue("rechts")
     assert page.has_css?("article.stack-card[data-uuid='#{@gamma.uuid}']")
     assert page.has_css?("article.stack-card[data-uuid='#{@beta.uuid}']"),
            "bei Umschalt bleibt die vorhandene Card stehen (ergaenzen statt ersetzen)"
@@ -696,6 +698,14 @@ class BladeStackTest < ApplicationSystemTestCase
          visible: :all)
   end
 
+  # #1642: Umschalt oeffnet das Menue, dort wird die Oeffnungsart gewaehlt.
+  # Alt ist kein Modifier mehr. (#1675: Diese Tests standen seit #1642 auf dem
+  # alten Stand und waren rot — Systemtests laufen nicht im Deploy-Tor.)
+  def aus_menue(art)
+    assert_selector "#blade_open_menu", wait: 5
+    find("#blade_open_menu button[data-open-art='#{art}']").click
+  end
+
   test "Sidebar: schlichter Klick navigiert weiter, statt anzuhaengen" do
     visit "/knowledge_items?stack=#{@alpha.uuid}"
     assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
@@ -707,18 +717,37 @@ class BladeStackTest < ApplicationSystemTestCase
            "ohne Modifier ist es Navigation — der alte Stapel bleibt nicht stehen"
   end
 
-  test "Sidebar: ALT haengt die Liste ans Stapel-Ende, ohne zu navigieren" do
+  # Bis #1642 war ALT der „ans Ende"-Modifier. Jetzt fragt UMSCHALT per Menue,
+  # und „ans Ende" ist ein Eintrag darin.
+  test "Sidebar: Am-Ende-Wahl haengt die Liste ans Stapel-Ende, ohne zu navigieren" do
     visit "/knowledge_items?stack=#{@alpha.uuid}"
     assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
 
-    sidebar_zeile("tasks").click(:alt)
+    sidebar_zeile("tasks").click(:shift)
+    aus_menue("ende")
 
     assert page.has_css?("article.stack-card[data-uuid='list:tasks']"),
-           "ALT muss die Aufgaben-Liste an den Stapel haengen"
+           "die Wahl muss die Aufgaben-Liste an den Stapel haengen"
     assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']"),
            "und die vorhandene Card stehen lassen"
     uuids = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
-    assert_equal "list:tasks", uuids.last, "ALT heisst: ans ENDE"
+    assert_equal "list:tasks", uuids.last, "die Am-Ende-Wahl heisst: ans ENDE"
+  end
+
+  # Die Gegenprobe zum Wegfall (#1642): ALT ist kein Modifier der ANWENDUNG
+  # mehr, sie haengt damit nichts an. Was der Browser daraus macht, ist seine
+  # Sache (Chrome: „Ziel herunterladen"). Geprueft wird, was uns gehoert: Es
+  # kommt keine Card dazu.
+  test "Sidebar: ALT haengt nichts mehr an" do
+    visit "/knowledge_items?stack=#{@alpha.uuid}"
+    assert page.has_css?("article.stack-card[data-uuid='#{@alpha.uuid}']")
+    vorher = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
+
+    sidebar_zeile("tasks").click(:alt)
+
+    assert page.has_no_css?("article.stack-card[data-uuid='list:tasks']"),
+           "ALT darf die Aufgaben-Liste nicht mehr an den Stapel haengen"
+    assert_equal vorher, page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }
   end
 
   # Ohne aufrufende Card gibt es keinen Anker fuer „rechts daneben" — in der
@@ -734,6 +763,7 @@ class BladeStackTest < ApplicationSystemTestCase
     JS
 
     sidebar_zeile("tasks").click(:shift)
+    aus_menue("rechts")
 
     assert page.has_css?("article.stack-card[data-uuid='list:tasks']")
     uuids = page.all("article.stack-card[data-uuid]").map { |el| el["data-uuid"] }

@@ -9,7 +9,8 @@
            class="h-10 max-w-[140px] object-contain border border-slate-200 rounded bg-white px-1 py-0.5">
       <%= form_with url: logo_knowledge_item_path(item.uuid), method: :delete, local: false, class: "contents" do %>
         <% if in_stack %><%= hidden_field_tag :in_stack, "1" %><% end %>
-        <button type="submit" class="text-slate-400 hover:text-red-500" title="<%= t("knowledge.detail.logo_remove") %>">✕</button>
+        <%= ui_button :logo_entfernen, type: "submit", size: "w-3.5 h-3.5",
+              class: "text-slate-400 hover:text-red-500" %>
       <% end %>
     <% end %>
     <%# #1211: multipart PFLICHT — form_with setzt es nur bei f.file_field

@@ -29,13 +29,10 @@
   <% spine_extra = capture do %>
     <% if is_pdf %>
       <% pdf_url = file_knowledge_item_path(item.uuid) %>
-      <button type="button"
-              data-controller="pdf-fullblade"
-              data-pdf-fullblade-url-value="<%= pdf_url %>"
-              data-action="click->pdf-fullblade#toggle"
-              title="<%= t("js.pdf.fullblade_title") %>"
-              aria-label="<%= t("js.pdf.fullblade_title") %>"
-              class="shrink-0 text-slate-500 hover:text-slate-800 cursor-pointer p-0 bg-transparent border-0 [&_svg]:w-4 [&_svg]:h-4"><span data-pdf-fullblade-target="expandIcon"><%= icon "expand" %></span><span data-pdf-fullblade-target="reduceIcon" class="hidden"><%= icon "reduce" %></span></button>
+      <%= ui_button :pdf_vollbild,
+            data: { controller: "pdf-fullblade", action: "click->pdf-fullblade#toggle",
+                    pdf_fullblade_url_value: pdf_url },
+            class: "shrink-0 text-slate-500 hover:text-slate-800 cursor-pointer p-0 bg-transparent border-0 [&_svg]:w-4 [&_svg]:h-4" do %><span data-pdf-fullblade-target="expandIcon"><%= icon "expand" %></span><span data-pdf-fullblade-target="reduceIcon" class="hidden"><%= icon "reduce" %></span><% end %>
       <a href="<%= pdf_url %>" target="_blank" rel="noopener"
          title="PDF in neuem Browser-Tab öffnen"
          aria-label="PDF in neuem Browser-Tab öffnen"

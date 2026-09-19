@@ -259,13 +259,10 @@
            data-empty="<%= item.bib_source_id.blank? %>"
            data-controller="picker-toggle source-picker"
            data-source-picker-url-value="<%= suggest_sources_path %>">
-        <button type="button"
-                data-action="click->picker-toggle#open"
-                title="<%= t("knowledge.detail.source") %>"
-                class="shrink-0 text-slate-400 [&_svg]:w-4 [&_svg]:h-4 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none"
-                aria-label="<%= t("knowledge.detail.change_source") %>">
-          <%= icon "quote" %>
-        </button>
+        <%= ui_button :quelle_waehlen, size: "w-4 h-4",
+              "aria-label": t("knowledge.detail.change_source"),
+              data: { action: "click->picker-toggle#open" },
+              class: "shrink-0 text-slate-400 hover:text-slate-700 cursor-pointer bg-transparent border-0 p-0 leading-none" %>
         <span class="erow-hover-label hidden group-hover/erow:inline text-slate-400 shrink-0 select-none"><%= t("knowledge.detail.source") %></span>
         <%# #603 R3: Text-Trigger entfernt — nur Icon. Verstecktes
             trigger-Target bleibt für die picker-toggle-Mechanik. %>

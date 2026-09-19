@@ -68,17 +68,12 @@
   <% end %>
 
   <%# #703 (Hans): erweiterte Spalten (Creator/Erstelldatum) entfernt. %>
-  <button type="button"
-          data-action="click->blade-stack#appendFromList"
-          data-target-uuid="<%= item.uuid %>"
-          title="Rechts daneben öffnen"
-          aria-label="Rechts daneben öffnen"
-          class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
-                 w-5 h-5 rounded text-slate-400 bg-transparent border-0
-                 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
-                 leading-none text-base">
-    +
-  </button>
+  <%# #1669: war ein Plus-Zeichen ohne Namen, Beschriftung hartkodiert. %>
+  <%= ui_button :rechts_daneben_oeffnen, size: "w-3.5 h-3.5",
+        data: { action: "click->blade-stack#appendFromList", target_uuid: item.uuid },
+        class: "flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer leading-none" %>
 
   <%# #374-Revert (Hans, 2026-05-25 22:08): Refs-Icon hier raus —
       lebt nur in der KI-Card-Toolbar (book_open-Icon). Vorheriger
@@ -90,17 +85,13 @@
       WorkNodesController; wenn ein Work-Tree-Blade desselben Topics
       im Stack offen ist, aktualisiert er sich via Turbo-Stream. %>
   <% if local_assigns[:topic_slug].present? %>
-    <button type="button"
-            data-controller="add-to-work-tree"
-            data-action="click->add-to-work-tree#add"
-            data-add-to-work-tree-topic-slug-value="<%= local_assigns[:topic_slug] %>"
-            data-add-to-work-tree-ki-uuid-value="<%= item.uuid %>"
-            title="Als Überschrift in die Gliederung aufnehmen"
-            aria-label="In die Gliederung aufnehmen"
-            class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
-                   w-5 h-5 rounded text-slate-400 bg-transparent border-0
-                   hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer">
-      <%= icon "file_text", size: "w-3.5 h-3.5" %>
-    </button>
+    <%= ui_button :in_gliederung_aufnehmen, size: "w-3.5 h-3.5",
+          "aria-label": t("knowledge.list.row.add_to_work_tree_aria"),
+          data: { controller: "add-to-work-tree", action: "click->add-to-work-tree#add",
+                  add_to_work_tree_topic_slug_value: local_assigns[:topic_slug],
+                  add_to_work_tree_ki_uuid_value: item.uuid },
+          class: "flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                  w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                  hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer" %>
   <% end %>
 </li>

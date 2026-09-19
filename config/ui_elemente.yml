@@ -326,3 +326,56 @@ knoten_entfernen:
 gliederung_loeschen:
   icon: x
   label: topics.tree_delete
+
+# ── Wissenseinträge ───────────────────────────────────────────────────────
+ki_abschnitt_fokussieren:
+  icon: expand
+  label: knowledge.detail.focus_description
+ki_jetzt_suchen:
+  icon: search
+  label: knowledge.detail.search_now_hint
+ki_speichern_und_schliessen:
+  icon: check
+  label: knowledge.detail.save_and_close
+ki_speichern:
+  icon: check
+  label: actions.save
+zeit_fuer_ki:
+  icon: timer
+  label: knowledge.detail.track_time_for_ki
+fehlende_eintraege_importieren:
+  icon: group
+  label: knowledge.detail.import_missing_entities
+verweise_oeffnen:
+  icon: book_open
+  label: knowledge.detail.references_hint
+aus_url_ergaenzen:
+  icon: user-search
+  label: knowledge.detail.complete_from_url
+quelle_waehlen:
+  icon: quote
+  label: knowledge.detail.source
+rechts_daneben_oeffnen:
+  icon: plus_circle
+  label: knowledge.list.row.append_right
+an_arbeitsflaeche_anhaengen:
+  icon: plus_circle
+  label: knowledge.list.pinned.append_title
+in_gliederung_aufnehmen:
+  icon: file_text
+  label: knowledge.list.row.add_to_work_tree
+logo_entfernen:
+  icon: x
+  label: knowledge.detail.logo_remove
+verweise_aktualisieren:
+  icon: refresh
+  label: knowledge.list.refs.reload_title
+verweis_inhalt_umschalten:
+  icon: chevron_right
+  label: knowledge.list.refs.cycle_title
+spalten_aufklappen:
+  icon: chevron_right
+  label: knowledge.form.expand_columns
+pdf_vollbild:
+  icon: expand
+  label: js.pdf.fullblade_title

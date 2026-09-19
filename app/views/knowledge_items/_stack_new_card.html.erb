@@ -97,11 +97,8 @@
         </div>
 
         <div class="flex items-center gap-1 shrink-0 text-slate-500">
-          <button type="submit" form="<%= form_id %>"
-                  title="<%= t("actions.save") %>" aria-label="<%= t("actions.save") %>"
-                  class="p-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer">
-            <%= icon "check" %>
-          </button>
+          <%= ui_button :ki_speichern, type: "submit", form: form_id,
+                class: "p-1 rounded text-emerald-700 hover:bg-emerald-50 cursor-pointer" %>
         </div>
       </div>
 

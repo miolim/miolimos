@@ -941,6 +941,11 @@ en:
         empty: "Nothing pinned."
         append_title: "Append to current stack"
         append_aria: "Append to stack"
+      # #1669: were hardcoded in the list row.
+      row:
+        append_right: "Open to the right"
+        add_to_work_tree: "Add as a heading to the outline"
+        add_to_work_tree_aria: "Add to outline"
       known:
         reset: "personally known — reset"
         mark: "mark as personally known"

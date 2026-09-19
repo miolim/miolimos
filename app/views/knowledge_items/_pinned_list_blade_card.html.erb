@@ -44,17 +44,12 @@
                     target_uuid: ki.uuid
                   },
                   class: "flex-1 hover:underline truncate text-slate-700" %>
-            <button type="button"
-                    data-action="click->blade-stack#appendFromList"
-                    data-target-uuid="<%= ki.uuid %>"
-                    title="<%= t('knowledge.list.pinned.append_title') %>"
-                    aria-label="<%= t('knowledge.list.pinned.append_aria') %>"
-                    class="flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
-                           w-5 h-5 rounded text-slate-400 bg-transparent border-0
-                           hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer
-                           leading-none text-base">
-              +
-            </button>
+            <%= ui_button :an_arbeitsflaeche_anhaengen, size: "w-3.5 h-3.5",
+                  "aria-label": t("knowledge.list.pinned.append_aria"),
+                  data: { action: "click->blade-stack#appendFromList", target_uuid: ki.uuid },
+                  class: "flex md:hidden md:group-hover:flex shrink-0 items-center justify-center
+                          w-5 h-5 rounded text-slate-400 bg-transparent border-0
+                          hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer leading-none" %>
           </li>
         <% end %>
       </ul>

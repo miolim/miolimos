@@ -945,6 +945,11 @@ de:
         empty: "Nichts angeheftet."
         append_title: "An aktuelle Arbeitsfläche anhängen"
         append_aria: "An Arbeitsfläche anhängen"
+      # #1669: waren im Listeneintrag hartkodiert.
+      row:
+        append_right: "Rechts daneben öffnen"
+        add_to_work_tree: "Als Überschrift in die Gliederung aufnehmen"
+        add_to_work_tree_aria: "In die Gliederung aufnehmen"
       known:
         reset: "persönlich bekannt — zurücksetzen"
         mark: "als persönlich bekannt markieren"

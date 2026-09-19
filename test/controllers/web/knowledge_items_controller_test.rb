@@ -112,7 +112,12 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, %(class="wikilink text-emerald-700 underline")
     assert_includes @response.body, %(data-target-uuid="#{target.uuid}")
-    assert_includes @response.body, %(data-action="click->blade-stack#openInStack")
+    # #1669: Bisher traf diese Zusage den Referenzen-KNOPF der Kopfzeile, nicht
+    # den Wikilink — seit der Knopf aus `ui_button` kommt, steht sein `>` als
+    # `&gt;` da. Geprueft wird jetzt der Wikilink selbst; seine Aktion traegt
+    # noch das Hoover-Ereignis dahinter.
+    assert_match(/<a [^>]*class="wikilink[^>]*data-action="click->blade-stack#openInStack\b/,
+                 @response.body)
   end
 
   test "GET /knowledge_items mit ?stack=u1,u2 rendert beide Cards initial" do
@@ -1218,10 +1223,14 @@ class KnowledgeItemsControllerTest < ActionDispatch::IntegrationTest
         headers: { "Accept" => "text/html, text/vnd.turbo-stream.html",
                    "Turbo-Frame" => "knowledge_detail" }
     assert_response :success
-    body = @response.body
+    # #1669: Der Knopf kommt aus `ui_button`. content_tag schreibt das `>` im
+    # Attributwert als `&gt;` und setzt title vor data-action — gleichwertiges
+    # Markup, andere Zeichenfolge. Geprueft wird deshalb der entschaerfte Text,
+    # und Reihenfolge-unabhaengig.
+    body = CGI.unescapeHTML(@response.body)
     title = I18n.t("knowledge.detail.complete_from_url")
     # Trigger ist ein popover#toggle-Button, kein <summary>
-    assert_match(/data-action="click->popover#toggle"[^>]*title="#{Regexp.escape(title)}"/, body)
+    assert_match(/<button[^>]*title="#{Regexp.escape(title)}"[^>]*data-action="click->popover#toggle"/, body)
     refute_match(/<summary[^>]*#{Regexp.escape(title)}/, body)
     # und das Panel ist der Popover-Content mit dem Formular darin
     assert_match(%r{data-popover-target="content"[^>]*>\s*<form[^>]*complete_from_url}, body)

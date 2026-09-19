@@ -132,6 +132,7 @@ de:
       unread_count:         "%{count} ungelesen"
       trigger_requested:    "Trigger angefordert · vor %{age}"
       check_inbox:          "Inbox prüfen"
+      toggle_section:       "Abschnitt ein-/ausklappen"   # #1672
       check_again:          "Erneut prüfen"
       check_inbox_title:    "Inbox jetzt prüfen lassen (Session läuft weiter)"
       fresh:                "↻ frisch"

@@ -22,9 +22,9 @@
          data-disclosure-storage-key-value="<%= storage_root %>"
          class="bg-white rounded border border-slate-200 min-w-0">
   <header class="px-3 py-2 border-b border-slate-200 flex items-center gap-2 flex-wrap">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-50 min-w-0">
+    <%= ui_button :agent_abschnitt_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-50 min-w-0" do %>
       <span data-disclosure-target="icon"
             class="inline-block transition-transform rotate-90 text-slate-400 shrink-0">
         <%= icon "chevron_right" %>
@@ -33,7 +33,7 @@
         <%= actor_initials(agent) %>
       </span>
       <h2 class="font-semibold text-sm truncate"><%= agent.name %></h2>
-    </button>
+    <% end %>
 
     <span class="text-xs px-2 py-0.5 rounded-full <%= status_pill_cls %>"><%= status_label %></span>
 
@@ -64,7 +64,7 @@
         <%= t("dashboard.agent.trigger_requested", age: compact_age(agent.inbox_run_requested_at)) %>
       </span>
     <% end %>
-    <%= button_to request_inbox_run_path(agent),
+    <%= ui_button_to :agent_inbox_pruefen, request_inbox_run_path(agent),
           method: :post,
           form: { class: "inline m-0 p-0 leading-none", data: { turbo_stream: true } },
           title: t("dashboard.agent.check_inbox_title"),
@@ -73,7 +73,7 @@
     <% end %>
     <%# #512 (Hans, 2026-06-04): zweite Variante — /clear vorweg (frischer
         Kontext), z. B. für eine neue Recherche. %>
-    <%= button_to request_inbox_run_path(agent, clear: 1),
+    <%= ui_button_to :agent_frischer_kontext, request_inbox_run_path(agent, clear: 1),
           method: :post,
           form: { class: "inline m-0 p-0 leading-none", data: { turbo_stream: true } },
           title: t("dashboard.agent.fresh_title"),
@@ -81,11 +81,8 @@
       <%= t("dashboard.agent.fresh") %>
     <% end %>
 
-    <%= link_to settings_agent_path(agent),
-          class: "ml-auto text-slate-400 hover:text-slate-700 p-1 rounded",
-          title: t("dashboard.agent.settings") do %>
-      <%= icon "gear", size: "w-4 h-4" %>
-    <% end %>
+    <%= ui_link :agent_einstellungen, settings_agent_path(agent), size: "w-4 h-4",
+          class: "ml-auto text-slate-400 hover:text-slate-700 p-1 rounded" %>
   </header>
 
   <div data-disclosure-target="content" class="divide-y divide-slate-100">
@@ -93,15 +90,15 @@
     <section data-controller="disclosure"
              data-disclosure-storage-key-value="<%= storage_root %>.tasks">
       <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50 flex-wrap">
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+        <%= ui_button :agent_abschnitt_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100" do %>
           <span data-disclosure-target="icon"
                 class="inline-block transition-transform rotate-90 text-slate-400">
             <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
           </span>
           <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.open_tasks") %></h3>
-        </button>
+        <% end %>
         <span class="text-xs text-slate-500"><%= bundle[:tasks].size %></span>
         <%= render "dashboard/agent_quickadd", agent_id: agent.id %>
       </header>
@@ -128,15 +125,15 @@
     <section data-controller="disclosure"
              data-disclosure-storage-key-value="<%= storage_root %>.unread">
       <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50">
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+        <%= ui_button :agent_abschnitt_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100" do %>
           <span data-disclosure-target="icon"
                 class="inline-block transition-transform rotate-90 text-slate-400">
             <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
           </span>
           <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.unread_comments") %></h3>
-        </button>
+        <% end %>
         <span class="text-xs text-slate-500"><%= bundle[:unread].size %></span>
         <%# #393 (Hans, 2026-05-28): „Alle als gelesen"-Button. Schickt
             die unique-Task-IDs aller unread-Replies an
@@ -215,15 +212,15 @@
     <section data-controller="disclosure"
              data-disclosure-storage-key-value="<%= storage_root %>.activity">
       <header class="px-4 py-1.5 flex items-center gap-2 bg-slate-50/50">
-        <button type="button"
-                data-action="click->disclosure#toggle"
-                class="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100">
+        <%= ui_button :agent_abschnitt_klappen,
+              data: { action: "click->disclosure#toggle" },
+              class: "flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-slate-100" do %>
           <span data-disclosure-target="icon"
                 class="inline-block transition-transform rotate-90 text-slate-400">
             <%= icon "chevron_right", size: "w-3.5 h-3.5" %>
           </span>
           <h3 class="text-xs font-medium text-slate-700"><%= t("dashboard.agent.activity") %></h3>
-        </button>
+        <% end %>
         <span class="text-xs text-slate-500"><%= bundle[:activity].size %></span>
       </header>
       <div data-disclosure-target="content">

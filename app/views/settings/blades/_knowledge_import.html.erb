@@ -13,20 +13,19 @@
       <%= t("settings.import.step1_intro") %>
     </p>
     <div class="flex items-center gap-2 flex-wrap">
-      <button type="button"
-              data-controller="copy-clipboard"
-              data-action="click->copy-clipboard#copy"
-              data-copy-clipboard-content-value="<%= @prompt %>"
-              data-copy-clipboard-toast-value="<%= t("settings.import.copy_prompt_toast") %>"
-              class="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+      <%= ui_button :import_prompt_kopieren,
+            data: { controller: "copy-clipboard", action: "click->copy-clipboard#copy",
+                    copy_clipboard_content_value: @prompt,
+                    copy_clipboard_toast_value: t("settings.import.copy_prompt_toast") },
+            class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" do %>
         📋 <%= t("settings.import.copy_prompt_button") %>
-      </button>
+      <% end %>
       <span class="text-xs text-slate-500"><%= t("settings.import.copy_prompt_also_appears") %>
         <%= link_to "/knowledge_items", knowledge_items_path, class: "underline hover:text-slate-900" %>.
         <% if @prompt_is_default %>
           <%= t("settings.import.prompt_default_hint") %>
         <% else %>
-          (<%= t("settings.import.prompt_custom_prefix") %> <%= button_to t("settings.import.reset_to_default"),
+          (<%= t("settings.import.prompt_custom_prefix") %> <%= ui_button_to :import_prompt_zuruecksetzen,
             settings_knowledge_import_prompt_reset_path,
             method: :post,
             form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.import.prompt_reset_confirm") } },
@@ -36,15 +35,14 @@
     </div>
 
     <details class="text-sm">
-      <summary class="cursor-pointer text-slate-600 hover:text-slate-900 select-none">
-        <%= t("settings.import.adjust_prompt") %>
-      </summary>
+      <%= ui_button :import_prompt_anpassen, tag: :summary,
+            class: "cursor-pointer text-slate-600 hover:text-slate-900 select-none" %>
       <%= form_with url: settings_knowledge_import_prompt_path, method: :patch, local: true, class: "mt-2 space-y-2" do |f| %>
         <%= f.text_area :prompt, value: @prompt,
               rows: 18,
               class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:border-slate-400" %>
         <div class="flex items-center gap-2">
-          <%= f.submit t("actions.save"),
+          <%= ui_button :import_prompt_speichern, type: :submit,
                 class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
           <span class="text-xs text-slate-500">
             <%= t("settings.import.empty_input_resets") %>
@@ -66,7 +64,7 @@
     <p class="text-sm text-slate-700">
       <%= t("settings.import.step3_intro") %>
     </p>
-    <%= button_to settings_knowledge_import_run_path,
+    <%= ui_button_to :import_jetzt_verarbeiten, settings_knowledge_import_run_path,
           method: :post,
           form: { class: "inline" },
           class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" do %>
@@ -145,7 +143,7 @@ Content-Type: application/json
       <% if @research_prompt_is_default %>
         <%= t("settings.import.research_default_hint") %>
       <% else %>
-        (<%= t("settings.import.prompt_custom_prefix") %> <%= button_to t("settings.import.reset_to_default"),
+        (<%= t("settings.import.prompt_custom_prefix") %> <%= ui_button_to :recherche_prompt_zuruecksetzen,
           settings_research_prompt_reset_path,
           method: :post,
           form: { class: "inline m-0 p-0", data: { turbo_confirm: t("settings.import.research_reset_confirm") } },
@@ -153,15 +151,14 @@ Content-Type: application/json
       <% end %>
     </p>
     <details class="text-sm">
-      <summary class="cursor-pointer text-slate-600 hover:text-slate-900 select-none">
-        <%= t("settings.import.adjust_template") %>
-      </summary>
+      <%= ui_button :recherche_vorlage_anpassen, tag: :summary,
+            class: "cursor-pointer text-slate-600 hover:text-slate-900 select-none" %>
       <%= form_with url: settings_research_prompt_path, method: :patch, local: true, class: "mt-2 space-y-2" do |f| %>
         <%= f.text_area :prompt, value: @research_prompt,
               rows: 10,
               class: "w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:border-slate-400" %>
         <div class="flex items-center gap-2">
-          <%= f.submit t("actions.save"),
+          <%= ui_button :recherche_prompt_speichern, type: :submit,
                 class: "text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
           <span class="text-xs text-slate-500">
             <%= t("settings.import.research_field_defaults_hint") %>

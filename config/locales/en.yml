@@ -131,6 +131,7 @@ en:
       unread_count:         "%{count} unread"
       trigger_requested:    "Trigger requested · %{age} ago"
       check_inbox:          "Check inbox"
+      toggle_section:       "Toggle section"   # #1672
       check_again:          "Check again"
       check_inbox_title:    "Check the inbox now (session keeps running)"
       fresh:                "↻ fresh"

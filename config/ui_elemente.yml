@@ -575,3 +575,39 @@ mail_tag_entfernen:
 mail_thema_loesen:
   icon: x
   label: communications.unlink_topic
+
+# ── Wissens-Import und Recherche-Vorlage (#1672 Etappe 6) ────────────────
+# Zwei Abschnitte mit gleicher Bauform, aber verschiedenen Zielen: der
+# Import-Prompt und die Recherche-Vorlage. Also je eigene Kennungen.
+import_prompt_kopieren:
+  label: settings.import.copy_prompt_button
+import_prompt_zuruecksetzen:
+  label: settings.import.reset_to_default
+import_prompt_anpassen:
+  label: settings.import.adjust_prompt
+import_prompt_speichern:
+  label: actions.save
+import_jetzt_verarbeiten:
+  label: settings.import.process_inbox_now
+recherche_prompt_zuruecksetzen:
+  label: settings.import.reset_to_default
+recherche_vorlage_anpassen:
+  label: settings.import.adjust_template
+recherche_prompt_speichern:
+  label: actions.save
+
+# ── Dashboard: Agenten-Abschnitt (#1672 Etappe 6) ────────────────────────
+# Vier Klapp-Knoepfe, EINE Kennung: Einen Abschnitt auf- und zuzuklappen ist
+# dieselbe Faehigkeit, egal welcher Abschnitt — gleiches Symbol, gleicher
+# Befehl. (Anders als bei den Zusagen: dort traegt jede Stufe ihr eigenes
+# Symbol, also auch ihren eigenen Eintrag.)
+agent_abschnitt_klappen:
+  icon: chevron_right
+  label: dashboard.agent.toggle_section
+agent_inbox_pruefen:
+  label: dashboard.agent.check_inbox
+agent_frischer_kontext:
+  label: dashboard.agent.fresh
+agent_einstellungen:
+  icon: gear
+  label: dashboard.agent.settings

@@ -239,8 +239,12 @@ class FileProxy
         body:            new_body,
         **KnowledgeItem::Stammdaten.attribute_aus(fm),
         issuer:          ActiveModel::Type::Boolean.new.cast(fm["issuer"]) ? true : false,
-        parent_org_uuid: KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
-        logo_uuid:       KnowledgeIndexer.resolve_ki_uuid(fm["logo"]),
+        # #1675: Nur auflösen, wenn der Aufrufer den Verweis wirklich ÄNDERT.
+        # Sonst lief jeder gespeicherte Text über den exportierten TITEL zurück
+        # („erster Treffer") — bei gleichnamigen Einträgen hing die Person
+        # danach still an der anderen Organisation.
+        parent_org_uuid: parent_org.nil? ? knowledge_item.parent_org_uuid : KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
+        logo_uuid:       logo.nil?       ? knowledge_item.logo_uuid       : KnowledgeIndexer.resolve_ki_uuid(fm["logo"]),
         file_path:       new_relative_path,
         content_hash:    Digest::SHA256.hexdigest(full_content),
         file_updated_at: Time.current,

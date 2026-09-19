@@ -148,4 +148,16 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal :bezahlt, pflicht.reload.state, "kein unbuchbarer Restbetrag"
     assert_equal BigDecimal("0"), pflicht.open_amount
   end
+  # #1675: next_number lief unter dem default_scope (ohne Papierkorb). Lag
+  # 2026-007 im Papierkorb, wurde die Nummer neu vergeben — nach dem
+  # Wiederherstellen gab es sie doppelt. Rechnungsnummern sind einmalig.
+  test "next_number vergibt die Nummer einer Rechnung im Papierkorb nicht noch einmal" do
+    aussteller = SecureRandom.uuid
+    alt = Invoice.create!(kind: :rechnung, issuer_uuid: aussteller, number: Invoice.next_number(aussteller))
+    alt.discard!
+
+    neu = Invoice.next_number(aussteller)
+    refute_equal alt.number, neu, "die Nummer aus dem Papierkorb wurde wiederverwendet"
+  end
+
 end

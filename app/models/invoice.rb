@@ -156,7 +156,11 @@ class Invoice < ApplicationRecord
   def self.next_number(issuer_uuid, date = Date.current)
     return nil if issuer_uuid.blank?
     prefix = "#{date.year}-"
-    last = where(kind: :rechnung, direction: :ausgehend, issuer_uuid: issuer_uuid).where("number LIKE ?", "#{prefix}%")
+    # #1675: MIT Papierkorb zählen (unscope des default_scope). Sonst wurde die
+    # Nummer einer weggeworfenen Rechnung neu vergeben — nach dem
+    # Wiederherstellen gab es sie doppelt.
+    last = unscope(where: :deleted_at)
+             .where(kind: :rechnung, direction: :ausgehend, issuer_uuid: issuer_uuid).where("number LIKE ?", "#{prefix}%")
              .pluck(:number).map { |n| n.to_s.split("-").last.to_i }.max.to_i
     format("%s%03d", prefix, last + 1)
   end

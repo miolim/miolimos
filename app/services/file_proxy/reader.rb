@@ -46,6 +46,14 @@ class FileProxy
       inner.empty? ? nil : inner
     end
 
+    # #1675: Ein Verweis (Arbeitgeber, Logo) steht der Lesbarkeit halber als
+    # TITEL in der Datei. Ist der Titel aber nicht eindeutig, wäre er beim
+    # Zurücklesen (Indexer) ein Würfelwurf — dann steht die UUID da; beide
+    # Formen löst KnowledgeIndexer.resolve_ki_uuid auf.
+    def verweis_fuer_export(ziel)
+      KnowledgeItem.by_title_ci(ziel.title).where.not(uuid: ziel.uuid).exists? ? ziel.uuid : ziel.title
+    end
+
     # Öffentlich, damit Writer es nutzen kann.
     def build_frontmatter_hash(ki)
       fm = {
@@ -63,12 +71,12 @@ class FileProxy
       fm["issuer"]     = true                          if ki.respond_to?(:issuer) && ki.issuer?          # #532
       if ki.parent_org_uuid.present?
         parent = KnowledgeItem.find_by(uuid: ki.parent_org_uuid)
-        fm["parent_org"] = parent.title if parent
+        fm["parent_org"] = verweis_fuer_export(parent) if parent
       end
       # #1168: Logo-Referenz als Titel exportieren (wie parent_org).
       if ki.respond_to?(:logo_uuid) && ki.logo_uuid.present?
         logo = KnowledgeItem.find_by(uuid: ki.logo_uuid)
-        fm["logo"] = logo.title if logo
+        fm["logo"] = verweis_fuer_export(logo) if logo
       end
       fm["creator"]    = ki.creator.name              if ki.creator
       # #460: Supersession ins Export-Frontmatter, damit die Ablösung in

@@ -82,6 +82,14 @@ release is cut, this section is renamed to the new version and a fresh
   processor or a vanished actor now ends visibly as failed, and a recurring
   job marks items as failed whose worker died mid-run (e.g. during a deploy)
   so they can be started again.
+- Saving a person no longer re-attaches them to a different organisation of
+  the same name (#1675). Employer and logo are exported by title and were
+  resolved again by “first match” on every save; with two entries of the same
+  title an ordinary text edit silently moved the person. The reference is now
+  only resolved when it is actually changed, and an ambiguous title is
+  exported as UUID so a re-index cannot flip it either.
+- Invoice numbers of invoices in the trash are no longer handed out again
+  (#1675) — restoring such an invoice produced a duplicate number.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

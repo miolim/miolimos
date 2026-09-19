@@ -348,4 +348,37 @@ class FileProxyTest < ActiveSupport::TestCase
     end
   end
 
+  # #1675: Arbeitgeber und Logo werden als TITEL exportiert und beim nächsten
+  # Speichern per „erster Treffer" wieder aufgelöst. Gibt es den Titel zweimal
+  # (die Gmail-Dublette „Faro GmbH", eine gleichnamige Notiz), hängte ein
+  # gewöhnliches Text-Speichern die Person still an die ANDERE Organisation.
+  test "update: Arbeitgeber und Logo bleiben bei gleichnamigen Eintraegen, wenn sie nicht geaendert werden" do
+    with_isolated_miolimos_base do
+      erste  = FileProxy.create(actor: @hans, title: "Faro GmbH", item_type: :organization, content: "")
+      zweite = FileProxy.create(actor: @hans, title: "Faro GmbH", item_type: :organization, content: "")
+      logo_a = FileProxy.create(actor: @hans, title: "Logo", item_type: :note, content: "")
+      logo_b = FileProxy.create(actor: @hans, title: "Logo", item_type: :note, content: "")
+      petra  = FileProxy.create(actor: @hans, title: "Petra Probe", item_type: :person, content: "")
+
+      [[erste, logo_a], [zweite, logo_b]].each do |org, logo|
+        petra.update!(parent_org_uuid: org.uuid, logo_uuid: logo.uuid)
+        FileProxy.update(actor: @hans, knowledge_item: petra.reload, content: "Text #{org.uuid[0, 4]}")
+        assert_equal org.uuid,  petra.reload.parent_org_uuid, "das Speichern hat den Arbeitgeber umgehängt"
+        assert_equal logo.uuid, petra.logo_uuid,              "das Speichern hat das Logo umgehängt"
+      end
+
+      # Auch der Weg über die DATEI darf nicht würfeln: Bei mehrdeutigem Titel
+      # steht die UUID im Export, und der Indexer-Lauf lässt die Zuordnung stehen.
+      assert_equal zweite.uuid, FileProxy::Reader.build_frontmatter_hash(petra.reload)["parent_org"]
+      KnowledgeIndexer.run
+      assert_equal zweite.uuid, petra.reload.parent_org_uuid, "der Indexer-Lauf hat den Arbeitgeber umgehängt"
+
+      # Ausdrücklich ändern und leeren geht weiter.
+      FileProxy.update(actor: @hans, knowledge_item: petra.reload, parent_org: erste.uuid)
+      assert_equal erste.uuid, petra.reload.parent_org_uuid
+      FileProxy.update(actor: @hans, knowledge_item: petra.reload, parent_org: "")
+      assert_nil petra.reload.parent_org_uuid
+    end
+  end
+
 end

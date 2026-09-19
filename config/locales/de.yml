@@ -176,6 +176,7 @@ de:
     template:         "Vorlage"
     edit_topic:       "Thema bearbeiten"
     delete_confirm:   "Thema wirklich löschen?"
+    delete_blocked:   "Dieses Thema wird nicht gelöscht, weil daran noch hängen: %{list}. Stattdessen deaktivieren — dann verschwindet es aus den Listen, und Zeiten, Rechnungen und Termine bleiben auffindbar."
     content_filter_all: "Alle"                 # #1672: waren hartkodiert
     content_filter_title: "Nur Titel"
     content_filter_body: "Mit Inhalt"

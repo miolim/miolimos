@@ -175,6 +175,7 @@ en:
     template:         "Template"
     edit_topic:       "Edit topic"
     delete_confirm:   "Really delete this topic?"
+    delete_blocked:   "This topic is not deleted because it still carries: %{list}. Deactivate it instead — it disappears from the lists while time entries, invoices and events stay findable."
     content_filter_all: "All"                  # #1672: were hardcoded
     content_filter_title: "Titles only"
     content_filter_body: "With content"

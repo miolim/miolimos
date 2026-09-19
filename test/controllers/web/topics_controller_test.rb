@@ -228,4 +228,36 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get "/topics/#{plain.slug}/card"
     refute_includes @response.body, "portal_preview"
   end
+  # #1675: Thema löschen war ganz ungetestet — und endete in einer Fehlerseite,
+  # sobald Zeiten, Rechnungen, Termine oder ein Portalzugang daran hingen
+  # (Fremdschlüssel ohne dependent:). Ein Thema mit Abrechnungsdaten löscht man
+  # auch nicht „mit": Es wird abgewiesen und zum Deaktivieren verwiesen.
+  test "DELETE: ein Thema mit Zeiten oder Rechnungen wird nicht geloescht, sondern zum Deaktivieren verwiesen" do
+    thema = create_topic(name: "Kundenprojekt")
+    TimeEntry.log_manual!(actor: @hans, started_at: 1.day.ago, minutes: 30, topic: thema)
+    Invoice.create!(kind: :rechnung, topic_id: thema.id)
+
+    assert_no_difference -> { Topic.count } do
+      delete "/topics/#{thema.slug}"
+    end
+    assert_response :redirect
+    assert_match(/Zeitbuchung|Rechnung/, flash[:alert].to_s)
+    assert_match(/deaktivier/i, flash[:alert].to_s)
+  end
+
+  test "DELETE: ein Thema ohne Abrechnungsdaten laesst sich loeschen — samt loser Verknuepfungen" do
+    thema = create_topic(name: "Wegwerf-Thema")
+    eintrag = InboxItem.create!(creator: @hans, source_kind: "text", source_url: "", raw_content: "x", status: "pending")
+    InboxItemTopic.create!(inbox_item: eintrag, topic: thema)
+    mail = Email.create!(external_id: "t-#{SecureRandom.hex(4)}", subject: "S", sent_at: Time.current,
+                         direction: :inbound, suggested_topic_id: thema.id)
+
+    assert_difference -> { Topic.count }, -1 do
+      delete "/topics/#{thema.slug}"
+    end
+    assert_response :redirect
+    assert InboxItem.exists?(eintrag.id), "der Posteingangs-Eintrag selbst bleibt"
+    assert_nil mail.reload.suggested_topic_id
+  end
+
 end

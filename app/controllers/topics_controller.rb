@@ -197,6 +197,13 @@ class TopicsController < ApplicationController
   end
 
   def destroy
+    # #1675: siehe Topic#loeschhindernisse — Abrechnungs- und Kundendaten
+    # verhindern das Löschen; vorher endete das in einer Fehlerseite.
+    if (hindernisse = @topic.loeschhindernisse).any?
+      liste = hindernisse.map { |was, n| "#{n} #{was}" }.join(", ")
+      redirect_to topic_path(@topic), alert: t("topics.delete_blocked", list: liste), status: :see_other
+      return
+    end
     @topic.destroy!
     redirect_to topics_path, notice: "Thema gelöscht"
   end

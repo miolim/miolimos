@@ -102,6 +102,29 @@ class Topic < ApplicationRecord
   # Zweckgeflecht = kind=purpose; mehrere Bäume je Topic möglich.
   # work_nodes (Knoten ALLER Bäume) bleibt für Zähler/Cascade bestehen.
   has_many :topic_trees, dependent: :destroy
+
+  # #1675: Thema löschen endete in einer Fehlerseite, sobald etwas per
+  # Fremdschlüssel daran hing, das kein dependent: hatte. Zwei Sorten:
+  #  • LOSE Verknüpfungen gehen mit bzw. werden gelöst (unten),
+  #  • ABRECHNUNGS- und Kundendaten verhindern das Löschen (loeschhindernisse) —
+  #    die löscht man nicht „mit", und sie vom Thema zu lösen machte sie
+  #    unauffindbar. Dafür gibt es „inaktiv".
+  has_many :inbox_item_topics, dependent: :destroy
+  has_many :suggested_communications, class_name: "Communication",
+           foreign_key: :suggested_topic_id, dependent: :nullify
+
+  LOESCHHINDERNISSE = {
+    "Zeitbuchung(en)"  => -> (t) { TimeEntry.unscoped.where(topic_id: t.id) },
+    "Rechnung(en)"     => -> (t) { Invoice.unscoped.where(topic_id: t.id) },
+    "Dokument(e)"      => -> (t) { Document.unscoped.where(topic_id: t.id) },
+    "Termin(e)"        => -> (t) { Event.unscoped.where(topic_id: t.id) },
+    "Portalzugang/-zugänge" => -> (t) { PortalAccess.where(topic_id: t.id) }
+  }.freeze
+
+  # { "Rechnung(en)" => 2, … } — leer heißt: darf gelöscht werden.
+  def loeschhindernisse
+    LOESCHHINDERNISSE.transform_values { |abfrage| abfrage.call(self).count }.select { |_, n| n.positive? }
+  end
   has_many :work_nodes, dependent: :destroy
   def default_work_tree
     topic_trees.work.first || topic_trees.create!(kind: "work", position: 1)

@@ -3,6 +3,9 @@
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+  # #1677: mitgelieferte Hilfetexte (db/help/*.md) laden — idempotent, lokal
+  # Geändertes bleibt stehen.
+  ./bin/rails help:import
 fi
 
 exec "${@}"

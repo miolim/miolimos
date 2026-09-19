@@ -54,6 +54,11 @@ bundle exec rails db:migrate
 echo "• rails capabilities:sync"
 bundle exec rails capabilities:sync
 
+# 2c. #1677: mitgelieferte Hilfetexte (db/help/*.md) in die Datenbank laden.
+#     Idempotent; vor Ort geänderte Erklärungen bleiben stehen und werden gemeldet.
+echo "• rails help:import"
+bundle exec rails help:import
+
 # 3. Assets: public/assets/ komplett neu bauen, damit Propshaft garantiert
 #    den frischen tailwind-<digest>.css serviert.
 echo "• assets:precompile (clean)"

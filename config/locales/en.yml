@@ -464,6 +464,7 @@ en:
 
   awaitings:
     index_title:    "Waiting points"
+    delete_confirm: "Really delete?"   # #1672: was hardcoded in the template
     new:            "New waiting point"
     edit:           "Edit waiting point"
     title_label:       "What are you waiting for?"

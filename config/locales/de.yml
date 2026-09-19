@@ -468,6 +468,7 @@ de:
 
   awaitings:
     index_title:    "Wartepunkte"
+    delete_confirm: "Wirklich löschen?"   # #1672: war im Template hartkodiert
     new:            "Neuer Wartepunkt"
     edit:           "Wartepunkt bearbeiten"
     title_label:       "Worauf wartest Du?"

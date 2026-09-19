@@ -146,6 +146,19 @@ class UiButtonPruefungTest < ActiveSupport::TestCase
     assert_empty alle(%(<%= ui_link :thema_oeffnen, pfad, class: "px-2 rounded" %>))
   end
 
+  # Ein Kommentar, der einen Helfer ERWÄHNT, ist kein Bedienelement. Daran hat
+  # sich die Prüfung bei ihrem ersten Einsatz verschluckt: Der Kommentar, mit
+  # dem eine Umstellung begründet war, zählte selbst als offene Stelle.
+  test "ein ERB-Kommentar ist kein Bedienelement" do
+    assert_empty alle(%(<%# hier stand mal ein button_to, siehe #1669 %>))
+    assert_empty alle(%(<%# f.submit und link_to class: "rounded" nur erwähnt %>))
+  end
+
+  test "der Kommentar verschiebt die Zeilennummern nicht" do
+    quelle = "<%# ein\n    mehrzeiliger Kommentar %>\n<button>Speichern</button>"
+    assert_equal [3], alle(quelle)
+  end
+
   # Der Riegel aus #1669 bleibt der schärfere: Er greift auch dort, wo der
   # weitere noch Rückstand erlaubt.
   test "der alte Riegel bleibt auf die namenlosen beschränkt" do

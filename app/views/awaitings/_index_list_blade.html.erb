@@ -56,7 +56,7 @@
                                 overdue: (@overdue_only ? "1" : nil),
                                 show_resolved: (@show_resolved ? "1" : nil) }.compact_blank,
               storage_key:    "awaitings" %>
-        <%= link_to t("awaitings.new"), new_awaiting_path,
+        <%= ui_link :wartepunkt_anlegen, new_awaiting_path,
               class: "text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700" %>
       </span>
     </header>

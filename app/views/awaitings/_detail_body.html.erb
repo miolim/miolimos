@@ -34,26 +34,21 @@
     </div>
     <div class="flex items-center gap-1 shrink-0 text-slate-500">
       <% if local_assigns[:expanded] %>
-        <%= link_to (request.referer.presence || awaitings_path),
-              title: t("awaitings.back"), "aria-label": t("awaitings.back"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-          <%= icon "reduce" %>
-        <% end %>
+        <%= ui_link :wartepunkt_zurueck, (request.referer.presence || awaitings_path),
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
       <% else %>
-        <%= link_to awaiting_path(awaiting), data: { turbo_frame: "_top" },
-              title: t("awaitings.open_full"), "aria-label": t("awaitings.full_view"),
-              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-          <%= icon "expand" %>
-        <% end %>
+        <%= ui_link :wartepunkt_vollansicht, awaiting_path(awaiting),
+              "aria-label": t("awaitings.full_view"), data: { turbo_frame: "_top" },
+              class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
       <% end %>
-      <%= link_to t("actions.edit"), edit_awaiting_path(awaiting),
+      <%= ui_link :wartepunkt_bearbeiten, edit_awaiting_path(awaiting),
             data: { turbo_frame: "_top" },
             class: "text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-50" %>
-      <%= button_to t("actions.delete"), awaiting_path(awaiting), method: :delete,
+      <%= ui_button_to :wartepunkt_loeschen, awaiting_path(awaiting), method: :delete,
             form: { class: "inline m-0 p-0",
                     data: (local_assigns[:expanded] ?
-                            { turbo_frame: "_top", turbo_confirm: "Wirklich löschen?" } :
-                            { turbo_stream: true,  turbo_confirm: "Wirklich löschen?" }) },
+                            { turbo_frame: "_top", turbo_confirm: t("awaitings.delete_confirm") } :
+                            { turbo_stream: true,  turbo_confirm: t("awaitings.delete_confirm") }) },
             class: "text-xs px-2 py-1 rounded border border-slate-200 bg-transparent hover:bg-rose-50 hover:text-rose-700 cursor-pointer" %>
     </div>
   </div>
@@ -130,16 +125,17 @@
 
   <% if awaiting.open? %>
     <div class="border-t border-slate-100 pt-3 flex items-center gap-2 flex-wrap">
-      <%= button_to resolve_awaiting_path(awaiting), method: :post,
+      <%= ui_button_to :wartepunkt_erledigen, resolve_awaiting_path(awaiting), method: :post,
             form: { class: "inline", data: { turbo_frame: "_top" } },
             class: "text-xs rounded bg-emerald-600 text-white px-3 py-1.5 hover:bg-emerald-700 cursor-pointer" do %>
         ✓ <%= t("awaitings.resolve") %>
       <% end %>
 
       <details class="relative">
-        <summary class="text-xs rounded bg-slate-700 text-white px-3 py-1.5 hover:bg-slate-800 cursor-pointer list-none">
+        <%= ui_button :wartepunkt_aufgabe_erstellen, tag: :summary,
+              class: "text-xs rounded bg-slate-700 text-white px-3 py-1.5 hover:bg-slate-800 cursor-pointer list-none" do %>
           + <%= t("awaitings.create_task") %>
-        </summary>
+        <% end %>
         <div class="absolute z-10 left-0 mt-1 w-80 bg-white border border-slate-200 rounded shadow-lg p-3">
           <%= form_with url: create_task_awaiting_path(awaiting), method: :post, local: true,
                 data: { turbo_frame: "_top" }, class: "space-y-2" do |f| %>
@@ -149,7 +145,7 @@
                     value: "Folgeaufgabe: #{awaiting.title.truncate(40)}",
                     class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
             </div>
-            <%= f.submit t("awaitings.create_task_and_resolve"),
+            <%= ui_button :wartepunkt_aufgabe_anlegen, type: :submit,
                   class: "text-xs px-3 py-1.5 rounded bg-slate-700 text-white hover:bg-slate-800 cursor-pointer" %>
           <% end %>
         </div>

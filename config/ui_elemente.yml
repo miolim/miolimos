@@ -414,3 +414,36 @@ identifier_entfernen:
 zeitbuchung_loeschen:
   icon: trash
   label: time_entries.delete_entry
+
+# ── Wartepunkte (#1672 Etappe 1) ─────────────────────────────────────────
+# Ab hier stehen auch BESCHRIFTETE Befehle im Katalog. Ein Eintrag ohne
+# `icon` trägt seinen Namen als Text — genau das, was der Knopf vorher
+# hartkodiert im Template hatte.
+wartepunkt_zurueck:
+  icon: reduce
+  label: awaitings.back
+wartepunkt_vollansicht:
+  icon: expand
+  label: awaitings.open_full
+wartepunkt_bearbeiten:
+  label: actions.edit
+wartepunkt_loeschen:
+  label: actions.delete
+wartepunkt_erledigen:
+  icon: check
+  label: awaitings.resolve
+wartepunkt_aufgabe_erstellen:
+  label: awaitings.create_task
+wartepunkt_aufgabe_anlegen:
+  label: awaitings.create_task_and_resolve
+wartepunkt_speichern:
+  label: actions.save
+wartepunkt_abbrechen:
+  label: actions.cancel
+wartepunkt_anlegen:
+  label: awaitings.new
+wartepunkt_schnell_hinzufuegen:
+  label: awaitings.add
+wartepunkt_thema_loesen:
+  icon: x
+  label: awaitings.unlink_topic

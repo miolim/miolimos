@@ -16,5 +16,5 @@
         placeholder: t("awaitings.quickadd_placeholder"),
         autofocus: local_assigns[:autofocus],
         class: "flex-1 rounded border border-slate-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" %>
-  <%= f.submit t("awaitings.add"), class: "text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
+  <%= ui_button :wartepunkt_schnell_hinzufuegen, type: :submit, class: "text-xs px-2 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
 <% end %>

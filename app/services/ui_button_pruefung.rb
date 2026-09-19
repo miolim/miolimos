@@ -34,8 +34,20 @@ class UiButtonPruefung
   # kann kein Katalogeintrag sein — davon gibt es beliebig viele, und sie
   # gehören dem Nutzer, nicht dem Programm.
   def self.alle_offenen_stellen(quelle)
-    (rohe_stellen(quelle, nur_namenlose: false) +
-     offene_rails_helfer(quelle)).uniq.sort
+    ohne = entkommentiert(quelle)
+    (rohe_stellen(ohne, nur_namenlose: false) +
+     offene_rails_helfer(ohne)).uniq.sort
+  end
+
+  # ERB-Kommentare ausblenden, Zeilenumbrüche behalten — sonst stimmen die
+  # Zeilennummern nicht mehr.
+  #
+  # Ein Kommentar, der `button_to` ERWÄHNT, ist kein Bedienelement. Genau
+  # daran hat sich die Prüfung bei ihrem ersten Einsatz verschluckt: Der
+  # Kommentar, mit dem ich eine Umstellung begründet habe, wurde selbst als
+  # offene Stelle gezählt.
+  def self.entkommentiert(quelle)
+    quelle.gsub(/<%#.*?%>/m) { |treffer| treffer.gsub(/[^\n]/, " ") }
   end
 
   # `button_to` / `link_to`-als-Knopf / `f.submit` — Bedienelemente, die Rails

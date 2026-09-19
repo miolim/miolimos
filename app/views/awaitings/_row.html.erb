@@ -77,10 +77,9 @@
   <% if blade_kind && blade_id %>
   <% end %>
 
-  <%= button_to resolve_awaiting_path(awaiting), method: :post,
+  <%= ui_button_to :wartepunkt_erledigen, resolve_awaiting_path(awaiting), method: :post, size: "w-4 h-4",
         form: { class: "inline shrink-0 m-0 p-0" },
-        class: "p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 bg-transparent border-0 cursor-pointer text-slate-500",
-        title: t("awaitings.resolve"), "aria-label": t("awaitings.resolve") do %>
+        class: "p-1 rounded hover:bg-emerald-50 hover:text-emerald-700 bg-transparent border-0 cursor-pointer text-slate-500" do %>
     <%= icon "check", size: "w-4 h-4" %>
   <% end %>
 </li>

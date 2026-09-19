@@ -27,5 +27,5 @@ test("Cmd/Strg gehoert dem Browser", () => {
 })
 
 test("das Menue bietet genau die vier Oeffnungsarten", () => {
-  assert.deepEqual(OEFFNUNGSARTEN, ["ersetzen", "links", "rechts", "ende"])
+  assert.deepEqual(OEFFNUNGSARTEN, ["ende", "rechts", "links", "ersetzen"])
 })

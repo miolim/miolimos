@@ -1697,10 +1697,12 @@ de:
       back_to_normal: "Zurück zur normalen Ansicht"
     # #1642: Umschalt+Klick fragt per Menü, wohin die Karte geht.
     blade_open_menu:
-      ersetzen: "Rechts ersetzen"
-      links:    "Links öffnen"
-      rechts:   "Rechts öffnen"
-      ende:     "Am Ende öffnen"
+      # #1671: von „weit weg" nach „hier"; unten steht, was der schlichte
+      # Klick ohnehin tut.
+      ende:     "Am Ende des Kartenstapels öffnen"
+      rechts:   "Rechts dieser Karte öffnen"
+      links:    "Links dieser Karte öffnen"
+      ersetzen: "Alles rechts dieser Karte ersetzen (normaler Mausklick)"
     shortcut_help:
       title: "Tastatur- und Maus-Shortcuts"
       group_general: "Allgemein"
@@ -1722,7 +1724,7 @@ de:
       key_paragraph_right: "Rechtsklick auf Absatz (Vorschau)"
       key_editor_right: "Rechtsklick im Textfeld (Bearbeiten)"
       click_replace: "Karte öffnen, ersetzt alles rechts der aufrufenden Karte"
-      click_menu: "Menü: rechts ersetzen · links öffnen · rechts öffnen · am Ende öffnen"
+      click_menu: "Menü: am Ende öffnen · rechts dieser Karte · links dieser Karte · alles rechts ersetzen"
       click_browser: "Dem Browser überlassen (z. B. in neuem Tab öffnen)"
       spine_click: "Karte fokussieren; eingeklappt: ausklappen"
       spine_dblclick: "Karte ein- / ausklappen"

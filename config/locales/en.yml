@@ -1680,10 +1680,12 @@ en:
       back_to_normal: "Back to normal view"
     # #1642: Shift + click asks, via a menu, where the card should go.
     blade_open_menu:
-      ersetzen: "Replace to the right"
-      links:    "Open on the left"
-      rechts:   "Open on the right"
-      ende:     "Open at the end"
+      # #1671: from "far away" to "here"; the bottom entry says what a plain
+      # click does anyway.
+      ende:     "Open at the end of the card stack"
+      rechts:   "Open right of this card"
+      links:    "Open left of this card"
+      ersetzen: "Replace everything right of this card (plain click)"
     shortcut_help:
       title: "Keyboard and mouse shortcuts"
       group_general: "General"
@@ -1705,7 +1707,7 @@ en:
       key_paragraph_right: "Right-click on paragraph (preview)"
       key_editor_right: "Right-click in text field (editing)"
       click_replace: "Open card, replacing everything right of the calling card"
-      click_menu: "Menu: replace to the right · open on the left · open on the right · open at the end"
+      click_menu: "Menu: open at the end · right of this card · left of this card · replace everything to the right"
       click_browser: "Leave it to the browser (e.g. open in new tab)"
       spine_click: "Focus card; if collapsed: expand"
       spine_dblclick: "Collapse / expand card"

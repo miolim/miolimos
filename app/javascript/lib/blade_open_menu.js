@@ -11,13 +11,19 @@
 // `oeffnungsart(event)`:
 //
 //   Klick            ersetzt alles rechts der aufrufenden Karte
-//   Umschalt+Klick   Menü: rechts ersetzen · links · rechts · ans Ende
+//   Umschalt+Klick   Menü: ans Ende · rechts · links · alles rechts ersetzen
 //   Cmd/Strg         gehört dem Browser („in neuem Tab öffnen")
 //
 // Das Menü ist bewusst dasselbe Muster wie das Schließen-Menü am Kartenrücken
 // (#1032): ein kleines Div am Klickpunkt, Escape und Klick daneben schließen.
 
-export const OEFFNUNGSARTEN = ["ersetzen", "links", "rechts", "ende"]
+// #1671 (Hans, über immoOS #1668): Die Reihenfolge läuft von „weit weg" nach
+// „hier" — man muss sie nicht lernen, man liest sie. Und UNTEN steht, was ein
+// schlichter Klick ohnehin tut: Wer die Zeile liest, weiß nebenbei, was der
+// normale Klick bedeutet, ohne dass es irgendwo erklärt werden müsste.
+//
+// Die Öffnungsarten selbst sind unverändert — nur ihre Reihenfolge.
+export const OEFFNUNGSARTEN = ["ende", "rechts", "links", "ersetzen"]
 
 // Was der Klick OHNE Menü bedeutet. Sprachneutral und ohne DOM — der
 // JS-Test prüft genau diese Funktion.

@@ -46,7 +46,7 @@ class WikilinkOeffnen1648Test < ApplicationSystemTestCase
 
     assert_selector "#blade_open_menu", wait: 5
     beschriftungen = all("#blade_open_menu button").map(&:text)
-    assert_equal %w[ersetzen links rechts ende].map { |a| I18n.t("js.blade_open_menu.#{a}") },
+    assert_equal %w[ende rechts links ersetzen].map { |a| I18n.t("js.blade_open_menu.#{a}") },
                  beschriftungen
   end
 
@@ -77,7 +77,7 @@ class WikilinkOeffnen1648Test < ApplicationSystemTestCase
     wikilink_klicken(modifier: [:shift])
     assert_selector "#blade_open_menu", wait: 5
 
-    find("body").send_keys(:escape)
+    escape_druecken
     assert_no_selector "#blade_open_menu", wait: 5
     sleep 0.5
     assert_equal vorher, uuids, "abgebrochen heißt: nichts öffnen"

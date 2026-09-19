@@ -70,7 +70,7 @@ class CardOeffnenModifierTest < ApplicationSystemTestCase
 
     assert_selector "#blade_open_menu", wait: 5
     beschriftungen = all("#blade_open_menu button").map(&:text)
-    assert_equal %w[ersetzen links rechts ende].map { |a| I18n.t("js.blade_open_menu.#{a}") },
+    assert_equal %w[ende rechts links ersetzen].map { |a| I18n.t("js.blade_open_menu.#{a}") },
                  beschriftungen
     assert page.has_no_css?(".stack-card[data-uuid='task:#{@tasks[0].id}']", wait: 2),
            "erst die Wahl öffnet die Karte"
@@ -104,7 +104,7 @@ class CardOeffnenModifierTest < ApplicationSystemTestCase
     zeile_klicken(@tasks[0], modifier: [:shift])
     assert_selector "#blade_open_menu", wait: 5
 
-    find("body").send_keys(:escape)
+    escape_druecken
     assert_no_selector "#blade_open_menu", wait: 5
     sleep 0.5
     assert_equal vorher, uuids, "abgebrochen heißt: nichts öffnen"
@@ -145,7 +145,7 @@ class CardOeffnenModifierTest < ApplicationSystemTestCase
     auswahl = page.evaluate_script("window.getSelection().toString().trim()")
     assert_equal "", auswahl,
                  "auf einer Zeile ist Umschalt der Modifier, kein Auswahlwerkzeug"
-    find("body").send_keys(:escape)
+    escape_druecken
 
     # Gegenprobe: In einem Eingabefeld muss Umschalt weiter auswählen —
     # sonst wäre die Unterdrückung pauschal statt selektiv.

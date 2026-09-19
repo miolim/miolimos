@@ -74,6 +74,24 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     cap
   end
 
+  # #1671 (aus immoOS #1668): Escape drücken, OHNE vorher irgendwo hinzuklicken.
+  #
+  # `find("body").send_keys(:escape)` sieht harmlos aus, klickt in Cuprite aber
+  # erst auf das Element und tippt danach (capybara/cuprite/page.rb#send_keys) —
+  # der Klick landet in der Bildschirmmitte. Steht dort ein Menü, wählt er einen
+  # Eintrag, bevor Escape ankommt. In immoOS ist genau daran ein Test
+  # umgefallen, nachdem die Menü-Einträge nur LÄNGER geworden waren: Das Menü
+  # wurde breiter, die Mitte lag plötzlich darin.
+  #
+  # Lehre über diesen Fall hinaus: Ein Test, der nach einer reinen Text- oder
+  # Breitenänderung umfällt, hat fast nie ein Verhaltensproblem. Erst den
+  # Screenshot ansehen, dann den Testgriff verdächtigen — nicht den Code.
+  def escape_druecken
+    page.execute_script(
+      'document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))'
+    )
+  end
+
   def login_as(actor, password: "secretsecret")
     visit "/login"
     fill_in "email",    with: actor.email

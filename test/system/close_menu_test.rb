@@ -50,7 +50,7 @@ class CloseMenuTest < ApplicationSystemTestCase
     eintrag = find("button", text: I18n.t("js.blade_stack.close_menu_right_of"), wait: 5)
     zustand = eintrag.disabled?
     # Menü wieder zumachen, sonst trifft der nächste Klick den Dismiss-Handler.
-    find("body").send_keys(:escape)
+    escape_druecken
     zustand
   end
 end

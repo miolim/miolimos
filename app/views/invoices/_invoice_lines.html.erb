@@ -51,10 +51,11 @@
                      onchange="this.form.requestSubmit()" class="border border-slate-200 rounded px-1 py-0.5 text-xs text-right tabular-nums">
             <% end %>
             <span class="tabular-nums text-right text-xs"><%= document_euro(line.net) %></span>
-            <button type="button" title="<%= t("documents.invoice.open_position") %>"
-                    data-controller="blade-link" data-blade-link-kind-value="invoice_line"
-                    data-blade-link-id-value="<%= line.id %>" data-action="click->blade-link#append"
-                    class="shrink-0 text-slate-300 hover:text-sky-600 bg-transparent border-0 cursor-pointer px-1">›</button>
+            <%# #1669: war ein Zeichen-Symbol (›) ohne Namen. %>
+            <%= ui_button :position_oeffnen, size: "w-3.5 h-3.5",
+                  data: { controller: "blade-link", action: "click->blade-link#append",
+                          blade_link_kind_value: "invoice_line", blade_link_id_value: line.id },
+                  class: "shrink-0 text-slate-300 hover:text-sky-600 bg-transparent border-0 cursor-pointer px-1" %>
           <% end %>
         <% else %>
           <div class="<%= cols %> px-1 py-1 text-xs">

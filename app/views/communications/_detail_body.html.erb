@@ -16,10 +16,8 @@
 
     <%# Wartepunkt — Icon öffnet ein kleines Formular (Worauf? + Datum). %>
     <details class="relative">
-      <summary class="p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer list-none inline-flex"
-               title="<%= t("communications.new_awaiting") %>" aria-label="<%= t("communications.new_awaiting") %>">
-        <%= icon "waiting" %>
-      </summary>
+      <%= ui_button :wartepunkt_aus_mail, tag: :summary,
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 cursor-pointer list-none inline-flex" %>
       <div class="absolute z-30 right-0 mt-1 w-80 bg-white border border-slate-200 rounded shadow-lg p-3 text-left">
         <%= form_with url: create_awaiting_communication_path(comm), method: :post, local: true, class: "space-y-2", data: { turbo_frame: "_top" } do |f| %>
           <div>

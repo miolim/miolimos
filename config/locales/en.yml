@@ -1028,6 +1028,8 @@ en:
       creator_placeholder: "Person/org title or UUID"
       add_creator: "+ Add creator"
       add_identifier: "+ Add identifier"
+      remove_creator: "Remove creator"       # #1669
+      remove_identifier: "Remove identifier" # #1669
     inline:
       cite_key_title: "Cite key — cite in KI bodies as [@%{slug}]"
       authors_creators: "Authors / Creators"
@@ -2115,6 +2117,7 @@ en:
       your_ref: "Your reference"
       our_ref: "Our reference"
       infoblock_fields: "Info-block fields"
+      infofield_remove: "Remove info field"   # #1669
       label_placeholder: "Label"
       value_placeholder: "Value"
       add_field: "+ Field"

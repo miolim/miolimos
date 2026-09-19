@@ -1033,6 +1033,8 @@ de:
       creator_placeholder: "Person/Org-Title oder UUID"
       add_creator: "+ Creator hinzufügen"
       add_identifier: "+ Identifier hinzufügen"
+      remove_creator: "Creator entfernen"       # #1669
+      remove_identifier: "Identifier entfernen" # #1669
     inline:
       cite_key_title: "Cite-Key — in Eintrags-Texten als [@%{slug}] zitieren"
       authors_creators: "Autoren / Creators"
@@ -2141,6 +2143,7 @@ de:
       your_ref: "Ihr Zeichen"
       our_ref: "Unser Zeichen"
       infoblock_fields: "Infoblock-Felder"
+      infofield_remove: "Infofeld entfernen"   # #1669
       label_placeholder: "Bezeichnung"
       value_placeholder: "Wert"
       add_field: "+ Feld"

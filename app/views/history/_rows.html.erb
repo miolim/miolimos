@@ -79,16 +79,12 @@
         end
     %>
     <% if plus_kind %>
-      <button type="button"
-              data-controller="blade-link"
-              data-blade-link-kind-value="<%= plus_kind %>"
-              data-blade-link-id-value="<%= plus_id %>"
-              data-blade-link-mode-value="append_to_substack"
-              data-action="click->blade-link#append"
-              title="<%= t("history.append_to_stack") %>" aria-label="<%= t("history.append_to_stack") %>"
-              class="shrink-0 p-0.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded cursor-pointer leading-none">
-        <span class="text-base leading-none">+</span>
-      </button>
+      <%# #1669: war ein Plus-Zeichen ohne Namen. %>
+      <%= ui_button :an_stapel_anhaengen, size: "w-3.5 h-3.5",
+            data: { controller: "blade-link", action: "click->blade-link#append",
+                    blade_link_kind_value: plus_kind, blade_link_id_value: plus_id,
+                    blade_link_mode_value: "append_to_substack" },
+            class: "shrink-0 p-0.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded cursor-pointer leading-none" %>
     <% end %>
     <span class="text-xs text-slate-500 shrink-0 tabular-nums" title="<%= l(view.viewed_at, format: '%d.%m.%Y, %H:%M') %>">
       <%= compact_age(view.viewed_at) %>

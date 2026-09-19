@@ -37,7 +37,7 @@
         <span></span>
         <input type="text" name="fields[][label]" placeholder="<%= t("documents.fields.label_placeholder") %>" class="<%= inp %>">
         <input type="text" name="fields[][value]" placeholder="<%= t("documents.fields.value_placeholder") %>" class="<%= inp %>">
-        <button type="button" data-action="click->rows-editor#remove" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+        <%= ui_button :infofeld_entfernen, size: "w-3.5 h-3.5", data: { action: "click->rows-editor#remove" }, class: "p-1 text-slate-400 hover:text-rose-600" %>
       </div>
     </template>
     <div data-rows-editor-target="rows" class="space-y-1">
@@ -47,7 +47,7 @@
           <span></span>
           <input type="text" name="fields[][label]" value="<%= fld.label %>" class="<%= inp %>">
           <input type="text" name="fields[][value]" value="<%= fld.value %>" class="<%= inp %>">
-          <button type="button" data-action="click->rows-editor#remove" class="p-1 text-slate-400 hover:text-rose-600">×</button>
+          <%= ui_button :infofeld_entfernen, size: "w-3.5 h-3.5", data: { action: "click->rows-editor#remove" }, class: "p-1 text-slate-400 hover:text-rose-600" %>
         </div>
       <% end %>
     </div>

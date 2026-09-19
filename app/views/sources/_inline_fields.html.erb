@@ -79,8 +79,9 @@
             <select name="creators[][role]" class="rounded border border-slate-200 px-1 py-0.5">
               <% SourceCreator::ROLES.each do |r| %><option value="<%= r %>"><%= r %></option><% end %>
             </select>
-            <button type="button" data-action="click->rows-editor#remove"
-                    class="px-2 text-slate-400 hover:text-rose-600">×</button>
+            <%= ui_button :creator_entfernen, size: "w-3.5 h-3.5",
+                  data: { action: "click->rows-editor#remove" },
+                  class: "px-2 text-slate-400 hover:text-rose-600" %>
           </div>
         </template>
         <div data-rows-editor-target="rows">
@@ -95,8 +96,9 @@
                   <option value="<%= r %>" <%= "selected" if sc.role == r %>><%= r %></option>
                 <% end %>
               </select>
-              <button type="button" data-action="click->rows-editor#remove"
-                      class="px-2 text-slate-400 hover:text-rose-600">×</button>
+              <%= ui_button :creator_entfernen, size: "w-3.5 h-3.5",
+                    data: { action: "click->rows-editor#remove" },
+                    class: "px-2 text-slate-400 hover:text-rose-600" %>
             </div>
           <% end %>
         </div>
@@ -232,8 +234,9 @@
               </select>
               <input type="text" name="identifiers[][value]" placeholder="<%= t("sources.fields.value") %>"
                      class="rounded border border-slate-200 px-2 py-0.5 font-mono">
-              <button type="button" data-action="click->rows-editor#remove"
-                      class="px-2 text-slate-400 hover:text-rose-600">×</button>
+              <%= ui_button :identifier_entfernen, size: "w-3.5 h-3.5",
+                    data: { action: "click->rows-editor#remove" },
+                    class: "px-2 text-slate-400 hover:text-rose-600" %>
             </div>
           </template>
           <div data-rows-editor-target="rows">
@@ -246,8 +249,9 @@
                 </select>
                 <input type="text" name="identifiers[][value]" value="<%= id.value %>"
                        class="rounded border border-slate-200 px-2 py-0.5 font-mono">
-                <button type="button" data-action="click->rows-editor#remove"
-                        class="px-2 text-slate-400 hover:text-rose-600">×</button>
+                <%= ui_button :identifier_entfernen, size: "w-3.5 h-3.5",
+                      data: { action: "click->rows-editor#remove" },
+                      class: "px-2 text-slate-400 hover:text-rose-600" %>
               </div>
             <% end %>
           </div>

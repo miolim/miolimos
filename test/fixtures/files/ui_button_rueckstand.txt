@@ -2,18 +2,15 @@
 # Die Liste darf NUR schrumpfen — neue Dateien werden gleich mit ui_button
 # gebaut. Zwei Wächter halten das ehrlich (test/services/ui_button_wachter_test.rb).
 #
-# Stand: 14 Dateien, 21 Knöpfe.
-app/views/communications/_detail_body.html.erb
-app/views/communications/_index_list_blade.html.erb
-app/views/dashboard/_agent_section.html.erb
-app/views/documents/_list_blade_card.html.erb
-app/views/history/_rows.html.erb
-app/views/invoices/_invoice_lines.html.erb
-app/views/invoices/_list_blade_card.html.erb
-app/views/printables/_infofields.html.erb
-app/views/settings/blades/_preferences.html.erb
-app/views/settings/tag_icons/_row.html.erb
+# Was noch offen ist und warum:
+#
+# _entity_picker ist ein GENERISCHER Baustein — derselbe Picker verknüpft
+# Themen, Tags, Quellen, Personen, Unteraufgaben, Rechnungs-Empfänger …, an
+# 25 Aufrufstellen mit je eigenem Symbol und eigener Beschriftung. Eine
+# Kennung am Picker selbst wäre sinnlos („Picker öffnen"): Der Befehl ist
+# jedes Mal ein anderer. Richtig ist, dass der AUFRUFER die Kennung mitgibt
+# — dann werden daraus 25 Einträge, und neun hartkodierte deutsche
+# Beschriftungen an diesen Stellen müssen zuerst nach de.yml/en.yml (#619).
+# Das ist eine eigene Etappe, keine Restarbeit.
+# Stand: 1 Dateien, 1 Knöpfe.
 app/views/shared/_entity_picker.html.erb
-app/views/sources/_form.html.erb
-app/views/sources/_inline_fields.html.erb
-app/views/time_entries/_blade_card.html.erb

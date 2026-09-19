@@ -161,9 +161,9 @@
                            maxlength="<%= ActorPreferences::SIDEBAR_HEADING_NAME_MAX %>" required
                            aria-label="<%= t("preferences.sidebar_heading_name") %>"
                            class="flex-1 min-w-0 select-text text-[11px] uppercase tracking-wider bg-transparent border-0 px-0 py-0 focus:outline-none focus:ring-0">
-                    <button type="button" data-action="sidebar-layout-editor#removeHeading"
-                            title="<%= t("preferences.sidebar_heading_remove") %>" aria-label="<%= t("preferences.sidebar_heading_remove") %>"
-                            class="shrink-0 text-slate-400 hover:text-rose-600 cursor-pointer bg-transparent border-0 px-1">×</button>
+                    <%= ui_button :sidebar_ueberschrift_entfernen, size: "w-3.5 h-3.5",
+                          data: { action: "sidebar-layout-editor#removeHeading" },
+                          class: "shrink-0 text-slate-400 hover:text-rose-600 cursor-pointer bg-transparent border-0 px-1" %>
                   </li>
                 <% else %>
                   <li data-item-id="<%= item_id %>"

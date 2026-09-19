@@ -33,11 +33,10 @@
 
       <span class="ml-auto flex items-center gap-1">
         <%# #1018 (Hans, 2026-07-16): Mehrfachauswahl-Modus (wie bei Aufgaben). %>
-        <button type="button" data-action="bulk-select#toggleMode"
-                title="<%= t("shared.bulk.multi_select") %>"
-                class="inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer">
-          <%= icon "check", size: "w-3.5 h-3.5" %>
-        </button>
+        <%= ui_button :mehrfach_auswahl, size: "w-3.5 h-3.5",
+              title: t("shared.bulk.multi_select"),
+              data: { action: "bulk-select#toggleMode" },
+              class: "inline-flex items-center justify-center p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" %>
         <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
         <%= render "shared/list_toolbar",
               path:           communications_path,

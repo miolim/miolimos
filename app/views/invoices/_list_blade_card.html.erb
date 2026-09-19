@@ -45,11 +45,9 @@
       <%# #1049: Dashboard-Anhängen (#1005) sitzt jetzt in der Card-Werkzeugleiste. %>
       <%# Filter-Popover: Typ / Absender / Empfänger (GET-Reload). %>
       <div data-controller="popover" data-popover-fixed-value="true" class="relative inline-block">
-        <button type="button" data-action="click->popover#toggle"
-                title="<%= t("documents.list.filter") %>" aria-label="<%= t("documents.list.filter") %>"
-                class="p-1 rounded shrink-0 <%= active_filter ? 'text-emerald-600' : 'text-slate-500' %> hover:bg-slate-100">
-          <%= icon "filter" %>
-        </button>
+        <%= ui_button :liste_filtern,
+              data: { action: "click->popover#toggle" },
+              class: "p-1 rounded shrink-0 #{active_filter ? 'text-emerald-600' : 'text-slate-500'} hover:bg-slate-100" %>
         <div data-popover-target="content"
              class="hidden absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded shadow-lg p-3 w-64">
           <%= form_with url: list_card_invoices_path, method: :get, data: { turbo_frame: "invoices_list_frame" }, class: "space-y-2 text-xs" do %>

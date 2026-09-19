@@ -379,3 +379,38 @@ spalten_aufklappen:
 pdf_vollbild:
   icon: expand
   label: js.pdf.fullblade_title
+
+# ── Kommunikation, Dashboard, Dokumente, Rechnungen, Quellen ──────────────
+wartepunkt_aus_mail:
+  icon: waiting
+  label: communications.new_awaiting
+alle_als_gelesen:
+  icon: check
+  label: dashboard.agent.mark_all_read
+liste_filtern:
+  icon: filter
+  label: documents.list.filter
+an_stapel_anhaengen:
+  icon: plus_circle
+  label: history.append_to_stack
+position_oeffnen:
+  icon: chevron_right
+  label: documents.invoice.open_position
+infofeld_entfernen:
+  icon: x
+  label: documents.fields.infofield_remove
+sidebar_ueberschrift_entfernen:
+  icon: x
+  label: preferences.sidebar_heading_remove
+tag_symbol_entfernen:
+  icon: x
+  label: settings.tag_icons.row_remove
+creator_entfernen:
+  icon: x
+  label: sources.form.remove_creator
+identifier_entfernen:
+  icon: x
+  label: sources.form.remove_identifier
+zeitbuchung_loeschen:
+  icon: trash
+  label: time_entries.delete_entry

@@ -638,6 +638,7 @@ en:
         one: "%{count} highlight"
         other: "%{count} highlights"
       clear_filter: "Clear filter"
+      work_tree_count: "%{count}x in the outline — click to highlight"           # #1672: was hardcoded
       file_path: "Show file path"              # #1672
       search_mode: "Toggle display mode"       # #1672
       highlights_filter: "Filter by highlight colour"      # #1672

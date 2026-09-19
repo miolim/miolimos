@@ -642,6 +642,7 @@ de:
         one: "%{count} Hervorhebung"
         other: "%{count} Hervorhebungen"
       clear_filter: "Filter aufheben"
+      work_tree_count: "%{count}x in der Gliederung — klicken zum Hervorheben"   # #1672: war hartkodiert
       file_path: "Dateipfad anzeigen"          # #1672
       search_mode: "Anzeige-Modus umschalten"  # #1672
       highlights_filter: "Nach Markierungsfarbe filtern"   # #1672

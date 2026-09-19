@@ -21,14 +21,14 @@
       <%# #364-Fix (Hans, 2026-05-25 17:00): data-controller muss am
           Button (oder einem Ancestor) sitzen, sonst registriert
           Stimulus die click-Action nicht. %>
-      <button type="button"
-              data-controller="work-tree-highlight"
-              data-action="click->work-tree-highlight#flash"
-              data-work-tree-highlight-ki-uuid-param="<%= item.uuid %>"
-              title="<%= wtc %>x im Work-Tree — klicken zum Hervorheben"
-              class="w-4 shrink-0 text-right tabular-nums text-[11px] text-emerald-700 font-medium hover:bg-emerald-50 rounded cursor-pointer">
+      <%# #1672: Beschriftung war hartkodiert deutsch. %>
+      <%= ui_button :ki_gliederung_hervorheben,
+            title: t("knowledge.detail.work_tree_count", count: wtc),
+            data: { controller: "work-tree-highlight", action: "click->work-tree-highlight#flash",
+                    work_tree_highlight_ki_uuid_param: item.uuid },
+            class: "w-4 shrink-0 text-right tabular-nums text-[11px] text-emerald-700 font-medium hover:bg-emerald-50 rounded cursor-pointer" do %>
         <%= wtc %>
-      </button>
+      <% end %>
     <% else %>
       <span class="w-4 shrink-0 text-right tabular-nums text-[11px] text-slate-300">&nbsp;</span>
     <% end %>

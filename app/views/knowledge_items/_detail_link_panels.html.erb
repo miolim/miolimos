@@ -65,15 +65,15 @@
   <section data-controller="disclosure"
            data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.backlinks"
            class="border border-slate-200 rounded">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <%= ui_button :ki_verweise_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
       <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
       </span>
       <span class="font-medium"><%= t("knowledge.detail.backlinks") %></span>
       <span class="text-slate-400">· <%= incoming_sources.size %></span>
-    </button>
+    <% end %>
     <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-1">
       <%# #501 (Hans, 2026-06-04): Antwort-Quellen als Aufgaben-/KI-Titel
           + „: Antwort" mit passendem Icon; Klick öffnet die ganze

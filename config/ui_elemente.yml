@@ -1103,3 +1103,30 @@ antwort_entwurf_sichern:
   label: tasks.reply_save_draft
 antwort_senden:
   label: tasks.reply_send
+
+# ── Wissenseintrag: Personen und Verweise (#1672 Etappe 21) ─────────────
+ki_neue_quelle_klappen:
+  label: knowledge.form.new_source
+ki_kontakt_loesen:
+  icon: x
+  label: knowledge.chip.unlink
+ki_verweise_klappen:
+  icon: chevron_right
+  label: knowledge.detail.backlinks
+ki_personen_verweise_klappen:
+  icon: chevron_right
+  label: knowledge.list.backlinks.title
+# Die vier Abschnitte der Personen-Verweise: ein Befehl, Text vom Aufrufer.
+ki_verweis_abschnitt_klappen:
+  label: knowledge.list.backlinks.title
+ki_gliederung_hervorheben:
+  label: knowledge.detail.work_tree_count
+ki_zusammenfuehren_bestaetigen:
+  label: knowledge.detail.merge_confirm_ok
+ki_zusammenfuehren_abbrechen:
+  label: knowledge.detail.merge_confirm_cancel
+person_menue_oeffnen:
+  label: knowledge.person_status.menu_title
+person_bekannt_umschalten:
+  icon: user-check
+  label: knowledge.person_status.menu_title

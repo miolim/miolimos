@@ -32,12 +32,12 @@
                border-slate-200 rounded shadow-lg max-h-64 overflow-y-auto"></ul>
   </label>
 
-  <button type="button"
-          data-action="click->disclosure#toggle"
-          class="text-emerald-700 hover:underline cursor-pointer">
+  <%= ui_button :ki_neue_quelle_klappen,
+        data: { action: "click->disclosure#toggle" },
+        class: "text-emerald-700 hover:underline cursor-pointer" do %>
     <span data-disclosure-target="icon" class="inline-block transition-transform">▶</span>
     <%= t("knowledge.form.new_source") %>
-  </button>
+  <% end %>
 
   <div data-disclosure-target="content"
        class="hidden p-3 border border-emerald-200 rounded bg-emerald-50/30 space-y-2">

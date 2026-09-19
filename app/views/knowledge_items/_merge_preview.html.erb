@@ -48,18 +48,20 @@
       <p class="text-slate-600"><%= t("knowledge.detail.merge_nichts") %></p>
     <% end %>
     <div class="flex gap-1.5 pt-0.5">
-      <button type="button" data-merge-bestaetigen
-              class="px-2 py-1 rounded bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
-              onclick="this.disabled = true; fetch('<%= merge_knowledge_item_path(item.uuid) %>', {
-                         method: 'POST', credentials: 'same-origin',
-                         headers: { 'Content-Type': 'application/x-www-form-urlencoded',
-                                    'Accept': 'text/vnd.turbo-stream.html',
-                                    'X-CSRF-Token': document.querySelector('meta[name=&quot;csrf-token&quot;]')?.content || '' },
-                         body: 'target_uuid=<%= target.uuid %>'
-                       }).then(r =&gt; r.text()).then(html =&gt; window.Turbo.renderStreamMessage(html))"><%= t("knowledge.detail.merge_confirm_ok") %></button>
-      <button type="button" data-merge-abbrechen
-              class="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer"
-              onclick="this.closest('#knowledge_merge_chip_<%= item.uuid %>').replaceChildren()"><%= t("knowledge.detail.merge_confirm_cancel") %></button>
+      <%# #1672: Das inline-onclick baut den POST selbst (Turbo-Stream-Antwort);
+          es bleibt unveraendert, nur als Ruby-Zeichenkette statt als Attribut. %>
+      <%= ui_button :ki_zusammenfuehren_bestaetigen, "data-merge-bestaetigen": "",
+            class: "px-2 py-1 rounded bg-rose-600 text-white hover:bg-rose-700 cursor-pointer",
+            onclick: "this.disabled = true; fetch('#{merge_knowledge_item_path(item.uuid)}', " \
+                     "{ method: 'POST', credentials: 'same-origin', " \
+                     "headers: { 'Content-Type': 'application/x-www-form-urlencoded', " \
+                     "'Accept': 'text/vnd.turbo-stream.html', " \
+                     "'X-CSRF-Token': document.querySelector('meta[name=\\\"csrf-token\\\"]')?.content || '' }, " \
+                     "body: 'target_uuid=#{target.uuid}' " \
+                     "}).then(r => r.text()).then(html => window.Turbo.renderStreamMessage(html))" %>
+      <%= ui_button :ki_zusammenfuehren_abbrechen, "data-merge-abbrechen": "",
+            class: "px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer",
+            onclick: "this.closest('#knowledge_merge_chip_#{item.uuid}').replaceChildren()" %>
     </div>
   </div>
 </span>

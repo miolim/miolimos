@@ -35,9 +35,9 @@
   <section data-controller="disclosure"
            data-disclosure-storage-key-value="knowledge.<%= item.uuid %>.person_backlinks"
            class="border border-slate-200 rounded">
-    <button type="button"
-            data-action="click->disclosure#toggle"
-            class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded">
+    <%= ui_button :ki_personen_verweise_klappen,
+          data: { action: "click->disclosure#toggle" },
+          class: "w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-50 rounded" do %>
       <span data-disclosure-target="icon" class="inline-block transition-transform rotate-90 text-slate-400">
         <%= icon "chevron_right" %>
       </span>
@@ -48,16 +48,17 @@
           <% if n > 0 %><span class="mr-2"><%= label %> · <%= n %></span><% end %>
         <% end %>
       </span>
-    </button>
+    <% end %>
 
     <div data-disclosure-target="content" class="px-3 pb-3 border-t border-slate-100 pt-2 space-y-3">
 
       <% if related_kis.any? %>
         <details<%= ' open'.html_safe if related_kis.size <= 5 %>>
-          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+          <%= ui_button :ki_verweis_abschnitt_klappen, tag: :summary,
+                class: "text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1" do %>
             <span class="font-medium"><%= t("knowledge.list.backlinks.section_knowledge") %></span>
             <span>· <%= related_kis.size %></span>
-          </summary>
+          <% end %>
           <div class="mt-1 space-y-0.5">
             <%# #680 (Hans, 2026-06-13): Antwort-Quellen nicht als nackte,
                 titellose Antwort öffnen — über backlink_source_descriptor
@@ -83,10 +84,11 @@
 
       <% if tasks.any? %>
         <details<%= ' open'.html_safe if tasks.size <= 5 %>>
-          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+          <%= ui_button :ki_verweis_abschnitt_klappen, tag: :summary,
+                class: "text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1" do %>
             <span class="font-medium"><%= t("knowledge.list.backlinks.section_tasks") %></span>
             <span>· <%= tasks.size %></span>
-          </summary>
+          <% end %>
           <div class="mt-1 space-y-0.5">
             <% tasks.each do |t| %>
               <div class="text-[13px] flex items-center gap-2">
@@ -107,10 +109,11 @@
 
       <% if comms.any? %>
         <details<%= ' open'.html_safe if comms.size <= 5 %>>
-          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+          <%= ui_button :ki_verweis_abschnitt_klappen, tag: :summary,
+                class: "text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1" do %>
             <span class="font-medium"><%= t("knowledge.list.backlinks.section_emails") %></span>
             <span>· <%= comms.size %></span>
-          </summary>
+          <% end %>
           <div class="mt-1 space-y-0.5">
             <% comms.each do |cm| %>
               <% c = cm.communication; next unless c %>
@@ -134,10 +137,11 @@
 
       <% if awaitings_open.any? %>
         <details<%= ' open'.html_safe if awaitings_open.size <= 5 %>>
-          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1">
+          <%= ui_button :ki_verweis_abschnitt_klappen, tag: :summary,
+                class: "text-xs text-slate-500 cursor-pointer hover:text-slate-900 flex items-center gap-1" do %>
             <span class="font-medium"><%= t("knowledge.list.backlinks.section_awaiting") %></span>
             <span>· <%= awaitings_open.size %></span>
-          </summary>
+          <% end %>
           <div class="mt-1 space-y-0.5">
             <% awaitings_open.each do |a| %>
               <div class="text-[13px] flex items-center gap-2">

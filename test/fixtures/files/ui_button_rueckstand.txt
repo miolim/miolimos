@@ -2,7 +2,7 @@
 # Die Liste darf NUR schrumpfen — neue Dateien werden gleich mit ui_button
 # gebaut. Zwei Wächter halten das ehrlich (test/services/ui_button_wachter_test.rb).
 #
-# Stand: 62 Dateien, 127 Knöpfe.
+# Stand: 56 Dateien, 97 Knöpfe.
 app/views/communications/_detail_body.html.erb
 app/views/communications/_index_list_blade.html.erb
 app/views/dashboard/_agent_section.html.erb
@@ -10,19 +10,13 @@ app/views/documents/_list_blade_card.html.erb
 app/views/history/_rows.html.erb
 app/views/invoices/_invoice_lines.html.erb
 app/views/invoices/_list_blade_card.html.erb
-app/views/knowledge_items/_affiliations_editor.html.erb
-app/views/knowledge_items/_bank_account_editor.html.erb
-app/views/knowledge_items/_contact_points_editor.html.erb
 app/views/knowledge_items/_detail_body_section.html.erb
 app/views/knowledge_items/_detail_header.html.erb
 app/views/knowledge_items/_detail_section.html.erb
-app/views/knowledge_items/_identifiers_editor.html.erb
 app/views/knowledge_items/_list_row.html.erb
 app/views/knowledge_items/_logo_field.html.erb
 app/views/knowledge_items/_pinned_list_blade_card.html.erb
-app/views/knowledge_items/_postal_address_editor.html.erb
 app/views/knowledge_items/_refs_blade.html.erb
-app/views/knowledge_items/_relationships_editor.html.erb
 app/views/knowledge_items/_stack.html.erb
 app/views/knowledge_items/_stack_card.html.erb
 app/views/knowledge_items/_stack_new_card.html.erb

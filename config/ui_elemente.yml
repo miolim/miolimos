@@ -20,3 +20,84 @@
 # Ein Fork legt seine eigenen Kennungen in eine zweite Datei daneben
 # (`config/ui_elemente.<fork>.yml`) — sie wird automatisch mitgelesen, und der
 # Release-Merge bleibt konfliktfrei.
+
+# ── Abschnitts-Editoren am Wissenseintrag (Person/Organisation) ────────────
+# Sechsmal dieselbe Bauform, sechs verschiedene BEFEHLE: Ein Plus, das eine
+# Anschrift anlegt, ist nicht dasselbe wie eines, das eine Bankverbindung
+# anlegt — auch wenn beide gleich aussehen.
+anschrift_bearbeiten:
+  icon: pencil
+  label: actions.edit
+anschrift_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.address.add
+anschrift_kopieren:
+  icon: copy
+  label: knowledge.editors.address.copy
+anschrift_entfernen:
+  icon: x
+  label: knowledge.editors.address.remove
+
+bankverbindung_bearbeiten:
+  icon: pencil
+  label: actions.edit
+bankverbindung_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.bank.add
+bankverbindung_kopieren:
+  icon: copy
+  label: knowledge.editors.bank.copy
+bankverbindung_entfernen:
+  icon: x
+  label: knowledge.editors.bank.remove
+
+kontaktweg_bearbeiten:
+  icon: pencil
+  label: actions.edit
+kontaktweg_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.contacts.add
+kontaktweg_nummer_kopieren:
+  icon: copy
+  label: knowledge.editors.contacts.copy_number
+mail_mit_text_schreiben:
+  icon: mail_plus
+  label: knowledge.editors.contacts.compose_with_text
+kontaktweg_entfernen:
+  icon: x
+  label: knowledge.editors.contacts.remove
+
+kennung_bearbeiten:
+  icon: pencil
+  label: actions.edit
+kennung_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.identifiers.add
+# Die Beschriftung trägt einen Platzhalter (%{label}) — der Aufruf reicht den
+# fertigen Text als title mit.
+kennung_kopieren:
+  icon: copy
+  label: knowledge.editors.identifiers.add
+kennung_entfernen:
+  icon: x
+  label: knowledge.editors.identifiers.remove
+
+affiliation_bearbeiten:
+  icon: pencil
+  label: actions.edit
+affiliation_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.affiliations.add
+affiliation_entfernen:
+  icon: x
+  label: knowledge.editors.affiliations.remove
+
+beziehung_bearbeiten:
+  icon: pencil
+  label: actions.edit
+beziehung_hinzufuegen:
+  icon: plus_circle
+  label: knowledge.editors.relationships.add
+beziehung_entfernen:
+  icon: x
+  label: knowledge.editors.relationships.remove

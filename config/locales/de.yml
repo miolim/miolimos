@@ -739,6 +739,7 @@ de:
         title: "Adresse"
         add: "Adresse hinzufügen"
         copy: "Adresse kopieren"
+        remove: "Adresse entfernen"   # #1669
         copied: "Adresse kopiert."
         empty: "Keine Adresse."
         postal: "Postadresse"
@@ -756,6 +757,7 @@ de:
         title: "Bankverbindungen"
         add: "Bankverbindung hinzufügen"
         copy: "IBAN kopieren"
+        remove: "Bankverbindung entfernen"   # #1669
         copied: "IBAN kopiert."
         empty: "Keine Bankverbindung."
         iban_placeholder: "IBAN"
@@ -766,12 +768,14 @@ de:
       relationships:
         title: "Beziehungen"
         add: "Beziehung hinzufügen"
+        remove: "Beziehung entfernen"   # #1669
         empty: "Keine Beziehungen."
         target_placeholder: "Person/Org (Title oder UUID)"
         kind_placeholder: "Art (z.B. Mentor:in)"
       contacts:
         title: "Kontaktdaten"
         add: "Kontaktdaten hinzufügen"
+        remove: "Kontaktdaten entfernen"   # #1669
         empty: "Keine Kontaktdaten."
         kind_email: "E-Mail"
         kind_phone: "Telefon"
@@ -795,6 +799,7 @@ de:
       affiliations:
         title: "Affiliations"
         add: "Affiliation hinzufügen"
+        remove: "Affiliation entfernen"   # #1669
         empty: "Keine Affiliations."
         org_placeholder: "Organisation"
         role_placeholder: "Rolle"
@@ -802,6 +807,7 @@ de:
       identifiers:
         title: "IDs"
         add: "ID hinzufügen"
+        remove: "ID entfernen"   # #1669
         empty: "Keine IDs."
         copy: "%{label} kopieren"
         copied: "%{label} kopiert."

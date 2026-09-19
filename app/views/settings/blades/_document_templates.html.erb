@@ -24,15 +24,12 @@
             <ul class="divide-y divide-slate-100">
               <% templates.each_with_index do |ki, idx| %>
                 <li class="px-4 py-2 flex items-center gap-3 group hover:bg-slate-50">
-                  <button type="button"
-                          data-controller="blade-link"
-                          data-blade-link-kind-value="ki"
-                          data-blade-link-id-value="<%= ki.uuid %>"
-                          data-action="click->blade-link#append"
-                          title="<%= t("settings.document_templates.open_hint") %>"
-                          class="flex-1 min-w-0 text-left text-sm font-medium text-slate-900 hover:text-emerald-700 truncate bg-transparent border-0 p-0 cursor-pointer">
+                  <%= ui_button :dokumentvorlage_oeffnen,
+                        data: { controller: "blade-link", action: "click->blade-link#append",
+                                blade_link_kind_value: "ki", blade_link_id_value: ki.uuid },
+                        class: "flex-1 min-w-0 text-left text-sm font-medium text-slate-900 hover:text-emerald-700 truncate bg-transparent border-0 p-0 cursor-pointer" do %>
                     <%= ki.title %>
-                  </button>
+                  <% end %>
                   <%# Dokumenttypen nutzen nur die ÄLTESTE Vorlage (#766) —
                       bei Mehrfachbelegung sichtbar machen, welche zieht.
                       E-Mail-Vorlagen sind alle wählbar (Popover-Auswahl). %>
@@ -42,7 +39,7 @@
                     </span>
                   <% end %>
                   <span class="shrink-0 text-xs text-slate-400"><%= l ki.created_at.to_date, format: :short %></span>
-                  <%= button_to t("settings.document_templates.remove"), settings_document_template_path(ki.uuid),
+                  <%= ui_button_to :dokumentvorlage_entfernen, settings_document_template_path(ki.uuid),
                         method: :delete,
                         form: { class: "inline shrink-0", data: { turbo_confirm: t("settings.document_templates.remove_confirm", title: ki.title) } },
                         class: "text-xs text-rose-600 hover:text-rose-800 bg-transparent border-0 cursor-pointer p-0" %>
@@ -75,7 +72,7 @@
                   class: "w-full text-sm rounded border border-slate-200 px-2 py-1 focus:border-slate-400 focus:outline-none" %>
           </label>
           <div class="flex justify-end pt-1">
-            <%= f.submit t("actions.create"),
+            <%= ui_button :dokumentvorlage_anlegen, type: :submit,
                   class: "px-3 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
           </div>
         <% end %>

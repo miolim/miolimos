@@ -279,6 +279,7 @@ de:
       restore: "Wiederherstellen"
     no_longer_next_step: "Nicht mehr nächster Schritt"
     backlinks: "Verweise auf diese Aufgabe"          # #1672
+    open_card: "Aufgaben-Karte öffnen"
     older_replies_toggle: "Ältere Antworten ein-/ausklappen"
     toggle_done: "Erledigt umschalten"
     priority_set: "Priorität setzen"

@@ -51,9 +51,9 @@
   <% end %>
 
   <div class="flex gap-2">
-    <%= f.submit t("actions.save"),
+    <%= ui_button :agent_formular_speichern, type: :submit,
           class: "px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 cursor-pointer" %>
-    <%= link_to t("actions.cancel"), settings_agents_path,
+    <%= ui_link :agent_formular_abbrechen, settings_agents_path,
           class: "px-3 py-1.5 rounded border border-slate-200 text-sm hover:bg-slate-50" %>
   </div>
 <% end %>

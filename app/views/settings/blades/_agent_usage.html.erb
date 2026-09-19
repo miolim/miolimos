@@ -15,7 +15,8 @@
     <span class="font-semibold"><%= t("settings.agent_usage.title") %></span>
     <nav class="flex items-center gap-0.5 text-xs">
       <% [7, 30, 90, 365].each do |n| %>
-        <%= link_to settings_blade_path("agent_usage", tage: n),
+        <%= ui_link :agent_zeitraum_waehlen, settings_blade_path("agent_usage", tage: n),
+              title: t("settings.agent_usage.days", count: n),
               data: { turbo_frame: "agent_usage_blade_frame" },
               class: "px-2 py-0.5 rounded #{@tage == n ? 'font-medium text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}" do %>
           <%= t("settings.agent_usage.days", count: n) %>
@@ -141,11 +142,10 @@
                 <% if nummer.present? %>
                   <%# #1660 R2 (Hans): Nummer UND Titel; beides öffnet die Karte. %>
                   <% titel = @usage_aufgaben_titel[nummer] %>
-                  <button type="button" data-controller="blade-link"
-                          data-blade-link-kind-value="task" data-blade-link-id-value="<%= nummer %>"
-                          data-action="click->blade-link#append"
-                          title="<%= titel %>"
-                          class="bg-transparent border-0 p-0 text-left cursor-pointer text-sky-700 hover:underline">#<%= nummer %><% if titel.present? %> <span class="text-slate-700"><%= titel %></span><% end %></button>
+                  <%= ui_button :aufgabe_aus_verbrauch_oeffnen, title: titel,
+                        data: { controller: "blade-link", action: "click->blade-link#append",
+                                blade_link_kind_value: "task", blade_link_id_value: nummer },
+                        class: "bg-transparent border-0 p-0 text-left cursor-pointer text-sky-700 hover:underline" do %>#<%= nummer %><% if titel.present? %> <span class="text-slate-700"><%= titel %></span><% end %><% end %>
                 <% else %>
                   <span class="text-slate-400"><%= t("settings.agent_usage.without_task") %></span>
                 <% end %>

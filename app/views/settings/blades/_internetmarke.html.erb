@@ -14,9 +14,9 @@
       <div class="text-xs text-slate-400"><%= t("settings.internetmarke.secrets_stored") %></div>
     </div>
     <div class="flex items-center gap-2">
-      <%= button_to t("settings.internetmarke.test"), test_settings_internetmarke_path, method: :post,
+      <%= ui_button_to :internetmarke_testen, test_settings_internetmarke_path, method: :post,
             class: "text-xs px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer" %>
-      <%= button_to t("settings.internetmarke.remove"), settings_internetmarke_path, method: :delete,
+      <%= ui_button_to :internetmarke_entfernen, settings_internetmarke_path, method: :delete,
             form: { data: { turbo_confirm: t("settings.internetmarke.remove_confirm") } },
             class: "text-xs px-2 py-1 rounded border border-slate-200 text-rose-600 hover:bg-rose-50 cursor-pointer" %>
     </div>
@@ -46,8 +46,6 @@
                class="mt-0.5 w-full text-sm border border-slate-200 rounded px-2 py-1">
       </label>
     </div>
-    <button type="submit" class="text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
-      <%= t("settings.internetmarke.save") %>
-    </button>
+    <%= ui_button :internetmarke_speichern, type: :submit, class: "text-sm px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" %>
   <% end %>
 </div>

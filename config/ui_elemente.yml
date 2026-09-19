@@ -1275,3 +1275,35 @@ infofelder_speichern:
 druckstueck_verknuepfung_loesen:
   icon: x
   label: knowledge.chip.unlink
+
+# ── Einstellungen: Listen und Agenten (#1672 Etappe 27) ─────────────────
+einstellungsseite_oeffnen:
+  label: nav.settings
+agent_anlegen:
+  label: settings.agents.list.new_agent
+agent_oeffnen:
+  label: settings.agents.list.detail
+agent_zeitraum_waehlen:
+  label: settings.agent_usage.title
+aufgabe_aus_verbrauch_oeffnen:
+  label: tasks.open_card
+dokumentvorlage_oeffnen:
+  label: settings.document_templates.open_hint
+dokumentvorlage_entfernen:
+  label: settings.document_templates.remove
+dokumentvorlage_anlegen:
+  label: actions.create
+internetmarke_testen:
+  label: settings.internetmarke.test
+internetmarke_entfernen:
+  label: settings.internetmarke.remove
+internetmarke_speichern:
+  label: settings.internetmarke.save
+ki_vorlage_loeschen:
+  label: actions.delete
+ki_vorlage_speichern:
+  label: actions.create
+agent_formular_speichern:
+  label: actions.save
+agent_formular_abbrechen:
+  label: actions.cancel

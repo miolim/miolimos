@@ -23,17 +23,15 @@
     <ul class="divide-y divide-slate-100 text-[13px]">
       <% Settings::BladesController::PAGES.each do |key, spec| %>
         <li class="group hover:bg-slate-50 flex items-center">
-          <button type="button"
-                  data-controller="blade-link"
-                  data-blade-link-kind-value="settings_page"
-                  data-blade-link-id-value="<%= key %>"
-                  data-action="click->blade-link#append"
-                  class="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 text-left
-                         bg-transparent border-0 cursor-pointer text-slate-700 hover:text-slate-900">
+          <%= ui_button :einstellungsseite_oeffnen, title: spec[:title],
+                data: { controller: "blade-link", action: "click->blade-link#append",
+                        blade_link_kind_value: "settings_page", blade_link_id_value: key },
+                class: "flex-1 min-w-0 flex items-center gap-2 px-3 py-2 text-left
+                        bg-transparent border-0 cursor-pointer text-slate-700 hover:text-slate-900" do %>
             <span class="shrink-0 text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon spec[:icon] %></span>
             <span class="flex-1 min-w-0 truncate"><%= t("settings.pages.#{key}") %></span>
             <span class="shrink-0 text-slate-300 group-hover:text-slate-500 [&_svg]:w-4 [&_svg]:h-4"><%= icon "chevron_right" %></span>
-          </button>
+          <% end %>
         </li>
       <% end %>
     </ul>

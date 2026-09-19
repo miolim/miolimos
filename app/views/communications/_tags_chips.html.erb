@@ -8,13 +8,11 @@
         <span class="inline-flex items-center opacity-70"><%= ic %></span>
       <% end %>
       <span><%= tag %></span>
-      <%= button_to communication_tag_path(comm, tag: tag), method: :delete,
+      <%= ui_button_to :mail_tag_entfernen, communication_tag_path(comm, tag: tag), method: :delete,
+            size: "w-3.5 h-3.5",
             form: { class: "inline m-0 p-0", data: { turbo_stream: true } },
-            title: t("communications.remove_tag"),
             "aria-label": t("communications.remove_tag_named", tag: tag),
-            class: "p-0 bg-transparent border-0 cursor-pointer leading-none text-slate-400 hover:text-rose-600" do %>
-        <span class="text-sm leading-none">×</span>
-      <% end %>
+            class: "p-0 bg-transparent border-0 cursor-pointer leading-none text-slate-400 hover:text-rose-600" %>
     </span>
   <% end %>
 </div>

@@ -7,12 +7,10 @@
   <% gmail = comm.respond_to?(:gmail_url) ? comm.gmail_url : nil %>
   <div class="flex items-center justify-end gap-1 text-slate-500 [&_svg]:w-5 [&_svg]:h-5">
     <%# Aufgabe erstellen %>
-    <%= button_to create_task_communication_path(comm), method: :post,
+    <%= ui_button_to :mail_aufgabe_erstellen, create_task_communication_path(comm), method: :post,
           form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
-          title: t("communications.create_task_title"), "aria-label": t("communications.create_task"),
-          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer" do %>
-      <%= icon "tasks" %>
-    <% end %>
+          title: t("communications.create_task_title"),
+          class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900 bg-transparent border-0 cursor-pointer" %>
 
     <%# Wartepunkt — Icon öffnet ein kleines Formular (Worauf? + Datum). %>
     <details class="relative">
@@ -31,7 +29,7 @@
             <%= f.date_field :follow_up_at, value: (Date.today + 7),
                   class: "w-full rounded border border-slate-200 px-2 py-1 text-sm" %>
           </div>
-          <%= f.submit t("communications.new_awaiting"),
+          <%= ui_button :mail_wartepunkt_anlegen, type: :submit,
                 class: "text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 cursor-pointer" %>
         <% end %>
       </div>
@@ -39,36 +37,27 @@
 
     <%# In Gmail öffnen %>
     <% if gmail %>
-      <%= link_to gmail, target: "_blank", rel: "noopener",
-            title: t("communications.open_gmail"), "aria-label": t("communications.open_gmail"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "mail" %>
-      <% end %>
+      <%= ui_link :in_gmail_oeffnen, gmail, target: "_blank", rel: "noopener",
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
     <% end %>
 
     <%# Vollansicht / Zurück %>
     <% if local_assigns[:expanded] %>
-      <%= link_to (request.referer.presence || communications_path),
-            title: t("communications.back_to_list"), "aria-label": t("communications.back"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "reduce" %>
-      <% end %>
+      <%= ui_link :mail_zurueck, (request.referer.presence || communications_path),
+            title: t("communications.back_to_list"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
     <% else %>
-      <%= link_to communication_path(comm), data: { turbo_frame: "_top" },
-            title: t("communications.open_full"), "aria-label": t("communications.full_view"),
-            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" do %>
-        <%= icon "expand" %>
-      <% end %>
+      <%= ui_link :mail_vollansicht, communication_path(comm), data: { turbo_frame: "_top" },
+            title: t("communications.open_full"),
+            class: "p-1 rounded hover:bg-slate-100 hover:text-slate-900" %>
     <% end %>
 
     <%# Entfernen %>
-    <%= button_to communication_path(comm), method: :delete,
+    <%= ui_button_to :mail_entfernen, communication_path(comm), method: :delete,
           form: { class: "inline m-0 p-0", data: { turbo_frame: "_top",
                     turbo_confirm: t("communications.remove_confirm") } },
-          title: t("communications.remove_title"), "aria-label": t("communications.remove"),
-          class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" do %>
-      <%= icon "trash" %>
-    <% end %>
+          title: t("communications.remove_title"),
+          class: "p-1 rounded hover:bg-rose-50 hover:text-rose-700 bg-transparent border-0 cursor-pointer" %>
   </div>
 
   <%# Betreffzeile — ohne Icons (#696). %>
@@ -91,7 +80,7 @@
                    class="w-14 border border-slate-200 rounded px-1 py-0.5 text-xs"
                    aria-label="<%= t("communications.call_duration_label") %>">
             <span><%= t("communications.call_duration_unit") %></span>
-            <button type="submit" class="text-xs text-emerald-700 hover:underline"><%= t("actions.save") %></button>
+            <%= ui_button :gespraechsdauer_speichern, type: :submit, class: "text-xs text-emerald-700 hover:underline" %>
           <% end %>
         <% end %>
         <% if comm.oauth_credential %>
@@ -175,17 +164,15 @@
             <span class="flex-1 min-w-0 truncate text-slate-700" title="<%= a[:filename] %>"><%= a[:filename] %></span>
             <span class="shrink-0 text-[11px] text-slate-400"><%= number_to_human_size(a[:size]) %></span>
             <% if (item = imported[idx]) %>
-              <button type="button"
-                      data-controller="blade-link"
-                      data-blade-link-kind-value="inbox_item"
-                      data-blade-link-id-value="<%= item.id %>"
-                      data-action="click->blade-link#append"
-                      title="<%= t("communications.open_in_inbox") %>"
-                      class="shrink-0 text-[11px] px-2 py-0.5 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer inline-flex items-center gap-1">
+              <%= ui_button :anhang_im_posteingang_oeffnen,
+                    title: t("communications.open_in_inbox"),
+                    data: { controller: "blade-link", action: "click->blade-link#append",
+                            blade_link_kind_value: "inbox_item", blade_link_id_value: item.id },
+                    class: "shrink-0 text-[11px] px-2 py-0.5 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer inline-flex items-center gap-1" do %>
                 <%= t("communications.in_inbox_short") %> <%= icon "external_link", size: "w-3 h-3" %>
-              </button>
+              <% end %>
             <% else %>
-              <%= button_to t("communications.import_to_inbox"),
+              <%= ui_button_to :anhang_importieren,
                     communication_import_attachment_path(comm, index: idx, stay_in_stack: 1),
                     method: :post,
                     form: { class: "inline m-0 p-0", data: { turbo_frame: "_top" } },
@@ -233,8 +220,8 @@
       <%= form_with url: communication_portal_replies_path(comm), method: :post, local: true, class: "space-y-2" do %>
         <textarea name="body" rows="3" required placeholder="<%= t("communications.reply_placeholder") %>"
                   class="w-full rounded border border-slate-200 bg-white px-2 py-1 text-sm"></textarea>
-        <button type="submit" class="text-xs px-3 py-1.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer">
-          <%= t("communications.portal_reply_submit") %></button>
+        <%= ui_button :portal_antwort_senden, type: :submit,
+              class: "text-xs px-3 py-1.5 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer" %>
       <% end %>
     </div>
   <% end %>

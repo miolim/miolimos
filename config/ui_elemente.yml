@@ -536,3 +536,42 @@ ki_abbrechen:
   label: actions.cancel
 ersetzung_rueckgaengig:
   label: knowledge.detail.undo
+
+# ── Kommunikation: Detail (#1672 Etappe 5) ───────────────────────────────
+mail_aufgabe_erstellen:
+  icon: tasks
+  label: communications.create_task
+mail_wartepunkt_anlegen:
+  label: communications.new_awaiting
+in_gmail_oeffnen:
+  icon: mail
+  label: communications.open_gmail
+mail_zurueck:
+  icon: reduce
+  label: communications.back
+mail_vollansicht:
+  icon: expand
+  label: communications.full_view
+mail_entfernen:
+  icon: trash
+  label: communications.remove
+gespraechsdauer_speichern:
+  label: actions.save
+anhang_im_posteingang_oeffnen:
+  label: communications.in_inbox_short
+anhang_importieren:
+  label: communications.import_to_inbox
+portal_antwort_senden:
+  label: communications.portal_reply_submit
+mails_stapel_anwenden:
+  label: shared.bulk.apply
+mails_stapel_loeschen:
+  label: actions.delete
+mails_stapel_abbrechen:
+  label: actions.cancel
+mail_tag_entfernen:
+  icon: x
+  label: communications.remove_tag
+mail_thema_loesen:
+  icon: x
+  label: communications.unlink_topic

@@ -10,16 +10,12 @@
 #
 # Beide Listen dürfen nur SCHRUMPFEN. Neue Bedienelemente landen in keiner von
 # beiden: Sie werden gleich mit ui_button/ui_button_to/ui_link gebaut.
-# Stand: 180 Dateien, 413 Bedienelemente.
+# Stand: 176 Dateien, 398 Bedienelemente.
 app/views/bank_ledgers/_blade_card.html.erb
 app/views/bank_ledgers/_list_blade_card.html.erb
 app/views/calendar/_item_row.html.erb
 app/views/calendar/_list_blade.html.erb
 app/views/calendar/_period.html.erb
-app/views/communications/_bulk_select_bar.html.erb
-app/views/communications/_detail_body.html.erb
-app/views/communications/_tags_chips.html.erb
-app/views/communications/_topics_chips.html.erb
 app/views/dashboard/_agent_section.html.erb
 app/views/dashboard/_index_list_blade.html.erb
 app/views/documents/_blade_card.html.erb

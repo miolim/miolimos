@@ -109,41 +109,14 @@ module Inbox
 
       private
 
+      # #1675: über SafeHttp — interne Adressen gesperrt (auch als Ziel einer
+      # Weiterleitung), Größengrenze, relative Weiterleitungen (#1462) aufgelöst.
       def fetch_html(url, max_redirects: 5)
-        uri = URI.parse(url)
-        max_redirects.times do
-          res = Net::HTTP.start(uri.host, uri.port,
-                                use_ssl: uri.scheme == "https",
-                                open_timeout: 5, read_timeout: 10) do |http|
-            http.request(Net::HTTP::Get.new(uri, "User-Agent" => "miolimOS/1.0 (+webclip)"))
-          end
-          case res
-          when Net::HTTPSuccess
-            return res.body.to_s.force_encoding("UTF-8")
-          when Net::HTTPRedirection
-            # #1462: `Location` darf laut RFC 7231 eine RELATIVE Referenz
-            # sein, und viele Seiten nutzen das — die FAZ etwa antwortet auf
-            # einen Kurzlink mit `Location: /aktuell/feuilleton/…`.
-            # `URI.parse` macht daraus ein URI::Generic ohne Host, und der
-            # naechste Aufruf starb mit „not an HTTP URI" — einer Meldung,
-            # die nach einem Protokoll-Problem klingt und keines war.
-            # `URI.join` loest relativ wie absolut gegen die aktuelle Adresse
-            # auf; ein absolutes Location ersetzt sie dabei vollstaendig.
-            ziel = res["location"].to_s
-            raise "Weiterleitung ohne Ziel (HTTP #{res.code}) fuer #{uri}" if ziel.empty?
-
-            uri = URI.join(uri, ziel)
-            # Nach der Aufloesung kann immer noch etwas stehen, das kein
-            # Web-Aufruf ist (`mailto:`, `javascript:`). Dann lieber sagen,
-            # was los ist, als es Net::HTTP kryptisch melden zu lassen.
-            unless uri.is_a?(URI::HTTP)
-              raise "Weiterleitung auf #{uri.scheme.presence || 'unbekanntes Schema'}: #{uri}"
-            end
-          else
-            raise "HTTP #{res.code} für #{url}"
-          end
-        end
-        raise "Zu viele Redirects für #{url}"
+        SafeHttp.get(url, headers: { "User-Agent" => "miolimOS/1.0 (+webclip)" },
+                     open_timeout: 5, read_timeout: 10, max_redirects: max_redirects)
+                .body.force_encoding("UTF-8")
+      rescue SafeHttp::Error => e
+        raise e.message
       end
 
       def extract_title(html)

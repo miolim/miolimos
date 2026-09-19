@@ -70,23 +70,16 @@ class FetchInboxTitleJob < ApplicationJob
   end
 
   def fetch_html_title(url)
-    uri = URI.parse(url)
-    return nil unless %w[http https].include?(uri.scheme)
-
-    response = Net::HTTP.start(uri.host, uri.port,
-                                use_ssl: uri.scheme == "https",
-                                open_timeout: HTTP_TIMEOUT,
-                                read_timeout: HTTP_TIMEOUT) do |http|
-      req = Net::HTTP::Get.new(uri.request_uri,
-                                "User-Agent" => USER_AGENT,
-                                "Accept" => "text/html,application/xhtml+xml")
-      http.request(req)
-    end
-    return nil unless response.is_a?(Net::HTTPSuccess)
+    # #1675: über SafeHttp — interne Adressen gesperrt, Größengrenze (für einen
+    # Titel reichen 2 MB), Weiterleitungen werden jetzt verfolgt.
+    antwort = SafeHttp.get(url, headers: { "User-Agent" => USER_AGENT,
+                                           "Accept" => "text/html,application/xhtml+xml" },
+                           open_timeout: HTTP_TIMEOUT, read_timeout: HTTP_TIMEOUT,
+                           max_bytes: 2 * 1024 * 1024)
 
     # Encoding aus Content-Type-Header oder einfach UTF-8 forcieren —
     # genaue Detection wäre Overkill für reine Title-Extraktion.
-    body = response.body.to_s.force_encoding("UTF-8").scrub
+    body = antwort.body.force_encoding("UTF-8").scrub
     if (m = body.match(%r{<title[^>]*>(.*?)</title>}im))
       decode_html_entities(m[1].strip).gsub(/\s+/, " ")
     end

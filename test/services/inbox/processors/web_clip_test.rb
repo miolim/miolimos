@@ -292,7 +292,9 @@ class Inbox::Processors::WebClipTest < ActiveSupport::TestCase
       res.status = 302
     end
     thread = Thread.new { server.start }
-    yield "http://127.0.0.1:#{server.config[:Port]}"
+    # #1675: Der Abruf läuft über SafeHttp und sperrt interne Adressen — der
+    # Testserver auf 127.0.0.1 wird ausdrücklich und nur für diesen Block erlaubt.
+    SafeHttp.intern_erlaubt { yield "http://127.0.0.1:#{server.config[:Port]}" }
   ensure
     server&.shutdown
     thread&.join(2)

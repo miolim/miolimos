@@ -9,7 +9,17 @@ require "open-uri"
 
 class LucideFetcher
   ICONS_DIR = Rails.root.join("app/views/shared/icons")
-  CDN_URL   = "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/%s.svg".freeze
+  # #1675: auf eine Version FESTGELEGT statt `@latest` — was heute geprüft ist,
+  # ist morgen dasselbe. Anheben per LUCIDE_STATIC_VERSION oder hier.
+  VERSION   = ENV.fetch("LUCIDE_STATIC_VERSION", "1.47.0")
+  CDN_URL   = "https://cdn.jsdelivr.net/npm/lucide-static@#{VERSION}/icons/%s.svg".freeze
+
+  # #1675: Das Ergebnis wird als ERB-Partial geschrieben — also als Code, den
+  # der Server ausführt. Durch kommt deshalb nur, was ein Strich-Icon braucht.
+  ERLAUBTE_ELEMENTE  = %w[path circle rect line polyline polygon ellipse g].freeze
+  ERLAUBTE_ATTRIBUTE = %w[d cx cy r rx ry x y x1 y1 x2 y2 width height points transform
+                          fill stroke stroke-width stroke-linecap stroke-linejoin].freeze
+  HARMLOSER_WERT     = /\A[\w\s.,\-+()#%]*\z/
   TIMEOUT   = 5  # seconds
 
   # Stellt sicher, dass ein Icon-Partial existiert. Gibt true zurueck,
@@ -23,18 +33,42 @@ class LucideFetcher
 
     url = format(CDN_URL, name)
     svg = URI.open(url, read_timeout: TIMEOUT).read
-    # Inner: alles zwischen <svg ...> und </svg>, gestripped.
-    m = svg.match(/<svg[^>]*>(.*)<\/svg>/m)
-    return false unless m
-    inner = m[1].strip
-    return false if inner.empty?
+    inner = bereinige(svg)
+    return false if inner.blank?
 
-    File.write(path, "<%# Lucide #{name} (auto-imported) %>\n#{inner}\n")
+    File.write(path, "<%# Lucide #{name} (auto-imported, lucide-static #{VERSION}) %>\n#{inner}\n")
     true
   rescue StandardError => e
     Rails.logger.warn "LucideFetcher: failed to fetch #{name}: #{e.class} #{e.message}"
     false
   end
+
+  # #1675: Das gelieferte SVG NEU AUFBAUEN statt durchreichen: nur erlaubte
+  # Formen mit erlaubten Attributen und harmlosen Werten. Alles andere —
+  # `<%`, Skripte, Ereignis-Attribute, Verweise, Fremdelemente — entfällt, weil
+  # es gar nicht erst übernommen wird. nil, wenn keine Form übrig bleibt.
+  def self.bereinige(svg)
+    require "nokogiri"
+    doc   = Nokogiri::XML(svg.to_s) { |cfg| cfg.nonet.recover }
+    wurzel = doc.root
+    return nil unless wurzel&.name == "svg"
+    doc.remove_namespaces!
+    formen = wurzel.element_children.filter_map { |knoten| erlaubte_form(knoten) }
+    formen.presence&.join("\n")
+  end
+
+  def self.erlaubte_form(knoten)
+    return nil unless ERLAUBTE_ELEMENTE.include?(knoten.name)
+    attribute = knoten.attribute_nodes.filter_map do |a|
+      next unless ERLAUBTE_ATTRIBUTE.include?(a.name) && a.value.match?(HARMLOSER_WERT)
+      %(#{a.name}="#{a.value}")
+    end
+    kinder = knoten.name == "g" ? knoten.element_children.filter_map { |k| erlaubte_form(k) } : []
+    return nil if knoten.name == "g" && kinder.empty?
+    offen = ["<#{knoten.name}", *attribute].join(" ")
+    kinder.empty? ? "#{offen} />" : "#{offen}>#{kinder.join}</#{knoten.name}>"
+  end
+  private_class_method :erlaubte_form
 
   # Schluckt eine Liste — gibt Hash {name => true/false} zurueck.
   def self.ensure_all(names)

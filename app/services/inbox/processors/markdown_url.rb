@@ -59,30 +59,21 @@ module Inbox
 
       private
 
+      # #1675: über SafeHttp (interne Adressen gesperrt, Größengrenze). Nebenbei
+      # behoben: Hier stand noch `URI.parse(res["location"])` — der Fehler mit
+      # relativen Weiterleitungen, den der Web-Clip seit #1462 nicht mehr hat.
       def fetch_markdown(url, max_redirects: 5)
-        uri = URI.parse(url)
-        max_redirects.times do
-          res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
-                                open_timeout: 5, read_timeout: 15) do |http|
-            http.request(Net::HTTP::Get.new(uri,
-              "User-Agent" => "miolimOS/1.0 (+md-import)",
-              "Accept"     => "text/markdown, text/plain, */*"))
-          end
-          case res
-          when Net::HTTPSuccess
-            body = res.body.to_s.dup.force_encoding("UTF-8")
-            raise "Datei ist kein Text (Binärinhalt)" unless body.valid_encoding?
-            if body.lstrip.start_with?("<!DOCTYPE", "<!doctype", "<html", "<HTML")
-              raise "URL lieferte HTML statt Markdown — dafür den Web-Clip nutzen."
-            end
-            return body
-          when Net::HTTPRedirection
-            uri = URI.parse(res["location"])
-          else
-            raise "HTTP #{res.code} für #{url}"
-          end
+        body = SafeHttp.get(url, headers: { "User-Agent" => "miolimOS/1.0 (+md-import)",
+                                            "Accept"     => "text/markdown, text/plain, */*" },
+                            open_timeout: 5, read_timeout: 15, max_redirects: max_redirects)
+                       .body.dup.force_encoding("UTF-8")
+        raise "Datei ist kein Text (Binärinhalt)" unless body.valid_encoding?
+        if body.lstrip.start_with?("<!DOCTYPE", "<!doctype", "<html", "<HTML")
+          raise "URL lieferte HTML statt Markdown — dafür den Web-Clip nutzen."
         end
-        raise "Zu viele Redirects für #{url}"
+        body
+      rescue SafeHttp::Error => e
+        raise e.message
       end
 
       # Titel: Frontmatter → erste H1/H2 im Roh-MD → InboxItem-Titel →

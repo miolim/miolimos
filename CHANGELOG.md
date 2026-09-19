@@ -110,6 +110,18 @@ release is cut, this section is renamed to the new version and a fresh
   at those ids — an invoice's foreign key turned the request into a 500, a
   document kept a dead reference. Removed rows now release their references
   explicitly (the document falls back to the automatic address).
+- **Security:** fetching web addresses (web clip, Markdown import, title
+  lookup, contact extraction) goes through one guarded fetcher, `SafeHttp`
+  (#1675): internal addresses are refused — loopback, private networks,
+  link-local incl. cloud metadata, also as the target of a redirect — the
+  connection is made to the checked IP, responses are capped in size, and
+  relative redirects are resolved everywhere (the Markdown import still had
+  the bug fixed for the web clip earlier). Before, any URL supplied by a user,
+  an agent or a mail was fetched and its body ended up in a readable entry.
+- **Security:** icons fetched from the Lucide CDN are rebuilt from an
+  allowlist of shape elements and attributes before being written as a view
+  partial, and the package version is pinned instead of `@latest` (#1675).
+  The file is server-executed ERB; it used to be written unfiltered.
 - **Security:** Settings → Users and Settings → Agents are now reserved for
   admins (#1675). Both only checked the `Actor` capability, which every human
   user holds — so a member or guest could issue an API token for any agent

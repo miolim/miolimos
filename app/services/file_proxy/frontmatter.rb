@@ -17,11 +17,12 @@ class FileProxy
               topics:, contacts:, tags:, aliases:,
               parent_org:,
               affiliations:, relationships:, contact_points:,
-              first_name:, last_name:, orcid: nil,
-              legal_form: nil,
-              gender: nil, salutation: nil, academic_title: nil,
-              birth_name: nil,
-              issuer: nil, logo: nil)
+              issuer: nil, logo: nil,
+              **stammdaten)
+      # #1675: Die skalaren Stammdaten (Name, Anrede, Rechtsform …) kommen als
+      # **stammdaten und laufen über EINE Liste — KnowledgeItem::Stammdaten.
+      unbekannt = stammdaten.keys - KnowledgeItem::Stammdaten::NAMEN
+      raise ArgumentError, "unbekannte Frontmatter-Felder: #{unbekannt.inspect}" if unbekannt.any?
       fm = old_fm.merge("updated_at" => Time.current.iso8601)
       fm["topics"]   = Array(topics)   if topics
       fm["contacts"] = Array(contacts) if contacts
@@ -42,20 +43,9 @@ class FileProxy
       fm["affiliations"]   = affiliations   unless affiliations.nil?
       fm["relationships"]  = relationships  unless relationships.nil?
       fm["contact_points"] = contact_points unless contact_points.nil?
-      fm["first_name"]     = first_name.presence     unless first_name.nil?
-      fm["last_name"]      = last_name.presence      unless last_name.nil?
-      fm["orcid"]          = orcid.presence          unless orcid.nil?   # #516
-      # #1057 (aus immoos #1031): Rechtsform — nur Katalogwerte, alles andere
-      # (auch "") räumt den Key ab (fm.compact unten).
-      fm["legal_form"]     = (legal_form if LegalForms.valid?(legal_form)) unless legal_form.nil?
-      # #1090: Geschlecht nur als Katalogwert, alles andere (auch "") raeumt
-      # den Key ab. Die Anrede ist bewusst Freitext (Titel, „Liebe Anna").
-      fm["gender"]         = (gender if Salutations.valid_gender?(gender)) unless gender.nil?
-      fm["salutation"]     = salutation.presence                           unless salutation.nil?
-      # #1090 Nachtrag: akademischer Titel ist Freitext wie die Anrede.
-      fm["academic_title"] = academic_title.presence                       unless academic_title.nil?
-      # #1615: Geburtsname, Freitext.
-      fm["birth_name"]     = birth_name.presence                           unless birth_name.nil?
+      # nil = nicht anfassen; leer oder (bei Katalogfeldern) ungültig räumt
+      # den Key ab (fm.compact unten).
+      KnowledgeItem::Stammdaten.in_frontmatter!(fm, stammdaten)
       # #1168: Logo als Titel-Referenz auf ein Bild-KI (wie parent_org);
       # "" räumt den Key ab (fm.compact unten).
       fm["logo"]           = logo.presence                                 unless logo.nil?

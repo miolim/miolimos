@@ -34,6 +34,17 @@ release is cut, this section is renamed to the new version and a fresh
   accepts an `initial` tab and announces every change as
   `simple-tabs:gewechselt`.
 
+### Changed
+
+- The scalar master-data fields of people and organisations (first/last name,
+  birth name, gender, salutation, academic title, ORCID, legal form) are now
+  declared in one place, `KnowledgeItem::Stammdaten` (#1675). Export, import,
+  re-index, merge, the update form and the create path all read that list;
+  before, a new field meant nine edits in seven files, and a forgotten one
+  lost the value silently. Forks that add such fields: add one line there
+  instead of patching each site. `FileProxy.update` now rejects unknown field
+  names with an `ArgumentError` naming them.
+
 ### Fixed
 
 - E-invoice amounts are consistent to the cent (#1675). XML amounts were

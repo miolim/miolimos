@@ -149,11 +149,11 @@ class FileProxy
                item_type: nil,
                parent_org: nil, affiliations: nil, relationships: nil,
                contact_points: nil,
-               first_name: nil, last_name: nil, orcid: nil,
-               legal_form: nil,
-               gender: nil, salutation: nil, academic_title: nil,
-               birth_name: nil,
-               issuer: nil, logo: nil)
+               issuer: nil, logo: nil,
+               **stammdaten)
+      # #1675: first_name:, gender:, birth_name: … — die skalaren Stammdaten
+      # kommen als **stammdaten (KnowledgeItem::Stammdaten). Unbekannte Keys
+      # weist Frontmatter.build ab, ein Tippfehler geht also nicht still unter.
       AccessGate.authorize!(actor: actor, resource_type: "KnowledgeItem", action: "update")
       FileProxy.ensure_writable!(actor, knowledge_item)   # #1675: vor der ersten Dateioperation
 
@@ -181,16 +181,9 @@ class FileProxy
         affiliations:   affiliations,
         relationships:  relationships,
         contact_points: contact_points,
-        first_name:     first_name,
-        last_name:      last_name,
-        orcid:          orcid,
-        legal_form:     legal_form,
-        gender:         gender,
-        salutation:     salutation,
-        academic_title: academic_title,
-        birth_name:     birth_name,
         issuer:         issuer,
-        logo:           logo
+        logo:           logo,
+        **stammdaten
       )
 
       # #650 (Hans, 2026-06-12): Binär-Datei-KIs (Bild/PDF — alles ohne
@@ -244,14 +237,7 @@ class FileProxy
         aliases:         Array(fm["aliases"]),
         tags:            Array(fm["tags"]),
         body:            new_body,
-        first_name:      fm["first_name"],
-        last_name:       fm["last_name"],
-        orcid:           fm["orcid"],
-        legal_form:      fm["legal_form"],
-        gender:          fm["gender"],
-        salutation:      fm["salutation"],
-        academic_title:  fm["academic_title"],
-        birth_name:      fm["birth_name"],
+        **KnowledgeItem::Stammdaten.attribute_aus(fm),
         issuer:          ActiveModel::Type::Boolean.new.cast(fm["issuer"]) ? true : false,
         parent_org_uuid: KnowledgeIndexer.resolve_parent_org_uuid(fm["parent_org"]),
         logo_uuid:       KnowledgeIndexer.resolve_ki_uuid(fm["logo"]),

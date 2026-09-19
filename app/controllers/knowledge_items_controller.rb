@@ -828,18 +828,11 @@ class KnowledgeItemsController < ApplicationController
       last_name:  params[:last_name].presence,
       parent_org: params[:parent_org].presence
     }.compact
-    # #1057 (aus immoos #1031): Rechtsform nur für Organisationen übernehmen;
+    # #1675: die typgebundenen Stammdaten (Rechtsform nur an Organisationen,
+    # Geschlecht/Anrede/Titel/Geburtsname nur an Personen) aus der EINEN Liste;
     # Nicht-Katalogwerte filtert Frontmatter.build.
-    if item.item_type == "organization" && params[:legal_form].present?
-      fields[:legal_form] = params[:legal_form]
-    end
+    fields.merge!(KnowledgeItem::Stammdaten.anlage_felder(item.item_type, params))
     if item.person?
-      # #1090: Geschlecht/Anrede nur für Personen; Nicht-Katalogwerte beim
-      # Geschlecht filtert Frontmatter.build.
-      fields[:gender]     = params[:gender]     if params[:gender].present?
-      fields[:salutation] = params[:salutation] if params[:salutation].present?
-      fields[:academic_title] = params[:academic_title] if params[:academic_title].present?
-      fields[:birth_name]     = params[:birth_name]     if params[:birth_name].present?   # #1615
       if !fields.key?(:first_name) && !fields.key?(:last_name) && !@blank_title
         parts = item.title.split(/\s+/)
         fields[:first_name] = parts[0..-2].join(" ").presence

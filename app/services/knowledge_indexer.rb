@@ -166,15 +166,9 @@ class KnowledgeIndexer
     item.item_type       = ITEM_TYPE_ALIASES[raw_type] || raw_type
     item.aliases         = Array(frontmatter["aliases"]).compact.map(&:to_s).reject(&:blank?)
     item.tags            = Array(frontmatter["tags"]).compact.map(&:to_s).reject(&:blank?)
-    item.first_name      = frontmatter["first_name"]
-    item.last_name       = frontmatter["last_name"]
-    # #1057 (aus immoos #1031): nur Katalogwerte indexieren, Fremdes wird nil.
-    item.legal_form      = (frontmatter["legal_form"] if LegalForms.valid?(frontmatter["legal_form"]))
-    # #1090: Geschlecht ebenfalls nur als Katalogwert; die Anrede ist Freitext.
-    item.gender          = (frontmatter["gender"] if Salutations.valid_gender?(frontmatter["gender"]))
-    item.salutation      = frontmatter["salutation"].presence
-    item.academic_title  = frontmatter["academic_title"].presence
-    item.birth_name      = frontmatter["birth_name"].presence   # #1615
+    # #1675: Name, Anrede, Rechtsform … aus EINER Liste (nur Katalogwerte bei
+    # Katalogfeldern; die ORCID wird bewusst nicht zurückgelesen).
+    KnowledgeItem::Stammdaten.indexieren!(item, frontmatter)
 
     item.parent_org_uuid = References.resolve_parent_org_uuid(frontmatter["parent_org"])
     item.logo_uuid       = References.resolve_ki_uuid(frontmatter["logo"])   # #1168

@@ -59,14 +59,7 @@ class FileProxy
       fm["contacts"] = ki.mentioned_kis.pluck(:uuid)  if ki.respond_to?(:mentioned_kis) && ki.mentioned_kis.any?
       fm["tags"]     = ki.tags.to_a                   if ki.tags.present?
       fm["aliases"]  = ki.aliases.to_a                if ki.aliases.present?
-      fm["first_name"] = ki.first_name                if ki.first_name.present?
-      fm["last_name"]  = ki.last_name                 if ki.last_name.present?
-      fm["orcid"]      = ki.orcid                      if ki.orcid.present?   # #516
-      fm["legal_form"] = ki.legal_form                if ki.legal_form.present?  # #1057
-      fm["gender"]     = ki.gender                    if ki.gender.present?      # #1090
-      fm["salutation"] = ki.salutation                if ki.salutation.present?  # #1090
-      fm["academic_title"] = ki.academic_title        if ki.academic_title.present?  # #1090 Nachtrag
-      fm["birth_name"] = ki.birth_name                if ki.birth_name.present?  # #1615
+      KnowledgeItem::Stammdaten.export!(fm, ki)   # #1675: Name, Anrede, Rechtsform … aus EINER Liste
       fm["issuer"]     = true                          if ki.respond_to?(:issuer) && ki.issuer?          # #532
       if ki.parent_org_uuid.present?
         parent = KnowledgeItem.find_by(uuid: ki.parent_org_uuid)

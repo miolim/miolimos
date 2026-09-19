@@ -8,11 +8,9 @@
 # weiterhin am KnowledgeItem-Datensatz; das Form-Object ist nur
 # Datenmuncher.
 class KnowledgeItemUpdateForm
-  SCALAR_FIELDS = %i[
-    title content item_type source source_url chat_title parent_org
-    first_name last_name legal_form gender salutation academic_title
-    birth_name logo
-  ].freeze
+  # #1675: die Stammdaten-Felder kommen aus der EINEN Liste.
+  SCALAR_FIELDS = (%i[title content item_type source source_url chat_title parent_org logo] +
+                   KnowledgeItem::Stammdaten::NAMEN).freeze
 
   SLUG_LIST_FIELDS = %i[topics contacts tags].freeze
 

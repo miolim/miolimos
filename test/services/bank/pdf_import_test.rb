@@ -144,4 +144,78 @@ class Bank::PdfImportTest < ActiveSupport::TestCase
     assert_not Bank::Import.detect(auszug(ende: "2.605,28")).sicher?
     assert_equal @konto, Bank::Import.detect(auszug).ledger
   end
+  # ── #1675: Jahreswechsel und mehrseitige Auszüge — bisher ungetestet ────
+  # Ein falsches Jahr übersteht die Saldoprüfung (die Summe stimmt ja) und
+  # bucht den Umsatz ins falsche Steuerjahr.
+
+  def seiten(*inhalte)
+    kopf = %(<!-- bank-pdf ocr=false -->\n)
+    kopf + inhalte.map { |i| %(<page width="595.0" height="842.0">#{i.join}</page>) }.join("\n")
+  end
+
+  def jahreswechsel_auszug
+    seiten(
+      [ zeile(40,  text: "IBAN DE89370400440532013000"),
+        zeile(55,  text: "Bu-Tag Wert Vorgang"),
+        zeile(70,  text: "alter Kontostand vom 29.12.2025", betrag: "1.000,00", hs: "H"),
+        zeile(90,  bu: "30.12.", wert: "30.12.", text: "Lastschrift", betrag: "100,00", hs: "S"),
+        zeile(100, text: "Stadtwerke Beispielstadt"),
+        zeile(110, text: "Abschlag Dezember"),
+        zeile(130, text: "Übertrag auf Blatt 2", betrag: "900,00", hs: "H"),
+        # Fußzeile von Blatt 1 — gehört zu KEINEM Umsatz:
+        zeile(780, text: "Volksbank Beispielstadt eG"),
+        zeile(790, text: "Vorstand Max Mustermann"),
+        zeile(800, text: "DE89370400440532013000") ],
+      [ # Kopf von Blatt 2 — ebenfalls kein Umsatz-Text, samt der EIGENEN IBAN:
+        zeile(40,  text: "Kontoauszug Blatt 2"),
+        zeile(50,  text: "IBAN DE89370400440532013000"),
+        zeile(70,  text: "Übertrag von Blatt 1", betrag: "900,00", hs: "H"),
+        zeile(90,  bu: "02.01.", wert: "31.12.", text: "Gutschrift", betrag: "250,00", hs: "H"),
+        zeile(100, text: "Kunde AG"),
+        zeile(110, text: "Rechnung 2025-117"),
+        zeile(140, text: "neuer Kontostand vom 05.01.2026", betrag: "1.150,00", hs: "H") ]
+    )
+  end
+
+  test "Jahreswechsel: Dezember bleibt im alten Jahr, Januar springt ins neue" do
+    rows = Bank::PdfImport.analyse(jahreswechsel_auszug).rows
+    assert_equal [Date.new(2025, 12, 30), Date.new(2026, 1, 2)], rows.map { |r| r[:booked_on] }
+  end
+
+  test "Jahreswechsel: am 02.01. gebucht, zum 31.12. wertgestellt — die Wertstellung liegt im Vorjahr" do
+    januar = Bank::PdfImport.analyse(jahreswechsel_auszug).rows.last
+    assert_equal Date.new(2025, 12, 31), januar[:value_date]
+  end
+
+  test "mehrseitig: Fuss- und Kopfzeilen landen nicht im Umsatz davor" do
+    dezember = Bank::PdfImport.analyse(jahreswechsel_auszug).rows.first
+
+    assert_equal "Stadtwerke Beispielstadt", dezember[:counterparty_name]
+    refute_match(/Volksbank|Vorstand|Kontoauszug|Blatt/, dezember[:purpose].to_s,
+                 "die Fußzeile von Blatt 1 steht im Verwendungszweck")
+    assert_nil dezember[:counterparty_iban],
+               "die EIGENE IBAN aus Fuß-/Kopfzeile wurde zur Gegenpartei-IBAN"
+  end
+
+  test "mehrseitig: jede Seite geht fuer sich auf" do
+    a = Bank::PdfImport.analyse(jahreswechsel_auszug)
+    assert a.pruefung.seiten_ok?, "Seitenprüfung: #{a.pruefung.inspect}"
+  end
+
+  # #1271: erster Auszug eines neuen Kontos — kein Datum am Anfangssaldo, nur am
+  # Ende. Dann wird von hinten gerechnet.
+  test "ohne Anfangsdatum wird das Jahr vom Endsaldo aus rueckwaerts bestimmt" do
+    auszug = seiten(
+      [ zeile(40,  text: "IBAN DE89370400440532013000"),
+        zeile(55,  text: "Bu-Tag Wert Vorgang"),
+        zeile(70,  text: "alter Kontostand", betrag: "0,00", hs: "H"),
+        zeile(90,  bu: "29.12.", wert: "29.12.", text: "Gutschrift", betrag: "500,00", hs: "H"),
+        zeile(100, text: "Ersteinzahlung"),
+        zeile(120, bu: "03.01.", wert: "03.01.", text: "Lastschrift", betrag: "50,00", hs: "S"),
+        zeile(130, text: "Kontoführung"),
+        zeile(160, text: "neuer Kontostand vom 05.01.2026", betrag: "450,00", hs: "H") ]
+    )
+    rows = Bank::PdfImport.analyse(auszug).rows
+    assert_equal [Date.new(2025, 12, 29), Date.new(2026, 1, 3)], rows.map { |r| r[:booked_on] }
+  end
 end

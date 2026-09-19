@@ -558,6 +558,15 @@ class BladeStackController extends Controller {
     }
     window.addEventListener("blade-stack:append", this._onAppendEvent)
 
+    // #1674 (aus immoOS #1097 uebernommen): Eine Card kann ihre Breite selbst
+    // aendern (dort: Listen-Card, die auf Tabelle umschaltet). Der Stack rechnet
+    // die Position jeder Card aus ihrer GEMESSENEN Breite — ohne Neuberechnung
+    // ueberlappen die Cards oder die Spines verrutschen. Statt restickify() von
+    // aussen aufzurufen (der Aufrufer muesste den Controller finden) ein
+    // Signal, das jeder senden kann:
+    //   window.dispatchEvent(new CustomEvent("blade-stack:relayout"))
+    this._onRelayout = () => this.restickify()
+    window.addEventListener("blade-stack:relayout", this._onRelayout)
     // #1509 (Hans): „UMSCHALT und ALT-UMSCHALT sind auch Modifier. Bei der
     // Benutzung wird aber an einigen Stellen Text in der Card selektiert.
     // Wenn dann die neue Card geoeffnet wurde, wird die Selektion auf deren
@@ -677,6 +686,7 @@ class BladeStackController extends Controller {
       document.body.classList.remove("has-blade-stack")
     }
     if (this._onAppendEvent) window.removeEventListener("blade-stack:append", this._onAppendEvent)
+    if (this._onRelayout) window.removeEventListener("blade-stack:relayout", this._onRelayout)
     if (this._keineAuswahlBeiModifier) {
       document.removeEventListener("mousedown", this._keineAuswahlBeiModifier, true)
     }
@@ -1913,9 +1923,24 @@ class BladeStackController extends Controller {
     // waehrend rechts Platz war, sah den Stack wegspringen. Das Flag
     // sagt dem Observer: Layout nachziehen ja, Fokus/Scroll/Trail nein.
     const wasActive = old.dataset.active === "true"
+    // #1674 (aus immoOS #1473 uebernommen, Hans dort): „Das Refresh sollte nur
+    // die Inhalte aktualisieren, nicht die Card-Breite zuruecksetzen." Fuehrt
+    // eine Card ihre Breite selbst (`data-own-width`), nimmt die frische Card
+    // Markierung UND Breite mit: Sonst steht sie zwischen Einhaengen und
+    // Stimulus-Connect kurz in der CSS-Standardbreite, und wer in dieser Luecke
+    // misst (Sticky-Offsets, Ueberstand) rechnet mit einer Breite, die es nie gab.
+    const eigeneBreite = old.dataset.ownWidth
+    const breiteVorher = old.style.width
     this._refreshingCard = true
     old.replaceWith(...nodes)
     if (wasActive) fresh.dataset.active = "true"
+    if (eigeneBreite) {
+      fresh.dataset.ownWidth = eigeneBreite
+      if (breiteVorher) {
+        fresh.style.width    = breiteVorher
+        fresh.style.maxWidth = "none"
+      }
+    }
     // Erst im naechsten Macrotask zuruecksetzen — der Observer-Callback
     // laeuft als Microtask noch vor dem Timeout und sieht das Flag.
     setTimeout(() => { this._refreshingCard = false }, 0)

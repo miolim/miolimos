@@ -24,7 +24,10 @@ require "test_helper"
 # geschlossen wurde — und genau das ist der Normalfall.
 class FormularVerschachtelungTest < ActiveSupport::TestCase
   WURZEL      = Rails.root.join("app/views")
-  FORMULAR    = /\bform_with\b|\bform_tag\b|\bbutton_to\b/
+  # #1672: `ui_button_to` gehört dazu — es IST ein `button_to` und bringt
+  # dasselbe Formular mit. `\bbutton_to\b` trifft es nicht: Vor `button_to`
+  # steht dort ein `_`, und das ist ein Wortzeichen, also keine Wortgrenze.
+  FORMULAR    = /\bform_with\b|\bform_tag\b|\bbutton_to\b|\bui_button_to\b/
   BLOCK_ENDE  = /\bdo\b(\s*\|[^|]*\|)?\s*\z/
   BLOCK_START = /\A\s*(if|unless|case|begin|while|until|for)\b/
 
@@ -138,12 +141,32 @@ class FormularVerschachtelungTest < ActiveSupport::TestCase
   # Formulare aus Helfern sähe dieser Scanner nicht — er liest nur Views.
   # Solange kein Helfer eines erzeugt, ist das keine Lücke; ändert sich das,
   # sagt es dieser Test.
+  #
+  # #1672: EINE Ausnahme, und sie ist keine Lücke. `ui_button_to` ist ein
+  # dünner Mantel um `button_to` (Kennung, Tooltip und aria-label aus dem
+  # Katalog). Seine AUFRUFE stehen in den Views und werden oben mitgeprüft,
+  # weil `ui_button_to` in FORMULAR steht — das Formular ist also sichtbar,
+  # nur an der richtigen Stelle. Der Test darunter hält genau das fest: Fiele
+  # `ui_button_to` je aus FORMULAR heraus, verlöre diese Ausnahme ihren Grund.
+  FORMULAR_HELFER = { "app/helpers/application_helper.rb" => "ui_button_to" }.freeze
+
   test "#1537: kein Helfer erzeugt Formulare" do
     treffer = Dir.glob(Rails.root.join("app/helpers/**/*.rb")).select do |p|
       File.read(p).match?(FORMULAR)
-    end
-    assert_empty treffer.map { |p| Pathname.new(p).relative_path_from(Rails.root).to_s },
+    end.map { |p| Pathname.new(p).relative_path_from(Rails.root).to_s }
+
+    assert_empty treffer - FORMULAR_HELFER.keys,
                  "Ein Helfer erzeugt ein Formular — die View-Prüfung sieht das nicht. " \
                  "Entweder den Helfer meiden oder die Prüfung erweitern."
+  end
+
+  test "#1537: die erlaubten Formular-Helfer werden in den Views mitgeprüft" do
+    FORMULAR_HELFER.each do |datei, helfer|
+      assert_match FORMULAR, helfer,
+                   "#{datei}: #{helfer} ist als Ausnahme eingetragen, steht aber nicht in " \
+                   "FORMULAR — seine Aufrufe in den Views würden nicht auf Verschachtelung geprüft."
+      assert File.read(Rails.root.join(datei)).include?("def #{helfer}"),
+             "#{datei}: #{helfer} gibt es nicht (mehr) — Ausnahme bitte streichen."
+    end
   end
 end

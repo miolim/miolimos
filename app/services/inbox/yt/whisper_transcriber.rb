@@ -16,14 +16,22 @@ module Inbox
       # Sekunden (über Chunk-Grenzen hinweg) — Basis für Zeitstempel.
       attr_reader :segments
 
+      # #1675: Abschnitte, die sich nicht transkribieren ließen —
+      # [{ abschnitt:, von:, bis: }] in Sekunden. Leer = lückenlos.
+      attr_reader :luecken
+
+      VERSUCHE = 2   # ein vorübergehender Fehler (429, Zeitüberschreitung) bekommt EINE Wiederholung
+
       def initialize(actor:)
         @actor    = actor
         @segments = []
+        @luecken  = []
       end
 
       def call(url, language_hint: nil)
         result = ""
         @segments = []
+        @luecken  = []
         LlmActivity.track(
           kind: :inbox_youtube_whisper, actor: @actor,
           source_kind: "url", source_id: url,
@@ -42,7 +50,15 @@ module Inbox
             offset = 0.0   # #660: kumulierte Dauer vorheriger Chunks
             texts  = chunks.map.with_index do |chunk_path, idx|
               Rails.logger.info("Whisper: chunk #{idx + 1}/#{chunks.size} (#{File.size(chunk_path) / 1024}KB)")
-              resp = Llm::WhisperClient.transcribe(path: chunk_path, language: language_hint, with_segments: true)
+              versuch = 0
+              resp = begin
+                versuch += 1
+                Llm::WhisperClient.transcribe(path: chunk_path, language: language_hint, with_segments: true)
+              rescue => e
+                raise if versuch >= VERSUCHE
+                Rails.logger.warn("Whisper-Chunk #{idx + 1}: Versuch #{versuch} fehlgeschlagen (#{e.class}), wiederhole")
+                retry
+              end
               Array(resp["segments"]).each do |seg|
                 @segments << { "start" => seg["start"].to_f + offset,
                                "end"   => seg["end"].to_f + offset,
@@ -51,7 +67,17 @@ module Inbox
               resp["text"].to_s.strip
             rescue => e
               Rails.logger.warn("Whisper-Chunk #{idx + 1} fehlgeschlagen: #{e.class} #{e.message}")
-              ""
+              # #1675: Vorher wurde daraus still "" — bei einem langen Video
+              # fehlten so 10, 40, 70 Minuten MITTEN im Transkript, ohne jede
+              # Spur, als „verarbeitet" verbucht. Jetzt steht die Lücke mit ihrer
+              # Zeitspanne im Text UND in der Zeitleiste; `luecken` sagt es dem
+              # Aufrufer.
+              bis = offset + (probe_duration(chunk_path) || CHUNK_SECONDS.to_f)
+              @luecken << { abschnitt: idx + 1, von: offset, bis: bis }
+              hinweis = "[… Abschnitt #{idx + 1} von #{chunks.size} (#{uhr(offset)}–#{uhr(bis)}) " \
+                        "konnte nicht transkribiert werden …]"
+              @segments << { "start" => offset, "end" => bis, "text" => hinweis }
+              hinweis
             ensure
               # Echte Chunk-Dauer addieren (ffmpeg segmentiert an
               # Keyframes — Chunks sind ~600s, aber nicht exakt).
@@ -62,7 +88,7 @@ module Inbox
             # Transkript ohne einen einzigen brauchbaren Chunk ist kein
             # Transkript. Das als Erfolg zu verbuchen war derselbe Fehler wie
             # beim Download.
-            if result.blank? && chunks.any?
+            if @luecken.size == chunks.size && chunks.any?
               raise YtDlp::Error, "Whisper lieferte für keinen der #{chunks.size} Audio-Abschnitte Text"
             end
           end
@@ -76,6 +102,12 @@ module Inbox
       private
 
       # #628 W0: Audiolänge via ffprobe — Basis der Whisper-Kosten.
+      # Sekunden → "mm:ss" bzw. "h:mm:ss" für den Lücken-Hinweis.
+      def uhr(sekunden)
+        s = sekunden.to_i
+        s >= 3600 ? format("%d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60) : format("%d:%02d", s / 60, s % 60)
+      end
+
       def probe_duration(audio_path)
         out, _err, status = Open3.capture3(
           "ffprobe", "-v", "error", "-show_entries", "format=duration",

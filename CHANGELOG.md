@@ -110,6 +110,11 @@ release is cut, this section is renamed to the new version and a fresh
   at those ids — an invoice's foreign key turned the request into a 500, a
   document kept a dead reference. Removed rows now release their references
   explicitly (the document falls back to the automatic address).
+- Long audio/video transcripts show their gaps (#1675). When a single
+  10-minute chunk failed at Whisper (rate limit, timeout), it silently became
+  empty text — a two-hour video could miss 20 or 70 minutes in the middle and
+  still count as processed. A failed chunk is now retried once; if it still
+  fails, the transcript and its timeline carry a marker with the time span.
 - VR-Bank PDF statements with several pages: footer and header lines (the
   bank's imprint, “Kontoauszug Blatt 2”, the account's own IBAN) are no longer
   appended to the last transaction before the page break (#1675). They ended

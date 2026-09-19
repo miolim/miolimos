@@ -136,6 +136,10 @@ module Inbox
              - NICHT übersetzen
              - NICHT kürzen — der vollständige Inhalt muss erhalten bleiben.
           4. Sprache identisch zum Eingang.
+          5. Hinweise in eckigen Klammern der Form „[… Abschnitt N von M
+             (mm:ss–mm:ss) konnte nicht transkribiert werden …]" WÖRTLICH und
+             als eigenen Absatz stehen lassen — sie markieren eine Lücke in der
+             Aufnahme und dürfen weder entfernt noch umformuliert werden.
 
           Antworte AUSSCHLIESSLICH mit dem strukturierten Transkript —
           keine Vorrede, keine Erklärung, keine Code-Fences.
